@@ -39,6 +39,8 @@ export interface Course {
   batches?: number;
   averageRating?: number;
   durationHours?: number;
+  // Added for compatibility with components
+  category?: CourseCategory;
 }
 
 export interface CourseCategory {
@@ -58,6 +60,10 @@ export interface Batch {
   students?: number;
   createdAt?: Date;
   updatedAt?: Date;
+  // Added for compatibility with components
+  course?: Course;
+  instructor?: User;
+  studentsCount?: number;
 }
 
 export interface Schedule {

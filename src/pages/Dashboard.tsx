@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen } from 'lucide-react';
@@ -5,18 +6,39 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DashboardMetrics from '@/components/dashboard/DashboardMetrics';
 import Layout from '@/components/layout/Layout';
-import { fetchCourses, fetchUsers } from '@/lib/api';
-import { Role } from '@/lib/types';
+import { fetchCourses, fetchUsers, getDashboardMetrics } from '@/lib/api';
+import { Role, DashboardMetrics as DashboardMetricsType } from '@/lib/types';
 
 const Dashboard = () => {
   const [totalStudents, setTotalStudents] = useState(0);
   const [totalInstructors, setTotalInstructors] = useState(0);
   const [totalCourses, setTotalCourses] = useState(0);
+  const [metrics, setMetrics] = useState<DashboardMetricsType | null>(null);
 
-  const { data: courses } = useQuery(['courses'], () => fetchCourses());
-  const { data: users } = useQuery(['users'], () => fetchUsers());
-  const { data: instructors } = useQuery(['instructors'], () => fetchUsers(Role.INSTRUCTOR));
-  const { data: students } = useQuery(['students'], () => fetchUsers(Role.STUDENT));
+  const { data: courses } = useQuery({
+    queryKey: ['courses'],
+    queryFn: () => fetchCourses(),
+  });
+  
+  const { data: users } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => fetchUsers(),
+  });
+  
+  const { data: instructors } = useQuery({
+    queryKey: ['instructors'],
+    queryFn: () => fetchUsers(Role.INSTRUCTOR),
+  });
+  
+  const { data: students } = useQuery({
+    queryKey: ['students'],
+    queryFn: () => fetchUsers(Role.STUDENT),
+  });
+  
+  const { data: dashboardMetrics } = useQuery({
+    queryKey: ['dashboardMetrics'],
+    queryFn: () => getDashboardMetrics(),
+  });
 
   useEffect(() => {
     if (courses) {
@@ -28,7 +50,10 @@ const Dashboard = () => {
     if (students) {
       setTotalStudents(students.length);
     }
-  }, [courses, instructors, students]);
+    if (dashboardMetrics) {
+      setMetrics(dashboardMetrics);
+    }
+  }, [courses, instructors, students, dashboardMetrics]);
 
   return (
     <Layout>
@@ -83,7 +108,7 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          <DashboardMetrics />
+          {metrics && <DashboardMetrics stats={metrics} />}
         </TabsContent>
         <TabsContent value="reports">
           <div>Reports Content</div>

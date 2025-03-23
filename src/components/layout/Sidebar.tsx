@@ -1,11 +1,10 @@
-
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { Role } from '@/lib/types';
-import { BookOpen, Calendar, LayoutDashboard, Lightbulb, Users, Settings, Menu, X, Compass, ChevronRight, Graduation, SlidersHorizontal } from 'lucide-react';
+import { BookOpen, Calendar, LayoutDashboard, Lightbulb, Users, Settings, Menu, X, Compass, ChevronRight, GraduationCap, SlidersHorizontal } from 'lucide-react';
 
 interface NavItem {
   title: string;
@@ -21,7 +20,6 @@ const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Close mobile sidebar when path changes
   useEffect(() => {
     setIsMobileOpen(false);
   }, [location.pathname]);
@@ -48,7 +46,7 @@ const Sidebar = () => {
     {
       title: 'Students',
       href: '/students',
-      icon: <Graduation className="h-5 w-5" />,
+      icon: <GraduationCap className="h-5 w-5" />,
       roles: [Role.ADMIN, Role.INSTRUCTOR],
     },
     {
@@ -71,7 +69,6 @@ const Sidebar = () => {
     },
   ];
 
-  // Filter navigation based on user role
   const filteredNavItems = navItems.filter((item) => {
     if (!item.roles) return true;
     return hasRole(item.roles);
@@ -79,7 +76,6 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile sidebar toggle button - only visible on small screens */}
       <Button
         variant="ghost"
         size="icon"
@@ -93,7 +89,6 @@ const Sidebar = () => {
         )}
       </Button>
 
-      {/* Sidebar backdrop for mobile */}
       {isMobileOpen && (
         <div
           className="fixed inset-0 z-30 bg-background/80 backdrop-blur-sm lg:hidden"
@@ -101,7 +96,6 @@ const Sidebar = () => {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-30 w-64 transform border-r bg-sidebar transition-all duration-300 ease-in-out lg:static lg:translate-x-0",
@@ -109,7 +103,6 @@ const Sidebar = () => {
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Logo */}
         <div className={cn(
           "flex h-16 items-center border-b px-6",
           isCollapsed && "justify-center px-0"
@@ -125,7 +118,6 @@ const Sidebar = () => {
             )}
           </div>
           
-          {/* Desktop collapse button */}
           <Button
             variant="ghost"
             size="icon"
@@ -139,7 +131,6 @@ const Sidebar = () => {
           </Button>
         </div>
 
-        {/* Navigation */}
         <nav className="space-y-1 px-3 py-4">
           {filteredNavItems.map((item) => (
             <NavLink
@@ -164,7 +155,6 @@ const Sidebar = () => {
           ))}
         </nav>
 
-        {/* User profile section */}
         <div className={cn(
           "absolute bottom-0 left-0 right-0 border-t p-4",
           isCollapsed && "flex justify-center p-2"

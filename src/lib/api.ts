@@ -1,381 +1,283 @@
 
-import { ApiResponse, AuthResponse, Batch, Course, CourseCategory, CourseReview, Role, Schedule, StudentBatch, User } from './types';
+import { CourseCategory, Level, Course, User, Role, Batch, Resource } from '@/lib/types';
 
-const API_URL = 'http://localhost:3000/api';
+// Mock API functions to simulate backend calls
 
-// Helper to handle API responses
-async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    return {
-      success: false,
-      error: errorData.error || `Error: ${response.status} ${response.statusText}`
-    };
+// Generic fetch function (simulating API call)
+const apiCall = <T>(data: T): Promise<T> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(data);
+    }, 500);
+  });
+};
+
+// Course Categories API
+export const fetchCourseCategories = async (): Promise<CourseCategory[]> => {
+  const categories: CourseCategory[] = [
+    { id: 1, categoryName: 'Web Development' },
+    { id: 2, categoryName: 'Mobile Development' },
+    { id: 3, categoryName: 'Data Science' },
+    { id: 4, categoryName: 'DevOps' },
+    { id: 5, categoryName: 'UI/UX Design' },
+  ];
+  return apiCall(categories);
+};
+
+// Users API
+export const fetchUsers = async (role?: Role): Promise<User[]> => {
+  const users: User[] = [
+    {
+      id: 1,
+      fullName: 'Admin User',
+      email: 'admin@example.com',
+      role: Role.ADMIN,
+      photoUrl: 'https://i.pravatar.cc/150?img=1',
+      createdAt: new Date('2023-01-01'),
+    },
+    {
+      id: 2,
+      fullName: 'Jane Smith',
+      email: 'jane.smith@example.com',
+      role: Role.INSTRUCTOR,
+      photoUrl: 'https://i.pravatar.cc/150?img=2',
+      createdAt: new Date('2023-02-15'),
+    },
+    {
+      id: 3,
+      fullName: 'John Doe',
+      email: 'john.doe@example.com',
+      role: Role.STUDENT,
+      photoUrl: 'https://i.pravatar.cc/150?img=3',
+      createdAt: new Date('2023-03-20'),
+    },
+    {
+      id: 4,
+      fullName: 'Alice Johnson',
+      email: 'alice@example.com',
+      role: Role.INSTRUCTOR,
+      photoUrl: 'https://i.pravatar.cc/150?img=4',
+      createdAt: new Date('2023-02-10'),
+    },
+    {
+      id: 5,
+      fullName: 'Robert Brown',
+      email: 'robert@example.com',
+      role: Role.STUDENT,
+      photoUrl: 'https://i.pravatar.cc/150?img=5',
+      createdAt: new Date('2023-04-05'),
+    },
+  ];
+
+  if (role) {
+    return apiCall(users.filter(user => user.role === role));
+  }
+  return apiCall(users);
+};
+
+// Courses API
+export const fetchCourses = async (): Promise<Course[]> => {
+  const courses: Course[] = [
+    {
+      id: 1,
+      courseName: 'Introduction to React',
+      description: 'Learn the basics of React, hooks, context API and build real-world applications',
+      courseLevel: Level.BEGINNER,
+      categoryId: 1,
+      thumbnailUrl: 'https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      students: 120,
+      averageRating: 4.7,
+      batches: 3,
+      durationHours: 18,
+      createdAt: new Date('2023-01-10'),
+      createdBy: 2,
+    },
+    {
+      id: 2,
+      courseName: 'Advanced JavaScript Patterns',
+      description: 'Deep dive into advanced JavaScript design patterns, asynchronous programming, and performance optimization',
+      courseLevel: Level.ADVANCED,
+      categoryId: 1,
+      thumbnailUrl: 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      students: 85,
+      averageRating: 4.9,
+      batches: 2,
+      durationHours: 24,
+      createdAt: new Date('2023-02-05'),
+      createdBy: 2,
+    },
+    {
+      id: 3,
+      courseName: 'Flutter for Beginners',
+      description: 'Start your journey in mobile app development with Flutter and Dart',
+      courseLevel: Level.BEGINNER,
+      categoryId: 2,
+      thumbnailUrl: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      students: 200,
+      averageRating: 4.5,
+      batches: 4,
+      durationHours: 20,
+      createdAt: new Date('2023-01-25'),
+      createdBy: 4,
+    },
+    {
+      id: 4,
+      courseName: 'Python for Data Science',
+      description: 'Learn Python programming with a focus on data analysis, visualization, and machine learning basics',
+      courseLevel: Level.INTERMEDIATE,
+      categoryId: 3,
+      thumbnailUrl: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      students: 150,
+      averageRating: 4.6,
+      batches: 3,
+      durationHours: 22,
+      createdAt: new Date('2023-03-15'),
+      createdBy: 4,
+    },
+    {
+      id: 5,
+      courseName: 'Docker Essentials',
+      description: 'Get started with containerization using Docker and understand container orchestration',
+      courseLevel: Level.BEGINNER,
+      categoryId: 4,
+      thumbnailUrl: 'https://images.unsplash.com/photo-1605745341112-85968b19335b?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      students: 95,
+      averageRating: 4.4,
+      batches: 2,
+      durationHours: 15,
+      createdAt: new Date('2023-04-10'),
+      createdBy: 2,
+    },
+  ];
+
+  return apiCall(courses);
+};
+
+// Fetch a single course by ID
+export const fetchCourseById = async (id: number): Promise<Course | null> => {
+  const courses = await fetchCourses();
+  const course = courses.find(course => course.id === id) || null;
+  return apiCall(course);
+};
+
+// Batches API
+export const fetchBatches = async (): Promise<Batch[]> => {
+  const batches: Batch[] = [
+    {
+      id: 1,
+      batchName: 'React - Morning Batch',
+      courseId: 1,
+      instructorId: 2,
+      startDate: new Date('2023-06-01'),
+      endDate: new Date('2023-08-01'),
+      students: 25,
+    },
+    {
+      id: 2,
+      batchName: 'React - Weekend Batch',
+      courseId: 1,
+      instructorId: 2,
+      startDate: new Date('2023-06-15'),
+      endDate: new Date('2023-08-15'),
+      students: 30,
+    },
+    {
+      id: 3,
+      batchName: 'JavaScript Advanced - Evening',
+      courseId: 2,
+      instructorId: 2,
+      startDate: new Date('2023-07-01'),
+      endDate: new Date('2023-09-01'),
+      students: 20,
+    },
+    {
+      id: 4,
+      batchName: 'Flutter - Morning Batch',
+      courseId: 3,
+      instructorId: 4,
+      startDate: new Date('2023-06-01'),
+      endDate: new Date('2023-08-01'),
+      students: 35,
+    },
+    {
+      id: 5,
+      batchName: 'Python for Data Science - Weekend',
+      courseId: 4,
+      instructorId: 4,
+      startDate: new Date('2023-07-15'),
+      endDate: new Date('2023-09-15'),
+      students: 25,
+    },
+  ];
+
+  return apiCall(batches);
+};
+
+// Resources API
+export const fetchResources = async (courseId?: number): Promise<Resource[]> => {
+  const resources: Resource[] = [
+    {
+      id: 1,
+      title: 'React Fundamentals Slides',
+      description: 'Slide deck covering React basics and component lifecycle',
+      fileUrl: 'https://example.com/resources/react-slides.pdf',
+      fileType: 'document',
+      courseId: 1,
+      createdAt: new Date('2023-05-15'),
+    },
+    {
+      id: 2,
+      title: 'React Hooks Demo Code',
+      description: 'Example code demonstrating React hooks usage',
+      fileUrl: 'https://github.com/example/react-hooks-demo',
+      fileType: 'code',
+      courseId: 1,
+      createdAt: new Date('2023-05-20'),
+    },
+    {
+      id: 3,
+      title: 'Advanced JavaScript Patterns Handbook',
+      description: 'Comprehensive guide to JS design patterns',
+      fileUrl: 'https://example.com/resources/js-patterns.pdf',
+      fileType: 'document',
+      courseId: 2,
+      createdAt: new Date('2023-05-25'),
+    },
+    {
+      id: 4,
+      title: 'Flutter Setup Guide',
+      description: 'Step-by-step guide for setting up Flutter development environment',
+      fileUrl: 'https://example.com/resources/flutter-setup.pdf',
+      fileType: 'document',
+      courseId: 3,
+      createdAt: new Date('2023-05-10'),
+    },
+    {
+      id: 5,
+      title: 'Python Data Analysis Code Samples',
+      description: 'Sample code for data analysis with pandas and matplotlib',
+      fileUrl: 'https://github.com/example/python-data-analysis',
+      fileType: 'code',
+      courseId: 4,
+      createdAt: new Date('2023-06-05'),
+    },
+  ];
+
+  if (courseId) {
+    return apiCall(resources.filter(resource => resource.courseId === courseId));
+  }
+  return apiCall(resources);
+};
+
+// Authentication API
+export const login = async (email: string, password: string): Promise<User | null> => {
+  const users = await fetchUsers();
+  // Simple mock auth - in real app would check password hash
+  const user = users.find(u => u.email === email);
+  
+  if (user && password.length > 0) {
+    return apiCall(user);
   }
   
-  const data = await response.json();
-  return { success: true, data: data as T, message: data.message };
-}
-
-// Auth API functions
-export async function login(email: string, password: string): Promise<ApiResponse<AuthResponse>> {
-  try {
-    // For demo, we'll simulate API call with mock data
-    if (email === 'admin@lms.com' && password === 'Admin@123') {
-      const mockUser: User = {
-        id: 1,
-        email: 'admin@lms.com',
-        fullName: 'System Administrator',
-        role: Role.ADMIN,
-        isFirstLogin: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      
-      const mockAuth: AuthResponse = {
-        user: mockUser,
-        token: 'mock-jwt-token-for-demo'
-      };
-      
-      // Store in local storage
-      localStorage.setItem('lms-auth', JSON.stringify(mockAuth));
-      
-      return { success: true, data: mockAuth };
-    }
-    
-    return { 
-      success: false, 
-      error: 'Invalid credentials. Please try again.' 
-    };
-  } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to login'
-    };
-  }
-}
-
-export async function logout(): Promise<void> {
-  localStorage.removeItem('lms-auth');
-}
-
-// User API functions
-export async function getCurrentUser(): Promise<ApiResponse<User>> {
-  try {
-    const authData = localStorage.getItem('lms-auth');
-    
-    if (!authData) {
-      return { success: false, error: 'Not authenticated' };
-    }
-    
-    const { user } = JSON.parse(authData) as AuthResponse;
-    return { success: true, data: user };
-  } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to get current user'
-    };
-  }
-}
-
-// Mock data functions - for demo purposes
-export async function getCategories(): Promise<ApiResponse<CourseCategory[]>> {
-  try {
-    const mockCategories: CourseCategory[] = [
-      { id: 1, categoryName: 'Web Development', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: 2, categoryName: 'Mobile Development', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: 3, categoryName: 'Data Science', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: 4, categoryName: 'UI/UX Design', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: 5, categoryName: 'DevOps', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    ];
-    
-    return { success: true, data: mockCategories };
-  } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to get categories'
-    };
-  }
-}
-
-export async function getCourses(): Promise<ApiResponse<Course[]>> {
-  try {
-    const mockCourses: Course[] = [
-      { 
-        id: 1, 
-        courseName: 'React Fundamentals', 
-        description: 'Learn the basics of React including components, props, and state management.',
-        courseLevel: 'BEGINNER',
-        categoryId: 1,
-        createdBy: 1,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        category: { id: 1, categoryName: 'Web Development', createdAt: '', updatedAt: '' },
-        students: 42,
-        batches: 3,
-        resources: 12,
-        averageRating: 4.7
-      },
-      { 
-        id: 2, 
-        courseName: 'Advanced JavaScript', 
-        description: 'Deep dive into JavaScript concepts including closures, promises, and async/await.',
-        courseLevel: 'ADVANCED',
-        categoryId: 1,
-        createdBy: 1,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        category: { id: 1, categoryName: 'Web Development', createdAt: '', updatedAt: '' },
-        students: 38,
-        batches: 2,
-        resources: 18,
-        averageRating: 4.9
-      },
-      { 
-        id: 3, 
-        courseName: 'Flutter for Beginners', 
-        description: 'Introduction to building cross-platform mobile apps with Flutter.',
-        courseLevel: 'BEGINNER',
-        categoryId: 2,
-        createdBy: 1,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        category: { id: 2, categoryName: 'Mobile Development', createdAt: '', updatedAt: '' },
-        students: 56,
-        batches: 4,
-        resources: 15,
-        averageRating: 4.5
-      },
-      { 
-        id: 4, 
-        courseName: 'Python for Data Science', 
-        description: 'Learn Python programming for data analysis and visualization.',
-        courseLevel: 'INTERMEDIATE',
-        categoryId: 3,
-        createdBy: 1,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        category: { id: 3, categoryName: 'Data Science', createdAt: '', updatedAt: '' },
-        students: 78,
-        batches: 5,
-        resources: 22,
-        averageRating: 4.8
-      },
-      { 
-        id: 5, 
-        courseName: 'UI Design Principles', 
-        description: 'Understand the fundamentals of UI design and create beautiful interfaces.',
-        courseLevel: 'BEGINNER',
-        categoryId: 4,
-        createdBy: 1,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        category: { id: 4, categoryName: 'UI/UX Design', createdAt: '', updatedAt: '' },
-        students: 45,
-        batches: 3,
-        resources: 16,
-        averageRating: 4.6
-      },
-    ];
-    
-    return { success: true, data: mockCourses };
-  } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to get courses'
-    };
-  }
-}
-
-export async function getBatches(): Promise<ApiResponse<Batch[]>> {
-  try {
-    const mockBatches: Batch[] = [
-      { 
-        id: 1, 
-        batchName: 'React Fundamentals - May 2023', 
-        courseId: 1,
-        instructorId: 2,
-        startDate: '2023-05-15T00:00:00Z',
-        endDate: '2023-06-15T00:00:00Z',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        course: { id: 1, courseName: 'React Fundamentals', courseLevel: 'BEGINNER', categoryId: 1, createdBy: 1, createdAt: '', updatedAt: '' },
-        instructor: { id: 2, email: 'john@example.com', fullName: 'John Doe', role: Role.INSTRUCTOR, isFirstLogin: false, createdAt: '', updatedAt: '' },
-        studentsCount: 15
-      },
-      { 
-        id: 2, 
-        batchName: 'Advanced JavaScript - June 2023', 
-        courseId: 2,
-        instructorId: 3,
-        startDate: '2023-06-01T00:00:00Z',
-        endDate: '2023-07-15T00:00:00Z',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        course: { id: 2, courseName: 'Advanced JavaScript', courseLevel: 'ADVANCED', categoryId: 1, createdBy: 1, createdAt: '', updatedAt: '' },
-        instructor: { id: 3, email: 'jane@example.com', fullName: 'Jane Smith', role: Role.INSTRUCTOR, isFirstLogin: false, createdAt: '', updatedAt: '' },
-        studentsCount: 12
-      },
-      { 
-        id: 3, 
-        batchName: 'Flutter for Beginners - May 2023', 
-        courseId: 3,
-        instructorId: 2,
-        startDate: '2023-05-10T00:00:00Z',
-        endDate: '2023-06-25T00:00:00Z',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        course: { id: 3, courseName: 'Flutter for Beginners', courseLevel: 'BEGINNER', categoryId: 2, createdBy: 1, createdAt: '', updatedAt: '' },
-        instructor: { id: 2, email: 'john@example.com', fullName: 'John Doe', role: Role.INSTRUCTOR, isFirstLogin: false, createdAt: '', updatedAt: '' },
-        studentsCount: 18
-      },
-      { 
-        id: 4, 
-        batchName: 'Python for Data Science - July 2023', 
-        courseId: 4,
-        instructorId: 4,
-        startDate: '2023-07-05T00:00:00Z',
-        endDate: '2023-08-20T00:00:00Z',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        course: { id: 4, courseName: 'Python for Data Science', courseLevel: 'INTERMEDIATE', categoryId: 3, createdBy: 1, createdAt: '', updatedAt: '' },
-        instructor: { id: 4, email: 'sam@example.com', fullName: 'Sam Wilson', role: Role.INSTRUCTOR, isFirstLogin: false, createdAt: '', updatedAt: '' },
-        studentsCount: 20
-      },
-    ];
-    
-    return { success: true, data: mockBatches };
-  } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to get batches'
-    };
-  }
-}
-
-export async function getUsers(role?: Role): Promise<ApiResponse<User[]>> {
-  try {
-    const mockUsers: User[] = [
-      { 
-        id: 1, 
-        email: 'admin@lms.com', 
-        fullName: 'System Administrator', 
-        role: Role.ADMIN, 
-        photoUrl: 'https://ui-avatars.com/api/?name=System+Administrator&background=0D8ABC&color=fff',
-        isFirstLogin: false, 
-        createdAt: '2023-01-01T00:00:00Z', 
-        updatedAt: '2023-01-01T00:00:00Z' 
-      },
-      { 
-        id: 2, 
-        email: 'john@example.com', 
-        fullName: 'John Doe', 
-        role: Role.INSTRUCTOR, 
-        photoUrl: 'https://ui-avatars.com/api/?name=John+Doe&background=0D8ABC&color=fff',
-        bio: 'Experienced web developer with 10+ years in React and JavaScript.',
-        isFirstLogin: false, 
-        createdAt: '2023-01-15T00:00:00Z', 
-        updatedAt: '2023-01-15T00:00:00Z' 
-      },
-      { 
-        id: 3, 
-        email: 'jane@example.com', 
-        fullName: 'Jane Smith', 
-        role: Role.INSTRUCTOR, 
-        photoUrl: 'https://ui-avatars.com/api/?name=Jane+Smith&background=0D8ABC&color=fff',
-        bio: 'Full-stack developer specializing in JavaScript and Node.js.',
-        isFirstLogin: false, 
-        createdAt: '2023-01-20T00:00:00Z', 
-        updatedAt: '2023-01-20T00:00:00Z' 
-      },
-      { 
-        id: 4, 
-        email: 'sam@example.com', 
-        fullName: 'Sam Wilson', 
-        role: Role.INSTRUCTOR, 
-        photoUrl: 'https://ui-avatars.com/api/?name=Sam+Wilson&background=0D8ABC&color=fff',
-        bio: 'Data scientist with expertise in Python and machine learning.',
-        isFirstLogin: false, 
-        createdAt: '2023-02-05T00:00:00Z', 
-        updatedAt: '2023-02-05T00:00:00Z' 
-      },
-      { 
-        id: 5, 
-        email: 'alex@example.com', 
-        fullName: 'Alex Johnson', 
-        role: Role.STUDENT, 
-        photoUrl: 'https://ui-avatars.com/api/?name=Alex+Johnson&background=0D8ABC&color=fff',
-        isFirstLogin: false, 
-        createdAt: '2023-03-10T00:00:00Z', 
-        updatedAt: '2023-03-10T00:00:00Z' 
-      },
-      { 
-        id: 6, 
-        email: 'maria@example.com', 
-        fullName: 'Maria Garcia', 
-        role: Role.STUDENT, 
-        photoUrl: 'https://ui-avatars.com/api/?name=Maria+Garcia&background=0D8ABC&color=fff',
-        isFirstLogin: false, 
-        createdAt: '2023-03-15T00:00:00Z', 
-        updatedAt: '2023-03-15T00:00:00Z' 
-      },
-    ];
-    
-    if (role) {
-      return { 
-        success: true, 
-        data: mockUsers.filter(user => user.role === role) 
-      };
-    }
-    
-    return { success: true, data: mockUsers };
-  } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to get users'
-    };
-  }
-}
-
-export async function getDashboardStats(): Promise<ApiResponse<any>> {
-  try {
-    const courses = await getCourses();
-    const batches = await getBatches();
-    const instructors = await getUsers(Role.INSTRUCTOR);
-    const students = await getUsers(Role.STUDENT);
-    
-    if (!courses.success || !batches.success || !instructors.success || !students.success) {
-      return { success: false, error: 'Failed to get dashboard data' };
-    }
-    
-    const mockStats = {
-      totalStudents: students.data?.length || 0,
-      totalInstructors: instructors.data?.length || 0,
-      totalCourses: courses.data?.length || 0,
-      totalBatches: batches.data?.length || 0,
-      recentCourses: courses.data?.slice(0, 3) || [],
-      upcomingBatches: batches.data?.slice(0, 3) || [],
-      popularCourses: [
-        { courseName: 'Python for Data Science', enrollments: 78 },
-        { courseName: 'Flutter for Beginners', enrollments: 56 },
-        { courseName: 'UI Design Principles', enrollments: 45 },
-        { courseName: 'React Fundamentals', enrollments: 42 },
-        { courseName: 'Advanced JavaScript', enrollments: 38 }
-      ],
-      studentsDemographics: {
-        'Web Development': 80,
-        'Mobile Development': 56,
-        'Data Science': 78,
-        'UI/UX Design': 45,
-        'DevOps': 25
-      }
-    };
-    
-    return { success: true, data: mockStats };
-  } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to get dashboard statistics'
-    };
-  }
-}
+  return apiCall(null);
+};

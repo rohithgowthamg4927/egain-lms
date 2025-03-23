@@ -51,7 +51,7 @@ const CourseCard = ({ course }: CourseCardProps) => {
           </div>
         </div>
         <img
-          src={course.thumbnail_url || `https://source.unsplash.com/random/600x400?${course.courseName}`}
+          src={course.thumbnailUrl || `https://source.unsplash.com/random/600x400?${course.courseName}`}
           alt={course.courseName}
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -75,10 +75,10 @@ const CourseCard = ({ course }: CourseCardProps) => {
             <Star className="h-4 w-4 mr-1 text-amber-500" />
             <span>{course.averageRating?.toFixed(1) || "N/A"}</span>
           </div>
-          {course.duration && (
+          {course.durationHours && (
             <div className="flex items-center text-sm text-muted-foreground">
               <Clock className="h-4 w-4 mr-1" />
-              <span>{course.duration} hrs</span>
+              <span>{course.durationHours} hrs</span>
             </div>
           )}
           <div className="flex items-center text-sm text-muted-foreground">

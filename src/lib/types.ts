@@ -1,33 +1,28 @@
 
+// Enums
 export enum Role {
-  ADMIN = "ADMIN",
-  INSTRUCTOR = "INSTRUCTOR",
-  STUDENT = "STUDENT"
+  ADMIN = 'ADMIN',
+  INSTRUCTOR = 'INSTRUCTOR',
+  STUDENT = 'STUDENT'
 }
 
 export enum Level {
-  BEGINNER = "BEGINNER",
-  INTERMEDIATE = "INTERMEDIATE",
-  ADVANCED = "ADVANCED"
+  BEGINNER = 'BEGINNER',
+  INTERMEDIATE = 'INTERMEDIATE',
+  ADVANCED = 'ADVANCED'
 }
 
+// Interfaces
 export interface User {
   id: number;
-  email: string;
   fullName: string;
+  email: string;
   role: Role;
   photoUrl?: string;
+  phone?: string;
   bio?: string;
-  isFirstLogin: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CourseCategory {
-  id: number;
-  categoryName: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
 export interface Course {
@@ -36,15 +31,21 @@ export interface Course {
   description?: string;
   courseLevel: Level;
   categoryId: number;
-  category?: CourseCategory;
+  thumbnailUrl?: string;
   createdBy: number;
-  createdAt: string;
-  updatedAt: string;
-  instructors?: User[];
-  students?: number; // Count of enrolled students
-  batches?: number; // Count of batches
-  resources?: number; // Count of resources
+  createdAt: Date;
+  updatedAt?: Date;
+  students?: number;
+  batches?: number;
   averageRating?: number;
+  durationHours?: number;
+}
+
+export interface CourseCategory {
+  id: number;
+  categoryName: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface Batch {
@@ -52,56 +53,50 @@ export interface Batch {
   batchName: string;
   courseId: number;
   instructorId: number;
-  startDate: string;
-  endDate: string;
-  course?: Course;
-  instructor?: User;
-  studentsCount?: number;
-  createdAt: string;
-  updatedAt: string;
+  startDate: Date;
+  endDate: Date;
+  students?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-export interface StudentBatch {
+export interface Schedule {
   id: number;
-  studentId: number;
   batchId: number;
-  status: string;
-  enrolledAt: string;
-  student?: User;
-  batch?: Batch;
+  startTime: Date;
+  endTime: Date;
+  topic?: string;
+  platform: string;
+  link?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface Resource {
+  id: number;
+  title: string;
+  description?: string;
+  fileUrl: string;
+  fileType: string;
+  courseId: number;
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
 export interface StudentCourse {
   id: number;
   studentId: number;
   courseId: number;
+  enrolledAt: Date;
   status: string;
-  enrolledAt: string;
-  student?: User;
-  course?: Course;
 }
 
-export interface Schedule {
+export interface StudentBatch {
   id: number;
+  studentId: number;
   batchId: number;
-  topic?: string;
-  startTime: string;
-  endTime: string;
-  platform: string;
-  link?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Resource {
-  id: number;
-  courseId: number;
-  title: string;
-  description?: string;
-  fileUrl: string;
-  fileType: string;
-  createdAt: string;
-  updatedAt: string;
+  enrolledAt: Date;
+  status: string;
 }
 
 export interface CourseReview {
@@ -110,33 +105,23 @@ export interface CourseReview {
   courseId: number;
   rating: number;
   review?: string;
-  createdAt: string;
-  updatedAt: string;
-  student?: User;
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
-export interface AuthResponse {
-  user: User;
-  token: string;
-}
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
-
-export interface DashboardStats {
+export interface DashboardMetrics {
   totalStudents: number;
   totalInstructors: number;
   totalCourses: number;
   totalBatches: number;
-  recentCourses: Course[];
-  upcomingBatches: Batch[];
-  studentsDemographics?: Record<string, number>;
-  popularCourses?: {
+  activeStudents: number;
+  coursesPerCategory: {
+    categoryName: string;
+    count: number;
+  }[];
+  recentEnrollments: {
+    studentName: string;
     courseName: string;
-    enrollments: number;
+    date: Date;
   }[];
 }

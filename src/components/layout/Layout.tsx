@@ -1,0 +1,57 @@
+
+import { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/hooks/use-auth';
+import { Loader2 } from 'lucide-react';
+import Header from './Header';
+import Sidebar from './Sidebar';
+
+interface LayoutProps {
+  children: React.ReactNode;
+  requireAuth?: boolean;
+}
+
+const Layout = ({ children, requireAuth = true }: LayoutProps) => {
+  const { isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && requireAuth && !isAuthenticated && location.pathname !== '/') {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate, requireAuth, location]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
+          <h2 className="mt-4 text-xl font-medium">Loading...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  // For login page or when no auth is required
+  if (!requireAuth || location.pathname === '/') {
+    return <>{children}</>;
+  }
+
+  // For authenticated pages
+  return (
+    <div className="min-h-screen bg-background flex">
+      <Sidebar />
+      <div className="flex-1 flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 p-6 overflow-auto">
+          <div className="max-w-7xl mx-auto animate-fade-in">
+            {children}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default Layout;

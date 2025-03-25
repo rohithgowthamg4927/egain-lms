@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { UserForm } from '@/components/users/UserForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,13 +9,18 @@ import { useToast } from '@/hooks/use-toast';
 import { Role } from '@/lib/types';
 import { UserPlus } from 'lucide-react';
 
+interface LocationState {
+  role?: Role;
+  userId?: number;
+}
+
 interface FormData {
   fullName: string;
   email: string;
   password: string;
   role: Role;
+  phoneNumber?: string;
   bio?: string;
-  phone?: string;
   photoUrl?: string;
 }
 
@@ -23,6 +28,8 @@ const AddUser = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { role, userId } = (location.state as LocationState) || {};
 
   const handleSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -41,10 +48,10 @@ const AddUser = () => {
       
       // Redirect to the appropriate page based on the user role
       switch (data.role) {
-        case Role.INSTRUCTOR:
+        case Role.instructor:
           navigate('/instructors');
           break;
-        case Role.STUDENT:
+        case Role.student:
           navigate('/students');
           break;
         default:
@@ -62,13 +69,17 @@ const AddUser = () => {
     }
   };
 
+  const defaultValues = role ? { role } : undefined;
+
   return (
     <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Add New User</h1>
-            <p className="text-muted-foreground mt-1">Create a new admin, instructor, or student account</p>
+            <h1 className="text-3xl font-bold">{userId ? 'Edit User' : 'Add New User'}</h1>
+            <p className="text-muted-foreground mt-1">
+              {userId ? 'Edit user information' : 'Create a new admin, instructor, or student account'}
+            </p>
           </div>
           <UserPlus className="h-8 w-8 text-primary" />
         </div>
@@ -77,13 +88,19 @@ const AddUser = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle>User Information</CardTitle>
+            <CardTitle>{userId ? 'User Information' : 'New User Information'}</CardTitle>
             <CardDescription>
-              Enter the details for the new user. All users will receive an email to set their password.
+              {userId 
+                ? 'Update the user\'s details below.' 
+                : 'Enter the details for the new user. They will receive a generated password.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <UserForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+            <UserForm 
+              onSubmit={handleSubmit} 
+              isSubmitting={isSubmitting} 
+              defaultValues={defaultValues}
+            />
           </CardContent>
         </Card>
       </div>

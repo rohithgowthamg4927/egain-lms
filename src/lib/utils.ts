@@ -12,18 +12,23 @@ export function cn(...inputs: ClassValue[]) {
  * @returns Random password string
  */
 export function generateRandomPassword(length: number = 8): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
-  let password = "";
+  const uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // removed I and O (can be confused with 1 and 0)
+  const lowercase = "abcdefghijkmnpqrstuvwxyz"; // removed l and o
+  const numbers = "23456789"; // removed 0 and 1
+  const symbols = "!@#$%^&*";
   
-  // Ensure at least one uppercase, lowercase, number and special character
-  password += chars.slice(0, 26).charAt(Math.floor(Math.random() * 26)); // uppercase
-  password += chars.slice(26, 52).charAt(Math.floor(Math.random() * 26)); // lowercase
-  password += chars.slice(52, 62).charAt(Math.floor(Math.random() * 10)); // number
-  password += chars.slice(62).charAt(Math.floor(Math.random() * (chars.length - 62))); // special
+  const allChars = uppercase + lowercase + numbers + symbols;
+  
+  // Ensure at least one of each character type
+  let password = "";
+  password += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+  password += lowercase.charAt(Math.floor(Math.random() * lowercase.length));
+  password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+  password += symbols.charAt(Math.floor(Math.random() * symbols.length));
   
   // Fill remaining length with random characters
   for (let i = 4; i < length; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
+    password += allChars.charAt(Math.floor(Math.random() * allChars.length));
   }
   
   // Shuffle the password

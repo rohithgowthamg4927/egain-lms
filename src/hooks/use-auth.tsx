@@ -57,13 +57,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Redirect based on role
         switch (matchedUser.role) {
-          case Role.ADMIN:
+          case Role.admin:
             navigate('/dashboard');
             break;
-          case Role.INSTRUCTOR:
+          case Role.instructor:
             navigate('/instructor-dashboard');
             break;
-          case Role.STUDENT:
+          case Role.student:
             navigate('/student-dashboard');
             break;
           default:

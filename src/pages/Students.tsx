@@ -1,10 +1,10 @@
+
 import { useEffect, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
 import Layout from '@/components/layout/Layout';
 import { DataTable } from '@/components/ui/data-table';
 import { getUsers } from '@/lib/api';
@@ -12,34 +12,20 @@ import { Role, User } from '@/lib/types';
 import { Plus, Search, UserPlus, UserCog, UserCheck, Eye, Edit, Trash } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useNavigate } from 'react-router-dom';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { getInitials } from '@/lib/utils';
 
 const Students = () => {
   const navigate = useNavigate();
   const [students, setStudents] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
-  const [newStudentName, setNewStudentName] = useState('');
-  const [newStudentEmail, setNewStudentEmail] = useState('');
-  const [newStudentPhone, setNewStudentPhone] = useState('');
-  const [newStudentAddress, setNewStudentAddress] = useState('');
-
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       
       try {
-        const response = await getUsers(Role.STUDENT);
+        const response = await getUsers(Role.student);
         
         if (response.success && response.data) {
           setStudents(response.data);
@@ -71,36 +57,7 @@ const Students = () => {
   );
 
   const handleAddStudent = () => {
-    if (!newStudentName || !newStudentEmail) {
-      toast({
-        title: 'Validation Error',
-        description: 'Name and email are required',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    toast({
-      title: 'Student Added',
-      description: `${newStudentName} has been added successfully`,
-    });
-    
-    setIsAddDialogOpen(false);
-    setNewStudentName('');
-    setNewStudentEmail('');
-    setNewStudentPhone('');
-    setNewStudentAddress('');
-    
-    navigate('/add-user', { state: { role: Role.STUDENT } });
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
+    navigate('/add-user', { state: { role: Role.student } });
   };
 
   const studentColumns = [
@@ -110,7 +67,7 @@ const Students = () => {
       cell: (student: User) => (
         <div className="flex items-center gap-3">
           <Avatar>
-            <AvatarImage src={student.photoUrl} alt={student.fullName} />
+            <AvatarImage src={student.profilePicture?.fileUrl} alt={student.fullName} />
             <AvatarFallback>{getInitials(student.fullName)}</AvatarFallback>
           </Avatar>
           <div>
@@ -176,18 +133,14 @@ const Students = () => {
     {
       label: 'View Profile',
       onClick: (student: User) => {
-        navigate(`/students/${student.id}`);
+        navigate(`/students/${student.userId}`);
       },
       icon: <Eye className="h-4 w-4" />,
     },
     {
       label: 'Edit',
       onClick: (student: User) => {
-        toast({
-          title: 'Edit Student',
-          description: `Editing: ${student.fullName}`,
-        });
-        navigate(`/add-user`, { state: { userId: student.id, role: Role.STUDENT } });
+        navigate(`/add-user`, { state: { userId: student.userId, role: Role.student } });
       },
       icon: <Edit className="h-4 w-4" />,
     },
@@ -209,67 +162,10 @@ const Students = () => {
       <div className="animate-fade-in">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
           <h1 className="text-3xl font-bold">Students</h1>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => navigate('/add-user', { state: { role: Role.STUDENT } })}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Student
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px]">
-              <DialogHeader>
-                <DialogTitle>Add New Student</DialogTitle>
-                <DialogDescription>
-                  Enter the student details below.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="studentName">Full Name</Label>
-                  <Input
-                    id="studentName"
-                    value={newStudentName}
-                    onChange={(e) => setNewStudentName(e.target.value)}
-                    placeholder="Enter full name"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="studentEmail">Email</Label>
-                  <Input
-                    id="studentEmail"
-                    type="email"
-                    value={newStudentEmail}
-                    onChange={(e) => setNewStudentEmail(e.target.value)}
-                    placeholder="Enter email address"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="studentPhone">Phone Number</Label>
-                  <Input
-                    id="studentPhone"
-                    value={newStudentPhone}
-                    onChange={(e) => setNewStudentPhone(e.target.value)}
-                    placeholder="Enter phone number"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="studentAddress">Address</Label>
-                  <Input
-                    id="studentAddress"
-                    value={newStudentAddress}
-                    onChange={(e) => setNewStudentAddress(e.target.value)}
-                    placeholder="Enter address"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddStudent}>Add Student</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={handleAddStudent}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Student
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">

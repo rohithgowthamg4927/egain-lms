@@ -1,9 +1,9 @@
+
 import { useEffect, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import Layout from '@/components/layout/Layout';
 import { DataTable } from '@/components/ui/data-table';
 import { getUsers } from '@/lib/api';
@@ -11,6 +11,7 @@ import { Role, User } from '@/lib/types';
 import { Plus, Search, Award, BookOpen, Users, Eye, Edit, Trash } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useNavigate } from 'react-router-dom';
+import { getInitials } from '@/lib/utils';
 
 const Instructors = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const Instructors = () => {
       setIsLoading(true);
       
       try {
-        const response = await getUsers(Role.INSTRUCTOR);
+        const response = await getUsers(Role.instructor);
         
         if (response.success && response.data) {
           setInstructors(response.data);
@@ -55,16 +56,7 @@ const Instructors = () => {
   );
 
   const handleAddInstructor = () => {
-    navigate('/add-user', { state: { role: Role.INSTRUCTOR } });
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
+    navigate('/add-user', { state: { role: Role.instructor } });
   };
 
   const instructorColumns = [
@@ -74,7 +66,7 @@ const Instructors = () => {
       cell: (instructor: User) => (
         <div className="flex items-center gap-3">
           <Avatar>
-            <AvatarImage src={instructor.photoUrl} alt={instructor.fullName} />
+            <AvatarImage src={instructor.profilePicture?.fileUrl} alt={instructor.fullName} />
             <AvatarFallback>{getInitials(instructor.fullName)}</AvatarFallback>
           </Avatar>
           <div>
@@ -129,14 +121,14 @@ const Instructors = () => {
     {
       label: 'View Profile',
       onClick: (instructor: User) => {
-        navigate(`/instructors/${instructor.id}`);
+        navigate(`/instructors/${instructor.userId}`);
       },
       icon: <Eye className="h-4 w-4" />,
     },
     {
       label: 'Edit',
       onClick: (instructor: User) => {
-        navigate(`/add-user`, { state: { userId: instructor.id, role: Role.INSTRUCTOR } });
+        navigate(`/add-user`, { state: { userId: instructor.userId, role: Role.instructor } });
       },
       icon: <Edit className="h-4 w-4" />,
     },

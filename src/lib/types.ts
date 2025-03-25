@@ -1,128 +1,101 @@
 
-// Enums
 export enum Role {
-  ADMIN = 'ADMIN',
-  INSTRUCTOR = 'INSTRUCTOR',
-  STUDENT = 'STUDENT'
+  admin = 'admin',
+  instructor = 'instructor',
+  student = 'student'
 }
 
 export enum Level {
-  BEGINNER = 'BEGINNER',
-  INTERMEDIATE = 'INTERMEDIATE',
-  ADVANCED = 'ADVANCED'
+  beginner = 'beginner',
+  intermediate = 'intermediate',
+  advanced = 'advanced'
 }
 
-// Interfaces
 export interface User {
-  id: number;
+  userId: number;
   fullName: string;
   email: string;
+  phoneNumber?: string;
   role: Role;
-  photoUrl?: string;
-  phone?: string;
-  bio?: string;
-  createdAt: Date;
-  updatedAt?: Date;
-  isFirstLogin?: boolean;
-  password?: string; // For demonstration purposes only - never store passwords in client-side code
-  address?: string;
+  createdAt: string;
+  updatedAt: string;
+  mustResetPassword: boolean;
+  profilePicture?: ProfilePicture;
+}
+
+export interface ProfilePicture {
+  pictureId: number;
+  userId: number;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Course {
-  id: number;
+  courseId: number;
   courseName: string;
-  description?: string;
   courseLevel: Level;
   categoryId: number;
+  description?: string;
   thumbnailUrl?: string;
-  createdBy: number;
-  createdAt: Date;
-  updatedAt?: Date;
-  students?: number;
-  batches?: number;
-  averageRating?: number;
-  durationHours?: number;
-  // Added for compatibility with components
+  duration?: number;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
   category?: CourseCategory;
-  instructors?: number[];
 }
 
 export interface CourseCategory {
-  id: number;
+  categoryId: number;
   categoryName: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Batch {
-  id: number;
+  batchId: number;
   batchName: string;
   courseId: number;
   instructorId: number;
-  startDate: Date;
-  endDate: Date;
-  students?: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-  // Added for compatibility with components
+  startDate: string;
+  endDate: string;
+  createdAt: string;
+  updatedAt: string;
   course?: Course;
   instructor?: User;
-  studentsCount?: number;
 }
 
 export interface Schedule {
-  id: number;
+  scheduleId: number;
   batchId: number;
-  startTime: Date;
-  endTime: Date;
-  topic?: string;
-  platform: string;
-  link?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-  recordingUrl?: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Resource {
-  id: number;
+  resourceId: number;
+  courseId: number;
   title: string;
-  description?: string;
-  fileUrl: string;
-  fileType: string;
-  courseId: number;
-  createdAt: Date;
-  updatedAt?: Date;
-}
-
-export interface StudentCourse {
-  id: number;
-  studentId: number;
-  courseId: number;
-  enrolledAt: Date;
-  status: string;
-  student?: User;
-  course?: Course;
-}
-
-export interface StudentBatch {
-  id: number;
-  studentId: number;
-  batchId: number;
-  enrolledAt: Date;
-  status: string;
-  student?: User;
-  batch?: Batch;
+  type: string;
+  url: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CourseReview {
-  id: number;
-  studentId: number;
+  reviewId: number;
   courseId: number;
+  userId: number;
   rating: number;
   review?: string;
-  createdAt: Date;
-  updatedAt?: Date;
-  student?: User;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface DashboardMetrics {
@@ -130,35 +103,28 @@ export interface DashboardMetrics {
   totalInstructors: number;
   totalCourses: number;
   totalBatches: number;
-  activeStudents: number;
-  coursesPerCategory: {
-    categoryName: string;
-    count: number;
-  }[];
-  recentEnrollments: {
-    studentName: string;
-    courseName: string;
-    date: Date;
-  }[];
+  recentUsers: User[];
+  upcomingBatches: Batch[];
 }
 
-export interface ClassRecording {
-  id: number;
-  scheduleId: number;
-  title: string;
-  description?: string;
-  recordingUrl: string;
-  uploadedBy: number;
-  createdAt: Date;
-  updatedAt?: Date;
+export interface UserFormData {
+  fullName: string;
+  email: string;
+  phoneNumber?: string;
+  role: Role;
+  password?: string;
+  bio?: string;
+  photoUrl?: string;
 }
 
-export interface Notification {
-  id: number;
-  userId: number;
-  title: string;
-  message: string;
-  isRead: boolean;
-  type: string;
-  createdAt: Date;
+export interface LoginCredentials {
+  email: string;
+  password: string;
+  role: Role;
+}
+
+export interface APIResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
 }

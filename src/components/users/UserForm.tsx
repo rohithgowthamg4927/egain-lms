@@ -18,8 +18,9 @@ import {
 } from '@/components/ui/form';
 import { Role } from '@/lib/types';
 import { uploadProfilePicture } from '@/lib/s3-upload';
-import { X, Upload, Loader2, User } from 'lucide-react';
+import { X, Upload, Loader2, User, Copy, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { generateRandomPassword } from '@/lib/utils';
 
 const formSchema = z.object({
   fullName: z.string().min(2, {
@@ -28,18 +29,15 @@ const formSchema = z.object({
   email: z.string().email({
     message: 'Please enter a valid email address.',
   }),
-  password: z.string().min(6, {
-    message: 'Password must be at least 6 characters.',
-  }),
-  role: z.enum(['ADMIN', 'INSTRUCTOR', 'STUDENT']),
+  role: z.enum(['admin', 'instructor', 'student']),
+  phoneNumber: z.string().optional(),
   bio: z.string().optional(),
-  phone: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 interface UserFormProps {
-  onSubmit: (values: FormValues & { photoUrl?: string }) => void;
+  onSubmit: (values: FormValues & { password: string; photoUrl?: string }) => void;
   defaultValues?: Partial<FormValues>;
   isSubmitting?: boolean;
 }
@@ -48,6 +46,8 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState(generateRandomPassword());
+  const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
@@ -55,10 +55,9 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
     defaultValues: {
       fullName: '',
       email: '',
-      password: '',
-      role: Role.STUDENT,
+      role: Role.student,
+      phoneNumber: '',
       bio: '',
-      phone: '',
       ...defaultValues
     }
   });
@@ -76,6 +75,24 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
   const removeProfilePicture = () => {
     setProfilePicture(null);
     setProfilePictureUrl(null);
+  };
+
+  const regeneratePassword = () => {
+    setGeneratedPassword(generateRandomPassword());
+    setCopied(false);
+  };
+
+  const copyPassword = () => {
+    navigator.clipboard.writeText(generatedPassword);
+    setCopied(true);
+    
+    toast({
+      title: 'Password copied',
+      description: 'Password has been copied to clipboard'
+    });
+    
+    // Reset the copied state after 2 seconds
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleSubmit = async (values: FormValues) => {
@@ -105,6 +122,7 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
     
     onSubmit({
       ...values,
+      password: generatedPassword,
       photoUrl
     });
   };
@@ -179,24 +197,10 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="Create a password" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="phone"
+            name="phoneNumber"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Phone Number</FormLabel>
@@ -207,6 +211,40 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
               </FormItem>
             )}
           />
+          
+          <div>
+            <FormLabel>Password</FormLabel>
+            <div className="mt-1">
+              <div className="flex">
+                <Input
+                  type="text"
+                  value={generatedPassword}
+                  readOnly
+                  className="rounded-r-none border-r-0"
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={copyPassword}
+                  className="rounded-none border-x-0"
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={regeneratePassword}
+                  className="rounded-l-none px-2 text-xs"
+                >
+                  Regenerate
+                </Button>
+              </div>
+              <FormDescription className="text-xs mt-1">
+                A random password is generated for the user. They will be required to change it on first login.
+              </FormDescription>
+            </div>
+          </div>
         </div>
 
         <FormField
@@ -223,19 +261,19 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
                 >
                   <FormItem className="flex items-center space-x-2 space-y-0">
                     <FormControl>
-                      <RadioGroupItem value="ADMIN" />
+                      <RadioGroupItem value="admin" />
                     </FormControl>
                     <FormLabel className="cursor-pointer">Admin</FormLabel>
                   </FormItem>
                   <FormItem className="flex items-center space-x-2 space-y-0">
                     <FormControl>
-                      <RadioGroupItem value="INSTRUCTOR" />
+                      <RadioGroupItem value="instructor" />
                     </FormControl>
                     <FormLabel className="cursor-pointer">Instructor</FormLabel>
                   </FormItem>
                   <FormItem className="flex items-center space-x-2 space-y-0">
                     <FormControl>
-                      <RadioGroupItem value="STUDENT" />
+                      <RadioGroupItem value="student" />
                     </FormControl>
                     <FormLabel className="cursor-pointer">Student</FormLabel>
                   </FormItem>

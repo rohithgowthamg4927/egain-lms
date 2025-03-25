@@ -12,7 +12,7 @@ import { Role } from "@/lib/types";
 const LoginForm = () => {
   const [email, setEmail] = useState("admin@lms.com");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>(Role.ADMIN);
+  const [role, setRole] = useState<Role>(Role.admin);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
@@ -60,7 +60,7 @@ const LoginForm = () => {
           
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Current Password</Label>
+              <Label htmlFor="password">Password</Label>
             </div>
             <div className="relative">
               <Input
@@ -89,21 +89,21 @@ const LoginForm = () => {
           <div className="space-y-2">
             <Label>Select Role</Label>
             <RadioGroup
-              defaultValue="ADMIN"
+              defaultValue="admin"
               value={role}
               onValueChange={(value) => setRole(value as Role)}
               className="flex flex-col space-y-1"
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="ADMIN" id="admin" />
+                <RadioGroupItem value="admin" id="admin" />
                 <Label htmlFor="admin" className="cursor-pointer">Admin</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="INSTRUCTOR" id="instructor" />
+                <RadioGroupItem value="instructor" id="instructor" />
                 <Label htmlFor="instructor" className="cursor-pointer">Instructor</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="STUDENT" id="student" />
+                <RadioGroupItem value="student" id="student" />
                 <Label htmlFor="student" className="cursor-pointer">Student</Label>
               </div>
             </RadioGroup>

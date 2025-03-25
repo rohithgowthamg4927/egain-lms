@@ -9,134 +9,175 @@ datasource db {
 }
 
 model User {
-  email           String          @unique
-  password        String
-  role            Role            @default(STUDENT)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  bio             String?
-  fullName        String
-  isFirstLogin    Boolean         @default(true)
-  photoUrl        String?
-  id              Int             @id @default(autoincrement())
-  teachingBatches Batch[]
-  reviews         CourseReview[]
-  batches         StudentBatch[]
-  enrolledCourses StudentCourse[]
-  courses         Course[]        @relation("InstructorCourses")
+  userId           Int             @id @default(autoincrement()) @map("user_id")
+  fullName         String          @map("full_name")
+  email            String          @unique
+  phoneNumber      String?         @map("phone_number")
+  role             Role
+  password         String
+  mustResetPassword Boolean        @default(true) @map("must_reset_password")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @default(now()) @map("updated_at")
+  profilePicture   ProfilePicture?
+  teachingBatches  Batch[]
+  courseReviews    CourseReview[]
+  studentBatches   StudentBatch[]
+  studentCourses   StudentCourse[]
+  instructorCourses InstructorCourse[]
+
+  @@map("users")
 }
 
-model Course {
-  description String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  courseLevel Level           @default(BEGINNER)
-  courseName  String
-  createdBy   Int
-  id          Int             @id @default(autoincrement())
-  categoryId  Int
-  batches     Batch[]
-  category    CourseCategory  @relation(fields: [categoryId], references: [id])
-  reviews     CourseReview[]
-  resources   Resource[]
-  students    StudentCourse[]
-  instructors User[]          @relation("InstructorCourses")
+model ProfilePicture {
+  pictureId   Int      @id @default(autoincrement()) @map("picture_id")
+  userId      Int      @unique @map("user_id")
+  fileName    String   @map("file_name")
+  fileUrl     String   @map("file_url")
+  fileType    String   @map("file_type")
+  fileSize    Int      @map("file_size")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @map("updated_at")
+  user        User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("profile_pictures")
 }
 
 model CourseCategory {
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  categoryName String   @unique
-  id           Int      @id @default(autoincrement())
+  categoryId   Int      @id @default(autoincrement()) @map("category_id")
+  categoryName String   @map("category_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @map("updated_at")
   courses      Course[]
+
+  @@map("course_categories")
+}
+
+model Course {
+  courseId         Int                @id @default(autoincrement()) @map("course_id")
+  courseName       String             @map("course_name")
+  courseLevel      Level              @map("course_level")
+  categoryId       Int                @map("category_id")
+  description      String?
+  thumbnailUrl     String?            @map("thumbnail_url")
+  duration         Int?
+  isPublished      Boolean            @default(false) @map("is_published")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @default(now()) @map("updated_at")
+  category         CourseCategory     @relation(fields: [categoryId], references: [categoryId], onDelete: Cascade)
+  batches          Batch[]
+  reviews          CourseReview[]
+  resources        Resource[]
+  studentCourses   StudentCourse[]
+  instructorCourses InstructorCourse[]
+
+  @@map("courses")
 }
 
 model Batch {
-  startDate    DateTime
-  endDate      DateTime
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  batchName    String
-  instructorId Int
-  id           Int            @id @default(autoincrement())
-  courseId     Int
-  course       Course         @relation(fields: [courseId], references: [id])
-  instructor   User           @relation(fields: [instructorId], references: [id])
+  batchId      Int            @id @default(autoincrement()) @map("batch_id")
+  batchName    String         @map("batch_name")
+  courseId     Int            @map("course_id")
+  instructorId Int            @map("instructor_id")
+  startDate    DateTime       @map("start_date")
+  endDate      DateTime       @map("end_date")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @default(now()) @map("updated_at")
+  course       Course         @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  instructor   User           @relation(fields: [instructorId], references: [userId], onDelete: Cascade)
   schedules    Schedule[]
   students     StudentBatch[]
+
+  @@map("batches")
 }
 
 model StudentCourse {
-  enrolledAt DateTime @default(now())
-  status     String   @default("enrolled")
-  id         Int      @id @default(autoincrement())
-  studentId  Int
-  courseId   Int
-  course     Course   @relation(fields: [courseId], references: [id])
-  student    User     @relation(fields: [studentId], references: [id])
+  studentCourseId Int      @id @default(autoincrement()) @map("student_course_id")
+  studentId       Int      @map("student_id")
+  courseId        Int      @map("course_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @map("updated_at")
+  student         User     @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  course          Course   @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
 
   @@unique([studentId, courseId])
+  @@map("student_courses")
 }
 
 model StudentBatch {
-  enrolledAt DateTime @default(now())
-  status     String   @default("enrolled")
-  id         Int      @id @default(autoincrement())
-  studentId  Int
-  batchId    Int
-  batch      Batch    @relation(fields: [batchId], references: [id])
-  student    User     @relation(fields: [studentId], references: [id])
+  studentBatchId Int      @id @default(autoincrement()) @map("student_batch_id")
+  studentId      Int      @map("student_id")
+  batchId        Int      @map("batch_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @map("updated_at")
+  student        User     @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  batch          Batch    @relation(fields: [batchId], references: [batchId], onDelete: Cascade)
 
   @@unique([studentId, batchId])
+  @@map("student_batches")
+}
+
+model InstructorCourse {
+  instructorCourseId Int      @id @default(autoincrement()) @map("instructor_course_id")
+  instructorId       Int      @map("instructor_id")
+  courseId           Int      @map("course_id")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @default(now()) @map("updated_at")
+  instructor         User     @relation(fields: [instructorId], references: [userId], onDelete: Cascade)
+  course             Course   @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+
+  @@unique([instructorId, courseId])
+  @@map("instructor_courses")
 }
 
 model Schedule {
-  startTime DateTime
-  endTime   DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  link      String?
-  platform  String   @default("zoom")
-  topic     String?
-  id        Int      @id @default(autoincrement())
-  batchId   Int
-  batch     Batch    @relation(fields: [batchId], references: [id])
+  scheduleId  Int      @id @default(autoincrement()) @map("schedule_id")
+  batchId     Int      @map("batch_id")
+  dayOfWeek   Int      @map("day_of_week")
+  startTime   DateTime @map("start_time") @db.Time()
+  endTime     DateTime @map("end_time") @db.Time()
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @map("updated_at")
+  batch       Batch    @relation(fields: [batchId], references: [batchId], onDelete: Cascade)
+
+  @@map("schedules")
 }
 
 model Resource {
-  title       String
-  description String?
-  fileUrl     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  fileType    String   @default("document")
-  id          Int      @id @default(autoincrement())
-  courseId    Int
-  course      Course   @relation(fields: [courseId], references: [id])
+  resourceId Int      @id @default(autoincrement()) @map("resource_id")
+  courseId   Int      @map("course_id")
+  title      String
+  type       String
+  url        String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @map("updated_at")
+  course     Course   @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+
+  @@map("resources")
 }
 
 model CourseReview {
-  rating    Int      @default(5)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  reviewId  Int      @id @default(autoincrement()) @map("review_id")
+  courseId  Int      @map("course_id")
+  userId    Int      @map("user_id")
+  rating    Int
   review    String?
-  id        Int      @id @default(autoincrement())
-  studentId Int
-  courseId  Int
-  course    Course   @relation(fields: [courseId], references: [id])
-  student   User     @relation(fields: [studentId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  course    Course   @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
-  @@unique([studentId, courseId])
+  @@unique([courseId, userId])
+  @@map("course_reviews")
 }
 
 enum Role {
-  ADMIN
-  INSTRUCTOR
-  STUDENT
+  admin
+  instructor
+  student
 }
 
 enum Level {
-  BEGINNER
-  INTERMEDIATE
-  ADVANCED
+  beginner
+  intermediate
+  advanced
 }

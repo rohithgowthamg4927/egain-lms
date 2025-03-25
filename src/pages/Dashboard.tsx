@@ -2,14 +2,17 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import DashboardMetrics from '@/components/dashboard/DashboardMetrics';
 import Layout from '@/components/layout/Layout';
 import { fetchCourses, fetchUsers, getDashboardMetrics } from '@/lib/api';
 import { Role, DashboardMetrics as DashboardMetricsType } from '@/lib/types';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [totalStudents, setTotalStudents] = useState(0);
   const [totalInstructors, setTotalInstructors] = useState(0);
   const [totalCourses, setTotalCourses] = useState(0);
@@ -55,6 +58,19 @@ const Dashboard = () => {
     }
   }, [courses, instructors, students, dashboardMetricsResponse]);
 
+  // Navigation handlers
+  const handleNavigateToStudents = () => {
+    navigate('/students');
+  };
+  
+  const handleNavigateToInstructors = () => {
+    navigate('/instructors');
+  };
+  
+  const handleNavigateToCourses = () => {
+    navigate('/courses');
+  };
+
   return (
     <Layout>
       <div className="flex justify-between items-center">
@@ -74,7 +90,7 @@ const Dashboard = () => {
         </TabsList>
         <TabsContent value="metrics" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={handleNavigateToStudents}>
               <CardHeader>
                 <CardTitle>Total Students</CardTitle>
               </CardHeader>
@@ -82,7 +98,7 @@ const Dashboard = () => {
                 <div className="text-2xl font-bold">{totalStudents}</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={handleNavigateToInstructors}>
               <CardHeader>
                 <CardTitle>Total Instructors</CardTitle>
               </CardHeader>
@@ -90,7 +106,7 @@ const Dashboard = () => {
                 <div className="text-2xl font-bold">{totalInstructors}</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={handleNavigateToCourses}>
               <CardHeader>
                 <CardTitle>Total Courses</CardTitle>
               </CardHeader>
@@ -111,7 +127,14 @@ const Dashboard = () => {
           {metrics && <DashboardMetrics stats={metrics} />}
         </TabsContent>
         <TabsContent value="reports">
-          <div>Reports Content</div>
+          <div className="p-6 bg-card rounded-lg border">
+            <h3 className="text-lg font-medium mb-4">Reports</h3>
+            <p className="mb-4">View and generate reports for your platform.</p>
+            <div className="flex gap-2">
+              <Button>Generate Report</Button>
+              <Button variant="outline">Export Data</Button>
+            </div>
+          </div>
         </TabsContent>
         <TabsContent value="settings">
           <div>Settings Content</div>

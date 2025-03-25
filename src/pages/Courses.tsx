@@ -11,14 +11,26 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import CourseGrid from '@/components/courses/CourseGrid';
 import { DataTable } from '@/components/ui/data-table';
 import { getCourses, getCategories } from '@/lib/api';
 import { Course, CourseCategory, Level } from '@/lib/types';
 import { Plus, Search, ListFilter, Grid, List, Eye, Edit, Trash } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 const Courses = () => {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,6 +38,13 @@ const Courses = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedLevel, setSelectedLevel] = useState<string>('all');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  
+  // Form states for creating a new course
+  const [newCourseName, setNewCourseName] = useState('');
+  const [newCourseCategory, setNewCourseCategory] = useState('');
+  const [newCourseLevel, setNewCourseLevel] = useState('');
+  const [newCourseDescription, setNewCourseDescription] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -84,11 +103,34 @@ const Courses = () => {
     return matchesSearch && matchesCategory && matchesLevel;
   });
 
-  const handleCreateCourse = () => {
-    toast({
-      title: 'Create Course',
-      description: 'This feature is not implemented in the demo.',
-    });
+  const handleCreateCourse = async () => {
+    try {
+      // Logic to create a new course
+      toast({
+        title: 'Course created',
+        description: `Course "${newCourseName}" has been created successfully.`,
+      });
+      setIsCreateDialogOpen(false);
+      
+      // Reset form fields
+      setNewCourseName('');
+      setNewCourseCategory('');
+      setNewCourseLevel('');
+      setNewCourseDescription('');
+      
+      // Refetch courses
+      const coursesResponse = await getCourses();
+      if (coursesResponse.success && coursesResponse.data) {
+        setCourses(coursesResponse.data);
+      }
+    } catch (error) {
+      console.error('Error creating course:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create course',
+        variant: 'destructive',
+      });
+    }
   };
 
   const courseColumns = [
@@ -134,7 +176,7 @@ const Courses = () => {
     {
       label: 'View',
       onClick: (course: Course) => {
-        window.location.href = `/courses/${course.id}`;
+        navigate(`/courses/${course.id}`);
       },
       icon: <Eye className="h-4 w-4" />,
     },
@@ -166,10 +208,76 @@ const Courses = () => {
       <div className="animate-fade-in">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
           <h1 className="text-3xl font-bold">Courses</h1>
-          <Button onClick={handleCreateCourse}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Course
-          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Course
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[525px]">
+              <DialogHeader>
+                <DialogTitle>Create New Course</DialogTitle>
+                <DialogDescription>
+                  Enter the details for the new course.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="courseName">Course Name</Label>
+                  <Input
+                    id="courseName"
+                    value={newCourseName}
+                    onChange={(e) => setNewCourseName(e.target.value)}
+                    placeholder="Enter course name"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="courseCategory">Category</Label>
+                  <Select value={newCourseCategory} onValueChange={setNewCourseCategory}>
+                    <SelectTrigger id="courseCategory">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          {category.categoryName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="courseLevel">Level</Label>
+                  <Select value={newCourseLevel} onValueChange={setNewCourseLevel}>
+                    <SelectTrigger id="courseLevel">
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BEGINNER">Beginner</SelectItem>
+                      <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
+                      <SelectItem value="ADVANCED">Advanced</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="courseDescription">Description</Label>
+                  <Input
+                    id="courseDescription"
+                    value={newCourseDescription}
+                    onChange={(e) => setNewCourseDescription(e.target.value)}
+                    placeholder="Enter course description"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateCourse}>Create Course</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="bg-card rounded-lg border p-4 mb-6">

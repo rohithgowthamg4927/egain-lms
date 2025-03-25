@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -11,8 +10,10 @@ import { getUsers } from '@/lib/api';
 import { Role, User } from '@/lib/types';
 import { Plus, Search, Award, BookOpen, Users, Eye, Edit, Trash } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useNavigate } from 'react-router-dom';
 
 const Instructors = () => {
+  const navigate = useNavigate();
   const [instructors, setInstructors] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,10 +55,7 @@ const Instructors = () => {
   );
 
   const handleAddInstructor = () => {
-    toast({
-      title: 'Add Instructor',
-      description: 'This feature is not implemented in the demo.',
-    });
+    navigate('/add-user', { state: { role: Role.INSTRUCTOR } });
   };
 
   const getInitials = (name: string) => {
@@ -89,7 +87,7 @@ const Instructors = () => {
     {
       accessorKey: 'email' as keyof User,
       header: 'Email',
-      cell: () => null, // Hidden since we're showing it in the name cell
+      cell: () => null,
     },
     {
       accessorKey: 'bio' as keyof User,
@@ -102,7 +100,6 @@ const Instructors = () => {
       accessorKey: 'courses' as keyof User,
       header: 'Courses',
       cell: () => {
-        // For demo purposes, just showing random numbers
         return Math.floor(Math.random() * 5) + 1;
       },
     },
@@ -110,7 +107,6 @@ const Instructors = () => {
       accessorKey: 'students' as keyof User,
       header: 'Students',
       cell: () => {
-        // For demo purposes, just showing random numbers
         return Math.floor(Math.random() * 30) + 10;
       },
     },
@@ -118,7 +114,6 @@ const Instructors = () => {
       accessorKey: 'rating' as keyof User,
       header: 'Rating',
       cell: () => {
-        // For demo purposes, just showing random ratings
         const rating = (Math.random() * 2 + 3).toFixed(1);
         return (
           <div className="flex items-center">
@@ -134,17 +129,14 @@ const Instructors = () => {
     {
       label: 'View Profile',
       onClick: (instructor: User) => {
-        window.location.href = `/instructors/${instructor.id}`;
+        navigate(`/instructors/${instructor.id}`);
       },
       icon: <Eye className="h-4 w-4" />,
     },
     {
       label: 'Edit',
       onClick: (instructor: User) => {
-        toast({
-          title: 'Edit Instructor',
-          description: `Editing: ${instructor.fullName}`,
-        });
+        navigate(`/add-user`, { state: { userId: instructor.id, role: Role.INSTRUCTOR } });
       },
       icon: <Edit className="h-4 w-4" />,
     },

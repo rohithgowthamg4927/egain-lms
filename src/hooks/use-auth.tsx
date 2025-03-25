@@ -9,7 +9,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string, role: Role) => Promise<boolean>;
   logout: () => void;
   hasRole: (role: Role | Role[]) => boolean;
 }
@@ -44,15 +44,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadUser();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, role: Role) => {
     setIsLoading(true);
     
     try {
       // For demo, just find a user with the matching email
       const users = await fetchUsers();
-      const matchedUser = users.find(u => u.email === email);
+      const matchedUser = users.find(u => u.email === email && u.role === role);
       
-      if (matchedUser && password.length > 0) {
+      if (matchedUser && password === 'Admin@123') {
         setUser(matchedUser);
         
         // Redirect based on role

@@ -12,9 +12,18 @@ import Batches from "./pages/Batches";
 import Students from "./pages/Students";
 import Instructors from "./pages/Instructors";
 import Profile from "./pages/Profile";
+import AddUser from "./pages/AddUser";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -31,6 +40,7 @@ const App = () => (
             <Route path="/students" element={<Students />} />
             <Route path="/instructors" element={<Instructors />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/add-user" element={<AddUser />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

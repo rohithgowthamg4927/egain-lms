@@ -1,0 +1,142 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  email           String          @unique
+  password        String
+  role            Role            @default(STUDENT)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  bio             String?
+  fullName        String
+  isFirstLogin    Boolean         @default(true)
+  photoUrl        String?
+  id              Int             @id @default(autoincrement())
+  teachingBatches Batch[]
+  reviews         CourseReview[]
+  batches         StudentBatch[]
+  enrolledCourses StudentCourse[]
+  courses         Course[]        @relation("InstructorCourses")
+}
+
+model Course {
+  description String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  courseLevel Level           @default(BEGINNER)
+  courseName  String
+  createdBy   Int
+  id          Int             @id @default(autoincrement())
+  categoryId  Int
+  batches     Batch[]
+  category    CourseCategory  @relation(fields: [categoryId], references: [id])
+  reviews     CourseReview[]
+  resources   Resource[]
+  students    StudentCourse[]
+  instructors User[]          @relation("InstructorCourses")
+}
+
+model CourseCategory {
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  categoryName String   @unique
+  id           Int      @id @default(autoincrement())
+  courses      Course[]
+}
+
+model Batch {
+  startDate    DateTime
+  endDate      DateTime
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  batchName    String
+  instructorId Int
+  id           Int            @id @default(autoincrement())
+  courseId     Int
+  course       Course         @relation(fields: [courseId], references: [id])
+  instructor   User           @relation(fields: [instructorId], references: [id])
+  schedules    Schedule[]
+  students     StudentBatch[]
+}
+
+model StudentCourse {
+  enrolledAt DateTime @default(now())
+  status     String   @default("enrolled")
+  id         Int      @id @default(autoincrement())
+  studentId  Int
+  courseId   Int
+  course     Course   @relation(fields: [courseId], references: [id])
+  student    User     @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, courseId])
+}
+
+model StudentBatch {
+  enrolledAt DateTime @default(now())
+  status     String   @default("enrolled")
+  id         Int      @id @default(autoincrement())
+  studentId  Int
+  batchId    Int
+  batch      Batch    @relation(fields: [batchId], references: [id])
+  student    User     @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, batchId])
+}
+
+model Schedule {
+  startTime DateTime
+  endTime   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  link      String?
+  platform  String   @default("zoom")
+  topic     String?
+  id        Int      @id @default(autoincrement())
+  batchId   Int
+  batch     Batch    @relation(fields: [batchId], references: [id])
+}
+
+model Resource {
+  title       String
+  description String?
+  fileUrl     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  fileType    String   @default("document")
+  id          Int      @id @default(autoincrement())
+  courseId    Int
+  course      Course   @relation(fields: [courseId], references: [id])
+}
+
+model CourseReview {
+  rating    Int      @default(5)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  review    String?
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  courseId  Int
+  course    Course   @relation(fields: [courseId], references: [id])
+  student   User     @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, courseId])
+}
+
+enum Role {
+  ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+enum Level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}

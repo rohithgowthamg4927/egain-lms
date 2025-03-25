@@ -1,7 +1,4 @@
-
 import { CourseCategory, Level, Course, User, Role, Batch, Resource, DashboardMetrics } from '@/lib/types';
-
-// Mock API functions to simulate backend calls
 
 // Generic fetch function (simulating API call)
 const apiCall = <T>(data: T): Promise<{ success: boolean; data?: T; error?: string }> => {
@@ -20,10 +17,10 @@ export const getCurrentUser = async (): Promise<{ success: boolean; data?: User;
   return apiCall(users[0]); // Mock admin user
 };
 
-export const login = async (email: string, password: string): Promise<{ success: boolean; data?: { user: User; token: string }; error?: string }> => {
+export const login = async (email: string, password: string, role: Role): Promise<{ success: boolean; data?: { user: User; token: string }; error?: string }> => {
   try {
     const users = await fetchUsers();
-    const user = users.find(u => u.email === email);
+    const user = users.find(u => u.email === email && u.role === role);
     
     if (user && password.length > 0) {
       return {
@@ -80,7 +77,7 @@ export const fetchUsers = async (role?: Role): Promise<User[]> => {
     {
       id: 1,
       fullName: 'Admin User',
-      email: 'admin@example.com',
+      email: 'admin@lms.com',
       role: Role.ADMIN,
       photoUrl: 'https://i.pravatar.cc/150?img=1',
       createdAt: new Date('2023-01-01'),

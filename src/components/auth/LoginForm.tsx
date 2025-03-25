@@ -4,12 +4,15 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Eye, EyeOff, Loader2, User } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Role } from "@/lib/types";
 
 const LoginForm = () => {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("admin@lms.com");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<Role>(Role.ADMIN);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
@@ -19,7 +22,7 @@ const LoginForm = () => {
     setIsSubmitting(true);
     
     try {
-      await login(email, password);
+      await login(email, password, role);
     } finally {
       setIsSubmitting(false);
     }
@@ -27,39 +30,37 @@ const LoginForm = () => {
 
   return (
     <Card className="w-full max-w-md glass-card">
-      <CardHeader className="space-y-2 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-          <BookOpen className="h-6 w-6 text-primary" />
+      <CardHeader className="space-y-2">
+        <div className="flex justify-center items-center">
+          <div className="text-indigo-600 text-2xl font-bold mb-1">e</div>
+          <div className="text-indigo-600 text-2xl font-bold">gain</div>
         </div>
-        <CardTitle className="text-2xl">Welcome to EduLMS</CardTitle>
-        <CardDescription>
-          Enter your credentials to access your account
-        </CardDescription>
+        <CardTitle className="text-3xl font-bold text-center">Welcome Back! 👋</CardTitle>
+        <p className="text-center text-muted-foreground">
+          Please sign in to your account and start the adventure
+        </p>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoFocus
-              className="h-11"
-            />
+            <div className="relative">
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="h-11 pl-10 bg-muted/40"
+              />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            </div>
           </div>
+          
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <a
-                href="#"
-                className="text-sm text-primary hover:text-primary/80"
-              >
-                Forgot password?
-              </a>
+              <Label htmlFor="password">Current Password</Label>
             </div>
             <div className="relative">
               <Input
@@ -69,7 +70,7 @@ const LoginForm = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-11 pr-10"
+                className="h-11 pr-10 bg-muted/40"
               />
               <button
                 type="button"
@@ -84,9 +85,33 @@ const LoginForm = () => {
               </button>
             </div>
           </div>
+          
+          <div className="space-y-2">
+            <Label>Select Role</Label>
+            <RadioGroup
+              defaultValue="ADMIN"
+              value={role}
+              onValueChange={(value) => setRole(value as Role)}
+              className="flex flex-col space-y-1"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="ADMIN" id="admin" />
+                <Label htmlFor="admin" className="cursor-pointer">Admin</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="INSTRUCTOR" id="instructor" />
+                <Label htmlFor="instructor" className="cursor-pointer">Instructor</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="STUDENT" id="student" />
+                <Label htmlFor="student" className="cursor-pointer">Student</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
           <Button
             type="submit"
-            className="w-full h-11"
+            className="w-full h-11 bg-blue-500 hover:bg-blue-600"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
@@ -100,11 +125,6 @@ const LoginForm = () => {
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="flex justify-center">
-        <p className="text-sm text-muted-foreground">
-          Use admin@lms.com / Admin@123 for demo login
-        </p>
-      </CardFooter>
     </Card>
   );
 };

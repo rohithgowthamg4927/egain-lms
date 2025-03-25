@@ -47,3 +47,23 @@ export async function uploadCourseThumbnail(file: File, courseId: number): Promi
 export async function uploadCourseResource(file: File, courseId: number): Promise<string> {
   return uploadFileToS3(file, `course-resources/${courseId}`);
 }
+
+export async function uploadClassRecording(file: File, batchId: number, scheduleId: number): Promise<string> {
+  return uploadFileToS3(file, `class-recordings/${batchId}/${scheduleId}`);
+}
+
+export function getFileTypeFromUrl(url: string): string {
+  const extension = url.split('.').pop()?.toLowerCase();
+  
+  if (['mp4', 'webm', 'mov'].includes(extension || '')) {
+    return 'video';
+  } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension || '')) {
+    return 'image';
+  } else if (['pdf'].includes(extension || '')) {
+    return 'pdf';
+  } else if (['doc', 'docx'].includes(extension || '')) {
+    return 'document';
+  } else {
+    return 'unknown';
+  }
+}

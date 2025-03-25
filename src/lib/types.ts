@@ -23,6 +23,9 @@ export interface User {
   bio?: string;
   createdAt: Date;
   updatedAt?: Date;
+  isFirstLogin?: boolean;
+  password?: string; // For demonstration purposes only - never store passwords in client-side code
+  address?: string;
 }
 
 export interface Course {
@@ -41,6 +44,7 @@ export interface Course {
   durationHours?: number;
   // Added for compatibility with components
   category?: CourseCategory;
+  instructors?: number[];
 }
 
 export interface CourseCategory {
@@ -76,6 +80,7 @@ export interface Schedule {
   link?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  recordingUrl?: string;
 }
 
 export interface Resource {
@@ -95,6 +100,8 @@ export interface StudentCourse {
   courseId: number;
   enrolledAt: Date;
   status: string;
+  student?: User;
+  course?: Course;
 }
 
 export interface StudentBatch {
@@ -103,6 +110,8 @@ export interface StudentBatch {
   batchId: number;
   enrolledAt: Date;
   status: string;
+  student?: User;
+  batch?: Batch;
 }
 
 export interface CourseReview {
@@ -113,6 +122,7 @@ export interface CourseReview {
   review?: string;
   createdAt: Date;
   updatedAt?: Date;
+  student?: User;
 }
 
 export interface DashboardMetrics {
@@ -130,4 +140,25 @@ export interface DashboardMetrics {
     courseName: string;
     date: Date;
   }[];
+}
+
+export interface ClassRecording {
+  id: number;
+  scheduleId: number;
+  title: string;
+  description?: string;
+  recordingUrl: string;
+  uploadedBy: number;
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+export interface Notification {
+  id: number;
+  userId: number;
+  title: string;
+  message: string;
+  isRead: boolean;
+  type: string;
+  createdAt: Date;
 }

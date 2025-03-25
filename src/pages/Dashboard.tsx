@@ -35,7 +35,7 @@ const Dashboard = () => {
     queryFn: () => fetchUsers(Role.STUDENT),
   });
   
-  const { data: dashboardMetrics } = useQuery({
+  const { data: dashboardMetricsResponse } = useQuery({
     queryKey: ['dashboardMetrics'],
     queryFn: () => getDashboardMetrics(),
   });
@@ -50,10 +50,10 @@ const Dashboard = () => {
     if (students) {
       setTotalStudents(students.length);
     }
-    if (dashboardMetrics) {
-      setMetrics(dashboardMetrics);
+    if (dashboardMetricsResponse && dashboardMetricsResponse.success && dashboardMetricsResponse.data) {
+      setMetrics(dashboardMetricsResponse.data);
     }
-  }, [courses, instructors, students, dashboardMetrics]);
+  }, [courses, instructors, students, dashboardMetricsResponse]);
 
   return (
     <Layout>

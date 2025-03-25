@@ -1,5 +1,5 @@
 
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, ObjectCannedACL } from '@aws-sdk/client-s3';
 
 // Initialize S3 client
 const s3Client = new S3Client({
@@ -23,7 +23,7 @@ export async function uploadFileToS3(
       Key: fileName,
       Body: file,
       ContentType: file.type,
-      ACL: 'public-read',
+      ACL: 'public-read' as ObjectCannedACL,
     };
 
     await s3Client.send(new PutObjectCommand(params));

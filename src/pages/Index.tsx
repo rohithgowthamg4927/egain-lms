@@ -1,49 +1,80 @@
-
-import { useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/use-auth';
-import LoginForm from '@/components/auth/LoginForm';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { Role } from '@/lib/types';
 
 const Index = () => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { toast } = useToast();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isAuthenticated && !isLoading && user) {
-      // Redirect based on role
-      switch (user.role) {
-        case 'ADMIN':
-          navigate('/dashboard');
-          break;
-        case 'INSTRUCTOR':
-          navigate('/instructor-dashboard');
-          break;
-        case 'STUDENT':
-          navigate('/student-dashboard');
-          break;
-        default:
-          navigate('/dashboard');
-      }
+  // Update the role condition checks to use the correct enum values
+  const handleLogin = (selectedRole: Role) => {
+    if (selectedRole === Role.admin) {
+      // Admin login logic
+      toast({
+        title: 'Admin Login',
+        description: 'Navigating to admin dashboard...',
+      });
+      navigate('/dashboard');
+    } else if (selectedRole === Role.instructor) {
+      // Instructor login logic
+      toast({
+        title: 'Instructor Login',
+        description: 'Navigating to instructor dashboard...',
+      });
+      navigate('/courses');
+    } else if (selectedRole === Role.student) {
+      // Student login logic
+      toast({
+        title: 'Student Login',
+        description: 'Navigating to student courses...',
+      });
+      navigate('/courses');
     }
-  }, [isAuthenticated, isLoading, user, navigate]);
+  };
 
   return (
-    <div className="min-h-screen bg-blue-50 flex flex-col md:flex-row">
-      {/* Left side with illustration */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-8">
-        <img 
-          src="public/lovable-uploads/96792f8f-d134-49c6-9d72-9e80cb1dbcb6.png" 
-          alt="Learning illustration" 
-          className="max-w-full max-h-[80vh] object-contain"
-        />
-      </div>
-      
-      {/* Right side with login form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-8 bg-white">
-        <div className="w-full max-w-md">
-          <LoginForm />
-        </div>
-      </div>
+    <div className="container flex items-center justify-center min-h-screen">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl text-center">LMS Admin</CardTitle>
+          <CardDescription className="text-center">
+            Login with your admin, instructor, or student account
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="m@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+        </CardContent>
+        <CardFooter className="flex justify-around">
+          <Button onClick={() => handleLogin(Role.admin)}>Admin</Button>
+          <Button onClick={() => handleLogin(Role.instructor)}>Instructor</Button>
+          <Button onClick={() => handleLogin(Role.student)}>Student</Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 };

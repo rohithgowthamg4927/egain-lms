@@ -16,20 +16,20 @@ const CourseCard = ({ course }: CourseCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const levelColor = {
-    'BEGINNER': 'bg-green-100 hover:bg-green-200 text-green-800',
-    'INTERMEDIATE': 'bg-blue-100 hover:bg-blue-200 text-blue-800',
-    'ADVANCED': 'bg-purple-100 hover:bg-purple-200 text-purple-800'
+    'beginner': 'bg-green-100 hover:bg-green-200 text-green-800',
+    'intermediate': 'bg-blue-100 hover:bg-blue-200 text-blue-800',
+    'advanced': 'bg-purple-100 hover:bg-purple-200 text-purple-800'
   };
 
   const viewCourse = () => {
-    navigate(`/courses/${course.id}`);
+    navigate(`/courses/${course.courseId}`);
   };
 
   const getLevelLabel = (level: Level): string => {
     const labels = {
-      'BEGINNER': 'Beginner',
-      'INTERMEDIATE': 'Intermediate',
-      'ADVANCED': 'Advanced'
+      'beginner': 'Beginner',
+      'intermediate': 'Intermediate',
+      'advanced': 'Advanced'
     };
     return labels[level] || level;
   };

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Role, User, Course, Batch } from '@/lib/types';
+import { Role, User, Course, Batch, Level } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { getInitials } from '@/lib/utils';
 import { CheckCircle, XCircle, Info, Mail, Phone, CalendarDays, BookOpen, Users, Clock, Award, Copy, Loader2, Edit, School, User as UserIcon } from 'lucide-react';

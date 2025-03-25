@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -29,43 +30,43 @@ const Sidebar = () => {
       title: 'Dashboard',
       href: '/dashboard',
       icon: <LayoutDashboard className="h-5 w-5" />,
-      roles: [Role.ADMIN, Role.INSTRUCTOR],
+      roles: [Role.admin, Role.instructor],
     },
     {
       title: 'Courses',
       href: '/courses',
       icon: <BookOpen className="h-5 w-5" />,
-      roles: [Role.ADMIN, Role.INSTRUCTOR, Role.STUDENT],
+      roles: [Role.admin, Role.instructor, Role.student],
     },
     {
       title: 'Batches',
       href: '/batches',
       icon: <Calendar className="h-5 w-5" />,
-      roles: [Role.ADMIN, Role.INSTRUCTOR],
+      roles: [Role.admin, Role.instructor],
     },
     {
       title: 'Students',
       href: '/students',
       icon: <GraduationCap className="h-5 w-5" />,
-      roles: [Role.ADMIN, Role.INSTRUCTOR],
+      roles: [Role.admin, Role.instructor],
     },
     {
       title: 'Instructors',
       href: '/instructors',
       icon: <Lightbulb className="h-5 w-5" />,
-      roles: [Role.ADMIN],
+      roles: [Role.admin],
     },
     {
       title: 'Resources',
       href: '/resources',
       icon: <Compass className="h-5 w-5" />,
-      roles: [Role.ADMIN, Role.INSTRUCTOR, Role.STUDENT],
+      roles: [Role.admin, Role.instructor, Role.student],
     },
     {
       title: 'Settings',
       href: '/settings',
       icon: <Settings className="h-5 w-5" />,
-      roles: [Role.ADMIN],
+      roles: [Role.admin],
     },
   ];
 

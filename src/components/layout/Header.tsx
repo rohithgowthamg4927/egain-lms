@@ -1,4 +1,3 @@
-
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -73,7 +72,7 @@ const Header = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={user?.photoUrl} />
+                  <AvatarImage src={user?.profilePicture?.fileUrl || user?.photoUrl} />
                   <AvatarFallback>{getInitials(user?.fullName || '')}</AvatarFallback>
                 </Avatar>
               </Button>

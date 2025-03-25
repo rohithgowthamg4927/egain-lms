@@ -21,6 +21,9 @@ export interface User {
   updatedAt: string;
   mustResetPassword: boolean;
   profilePicture?: ProfilePicture;
+  // Additional fields needed by components
+  photoUrl?: string;
+  bio?: string;
 }
 
 export interface ProfilePicture {
@@ -46,6 +49,13 @@ export interface Course {
   createdAt: string;
   updatedAt: string;
   category?: CourseCategory;
+  // Additional fields needed by components
+  id?: number; // Alias for courseId for backward compatibility
+  students?: number;
+  batches?: number;
+  averageRating?: number;
+  durationHours?: number;
+  createdBy?: number;
 }
 
 export interface CourseCategory {
@@ -53,6 +63,8 @@ export interface CourseCategory {
   categoryName: string;
   createdAt: string;
   updatedAt: string;
+  // Additional fields needed by components
+  id?: number; // Alias for categoryId for backward compatibility
 }
 
 export interface Batch {
@@ -66,6 +78,10 @@ export interface Batch {
   updatedAt: string;
   course?: Course;
   instructor?: User;
+  // Additional fields needed by components
+  id?: number; // Alias for batchId for backward compatibility
+  students?: number;
+  studentsCount?: number;
 }
 
 export interface Schedule {
@@ -76,6 +92,10 @@ export interface Schedule {
   endTime: string;
   createdAt: string;
   updatedAt: string;
+  // Additional fields needed by components
+  topic?: string;
+  platform?: string;
+  link?: string;
 }
 
 export interface Resource {
@@ -105,6 +125,10 @@ export interface DashboardMetrics {
   totalBatches: number;
   recentUsers: User[];
   upcomingBatches: Batch[];
+  // Additional fields needed by components
+  activeStudents?: number;
+  coursesPerCategory?: {categoryName: string, count: number}[];
+  recentEnrollments?: {studentName: string, courseName: string, date: Date}[];
 }
 
 export interface UserFormData {

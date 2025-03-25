@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from 'react';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,23 +12,28 @@ import { Plus, Search, UserPlus, UserCog, UserCheck, Eye, Edit, Trash } from 'lu
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useNavigate } from 'react-router-dom';
 import { getInitials } from '@/lib/utils';
+import { formatDate } from '@/lib/utils/date-helpers';
 
 const Students = () => {
   const navigate = useNavigate();
   const [students, setStudents] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
   
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       
       try {
+        console.log('Fetching students...');
         const response = await getUsers(Role.student);
+        console.log('Response:', response);
         
         if (response.success && response.data) {
           setStudents(response.data);
         } else {
+          console.error('API error:', response.error);
           toast({
             title: 'Error',
             description: response.error || 'Failed to fetch students',
@@ -40,7 +44,7 @@ const Students = () => {
         console.error('Error fetching data:', error);
         toast({
           title: 'Error',
-          description: 'An unexpected error occurred',
+          description: 'An unexpected error occurred while fetching students',
           variant: 'destructive',
         });
       } finally {
@@ -49,7 +53,7 @@ const Students = () => {
     };
     
     fetchData();
-  }, []);
+  }, [toast]);
 
   const filteredStudents = students.filter((student) =>
     student.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -225,13 +229,20 @@ const Students = () => {
         </div>
 
         <div className="bg-card rounded-lg border overflow-hidden">
-          <DataTable
-            data={filteredStudents}
-            columns={studentColumns}
-            actions={studentActions}
-            className="w-full"
-            searchKey="fullName"
-          />
+          {isLoading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p>Loading students...</p>
+            </div>
+          ) : (
+            <DataTable
+              data={filteredStudents}
+              columns={studentColumns}
+              actions={studentActions}
+              className="w-full"
+              searchKey="fullName"
+            />
+          )}
         </div>
       </div>
     </Layout>

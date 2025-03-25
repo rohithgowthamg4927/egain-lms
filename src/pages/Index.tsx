@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,8 +14,16 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Update the role condition checks to use the correct enum values
   const handleLogin = (selectedRole: Role) => {
+    if (!email || !password) {
+      toast({
+        title: 'Missing information',
+        description: 'Please enter both email and password',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (selectedRole === Role.admin) {
       // Admin login logic
       toast({

@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from 'react';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,17 +17,21 @@ const Instructors = () => {
   const [instructors, setInstructors] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       
       try {
+        console.log('Fetching instructors...');
         const response = await getUsers(Role.instructor);
+        console.log('Response:', response);
         
         if (response.success && response.data) {
           setInstructors(response.data);
         } else {
+          console.error('API error:', response.error);
           toast({
             title: 'Error',
             description: response.error || 'Failed to fetch instructors',
@@ -39,7 +42,7 @@ const Instructors = () => {
         console.error('Error fetching data:', error);
         toast({
           title: 'Error',
-          description: 'An unexpected error occurred',
+          description: 'An unexpected error occurred while fetching instructors',
           variant: 'destructive',
         });
       } finally {
@@ -48,7 +51,7 @@ const Instructors = () => {
     };
     
     fetchData();
-  }, []);
+  }, [toast]);
 
   const filteredInstructors = instructors.filter((instructor) =>
     instructor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -213,13 +216,20 @@ const Instructors = () => {
         </div>
 
         <div className="bg-card rounded-lg border overflow-hidden">
-          <DataTable
-            data={filteredInstructors}
-            columns={instructorColumns}
-            actions={instructorActions}
-            className="w-full"
-            searchKey="fullName"
-          />
+          {isLoading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p>Loading instructors...</p>
+            </div>
+          ) : (
+            <DataTable
+              data={filteredInstructors}
+              columns={instructorColumns}
+              actions={instructorActions}
+              className="w-full"
+              searchKey="fullName"
+            />
+          )}
         </div>
       </div>
     </Layout>

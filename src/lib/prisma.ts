@@ -49,15 +49,42 @@ function getMockPrismaClient() {
 // Create a mock model with basic CRUD operations
 function createMockModel(modelName: string) {
   return {
-    findMany: async () => [],
-    findUnique: async () => null,
-    findFirst: async () => null,
-    create: async (data: any) => ({ id: Date.now(), ...data.data }),
-    update: async (data: any) => ({ id: data.where.id || 1, ...data.data }),
-    delete: async () => ({}),
-    deleteMany: async () => ({ count: 0 }),
-    count: async () => 0,
-    upsert: async (data: any) => ({ id: 1, ...data.create })
+    findMany: async () => {
+      console.log(`Mock findMany called for ${modelName}`);
+      return [];
+    },
+    findUnique: async () => {
+      console.log(`Mock findUnique called for ${modelName}`);
+      return null;
+    },
+    findFirst: async () => {
+      console.log(`Mock findFirst called for ${modelName}`);
+      return null;
+    },
+    create: async (data: any) => {
+      console.log(`Mock create called for ${modelName}`, data);
+      return { id: Date.now(), ...data.data };
+    },
+    update: async (data: any) => {
+      console.log(`Mock update called for ${modelName}`, data);
+      return { id: data.where.id || 1, ...data.data };
+    },
+    delete: async () => {
+      console.log(`Mock delete called for ${modelName}`);
+      return {};
+    },
+    deleteMany: async () => {
+      console.log(`Mock deleteMany called for ${modelName}`);
+      return { count: 0 };
+    },
+    count: async () => {
+      console.log(`Mock count called for ${modelName}`);
+      return 0;
+    },
+    upsert: async (data: any) => {
+      console.log(`Mock upsert called for ${modelName}`, data);
+      return { id: 1, ...data.create };
+    }
   };
 }
 

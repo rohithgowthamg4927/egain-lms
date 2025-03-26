@@ -12,7 +12,7 @@ export const dateToString = (date: Date | string): string => {
     return new Date(date).toISOString();
   } catch (error) {
     console.error("Invalid date string:", date);
-    return date;
+    return String(date);
   }
 };
 

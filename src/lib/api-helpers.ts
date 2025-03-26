@@ -8,17 +8,17 @@ import { dateToString } from './utils/date-helpers';
 export function convertDatesToStrings<T>(obj: T): T {
   if (!obj || typeof obj !== 'object') return obj;
   
-  const result = { ...obj };
+  const result = { ...obj } as any;
   
   for (const key in result) {
     if (result[key] instanceof Date) {
-      result[key] = dateToString(result[key] as unknown as Date);
+      result[key] = dateToString(result[key] as Date);
     } else if (typeof result[key] === 'object' && result[key] !== null) {
       result[key] = convertDatesToStrings(result[key]);
     }
   }
   
-  return result;
+  return result as T;
 }
 
 /**
@@ -26,7 +26,7 @@ export function convertDatesToStrings<T>(obj: T): T {
  * For example: courseId and id for Course
  */
 export function ensureIdProperties<T extends { [key: string]: any }>(entity: T, entityType: string): T {
-  const result = { ...entity };
+  const result = { ...entity } as any;
   const idPropName = `${entityType}Id`;
   
   // If we have an id but no entityId (courseId, batchId, etc.)
@@ -39,7 +39,7 @@ export function ensureIdProperties<T extends { [key: string]: any }>(entity: T, 
     result.id = result[idPropName];
   }
   
-  return result;
+  return result as T;
 }
 
 /**
@@ -56,9 +56,9 @@ export function mapApiCourse(course: any): Course {
     thumbnailUrl: course.thumbnailUrl,
     duration: course.duration,
     durationHours: course.durationHours || course.duration,
-    isPublished: course.isPublished,
+    isPublished: course.isPublished ?? true,
     createdAt: dateToString(course.createdAt),
-    updatedAt: dateToString(course.updatedAt),
+    updatedAt: dateToString(course.updatedAt || course.createdAt),
     category: course.category,
     students: course.students || 0,
     batches: course.batches || 0,
@@ -70,13 +70,14 @@ export function mapApiCourse(course: any): Course {
 export function mapApiUser(user: any): User {
   return {
     userId: user.id || user.userId,
+    id: user.id || user.userId, // Adding id for compatibility
     fullName: user.fullName,
     email: user.email,
     phoneNumber: user.phoneNumber || user.phone,
     role: user.role,
     createdAt: dateToString(user.createdAt),
-    updatedAt: dateToString(user.updatedAt),
-    mustResetPassword: user.mustResetPassword || user.isFirstLogin,
+    updatedAt: dateToString(user.updatedAt || user.createdAt),
+    mustResetPassword: user.mustResetPassword || user.isFirstLogin || false,
     profilePicture: user.profilePicture,
     photoUrl: user.photoUrl || user.profilePicture?.fileUrl,
     bio: user.bio
@@ -88,8 +89,8 @@ export function mapApiCategory(category: any): CourseCategory {
     categoryId: category.id || category.categoryId,
     id: category.id || category.categoryId,
     categoryName: category.categoryName,
-    createdAt: dateToString(category.createdAt),
-    updatedAt: dateToString(category.updatedAt)
+    createdAt: dateToString(category.createdAt || new Date()),
+    updatedAt: dateToString(category.updatedAt || category.createdAt || new Date())
   };
 }
 
@@ -102,8 +103,8 @@ export function mapApiBatch(batch: any): Batch {
     instructorId: batch.instructorId,
     startDate: dateToString(batch.startDate),
     endDate: dateToString(batch.endDate),
-    createdAt: dateToString(batch.createdAt),
-    updatedAt: dateToString(batch.updatedAt),
+    createdAt: dateToString(batch.createdAt || new Date()),
+    updatedAt: dateToString(batch.updatedAt || batch.createdAt || new Date()),
     course: batch.course ? mapApiCourse(batch.course) : undefined,
     instructor: batch.instructor ? mapApiUser(batch.instructor) : undefined,
     students: batch.students || 0,

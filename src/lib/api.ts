@@ -2,6 +2,7 @@
 import { CourseCategory, Level, Course, User, Role, Batch, Resource, DashboardMetrics, Schedule } from '@/lib/types';
 import { uploadProfilePicture, uploadCourseThumbnail, uploadClassRecording } from '@/lib/s3-upload';
 import { generateRandomPassword } from '@/lib/utils';
+import { dateToString } from '@/lib/utils/date-helpers';
 
 // Generic fetch function (simulating API call)
 const apiCall = <T>(data: T): Promise<{ success: boolean; data?: T; error?: string }> => {
@@ -67,16 +68,16 @@ export const createUser = async (userData: Partial<User>, profilePicture?: File)
     // Create new user with generated ID
     const newUser: User = {
       id: Date.now(),
+      userId: Date.now(),
       fullName: userData.fullName || '',
       email: userData.email || '',
-      role: userData.role || Role.STUDENT,
+      role: userData.role || Role.student,
       photoUrl,
-      phone: userData.phone,
+      phoneNumber: userData.phoneNumber,
       bio: userData.bio,
-      isFirstLogin: true,
-      password,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      mustResetPassword: true,
+      createdAt: dateToString(new Date()),
+      updatedAt: dateToString(new Date()),
     };
     
     return { success: true, data: newUser };
@@ -88,10 +89,10 @@ export const createUser = async (userData: Partial<User>, profilePicture?: File)
   }
 };
 
-export const updateUser = async (id: number, userData: Partial<User>, profilePicture?: File): Promise<{ success: boolean; data?: User; error?: string }> => {
+export const updateUser = async (userId: number, userData: Partial<User>, profilePicture?: File): Promise<{ success: boolean; data?: User; error?: string }> => {
   try {
     const users = await fetchUsers();
-    const userIndex = users.findIndex(u => u.id === id);
+    const userIndex = users.findIndex(u => u.userId === userId);
     
     if (userIndex === -1) {
       return { success: false, error: 'User not found' };
@@ -99,14 +100,14 @@ export const updateUser = async (id: number, userData: Partial<User>, profilePic
     
     // Upload profile picture if provided
     if (profilePicture) {
-      userData.photoUrl = await uploadProfilePicture(profilePicture, id);
+      userData.photoUrl = await uploadProfilePicture(profilePicture, userId);
     }
     
     // Update user
     const updatedUser: User = {
       ...users[userIndex],
       ...userData,
-      updatedAt: new Date()
+      updatedAt: dateToString(new Date())
     };
     
     return { success: true, data: updatedUser };
@@ -121,15 +122,15 @@ export const updateUser = async (id: number, userData: Partial<User>, profilePic
 export const changePassword = async (userId: number, newPassword: string): Promise<{ success: boolean; error?: string }> => {
   try {
     const users = await fetchUsers();
-    const userIndex = users.findIndex(u => u.id === userId);
+    const userIndex = users.findIndex(u => u.userId === userId);
     
     if (userIndex === -1) {
       return { success: false, error: 'User not found' };
     }
     
     // In a real app, this would hash the password
-    // Update isFirstLogin flag
-    users[userIndex].isFirstLogin = false;
+    // Update mustResetPassword flag
+    users[userIndex].mustResetPassword = false;
     
     return { success: true };
   } catch (error) {
@@ -154,11 +155,11 @@ export const deleteUser = async (id: number): Promise<{ success: boolean; error?
 // Course Categories API
 export const fetchCourseCategories = async (): Promise<CourseCategory[]> => {
   const categories: CourseCategory[] = [
-    { id: 1, categoryName: 'Web Development' },
-    { id: 2, categoryName: 'Mobile Development' },
-    { id: 3, categoryName: 'Data Science' },
-    { id: 4, categoryName: 'DevOps' },
-    { id: 5, categoryName: 'UI/UX Design' },
+    { id: 1, categoryId: 1, categoryName: 'Web Development', createdAt: dateToString(new Date()), updatedAt: dateToString(new Date()) },
+    { id: 2, categoryId: 2, categoryName: 'Mobile Development', createdAt: dateToString(new Date()), updatedAt: dateToString(new Date()) },
+    { id: 3, categoryId: 3, categoryName: 'Data Science', createdAt: dateToString(new Date()), updatedAt: dateToString(new Date()) },
+    { id: 4, categoryId: 4, categoryName: 'DevOps', createdAt: dateToString(new Date()), updatedAt: dateToString(new Date()) },
+    { id: 5, categoryId: 5, categoryName: 'UI/UX Design', createdAt: dateToString(new Date()), updatedAt: dateToString(new Date()) },
   ];
   return categories;
 };
@@ -176,9 +177,10 @@ export const createCategory = async (categoryData: Partial<CourseCategory>): Pro
   try {
     const newCategory: CourseCategory = {
       id: Date.now(),
+      categoryId: Date.now(),
       categoryName: categoryData.categoryName || '',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: dateToString(new Date()),
+      updatedAt: dateToString(new Date())
     };
     
     return { success: true, data: newCategory };
@@ -195,53 +197,58 @@ export const fetchUsers = async (role?: Role): Promise<User[]> => {
   const users: User[] = [
     {
       id: 1,
+      userId: 1,
       fullName: 'Admin User',
       email: 'admin@lms.com',
-      role: Role.ADMIN,
+      role: Role.admin,
       photoUrl: 'https://i.pravatar.cc/150?img=1',
-      createdAt: new Date('2023-01-01'),
-      isFirstLogin: false,
-      password: 'Admin@123'
+      createdAt: dateToString(new Date('2023-01-01')),
+      updatedAt: dateToString(new Date('2023-01-01')),
+      mustResetPassword: false
     },
     {
       id: 2,
+      userId: 2,
       fullName: 'Jane Smith',
       email: 'jane.smith@example.com',
-      role: Role.INSTRUCTOR,
+      role: Role.instructor,
       photoUrl: 'https://i.pravatar.cc/150?img=2',
-      createdAt: new Date('2023-02-15'),
-      isFirstLogin: true,
-      password: 'Temp1234'
+      createdAt: dateToString(new Date('2023-02-15')),
+      updatedAt: dateToString(new Date('2023-02-15')),
+      mustResetPassword: true
     },
     {
       id: 3,
+      userId: 3,
       fullName: 'John Doe',
       email: 'john.doe@example.com',
-      role: Role.STUDENT,
+      role: Role.student,
       photoUrl: 'https://i.pravatar.cc/150?img=3',
-      createdAt: new Date('2023-03-20'),
-      isFirstLogin: true,
-      password: 'Temp5678'
+      createdAt: dateToString(new Date('2023-03-20')),
+      updatedAt: dateToString(new Date('2023-03-20')),
+      mustResetPassword: true
     },
     {
       id: 4,
+      userId: 4,
       fullName: 'Alice Johnson',
       email: 'alice@example.com',
-      role: Role.INSTRUCTOR,
+      role: Role.instructor,
       photoUrl: 'https://i.pravatar.cc/150?img=4',
-      createdAt: new Date('2023-02-10'),
-      isFirstLogin: true,
-      password: 'Temp4321'
+      createdAt: dateToString(new Date('2023-02-10')),
+      updatedAt: dateToString(new Date('2023-02-10')),
+      mustResetPassword: true
     },
     {
       id: 5,
+      userId: 5,
       fullName: 'Robert Brown',
       email: 'robert@example.com',
-      role: Role.STUDENT,
+      role: Role.student,
       photoUrl: 'https://i.pravatar.cc/150?img=5',
-      createdAt: new Date('2023-04-05'),
-      isFirstLogin: true,
-      password: 'Temp8765'
+      createdAt: dateToString(new Date('2023-04-05')),
+      updatedAt: dateToString(new Date('2023-04-05')),
+      mustResetPassword: true
     },
   ];
 
@@ -266,73 +273,88 @@ export const fetchCourses = async (): Promise<Course[]> => {
   const courses: Course[] = [
     {
       id: 1,
+      courseId: 1,
       courseName: 'Introduction to React',
       description: 'Learn the basics of React, hooks, context API and build real-world applications',
-      courseLevel: Level.BEGINNER,
+      courseLevel: Level.beginner,
       categoryId: 1,
       thumbnailUrl: 'https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
       students: 120,
       averageRating: 4.7,
       batches: 3,
       durationHours: 18,
-      createdAt: new Date('2023-01-10'),
+      createdAt: dateToString(new Date('2023-01-10')),
+      updatedAt: dateToString(new Date('2023-01-10')),
       createdBy: 2,
+      isPublished: true
     },
     {
       id: 2,
+      courseId: 2,
       courseName: 'Advanced JavaScript Patterns',
       description: 'Deep dive into advanced JavaScript design patterns, asynchronous programming, and performance optimization',
-      courseLevel: Level.ADVANCED,
+      courseLevel: Level.advanced,
       categoryId: 1,
       thumbnailUrl: 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
       students: 85,
       averageRating: 4.9,
       batches: 2,
       durationHours: 24,
-      createdAt: new Date('2023-02-05'),
+      createdAt: dateToString(new Date('2023-02-05')),
+      updatedAt: dateToString(new Date('2023-02-05')),
       createdBy: 2,
+      isPublished: true
     },
     {
       id: 3,
+      courseId: 3,
       courseName: 'Flutter for Beginners',
       description: 'Start your journey in mobile app development with Flutter and Dart',
-      courseLevel: Level.BEGINNER,
+      courseLevel: Level.beginner,
       categoryId: 2,
       thumbnailUrl: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
       students: 200,
       averageRating: 4.5,
       batches: 4,
       durationHours: 20,
-      createdAt: new Date('2023-01-25'),
+      createdAt: dateToString(new Date('2023-01-25')),
+      updatedAt: dateToString(new Date('2023-01-25')),
       createdBy: 4,
+      isPublished: true
     },
     {
       id: 4,
+      courseId: 4,
       courseName: 'Python for Data Science',
       description: 'Learn Python programming with a focus on data analysis, visualization, and machine learning basics',
-      courseLevel: Level.INTERMEDIATE,
+      courseLevel: Level.intermediate,
       categoryId: 3,
       thumbnailUrl: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
       students: 150,
       averageRating: 4.6,
       batches: 3,
       durationHours: 22,
-      createdAt: new Date('2023-03-15'),
+      createdAt: dateToString(new Date('2023-03-15')),
+      updatedAt: dateToString(new Date('2023-03-15')),
       createdBy: 4,
+      isPublished: true
     },
     {
       id: 5,
+      courseId: 5,
       courseName: 'Docker Essentials',
       description: 'Get started with containerization using Docker and understand container orchestration',
-      courseLevel: Level.BEGINNER,
+      courseLevel: Level.beginner,
       categoryId: 4,
       thumbnailUrl: 'https://images.unsplash.com/photo-1605745341112-85968b19335b?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
       students: 95,
       averageRating: 4.4,
       batches: 2,
       durationHours: 15,
-      createdAt: new Date('2023-04-10'),
+      createdAt: dateToString(new Date('2023-04-10')),
+      updatedAt: dateToString(new Date('2023-04-10')),
       createdBy: 2,
+      isPublished: true
     },
   ];
 
@@ -363,17 +385,21 @@ export const createCourse = async (courseData: Partial<Course>, thumbnail?: File
     }
     
     // Create new course with generated ID
+    const newId = Date.now();
     const newCourse: Course = {
-      id: Date.now(),
+      id: newId,
+      courseId: newId,
       courseName: courseData.courseName || '',
-      description: courseData.description,
-      courseLevel: courseData.courseLevel || Level.BEGINNER,
+      description: courseData.description || '',
+      courseLevel: courseData.courseLevel || Level.beginner,
       categoryId: courseData.categoryId || 1,
       thumbnailUrl,
       students: 0,
       batches: 0,
-      createdAt: new Date(),
+      createdAt: dateToString(new Date()),
+      updatedAt: dateToString(new Date()),
       createdBy: courseData.createdBy || 1,
+      isPublished: courseData.isPublished || false,
     };
     
     // Add category for consistency
@@ -404,53 +430,63 @@ export const fetchBatches = async (courseId?: number): Promise<Batch[]> => {
   const batches: Batch[] = [
     {
       id: 1,
+      batchId: 1,
       batchName: 'React - Morning Batch',
       courseId: 1,
       instructorId: 2,
-      startDate: new Date('2023-06-01'),
-      endDate: new Date('2023-08-01'),
+      startDate: dateToString(new Date('2023-06-01')),
+      endDate: dateToString(new Date('2023-08-01')),
       students: 25,
-      createdAt: new Date('2023-05-15'),
+      createdAt: dateToString(new Date('2023-05-15')),
+      updatedAt: dateToString(new Date('2023-05-15')),
     },
     {
       id: 2,
+      batchId: 2,
       batchName: 'React - Weekend Batch',
       courseId: 1,
       instructorId: 2,
-      startDate: new Date('2023-06-15'),
-      endDate: new Date('2023-08-15'),
+      startDate: dateToString(new Date('2023-06-15')),
+      endDate: dateToString(new Date('2023-08-15')),
       students: 30,
-      createdAt: new Date('2023-05-20'),
+      createdAt: dateToString(new Date('2023-05-20')),
+      updatedAt: dateToString(new Date('2023-05-20')),
     },
     {
       id: 3,
+      batchId: 3,
       batchName: 'JavaScript Advanced - Evening',
       courseId: 2,
       instructorId: 2,
-      startDate: new Date('2023-07-01'),
-      endDate: new Date('2023-09-01'),
+      startDate: dateToString(new Date('2023-07-01')),
+      endDate: dateToString(new Date('2023-09-01')),
       students: 20,
-      createdAt: new Date('2023-06-01'),
+      createdAt: dateToString(new Date('2023-06-01')),
+      updatedAt: dateToString(new Date('2023-06-01')),
     },
     {
       id: 4,
+      batchId: 4,
       batchName: 'Flutter - Morning Batch',
       courseId: 3,
       instructorId: 4,
-      startDate: new Date('2023-06-01'),
-      endDate: new Date('2023-08-01'),
+      startDate: dateToString(new Date('2023-06-01')),
+      endDate: dateToString(new Date('2023-08-01')),
       students: 35,
-      createdAt: new Date('2023-05-15'),
+      createdAt: dateToString(new Date('2023-05-15')),
+      updatedAt: dateToString(new Date('2023-05-15')),
     },
     {
       id: 5,
+      batchId: 5,
       batchName: 'Python for Data Science - Weekend',
       courseId: 4,
       instructorId: 4,
-      startDate: new Date('2023-07-15'),
-      endDate: new Date('2023-09-15'),
+      startDate: dateToString(new Date('2023-07-15')),
+      endDate: dateToString(new Date('2023-09-15')),
       students: 25,
-      createdAt: new Date('2023-06-10'),
+      createdAt: dateToString(new Date('2023-06-10')),
+      updatedAt: dateToString(new Date('2023-06-10')),
     },
   ];
 
@@ -496,15 +532,18 @@ export const createBatch = async (batchData: Partial<Batch>): Promise<{ success:
     }
     
     // Create new batch with generated ID
+    const newId = Date.now();
     const newBatch: Batch = {
-      id: Date.now(),
+      id: newId,
+      batchId: newId,
       batchName: batchData.batchName || '',
       courseId: batchData.courseId || 0,
       instructorId: batchData.instructorId || 0,
-      startDate: batchData.startDate || new Date(),
-      endDate: batchData.endDate || new Date(),
+      startDate: dateToString(batchData.startDate || new Date()),
+      endDate: dateToString(batchData.endDate || new Date()),
       students: 0,
-      createdAt: new Date(),
+      createdAt: dateToString(new Date()),
+      updatedAt: dateToString(new Date()),
     };
     
     // Add course and instructor for consistency
@@ -536,58 +575,68 @@ export const fetchSchedules = async (batchId?: number): Promise<Schedule[]> => {
   const schedules: Schedule[] = [
     {
       id: 1,
+      scheduleId: 1,
       batchId: 1,
-      startTime: new Date('2023-06-05T17:00:00'),
-      endTime: new Date('2023-06-05T18:30:00'),
+      dayOfWeek: 1,
+      startTime: dateToString(new Date('2023-06-05T17:00:00')),
+      endTime: dateToString(new Date('2023-06-05T18:30:00')),
       topic: 'Introduction to React Basics',
       platform: 'zoom',
       link: 'https://zoom.us/j/123456789',
-      createdAt: new Date('2023-05-20'),
-      updatedAt: new Date('2023-05-20'),
+      createdAt: dateToString(new Date('2023-05-20')),
+      updatedAt: dateToString(new Date('2023-05-20')),
     },
     {
       id: 2,
+      scheduleId: 2,
       batchId: 1,
-      startTime: new Date('2023-06-07T17:00:00'),
-      endTime: new Date('2023-06-07T18:30:00'),
+      dayOfWeek: 3,
+      startTime: dateToString(new Date('2023-06-07T17:00:00')),
+      endTime: dateToString(new Date('2023-06-07T18:30:00')),
       topic: 'Components and Props',
       platform: 'zoom',
       link: 'https://zoom.us/j/123456789',
-      createdAt: new Date('2023-05-20'),
-      updatedAt: new Date('2023-05-20'),
+      createdAt: dateToString(new Date('2023-05-20')),
+      updatedAt: dateToString(new Date('2023-05-20')),
     },
     {
       id: 3,
+      scheduleId: 3,
       batchId: 2,
-      startTime: new Date('2023-06-10T10:00:00'),
-      endTime: new Date('2023-06-10T11:30:00'),
+      dayOfWeek: 6,
+      startTime: dateToString(new Date('2023-06-10T10:00:00')),
+      endTime: dateToString(new Date('2023-06-10T11:30:00')),
       topic: 'React Weekend Workshop',
       platform: 'google-meet',
       link: 'https://meet.google.com/abc-defg-hij',
-      createdAt: new Date('2023-05-25'),
-      updatedAt: new Date('2023-05-25'),
+      createdAt: dateToString(new Date('2023-05-25')),
+      updatedAt: dateToString(new Date('2023-05-25')),
     },
     {
       id: 4,
+      scheduleId: 4,
       batchId: 3,
-      startTime: new Date('2023-07-03T18:00:00'),
-      endTime: new Date('2023-07-03T19:30:00'),
+      dayOfWeek: 1,
+      startTime: dateToString(new Date('2023-07-03T18:00:00')),
+      endTime: dateToString(new Date('2023-07-03T19:30:00')),
       topic: 'JavaScript Design Patterns',
       platform: 'zoom',
       link: 'https://zoom.us/j/987654321',
-      createdAt: new Date('2023-06-15'),
-      updatedAt: new Date('2023-06-15'),
+      createdAt: dateToString(new Date('2023-06-15')),
+      updatedAt: dateToString(new Date('2023-06-15')),
     },
     {
       id: 5,
+      scheduleId: 5,
       batchId: 4,
-      startTime: new Date('2023-06-05T09:00:00'),
-      endTime: new Date('2023-06-05T10:30:00'),
+      dayOfWeek: 1,
+      startTime: dateToString(new Date('2023-06-05T09:00:00')),
+      endTime: dateToString(new Date('2023-06-05T10:30:00')),
       topic: 'Flutter UI Basics',
       platform: 'zoom',
       link: 'https://zoom.us/j/567891234',
-      createdAt: new Date('2023-05-20'),
-      updatedAt: new Date('2023-05-20'),
+      createdAt: dateToString(new Date('2023-05-20')),
+      updatedAt: dateToString(new Date('2023-05-20')),
     },
   ];
 
@@ -610,16 +659,19 @@ export const getSchedules = async (batchId?: number): Promise<{ success: boolean
 export const createSchedule = async (scheduleData: Partial<Schedule>): Promise<{ success: boolean; data?: Schedule; error?: string }> => {
   try {
     // Create new schedule with generated ID
+    const newId = Date.now();
     const newSchedule: Schedule = {
-      id: Date.now(),
+      id: newId,
+      scheduleId: newId,
       batchId: scheduleData.batchId || 0,
-      startTime: scheduleData.startTime || new Date(),
-      endTime: scheduleData.endTime || new Date(),
-      topic: scheduleData.topic,
+      dayOfWeek: scheduleData.dayOfWeek || 1,
+      startTime: dateToString(scheduleData.startTime || new Date()),
+      endTime: dateToString(scheduleData.endTime || new Date()),
+      topic: scheduleData.topic || '',
       platform: scheduleData.platform || 'zoom',
-      link: scheduleData.link,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      link: scheduleData.link || '',
+      createdAt: dateToString(new Date()),
+      updatedAt: dateToString(new Date()),
     };
     
     return { success: true, data: newSchedule };
@@ -655,48 +707,58 @@ export const fetchResources = async (courseId?: number): Promise<Resource[]> => 
   const resources: Resource[] = [
     {
       id: 1,
+      resourceId: 1,
       title: 'React Fundamentals Slides',
       description: 'Slide deck covering React basics and component lifecycle',
-      fileUrl: 'https://example.com/resources/react-slides.pdf',
-      fileType: 'document',
+      url: 'https://example.com/resources/react-slides.pdf',
+      type: 'document',
       courseId: 1,
-      createdAt: new Date('2023-05-15'),
+      createdAt: dateToString(new Date('2023-05-15')),
+      updatedAt: dateToString(new Date('2023-05-15')),
     },
     {
       id: 2,
+      resourceId: 2,
       title: 'React Hooks Demo Code',
       description: 'Example code demonstrating React hooks usage',
-      fileUrl: 'https://github.com/example/react-hooks-demo',
-      fileType: 'code',
+      url: 'https://github.com/example/react-hooks-demo',
+      type: 'code',
       courseId: 1,
-      createdAt: new Date('2023-05-20'),
+      createdAt: dateToString(new Date('2023-05-20')),
+      updatedAt: dateToString(new Date('2023-05-20')),
     },
     {
       id: 3,
+      resourceId: 3,
       title: 'Advanced JavaScript Patterns Handbook',
       description: 'Comprehensive guide to JS design patterns',
-      fileUrl: 'https://example.com/resources/js-patterns.pdf',
-      fileType: 'document',
+      url: 'https://example.com/resources/js-patterns.pdf',
+      type: 'document',
       courseId: 2,
-      createdAt: new Date('2023-05-25'),
+      createdAt: dateToString(new Date('2023-05-25')),
+      updatedAt: dateToString(new Date('2023-05-25')),
     },
     {
       id: 4,
+      resourceId: 4,
       title: 'Flutter Setup Guide',
       description: 'Step-by-step guide for setting up Flutter development environment',
-      fileUrl: 'https://example.com/resources/flutter-setup.pdf',
-      fileType: 'document',
+      url: 'https://example.com/resources/flutter-setup.pdf',
+      type: 'document',
       courseId: 3,
-      createdAt: new Date('2023-05-10'),
+      createdAt: dateToString(new Date('2023-05-10')),
+      updatedAt: dateToString(new Date('2023-05-10')),
     },
     {
       id: 5,
+      resourceId: 5,
       title: 'Python Data Analysis Code Samples',
       description: 'Sample code for data analysis with pandas and matplotlib',
-      fileUrl: 'https://github.com/example/python-data-analysis',
-      fileType: 'code',
+      url: 'https://github.com/example/python-data-analysis',
+      type: 'code',
       courseId: 4,
-      createdAt: new Date('2023-06-05'),
+      createdAt: dateToString(new Date('2023-06-05')),
+      updatedAt: dateToString(new Date('2023-06-05')),
     },
   ];
 
@@ -722,8 +784,16 @@ export const getDashboardMetrics = async (): Promise<{ success: boolean; data?: 
     const courses = await fetchCourses();
     const batches = await fetchBatches();
     
-    const students = users.filter(user => user.role === Role.STUDENT);
-    const instructors = users.filter(user => user.role === Role.INSTRUCTOR);
+    const students = users.filter(user => user.role === Role.student);
+    const instructors = users.filter(user => user.role === Role.instructor);
+    
+    const recentUsers: User[] = [...users].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    ).slice(0, 5);
+    
+    const upcomingBatches: Batch[] = [...batches].sort((a, b) => 
+      new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    ).slice(0, 5);
     
     const metrics: DashboardMetrics = {
       totalStudents: students.length,
@@ -742,7 +812,9 @@ export const getDashboardMetrics = async (): Promise<{ success: boolean; data?: 
         { studentName: 'Robert Brown', courseName: 'Flutter for Beginners', date: new Date('2023-05-20') },
         { studentName: 'John Doe', courseName: 'Python for Data Science', date: new Date('2023-05-15') },
         { studentName: 'Robert Brown', courseName: 'Docker Essentials', date: new Date('2023-05-10') },
-      ]
+      ],
+      recentUsers,
+      upcomingBatches,
     };
     
     return { success: true, data: metrics };

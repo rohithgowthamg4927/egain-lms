@@ -13,6 +13,7 @@ export enum Level {
 
 export interface User {
   userId: number;
+  id?: number; // Added for API compatibility
   fullName: string;
   email: string;
   phoneNumber?: string;
@@ -39,6 +40,7 @@ export interface ProfilePicture {
 
 export interface Course {
   courseId: number;
+  id?: number; // Added for API compatibility
   courseName: string;
   courseLevel: Level;
   categoryId: number;
@@ -50,7 +52,6 @@ export interface Course {
   updatedAt: string;
   category?: CourseCategory;
   // Additional fields needed by components
-  id?: number; // Alias for courseId for backward compatibility
   students?: number;
   batches?: number;
   averageRating?: number;
@@ -60,15 +61,15 @@ export interface Course {
 
 export interface CourseCategory {
   categoryId: number;
+  id?: number; // Added for API compatibility
   categoryName: string;
   createdAt: string;
   updatedAt: string;
-  // Additional fields needed by components
-  id?: number; // Alias for categoryId for backward compatibility
 }
 
 export interface Batch {
   batchId: number;
+  id?: number; // Added for API compatibility
   batchName: string;
   courseId: number;
   instructorId: number;
@@ -79,13 +80,13 @@ export interface Batch {
   course?: Course;
   instructor?: User;
   // Additional fields needed by components
-  id?: number; // Alias for batchId for backward compatibility
   students?: number;
   studentsCount?: number;
 }
 
 export interface Schedule {
   scheduleId: number;
+  id?: number; // Added for API compatibility
   batchId: number;
   dayOfWeek: number;
   startTime: string;
@@ -100,10 +101,12 @@ export interface Schedule {
 
 export interface Resource {
   resourceId: number;
+  id?: number; // Added for API compatibility
   courseId: number;
   title: string;
   type: string;
   url: string;
+  description?: string;
   createdAt: string;
   updatedAt: string;
 }

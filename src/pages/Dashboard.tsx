@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -133,7 +134,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold">
                 {getInstructorsQuery.isLoading ? (
-                  <Skeleton width={80} />
+                  <Skeleton className="h-5 w-20" />
                 ) : (
                   instructorsCount
                 )}
@@ -154,7 +155,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold">
                 {getStudentsQuery.isLoading ? (
-                  <Skeleton width={80} />
+                  <Skeleton className="h-5 w-20" />
                 ) : (
                   studentsCount
                 )}
@@ -175,7 +176,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold">
                 {getCoursesQuery.isLoading ? (
-                  <Skeleton width={80} />
+                  <Skeleton className="h-5 w-20" />
                 ) : (
                   coursesCount
                 )}
@@ -194,7 +195,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="text-2xl font-bold">
                 {getBatchesQuery.isLoading ? (
-                  <Skeleton width={80} />
+                  <Skeleton className="h-5 w-20" />
                 ) : (
                   batchesCount
                 )}
@@ -214,7 +215,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               {getDashboardMetricsQuery.isLoading ? (
-                <Skeleton height={300} />
+                <Skeleton className="h-[300px]" />
               ) : (
                 <Bar options={chartOptions} data={chartData} />
               )}

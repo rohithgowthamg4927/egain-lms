@@ -5,16 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { Role } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
 
 const Index = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { login, isLoading } = useAuth();
 
-  const handleLogin = (selectedRole: Role) => {
+  const handleLogin = async (selectedRole: Role) => {
     if (!email || !password) {
       toast({
         title: 'Missing information',
@@ -24,27 +26,15 @@ const Index = () => {
       return;
     }
 
-    if (selectedRole === Role.admin) {
-      // Admin login logic
+    // Use the login function from the auth context
+    const success = await login(email, password, selectedRole);
+    
+    if (!success) {
       toast({
-        title: 'Admin Login',
-        description: 'Navigating to admin dashboard...',
+        title: 'Login Failed',
+        description: 'Invalid credentials',
+        variant: 'destructive',
       });
-      navigate('/dashboard');
-    } else if (selectedRole === Role.instructor) {
-      // Instructor login logic
-      toast({
-        title: 'Instructor Login',
-        description: 'Navigating to instructor dashboard...',
-      });
-      navigate('/courses');
-    } else if (selectedRole === Role.student) {
-      // Student login logic
-      toast({
-        title: 'Student Login',
-        description: 'Navigating to student courses...',
-      });
-      navigate('/courses');
     }
   };
 
@@ -79,9 +69,9 @@ const Index = () => {
           </div>
         </CardContent>
         <CardFooter className="flex justify-around">
-          <Button onClick={() => handleLogin(Role.admin)}>Admin</Button>
-          <Button onClick={() => handleLogin(Role.instructor)}>Instructor</Button>
-          <Button onClick={() => handleLogin(Role.student)}>Student</Button>
+          <Button onClick={() => handleLogin(Role.admin)} disabled={isLoading}>Admin</Button>
+          <Button onClick={() => handleLogin(Role.instructor)} disabled={isLoading}>Instructor</Button>
+          <Button onClick={() => handleLogin(Role.student)} disabled={isLoading}>Student</Button>
         </CardFooter>
       </Card>
     </div>

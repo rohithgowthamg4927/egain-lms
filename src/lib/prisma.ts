@@ -1,5 +1,7 @@
 
-// This file should not be imported directly in browser components
+// This file is meant to be imported only in Node.js environment
+// It should never be directly imported in components that run in the browser
+
 import { PrismaClient } from '@prisma/client';
 
 // Check if we're in a browser environment
@@ -9,19 +11,11 @@ const isBrowser = typeof window !== 'undefined';
 let prisma: PrismaClient;
 
 if (isBrowser) {
-  // In browser environments, provide a dummy implementation
-  // that logs warnings instead of trying to connect to the database
-  // @ts-ignore - this is intentional for browser environments
-  prisma = new Proxy({}, {
-    get: (_, prop) => {
-      console.warn(`Prisma cannot be used in browser environments. Attempted to access: ${String(prop)}`);
-      return new Proxy({}, {
-        get: () => {
-          return () => Promise.resolve([]);
-        }
-      });
-    }
-  });
+  // This code should never be executed in browser
+  // The dynamic imports in api.ts should prevent this from happening
+  console.error('Error: Attempted to import PrismaClient in browser environment');
+  // @ts-ignore - create an empty object as fallback
+  prisma = {};
 } else {
   // In Node.js environments, create a real Prisma instance
   // PrismaClient is attached to the `global` object in development to prevent

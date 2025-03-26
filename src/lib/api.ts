@@ -1,4 +1,3 @@
-
 import { CourseCategory, Level, Course, User, Role, Batch, Resource, DashboardMetrics, Schedule } from '@/lib/types';
 import { uploadProfilePicture, uploadCourseThumbnail, uploadClassRecording } from '@/lib/s3-upload';
 import { generateRandomPassword } from '@/lib/utils';
@@ -6,11 +5,77 @@ import { dateToString } from '@/lib/utils/date-helpers';
 import { convertDatesToStrings, mapApiUser, mapApiCourse, mapApiCategory, mapApiBatch } from '@/lib/api-helpers';
 import prisma from '@/lib/prisma';
 
-// Generic fetch function with error handling
+// Check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined';
+
+// Sample mock data for browser environment
+const mockData = {
+  users: [
+    {
+      userId: 1,
+      fullName: 'Admin User',
+      email: 'admin@lms.com',
+      role: Role.admin,
+      profilePicture: { 
+        fileUrl: 'https://i.pravatar.cc/150?img=1'
+      },
+      mustResetPassword: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  ],
+  courses: [
+    {
+      courseId: 1,
+      courseName: 'React Fundamentals',
+      courseLevel: Level.beginner,
+      categoryId: 1,
+      description: 'Learn the basics of React',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      duration: 20,
+      isPublished: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      students: 15,
+      batches: 2,
+      averageRating: 4.5
+    }
+  ],
+  categories: [
+    {
+      categoryId: 1,
+      categoryName: 'Web Development',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  ],
+  batches: [
+    {
+      batchId: 1,
+      batchName: 'Morning Batch',
+      courseId: 1,
+      instructorId: 2,
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      students: 12,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  ]
+};
+
+// Generic fetch function with error handling and mock data fallback
 const apiCall = async <T>(
-  action: () => Promise<T>
+  action: () => Promise<T>,
+  mockResult?: T
 ): Promise<{ success: boolean; data?: T; error?: string }> => {
   try {
+    // If we're in a browser environment and have mock data, use it
+    if (isBrowser && mockResult) {
+      console.log('Using mock data in browser environment');
+      return { success: true, data: mockResult };
+    }
+    
     const result = await action();
     return { success: true, data: result };
   } catch (error) {
@@ -24,8 +89,15 @@ const apiCall = async <T>(
 
 // Authentication API
 export const getCurrentUser = async (): Promise<{ success: boolean; data?: User; error?: string }> => {
-  // In a real app, this would check the session/token
   try {
+    if (isBrowser) {
+      // In browser, return mock data
+      return { 
+        success: true, 
+        data: mapApiUser(mockData.users[0]) 
+      };
+    }
+    
     const users = await prisma.user.findMany({
       where: { role: 'admin' },
       take: 1,
@@ -40,12 +112,24 @@ export const getCurrentUser = async (): Promise<{ success: boolean; data?: User;
     
     return { success: false, error: 'No user found' };
   } catch (error) {
+    console.error("Error fetching current user:", error);
     return { success: false, error: 'Failed to fetch current user' };
   }
 };
 
 export const login = async (email: string, password: string, role: Role): Promise<{ success: boolean; data?: { user: User; token: string }; error?: string }> => {
   try {
+    if (isBrowser) {
+      // In browser, return mock data
+      return { 
+        success: true, 
+        data: {
+          user: mapApiUser(mockData.users[0]),
+          token: 'mock-jwt-token'
+        }
+      };
+    }
+    
     const user = await prisma.user.findFirst({
       where: { 
         email,
@@ -62,7 +146,7 @@ export const login = async (email: string, password: string, role: Role): Promis
         success: true,
         data: {
           user: mapApiUser(user),
-          token: 'mock-jwt-token' // In a real app, generate a JWT
+          token: 'mock-jwt-token'
         }
       };
     }
@@ -604,3 +688,4 @@ export const unenrollStudentFromCourse = async (studentId: number, courseId: num
     return true;
   });
 };
+

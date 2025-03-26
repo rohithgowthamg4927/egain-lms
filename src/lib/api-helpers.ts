@@ -25,17 +25,17 @@ export function convertDatesToStrings<T>(obj: T): T {
  * Ensures the entity has both id and entityId properties
  * For example: courseId and id for Course
  */
-export function ensureIdProperties<T extends { [key: string]: any }>(entity: T, entityType: string): T {
+export function ensureIdProperties<T>(entity: T, entityType: string): T {
   const result = { ...entity } as any;
   const idPropName = `${entityType}Id`;
   
   // If we have an id but no entityId (courseId, batchId, etc.)
-  if (result.id && !result[idPropName]) {
+  if ('id' in result && !result[idPropName]) {
     result[idPropName] = result.id;
   }
   
   // If we have an entityId but no id
-  if (!result.id && result[idPropName]) {
+  if (!('id' in result) && result[idPropName]) {
     result.id = result[idPropName];
   }
   
@@ -57,8 +57,8 @@ export function mapApiCourse(course: any): Course {
     duration: course.duration,
     durationHours: course.durationHours || course.duration,
     isPublished: course.isPublished ?? true,
-    createdAt: dateToString(course.createdAt),
-    updatedAt: dateToString(course.updatedAt || course.createdAt),
+    createdAt: course.createdAt ? dateToString(course.createdAt) : dateToString(new Date()),
+    updatedAt: course.updatedAt ? dateToString(course.updatedAt) : dateToString(new Date()),
     category: course.category,
     students: course.students || 0,
     batches: course.batches || 0,
@@ -75,8 +75,8 @@ export function mapApiUser(user: any): User {
     email: user.email,
     phoneNumber: user.phoneNumber || user.phone,
     role: user.role,
-    createdAt: dateToString(user.createdAt),
-    updatedAt: dateToString(user.updatedAt || user.createdAt),
+    createdAt: user.createdAt ? dateToString(user.createdAt) : dateToString(new Date()),
+    updatedAt: user.updatedAt ? dateToString(user.updatedAt) : dateToString(new Date()),
     mustResetPassword: user.mustResetPassword || user.isFirstLogin || false,
     profilePicture: user.profilePicture,
     photoUrl: user.photoUrl || user.profilePicture?.fileUrl,
@@ -89,8 +89,8 @@ export function mapApiCategory(category: any): CourseCategory {
     categoryId: category.id || category.categoryId,
     id: category.id || category.categoryId,
     categoryName: category.categoryName,
-    createdAt: dateToString(category.createdAt || new Date()),
-    updatedAt: dateToString(category.updatedAt || category.createdAt || new Date())
+    createdAt: category.createdAt ? dateToString(category.createdAt) : dateToString(new Date()),
+    updatedAt: category.updatedAt ? dateToString(category.updatedAt) : dateToString(new Date())
   };
 }
 
@@ -103,8 +103,8 @@ export function mapApiBatch(batch: any): Batch {
     instructorId: batch.instructorId,
     startDate: dateToString(batch.startDate),
     endDate: dateToString(batch.endDate),
-    createdAt: dateToString(batch.createdAt || new Date()),
-    updatedAt: dateToString(batch.updatedAt || batch.createdAt || new Date()),
+    createdAt: batch.createdAt ? dateToString(batch.createdAt) : dateToString(new Date()),
+    updatedAt: batch.updatedAt ? dateToString(batch.updatedAt) : dateToString(new Date()),
     course: batch.course ? mapApiCourse(batch.course) : undefined,
     instructor: batch.instructor ? mapApiUser(batch.instructor) : undefined,
     students: batch.students || 0,

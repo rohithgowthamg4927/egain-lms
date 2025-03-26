@@ -3,15 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { Role, Level } from '@/lib/types';
 
 // This script will initialize the database with some sample data if it's empty
-// It will only run in a Node.js environment, not in the browser
 async function setupDatabase() {
-  // This function is only meant to be used in a Node.js environment
-  // It will not be used in the browser
-  if (typeof window !== 'undefined') {
-    console.log('setupDatabase should only be run in a Node.js environment');
-    return;
-  }
-
   try {
     const prisma = new PrismaClient();
     

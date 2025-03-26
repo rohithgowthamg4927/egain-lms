@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Initialize the React app
+// Initialize the app without any server-only operations
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />

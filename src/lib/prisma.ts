@@ -20,11 +20,14 @@ const createPrismaInstance = (): PrismaInstance => {
   
   // For Node.js environments, use the real PrismaClient
   return new PrismaClient({
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
+    // Only set datasources if we have a DATABASE_URL
+    ...(process.env.DATABASE_URL && {
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
       },
-    },
+    }),
   });
 };
 
@@ -42,7 +45,9 @@ function getMockPrismaClient() {
     resource: createMockModel('resource'),
     courseReview: createMockModel('courseReview'),
     profilePicture: createMockModel('profilePicture'),
-    $disconnect: async () => {}
+    $disconnect: async () => {
+      console.log('Mock $disconnect called');
+    }
   };
 }
 
@@ -92,6 +97,7 @@ function createMockModel(modelName: string) {
 export const prisma = globalThis.prisma || createPrismaInstance();
 
 // Add to globalThis in development to prevent multiple instances
+// Only in Node.js environment, not in browser
 if (process.env.NODE_ENV !== 'production' && !isBrowser) {
   globalThis.prisma = prisma;
 }

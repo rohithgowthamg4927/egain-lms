@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { fetchUsers, login as apiLogin, logout as apiLogout } from '@/lib/api';
 import { Role, User } from '@/lib/types';
 
@@ -20,16 +20,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadUser = async () => {
       setIsLoading(true);
       
       try {
-        // For demo purposes, just use the first user as logged in
-        const users = await fetchUsers();
-        if (users && users.length > 0) {
-          setUser(users[0]);
+        // Check if there's a user session in localStorage
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
         } else {
           setUser(null);
         }
@@ -48,15 +49,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
-      // For demo, just find a user with the matching email
-      const users = await fetchUsers();
-      const matchedUser = users.find(u => u.email === email && u.role === role);
+      console.log("Attempting login with:", { email, role });
       
-      if (matchedUser && password === 'Admin@123') {
-        setUser(matchedUser);
+      // Call the API login function
+      const response = await apiLogin(email, password, role);
+      
+      if (response.success && response.data) {
+        const userData = response.data.user;
+        setUser(userData);
+        
+        // Store user in localStorage
+        localStorage.setItem('currentUser', JSON.stringify(userData));
         
         // Redirect based on role
-        switch (matchedUser.role) {
+        switch (userData.role) {
           case Role.admin:
             navigate('/dashboard');
             break;
@@ -72,14 +78,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         toast({
           title: 'Login Successful',
-          description: `Welcome, ${matchedUser.fullName}!`,
+          description: `Welcome, ${userData.fullName}!`,
         });
         
         return true;
       } else {
         toast({
           title: 'Login Failed',
-          description: 'Invalid credentials',
+          description: response.error || 'Invalid credentials',
           variant: 'destructive',
         });
         return false;
@@ -91,6 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: errorMessage,
         variant: 'destructive',
       });
+      console.error("Login error:", error);
       return false;
     } finally {
       setIsLoading(false);
@@ -98,7 +105,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    // In a real app, you would call the API to logout
+    // Remove user from localStorage
+    localStorage.removeItem('currentUser');
     setUser(null);
     navigate('/');
     toast({

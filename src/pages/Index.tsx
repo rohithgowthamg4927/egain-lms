@@ -1,90 +1,26 @@
 
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Role } from '@/lib/types';
+import LoginForm from '@/components/auth/LoginForm';
+import { useAuth } from '@/hooks/use-auth';
+import Layout from '@/components/layout/Layout';
 
 const Index = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (selectedRole: Role) => {
-    if (!email || !password) {
-      toast({
-        title: 'Missing information',
-        description: 'Please enter both email and password',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (selectedRole === Role.admin) {
-      // Admin login logic
-      toast({
-        title: 'Admin Login',
-        description: 'Navigating to admin dashboard...',
-      });
+  useEffect(() => {
+    if (isAuthenticated) {
       navigate('/dashboard');
-    } else if (selectedRole === Role.instructor) {
-      // Instructor login logic
-      toast({
-        title: 'Instructor Login',
-        description: 'Navigating to instructor dashboard...',
-      });
-      navigate('/courses');
-    } else if (selectedRole === Role.student) {
-      // Student login logic
-      toast({
-        title: 'Student Login',
-        description: 'Navigating to student courses...',
-      });
-      navigate('/courses');
     }
-  };
+  }, [isAuthenticated, navigate]);
 
   return (
-    <div className="container flex items-center justify-center min-h-screen">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">LMS Admin</CardTitle>
-          <CardDescription className="text-center">
-            Login with your admin, instructor, or student account
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="m@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-around">
-          <Button onClick={() => handleLogin(Role.admin)}>Admin</Button>
-          <Button onClick={() => handleLogin(Role.instructor)}>Instructor</Button>
-          <Button onClick={() => handleLogin(Role.student)}>Student</Button>
-        </CardFooter>
-      </Card>
-    </div>
+    <Layout requireAuth={false}>
+      <div className="container flex items-center justify-center min-h-screen">
+        <LoginForm />
+      </div>
+    </Layout>
   );
 };
 

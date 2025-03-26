@@ -18,10 +18,13 @@ const Layout = ({ children, requireAuth = true }: LayoutProps) => {
   const location = useLocation();
 
   useEffect(() => {
+    // Only redirect if authentication is required, the auth check is completed, 
+    // the user is not authenticated, and they're not already on the login page
     if (!isLoading && requireAuth && !isAuthenticated && location.pathname !== '/') {
+      console.log("Redirecting to login from:", location.pathname);
       navigate('/', { replace: true });
     }
-  }, [isAuthenticated, isLoading, navigate, requireAuth, location]);
+  }, [isAuthenticated, isLoading, navigate, requireAuth, location.pathname]);
 
   if (isLoading) {
     return (

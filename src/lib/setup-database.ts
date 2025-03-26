@@ -1,12 +1,16 @@
 
-import { PrismaClient } from '@prisma/client';
 import { Role, Level } from '@/lib/types';
+import prisma from './prisma';
 
 // This script will initialize the database with some sample data if it's empty
 async function setupDatabase() {
+  // Check if we're in a browser environment
+  if (typeof window !== 'undefined') {
+    console.warn('setupDatabase() was called in a browser environment. Skipping database setup.');
+    return;
+  }
+
   try {
-    const prisma = new PrismaClient();
-    
     console.log('Setting up database...');
     
     // Check if any users exist
@@ -59,7 +63,6 @@ async function setupDatabase() {
     }
     
     console.log('Database setup complete!');
-    await prisma.$disconnect();
   } catch (error) {
     console.error('Error setting up database:', error);
     throw error; // Rethrow to show in console

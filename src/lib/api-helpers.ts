@@ -25,8 +25,8 @@ export function convertDatesToStrings<T>(obj: T): T {
  * Ensures the entity has both id and entityId properties
  * For example: courseId and id for Course
  */
-export function ensureIdProperties<T>(entity: T, entityType: string): T {
-  const result = { ...entity } as any;
+export function ensureIdProperties<T extends Record<string, any>>(entity: T, entityType: string): T {
+  const result = { ...entity } as Record<string, any>;
   const idPropName = `${entityType}Id`;
   
   // If we have an id but no entityId (courseId, batchId, etc.)

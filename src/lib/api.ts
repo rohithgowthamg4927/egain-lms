@@ -1,10 +1,12 @@
+
 import { CourseCategory, Level, Course, User, Role, Batch, Resource, DashboardMetrics, Schedule } from '@/lib/types';
 import { uploadProfilePicture, uploadCourseThumbnail, uploadClassRecording } from '@/lib/s3-upload';
 import { generateRandomPassword } from '@/lib/utils';
 import { dateToString } from '@/lib/utils/date-helpers';
 
-// Base API URL 
-const API_BASE_URL = 'http://localhost:3001/api';
+// Base API URL - Use environment variable with fallback to localhost
+// The API_URL can be configured based on your deployment environment
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // Generic fetch wrapper with error handling
 async function apiFetch<T>(
@@ -12,7 +14,10 @@ async function apiFetch<T>(
   options: RequestInit = {}
 ): Promise<{ success: boolean; data?: T; error?: string }> {
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log(`Fetching from: ${url}`);
+    
+    const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',

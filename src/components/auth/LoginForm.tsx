@@ -17,6 +17,7 @@ const LoginForm = () => {
   const [role, setRole] = useState<Role>(Role.admin);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { login } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -24,8 +25,10 @@ const LoginForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMessage(null);
     
     try {
+      console.log("Attempting login with:", { email, role });
       const success = await login(email, password, role);
       
       if (success) {
@@ -37,9 +40,11 @@ const LoginForm = () => {
       }
     } catch (error) {
       console.error("Login error:", error);
+      const message = error instanceof Error ? error.message : 'Failed to connect to server';
+      setErrorMessage(message);
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -128,6 +133,12 @@ const LoginForm = () => {
             </RadioGroup>
           </div>
           
+          {errorMessage && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+              <span className="block sm:inline">{errorMessage}</span>
+            </div>
+          )}
+          
           <Button
             type="submit"
             className="w-full h-11 bg-blue-500 hover:bg-blue-600"
@@ -142,6 +153,12 @@ const LoginForm = () => {
               "Sign In"
             )}
           </Button>
+          
+          <div className="text-center text-sm text-gray-500 mt-4">
+            <p>
+              Make sure your backend server is running at: {import.meta.env.VITE_API_URL || 'http://localhost:3001'}
+            </p>
+          </div>
         </form>
       </CardContent>
     </Card>

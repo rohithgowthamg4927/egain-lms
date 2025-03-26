@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoginForm from '@/components/auth/LoginForm';
+import ServerStatusCheck from '@/components/auth/ServerStatusCheck';
 import { useAuth } from '@/hooks/use-auth';
 import Layout from '@/components/layout/Layout';
 
@@ -17,8 +18,11 @@ const Index = () => {
 
   return (
     <Layout requireAuth={false}>
-      <div className="container flex items-center justify-center min-h-screen">
+      <div className="container flex flex-col items-center justify-center min-h-screen">
         <LoginForm />
+        <div className="mt-6">
+          <ServerStatusCheck />
+        </div>
       </div>
     </Layout>
   );

@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
-import { fetchUsers, login as apiLogin, logout as apiLogout } from '@/lib/api';
+import { getCurrentUser, login as apiLogin, logout as apiLogout } from '@/lib/api';
 import { Role, User } from '@/lib/types';
 
 interface AuthContextType {
@@ -26,12 +26,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       
       try {
-        // For demo purposes, just use the first user as logged in
-        const users = await fetchUsers();
-        if (users && users.length > 0) {
-          setUser(users[0]);
+        // Use getCurrentUser instead of fetchUsers
+        const response = await getCurrentUser();
+        if (response.success && response.data) {
+          setUser(response.data);
         } else {
           setUser(null);
+          console.error('Error loading user:', response.error);
         }
       } catch (error) {
         setUser(null);
@@ -48,15 +49,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
-      // For demo, just find a user with the matching email
-      const users = await fetchUsers();
-      const matchedUser = users.find(u => u.email === email && u.role === role);
+      const response = await apiLogin(email, password, role);
       
-      if (matchedUser && password === 'Admin@123') {
-        setUser(matchedUser);
+      if (response.success && response.data) {
+        setUser(response.data.user);
         
         // Redirect based on role
-        switch (matchedUser.role) {
+        switch (response.data.user.role) {
           case Role.admin:
             navigate('/dashboard');
             break;
@@ -72,14 +71,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         toast({
           title: 'Login Successful',
-          description: `Welcome, ${matchedUser.fullName}!`,
+          description: `Welcome, ${response.data.user.fullName}!`,
         });
         
         return true;
       } else {
         toast({
           title: 'Login Failed',
-          description: 'Invalid credentials',
+          description: response.error || 'Invalid credentials',
           variant: 'destructive',
         });
         return false;
@@ -98,12 +97,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    // In a real app, you would call the API to logout
-    setUser(null);
-    navigate('/');
-    toast({
-      title: 'Logged out',
-      description: 'You have been successfully logged out.',
+    apiLogout().then(() => {
+      setUser(null);
+      navigate('/');
+      toast({
+        title: 'Logged out',
+        description: 'You have been successfully logged out.',
+      });
     });
   };
 

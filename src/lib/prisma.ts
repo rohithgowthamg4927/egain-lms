@@ -1,8 +1,7 @@
 
 import { PrismaClient } from '@prisma/client';
 
-// This is a special handling for browser environments
-// In browsers, we'll use a mock implementation instead of the actual PrismaClient
+// Determine if we're in a browser environment
 const isBrowser = typeof window !== 'undefined';
 
 // Define a type for our Prisma instance that can be either real or mock
@@ -14,20 +13,13 @@ const createPrismaInstance = (): PrismaInstance => {
   if (isBrowser) {
     console.warn('Prisma Client is being used in a browser environment. Using mock implementation.');
     // Return a mock object that mimics the PrismaClient interface
-    // This is just to prevent runtime errors, actual data should be provided by API
     return getMockPrismaClient();
   }
   
   // For Node.js environments, use the real PrismaClient
+  console.log('Creating real PrismaClient instance for Node.js environment');
   return new PrismaClient({
-    // Only set datasources if we have a DATABASE_URL
-    ...(process.env.DATABASE_URL && {
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
-        },
-      },
-    }),
+    log: ['query', 'info', 'warn', 'error'],
   });
 };
 
@@ -93,13 +85,20 @@ function createMockModel(modelName: string) {
   };
 }
 
-// Create and export the prisma instance
-export const prisma = globalThis.prisma || createPrismaInstance();
+// For Node.js environments, create the real Prisma instance
+// For browser environments, create the mock Prisma instance
+let prisma: PrismaInstance;
 
-// Add to globalThis in development to prevent multiple instances
-// Only in Node.js environment, not in browser
-if (process.env.NODE_ENV !== 'production' && !isBrowser) {
-  globalThis.prisma = prisma;
+if (!globalThis.prisma) {
+  prisma = createPrismaInstance();
+  
+  // Only save to globalThis in Node.js environment
+  if (!isBrowser) {
+    globalThis.prisma = prisma;
+  }
+} else {
+  prisma = globalThis.prisma;
 }
 
+export { prisma };
 export default prisma;

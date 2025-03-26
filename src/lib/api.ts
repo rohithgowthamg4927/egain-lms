@@ -1,113 +1,36 @@
+
 import { CourseCategory, Level, Course, User, Role, Batch, Resource, DashboardMetrics, Schedule } from '@/lib/types';
+import { uploadProfilePicture, uploadCourseThumbnail, uploadClassRecording } from '@/lib/s3-upload';
+import { generateRandomPassword } from '@/lib/utils';
+import { dateToString } from '@/lib/utils/date-helpers';
 
-// Check if we're in a browser environment
-const isBrowser = typeof window !== 'undefined';
-
-// Mock data for browser environment
-const mockUsers = [
-  {
-    userId: 1,
-    fullName: 'Admin User',
-    email: 'admin@lms.com',
-    role: Role.admin,
-    phoneNumber: null,
-    mustResetPassword: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    photoUrl: 'https://i.pravatar.cc/150?img=1'
-  }
-];
-
-// Generic fetch function with error handling
-const apiCall = async <T>(
-  action: () => Promise<T>
-): Promise<{ success: boolean; data?: T; error?: string }> => {
-  try {
-    const result = await action();
-    return { success: true, data: result };
-  } catch (error) {
-    console.error("API Error:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'An unexpected error occurred' 
-    };
-  }
+// Generic fetch function (simulating API call)
+const apiCall = <T>(data: T): Promise<{ success: boolean; data?: T; error?: string }> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({ success: true, data });
+    }, 500);
+  });
 };
 
 // Authentication API
 export const getCurrentUser = async (): Promise<{ success: boolean; data?: User; error?: string }> => {
-  // In browser environment, return mock data
-  if (isBrowser) {
-    return { success: true, data: mockUsers[0] };
-  }
-  
-  // In Node.js environment, use prisma (this code won't run in browser)
-  try {
-    // Import Prisma dynamically to prevent browser from loading it
-    const { prisma } = await import('./prisma');
-    
-    const users = await prisma.user.findMany({
-      where: { role: 'admin' },
-      take: 1,
-      include: {
-        profilePicture: true
-      }
-    });
-    
-    if (users.length > 0) {
-      // This function should be imported dynamically if needed
-      const { mapApiUser } = await import('./api-helpers');
-      return { success: true, data: mapApiUser(users[0]) };
-    }
-    
-    return { success: false, error: 'No user found' };
-  } catch (error) {
-    console.error("Error fetching current user:", error);
-    return { success: false, error: 'Failed to fetch current user' };
-  }
+  // In a real app, this would check the session/token
+  // For demo, just return a mock user
+  const users = await fetchUsers();
+  return apiCall(users[0]); // Mock admin user
 };
 
 export const login = async (email: string, password: string, role: Role): Promise<{ success: boolean; data?: { user: User; token: string }; error?: string }> => {
-  // For browser testing, allow login with any credentials
-  if (isBrowser) {
-    // Create a mock user based on the role
-    const mockUser = {
-      ...mockUsers[0],
-      fullName: `${role.charAt(0).toUpperCase() + role.slice(1)} User`,
-      email,
-      role
-    };
-    
-    return {
-      success: true,
-      data: {
-        user: mockUser,
-        token: 'mock-jwt-token'
-      }
-    };
-  }
-  
-  // In Node.js environment, use prisma (this code won't run in browser)
   try {
-    const { prisma } = await import('./prisma');
-    const { mapApiUser } = await import('./api-helpers');
+    const users = await fetchUsers();
+    const user = users.find(u => u.email === email && u.role === role);
     
-    const user = await prisma.user.findFirst({
-      where: { 
-        email,
-        role,
-        password // In a real app, you would hash the password
-      },
-      include: {
-        profilePicture: true
-      }
-    });
-    
-    if (user) {
+    if (user && password.length > 0) {
       return {
         success: true,
         data: {
-          user: mapApiUser(user),
+          user,
           token: 'mock-jwt-token'
         }
       };
@@ -130,485 +53,634 @@ export const logout = async (): Promise<{ success: boolean }> => {
   return { success: true };
 };
 
-// Mock implementations for browser environment
-// These implementations will return mock data in browser
-// In a real production app, these would likely call REST APIs
-
 // User Management API
 export const createUser = async (userData: Partial<User>, profilePicture?: File): Promise<{ success: boolean; data?: User; error?: string }> => {
-  if (isBrowser) {
-    console.log('Mock createUser called with:', userData, profilePicture);
-    return {
-      success: true,
-      data: {
-        userId: Date.now(),
-        fullName: userData.fullName || 'New User',
-        email: userData.email || 'user@example.com',
-        role: userData.role || Role.student,
-        phoneNumber: userData.phoneNumber || null,
-        mustResetPassword: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        photoUrl: userData.photoUrl || 'https://i.pravatar.cc/150?img=12'
-      }
+  try {
+    // Generate random password
+    const password = generateRandomPassword(8);
+    
+    // Upload profile picture if provided
+    let photoUrl = userData.photoUrl;
+    if (profilePicture) {
+      photoUrl = await uploadProfilePicture(profilePicture, Date.now());
+    }
+    
+    // Create new user with generated ID
+    const newUser: User = {
+      id: Date.now(),
+      userId: Date.now(),
+      fullName: userData.fullName || '',
+      email: userData.email || '',
+      role: userData.role || Role.student,
+      photoUrl,
+      phoneNumber: userData.phoneNumber,
+      bio: userData.bio,
+      mustResetPassword: true,
+      createdAt: dateToString(new Date()),
+      updatedAt: dateToString(new Date()),
+    };
+    
+    return { success: true, data: newUser };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to create user' 
     };
   }
-  
-  // This part won't be executed in browser
-  // It would need to be implemented for Node.js environment
-  return { success: false, error: 'Not implemented for server environment' };
 };
 
-// Mock implementations for other API functions
 export const updateUser = async (userId: number, userData: Partial<User>, profilePicture?: File): Promise<{ success: boolean; data?: User; error?: string }> => {
-  if (isBrowser) {
-    console.log('Mock updateUser called with:', userId, userData, profilePicture);
-    return {
-      success: true,
-      data: {
-        userId,
-        ...mockUsers[0],
-        ...userData,
-        updatedAt: new Date().toISOString()
-      }
+  try {
+    const users = await fetchUsers();
+    const userIndex = users.findIndex(u => u.userId === userId);
+    
+    if (userIndex === -1) {
+      return { success: false, error: 'User not found' };
+    }
+    
+    // Upload profile picture if provided
+    if (profilePicture) {
+      userData.photoUrl = await uploadProfilePicture(profilePicture, userId);
+    }
+    
+    // Update user
+    const updatedUser: User = {
+      ...users[userIndex],
+      ...userData,
+      updatedAt: dateToString(new Date())
+    };
+    
+    return { success: true, data: updatedUser };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to update user' 
     };
   }
-  
-  return { success: false, error: 'Not implemented for server environment' };
 };
 
 export const changePassword = async (userId: number, newPassword: string): Promise<{ success: boolean; error?: string }> => {
-  if (isBrowser) {
-    console.log('Mock changePassword called with:', userId, newPassword);
+  try {
+    const users = await fetchUsers();
+    const userIndex = users.findIndex(u => u.userId === userId);
+    
+    if (userIndex === -1) {
+      return { success: false, error: 'User not found' };
+    }
+    
+    // In a real app, this would hash the password
+    // Update mustResetPassword flag
+    users[userIndex].mustResetPassword = false;
+    
     return { success: true };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to change password' 
+    };
   }
-  
-  return { success: false, error: 'Not implemented for server environment' };
 };
 
 export const deleteUser = async (id: number): Promise<{ success: boolean; error?: string }> => {
-  if (isBrowser) {
-    console.log('Mock deleteUser called with:', id);
+  try {
     return { success: true };
-  }
-  
-  return { success: false, error: 'Not implemented for server environment' };
-};
-
-// Mock implementations for categories
-export const getCategories = async (): Promise<{ success: boolean; data?: CourseCategory[]; error?: string }> => {
-  if (isBrowser) {
-    return {
-      success: true,
-      data: [
-        { categoryId: 1, categoryName: 'Web Development', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { categoryId: 2, categoryName: 'Mobile Development', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { categoryId: 3, categoryName: 'Data Science', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
-      ]
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to delete user' 
     };
   }
-  
-  return { success: false, error: 'Not implemented for server environment' };
+};
+
+// Course Categories API
+export const fetchCourseCategories = async (): Promise<CourseCategory[]> => {
+  const categories: CourseCategory[] = [
+    { id: 1, categoryId: 1, categoryName: 'Web Development', createdAt: dateToString(new Date()), updatedAt: dateToString(new Date()) },
+    { id: 2, categoryId: 2, categoryName: 'Mobile Development', createdAt: dateToString(new Date()), updatedAt: dateToString(new Date()) },
+    { id: 3, categoryId: 3, categoryName: 'Data Science', createdAt: dateToString(new Date()), updatedAt: dateToString(new Date()) },
+    { id: 4, categoryId: 4, categoryName: 'DevOps', createdAt: dateToString(new Date()), updatedAt: dateToString(new Date()) },
+    { id: 5, categoryId: 5, categoryName: 'UI/UX Design', createdAt: dateToString(new Date()), updatedAt: dateToString(new Date()) },
+  ];
+  return categories;
+};
+
+export const getCategories = async (): Promise<{ success: boolean; data?: CourseCategory[]; error?: string }> => {
+  try {
+    const categories = await fetchCourseCategories();
+    return { success: true, data: categories };
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch categories' };
+  }
 };
 
 export const createCategory = async (categoryData: Partial<CourseCategory>): Promise<{ success: boolean; data?: CourseCategory; error?: string }> => {
-  if (isBrowser) {
-    return {
-      success: true,
-      data: {
-        categoryId: Date.now(),
-        categoryName: categoryData.categoryName || 'New Category',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
+  try {
+    const newCategory: CourseCategory = {
+      id: Date.now(),
+      categoryId: Date.now(),
+      categoryName: categoryData.categoryName || '',
+      createdAt: dateToString(new Date()),
+      updatedAt: dateToString(new Date())
+    };
+    
+    return { success: true, data: newCategory };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to create category' 
     };
   }
-  
-  return { success: false, error: 'Not implemented for server environment' };
 };
 
 // Users API
-export const getUsers = async (role?: Role): Promise<{ success: boolean; data?: User[]; error?: string }> => {
-  if (isBrowser) {
-    // Generate mock users based on role
-    let users = [mockUsers[0]];
-    
-    if (role === Role.student) {
-      users = [
-        { ...mockUsers[0], userId: 2, fullName: 'Student 1', email: 'student1@lms.com', role: Role.student },
-        { ...mockUsers[0], userId: 3, fullName: 'Student 2', email: 'student2@lms.com', role: Role.student }
-      ];
-    } else if (role === Role.instructor) {
-      users = [
-        { ...mockUsers[0], userId: 4, fullName: 'Instructor 1', email: 'instructor1@lms.com', role: Role.instructor },
-        { ...mockUsers[0], userId: 5, fullName: 'Instructor 2', email: 'instructor2@lms.com', role: Role.instructor }
-      ];
-    }
-    
-    return { success: true, data: users };
+export const fetchUsers = async (role?: Role): Promise<User[]> => {
+  const users: User[] = [
+    {
+      id: 1,
+      userId: 1,
+      fullName: 'Admin User',
+      email: 'admin@lms.com',
+      role: Role.admin,
+      photoUrl: 'https://i.pravatar.cc/150?img=1',
+      createdAt: dateToString(new Date('2023-01-01')),
+      updatedAt: dateToString(new Date('2023-01-01')),
+      mustResetPassword: false
+    },
+    {
+      id: 2,
+      userId: 2,
+      fullName: 'Jane Smith',
+      email: 'jane.smith@example.com',
+      role: Role.instructor,
+      photoUrl: 'https://i.pravatar.cc/150?img=2',
+      createdAt: dateToString(new Date('2023-02-15')),
+      updatedAt: dateToString(new Date('2023-02-15')),
+      mustResetPassword: true
+    },
+    {
+      id: 3,
+      userId: 3,
+      fullName: 'John Doe',
+      email: 'john.doe@example.com',
+      role: Role.student,
+      photoUrl: 'https://i.pravatar.cc/150?img=3',
+      createdAt: dateToString(new Date('2023-03-20')),
+      updatedAt: dateToString(new Date('2023-03-20')),
+      mustResetPassword: true
+    },
+    {
+      id: 4,
+      userId: 4,
+      fullName: 'Alice Johnson',
+      email: 'alice@example.com',
+      role: Role.instructor,
+      photoUrl: 'https://i.pravatar.cc/150?img=4',
+      createdAt: dateToString(new Date('2023-02-10')),
+      updatedAt: dateToString(new Date('2023-02-10')),
+      mustResetPassword: true
+    },
+    {
+      id: 5,
+      userId: 5,
+      fullName: 'Robert Brown',
+      email: 'robert@example.com',
+      role: Role.student,
+      photoUrl: 'https://i.pravatar.cc/150?img=5',
+      createdAt: dateToString(new Date('2023-04-05')),
+      updatedAt: dateToString(new Date('2023-04-05')),
+      mustResetPassword: true
+    },
+  ];
+
+  if (role) {
+    return users.filter(user => user.role === role);
   }
-  
-  return { success: false, error: 'Not implemented for server environment' };
+  return users;
 };
 
-// Alias for backward compatibility
-export const fetchUsers = getUsers;
+// Alias for fetchUsers to match usage in components
+export const getUsers = async (role?: Role): Promise<{ success: boolean; data?: User[]; error?: string }> => {
+  try {
+    const users = await fetchUsers(role);
+    return { success: true, data: users };
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch users' };
+  }
+};
 
 // Courses API
-export const getCourses = async (): Promise<{ success: boolean; data?: Course[]; error?: string }> => {
-  if (isBrowser) {
-    return {
-      success: true,
-      data: [
-        {
-          courseId: 1,
-          courseName: 'React Fundamentals',
-          description: 'Learn the basics of React',
-          courseLevel: Level.beginner,
-          categoryId: 1,
-          category: { categoryId: 1, categoryName: 'Web Development', createdAt: '', updatedAt: '' },
-          thumbnailUrl: 'https://example.com/react.jpg',
-          durationHours: 10,
-          isPublished: true,
-          students: 25,
-          batches: 2,
-          averageRating: 4.5,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          courseId: 2,
-          courseName: 'Advanced React',
-          description: 'Master React and Redux',
-          courseLevel: Level.advanced,
-          categoryId: 1,
-          category: { categoryId: 1, categoryName: 'Web Development', createdAt: '', updatedAt: '' },
-          thumbnailUrl: 'https://example.com/advanced-react.jpg',
-          durationHours: 15,
-          isPublished: true,
-          students: 15,
-          batches: 1,
-          averageRating: 4.8,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ]
-    };
-  }
-  
-  return { success: false, error: 'Not implemented for server environment' };
+export const fetchCourses = async (): Promise<Course[]> => {
+  const courses: Course[] = [
+    {
+      id: 1,
+      courseId: 1,
+      courseName: 'Introduction to React',
+      description: 'Learn the basics of React, hooks, context API and build real-world applications',
+      courseLevel: Level.beginner,
+      categoryId: 1,
+      thumbnailUrl: 'https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      students: 120,
+      averageRating: 4.7,
+      batches: 3,
+      durationHours: 18,
+      createdAt: dateToString(new Date('2023-01-10')),
+      updatedAt: dateToString(new Date('2023-01-10')),
+      createdBy: 2,
+      isPublished: true
+    },
+    {
+      id: 2,
+      courseId: 2,
+      courseName: 'Advanced JavaScript Patterns',
+      description: 'Deep dive into advanced JavaScript design patterns, asynchronous programming, and performance optimization',
+      courseLevel: Level.advanced,
+      categoryId: 1,
+      thumbnailUrl: 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      students: 85,
+      averageRating: 4.9,
+      batches: 2,
+      durationHours: 24,
+      createdAt: dateToString(new Date('2023-02-05')),
+      updatedAt: dateToString(new Date('2023-02-05')),
+      createdBy: 2,
+      isPublished: true
+    },
+    {
+      id: 3,
+      courseId: 3,
+      courseName: 'Flutter for Beginners',
+      description: 'Start your journey in mobile app development with Flutter and Dart',
+      courseLevel: Level.beginner,
+      categoryId: 2,
+      thumbnailUrl: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      students: 200,
+      averageRating: 4.5,
+      batches: 4,
+      durationHours: 20,
+      createdAt: dateToString(new Date('2023-01-25')),
+      updatedAt: dateToString(new Date('2023-01-25')),
+      createdBy: 4,
+      isPublished: true
+    },
+    {
+      id: 4,
+      courseId: 4,
+      courseName: 'Python for Data Science',
+      description: 'Learn Python programming with a focus on data analysis, visualization, and machine learning basics',
+      courseLevel: Level.intermediate,
+      categoryId: 3,
+      thumbnailUrl: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      students: 150,
+      averageRating: 4.6,
+      batches: 3,
+      durationHours: 22,
+      createdAt: dateToString(new Date('2023-03-15')),
+      updatedAt: dateToString(new Date('2023-03-15')),
+      createdBy: 4,
+      isPublished: true
+    },
+    {
+      id: 5,
+      courseId: 5,
+      courseName: 'Docker Essentials',
+      description: 'Get started with containerization using Docker and understand container orchestration',
+      courseLevel: Level.beginner,
+      categoryId: 4,
+      thumbnailUrl: 'https://images.unsplash.com/photo-1605745341112-85968b19335b?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+      students: 95,
+      averageRating: 4.4,
+      batches: 2,
+      durationHours: 15,
+      createdAt: dateToString(new Date('2023-04-10')),
+      updatedAt: dateToString(new Date('2023-04-10')),
+      createdBy: 2,
+      isPublished: true
+    },
+  ];
+
+  // Enrich with category data
+  const categories = await fetchCourseCategories();
+  return courses.map(course => ({
+    ...course,
+    category: categories.find(c => c.id === course.categoryId)
+  })) as Course[];
 };
 
-// Alias for backward compatibility
-export const fetchCourses = getCourses;
-
-// Implement other API functions as needed with mock data for browser environment
-export const fetchCourseById = async (id: number): Promise<Course | null> => {
-  if (isBrowser) {
-    const courses = (await getCourses()).data || [];
-    return courses.find(course => course.courseId === id) || null;
+// Alias for fetchCourses to match usage in components
+export const getCourses = async (): Promise<{ success: boolean; data?: Course[]; error?: string }> => {
+  try {
+    const courses = await fetchCourses();
+    return { success: true, data: courses };
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch courses' };
   }
-  
-  return null;
 };
 
 export const createCourse = async (courseData: Partial<Course>, thumbnail?: File): Promise<{ success: boolean; data?: Course; error?: string }> => {
-  if (isBrowser) {
-    return {
-      success: true,
-      data: {
-        courseId: Date.now(),
-        courseName: courseData.courseName || 'New Course',
-        description: courseData.description || '',
-        courseLevel: courseData.courseLevel || Level.beginner,
-        categoryId: courseData.categoryId || 1,
-        category: { categoryId: 1, categoryName: 'Web Development', createdAt: '', updatedAt: '' },
-        thumbnailUrl: courseData.thumbnailUrl || 'https://example.com/placeholder.jpg',
-        durationHours: courseData.durationHours || 10,
-        isPublished: courseData.isPublished || false,
-        students: 0,
-        batches: 0,
-        averageRating: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
+  try {
+    // Upload thumbnail if provided
+    let thumbnailUrl = courseData.thumbnailUrl;
+    if (thumbnail) {
+      thumbnailUrl = await uploadCourseThumbnail(thumbnail, Date.now());
+    }
+    
+    // Create new course with generated ID
+    const newId = Date.now();
+    const newCourse: Course = {
+      id: newId,
+      courseId: newId,
+      courseName: courseData.courseName || '',
+      description: courseData.description || '',
+      courseLevel: courseData.courseLevel || Level.beginner,
+      categoryId: courseData.categoryId || 1,
+      thumbnailUrl,
+      students: 0,
+      batches: 0,
+      createdAt: dateToString(new Date()),
+      updatedAt: dateToString(new Date()),
+      createdBy: courseData.createdBy || 1,
+      isPublished: courseData.isPublished || false,
+    };
+    
+    // Add category for consistency
+    const categories = await fetchCourseCategories();
+    newCourse.category = categories.find(c => c.id === newCourse.categoryId);
+    
+    return { success: true, data: newCourse };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to create course' 
     };
   }
-  
-  return { success: false, error: 'Not implemented for server environment' };
 };
 
-// Mock implementations for batches
+// Fetch a single course by ID
+export const fetchCourseById = async (id: number): Promise<Course | null> => {
+  const courses = await fetchCourses();
+  const course = courses.find(course => course.id === id) || null;
+  return course;
+};
+
+// Batches API
+export const fetchBatches = async (courseId?: number): Promise<Batch[]> => {
+  const courses = await fetchCourses();
+  const users = await fetchUsers();
+  
+  const batches: Batch[] = [
+    {
+      id: 1,
+      batchId: 1,
+      batchName: 'React - Morning Batch',
+      courseId: 1,
+      instructorId: 2,
+      startDate: dateToString(new Date('2023-06-01')),
+      endDate: dateToString(new Date('2023-08-01')),
+      students: 25,
+      createdAt: dateToString(new Date('2023-05-15')),
+      updatedAt: dateToString(new Date('2023-05-15')),
+    },
+    {
+      id: 2,
+      batchId: 2,
+      batchName: 'React - Weekend Batch',
+      courseId: 1,
+      instructorId: 2,
+      startDate: dateToString(new Date('2023-06-15')),
+      endDate: dateToString(new Date('2023-08-15')),
+      students: 30,
+      createdAt: dateToString(new Date('2023-05-20')),
+      updatedAt: dateToString(new Date('2023-05-20')),
+    },
+    {
+      id: 3,
+      batchId: 3,
+      batchName: 'JavaScript Advanced - Evening',
+      courseId: 2,
+      instructorId: 2,
+      startDate: dateToString(new Date('2023-07-01')),
+      endDate: dateToString(new Date('2023-09-01')),
+      students: 20,
+      createdAt: dateToString(new Date('2023-06-01')),
+      updatedAt: dateToString(new Date('2023-06-01')),
+    },
+    {
+      id: 4,
+      batchId: 4,
+      batchName: 'Flutter - Morning Batch',
+      courseId: 3,
+      instructorId: 4,
+      startDate: dateToString(new Date('2023-06-01')),
+      endDate: dateToString(new Date('2023-08-01')),
+      students: 35,
+      createdAt: dateToString(new Date('2023-05-15')),
+      updatedAt: dateToString(new Date('2023-05-15')),
+    },
+    {
+      id: 5,
+      batchId: 5,
+      batchName: 'Python for Data Science - Weekend',
+      courseId: 4,
+      instructorId: 4,
+      startDate: dateToString(new Date('2023-07-15')),
+      endDate: dateToString(new Date('2023-09-15')),
+      students: 25,
+      createdAt: dateToString(new Date('2023-06-10')),
+      updatedAt: dateToString(new Date('2023-06-10')),
+    },
+  ];
+
+  // Add additional properties to simulate joined data
+  const enrichedBatches = batches.map(batch => ({
+    ...batch,
+    course: courses.find(c => c.id === batch.courseId),
+    instructor: users.find(u => u.id === batch.instructorId),
+    studentsCount: batch.students,
+  }));
+  
+  if (courseId) {
+    return enrichedBatches.filter(batch => batch.courseId === courseId);
+  }
+  
+  return enrichedBatches as any;
+};
+
+// Alias for fetchBatches to match usage in components
 export const getBatches = async (courseId?: number): Promise<{ success: boolean; data?: Batch[]; error?: string }> => {
-  if (isBrowser) {
-    const batches = [
-      {
-        batchId: 1,
-        batchName: 'Batch 1',
-        courseId: 1,
-        course: (await getCourses()).data?.[0],
-        instructorId: 4,
-        instructor: (await getUsers(Role.instructor)).data?.[0],
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-        students: 15,
-        studentsCount: 15,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        batchId: 2,
-        batchName: 'Batch 2',
-        courseId: 2,
-        course: (await getCourses()).data?.[1],
-        instructorId: 5,
-        instructor: (await getUsers(Role.instructor)).data?.[1],
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(), // 45 days from now
-        students: 10,
-        studentsCount: 10,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ];
-    
-    if (courseId) {
-      return { success: true, data: batches.filter(batch => batch.courseId === courseId) };
-    }
-    
+  try {
+    const batches = await fetchBatches(courseId);
     return { success: true, data: batches };
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch batches' };
   }
-  
-  return { success: false, error: 'Not implemented for server environment' };
 };
 
-// Alias for backward compatibility
-export const fetchBatches = getBatches;
-
-// Mock implementation for other required functions
 export const createBatch = async (batchData: Partial<Batch>): Promise<{ success: boolean; data?: Batch; error?: string }> => {
-  if (isBrowser) {
-    return {
-      success: true,
+  try {
+    // Check if batch with same name already exists for the course
+    const batches = await fetchBatches(batchData.courseId);
+    const duplicateBatch = batches.find(b => 
+      b.courseId === batchData.courseId && 
+      b.batchName.toLowerCase() === batchData.batchName?.toLowerCase()
+    );
+    
+    if (duplicateBatch) {
+      return {
+        success: false,
+        error: `A batch with name "${batchData.batchName}" already exists for this course`
+      };
+    }
+    
+    // Create new batch with generated ID
+    const newId = Date.now();
+    const newBatch: Batch = {
+      id: newId,
+      batchId: newId,
+      batchName: batchData.batchName || '',
+      courseId: batchData.courseId || 0,
+      instructorId: batchData.instructorId || 0,
+      startDate: dateToString(batchData.startDate || new Date()),
+      endDate: dateToString(batchData.endDate || new Date()),
+      students: 0,
+      createdAt: dateToString(new Date()),
+      updatedAt: dateToString(new Date()),
+    };
+    
+    // Add course and instructor for consistency
+    const courses = await fetchCourses();
+    const users = await fetchUsers();
+    
+    const course = courses.find(c => c.id === newBatch.courseId);
+    const instructor = users.find(u => u.id === newBatch.instructorId);
+    
+    return { 
+      success: true, 
       data: {
-        batchId: Date.now(),
-        batchName: batchData.batchName || 'New Batch',
-        courseId: batchData.courseId || 1,
-        course: (await getCourses()).data?.[0],
-        instructorId: batchData.instructorId || 4,
-        instructor: (await getUsers(Role.instructor)).data?.[0],
-        startDate: batchData.startDate || new Date().toISOString(),
-        endDate: batchData.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        students: 0,
-        studentsCount: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
+        ...newBatch,
+        course,
+        instructor,
+        studentsCount: 0
+      } as any
+    };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to create batch' 
     };
   }
-  
-  return { success: false, error: 'Not implemented for server environment' };
 };
 
-// Mock implementations for schedules
-export const getSchedules = async (batchId?: number): Promise<{ success: boolean; data?: Schedule[]; error?: string }> => {
-  if (isBrowser) {
-    const schedules = [
-      {
-        scheduleId: 1,
-        id: 1,
-        batchId: 1,
-        dayOfWeek: 1, // Monday
-        startTime: '09:00:00',
-        endTime: '11:00:00',
-        topic: 'Introduction to React',
-        platform: 'zoom',
-        link: 'https://zoom.us/j/123456789',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        scheduleId: 2,
-        id: 2,
-        batchId: 1,
-        dayOfWeek: 3, // Wednesday
-        startTime: '09:00:00',
-        endTime: '11:00:00',
-        topic: 'React Components',
-        platform: 'zoom',
-        link: 'https://zoom.us/j/123456789',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ];
-    
-    if (batchId) {
-      return { success: true, data: schedules.filter(schedule => schedule.batchId === batchId) };
-    }
-    
-    return { success: true, data: schedules };
+// Schedules API
+export const fetchSchedules = async (batchId?: number): Promise<Schedule[]> => {
+  const schedules: Schedule[] = [
+    {
+      id: 1,
+      scheduleId: 1,
+      batchId: 1,
+      dayOfWeek: 1,
+      startTime: dateToString(new Date('2023-06-05T17:00:00')),
+      endTime: dateToString(new Date('2023-06-05T18:30:00')),
+      topic: 'Introduction to React Basics',
+      platform: 'zoom',
+      link: 'https://zoom.us/j/123456789',
+      createdAt: dateToString(new Date('2023-05-20')),
+      updatedAt: dateToString(new Date('2023-05-20')),
+    },
+    {
+      id: 2,
+      scheduleId: 2,
+      batchId: 1,
+      dayOfWeek: 3,
+      startTime: dateToString(new Date('2023-06-07T17:00:00')),
+      endTime: dateToString(new Date('2023-06-07T18:30:00')),
+      topic: 'Components and Props',
+      platform: 'zoom',
+      link: 'https://zoom.us/j/123456789',
+      createdAt: dateToString(new Date('2023-05-20')),
+      updatedAt: dateToString(new Date('2023-05-20')),
+    },
+    {
+      id: 3,
+      scheduleId: 3,
+      batchId: 2,
+      dayOfWeek: 6,
+      startTime: dateToString(new Date('2023-06-10T10:00:00')),
+      endTime: dateToString(new Date('2023-06-10T11:30:00')),
+      topic: 'React Weekend Workshop',
+      platform: 'google-meet',
+      link: 'https://meet.google.com/abc-defg-hij',
+      createdAt: dateToString(new Date('2023-05-25')),
+      updatedAt: dateToString(new Date('2023-05-25')),
+    },
+    {
+      id: 4,
+      scheduleId: 4,
+      batchId: 3,
+      dayOfWeek: 1,
+      startTime: dateToString(new Date('2023-07-03T18:00:00')),
+      endTime: dateToString(new Date('2023-07-03T19:30:00')),
+      topic: 'JavaScript Design Patterns',
+      platform: 'zoom',
+      link: 'https://zoom.us/j/987654321',
+      createdAt: dateToString(new Date('2023-06-15')),
+      updatedAt: dateToString(new Date('2023-06-15')),
+    },
+    {
+      id: 5,
+      scheduleId: 5,
+      batchId: 4,
+      dayOfWeek: 1,
+      startTime: dateToString(new Date('2023-06-05T09:00:00')),
+      endTime: dateToString(new Date('2023-06-05T10:30:00')),
+      topic: 'Flutter UI Basics',
+      platform: 'zoom',
+      link: 'https://zoom.us/j/567891234',
+      createdAt: dateToString(new Date('2023-05-20')),
+      updatedAt: dateToString(new Date('2023-05-20')),
+    },
+  ];
+
+  if (batchId) {
+    return schedules.filter(schedule => schedule.batchId === batchId);
   }
   
-  return { success: false, error: 'Not implemented for server environment' };
+  return schedules;
 };
 
-// Alias for backward compatibility
-export const fetchSchedules = getSchedules;
+export const getSchedules = async (batchId?: number): Promise<{ success: boolean; data?: Schedule[]; error?: string }> => {
+  try {
+    const schedules = await fetchSchedules(batchId);
+    return { success: true, data: schedules };
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch schedules' };
+  }
+};
 
 export const createSchedule = async (scheduleData: Partial<Schedule>): Promise<{ success: boolean; data?: Schedule; error?: string }> => {
-  if (isBrowser) {
-    return {
-      success: true,
-      data: {
-        scheduleId: Date.now(),
-        id: Date.now(),
-        batchId: scheduleData.batchId || 1,
-        dayOfWeek: scheduleData.dayOfWeek || 1,
-        startTime: scheduleData.startTime || '09:00:00',
-        endTime: scheduleData.endTime || '11:00:00',
-        topic: scheduleData.topic || 'New Schedule',
-        platform: scheduleData.platform || 'zoom',
-        link: scheduleData.link || 'https://zoom.us/j/123456789',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
+  try {
+    // Create new schedule with generated ID
+    const newId = Date.now();
+    const newSchedule: Schedule = {
+      id: newId,
+      scheduleId: newId,
+      batchId: scheduleData.batchId || 0,
+      dayOfWeek: scheduleData.dayOfWeek || 1,
+      startTime: dateToString(scheduleData.startTime || new Date()),
+      endTime: dateToString(scheduleData.endTime || new Date()),
+      topic: scheduleData.topic || '',
+      platform: scheduleData.platform || 'zoom',
+      link: scheduleData.link || '',
+      createdAt: dateToString(new Date()),
+      updatedAt: dateToString(new Date()),
+    };
+    
+    return { success: true, data: newSchedule };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to create schedule' 
     };
   }
-  
-  return { success: false, error: 'Not implemented for server environment' };
-};
-
-// Mock implementations for resources
-export const getResources = async (courseId?: number): Promise<{ success: boolean; data?: Resource[]; error?: string }> => {
-  if (isBrowser) {
-    const resources = [
-      {
-        resourceId: 1,
-        id: 1,
-        courseId: 1,
-        title: 'React Documentation',
-        type: 'link',
-        url: 'https://reactjs.org',
-        description: 'Official React documentation',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        resourceId: 2,
-        id: 2,
-        courseId: 1,
-        title: 'React Slides',
-        type: 'pdf',
-        url: 'https://example.com/slides.pdf',
-        description: 'Lecture slides',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ];
-    
-    if (courseId) {
-      return { success: true, data: resources.filter(resource => resource.courseId === courseId) };
-    }
-    
-    return { success: true, data: resources };
-  }
-  
-  return { success: false, error: 'Not implemented for server environment' };
-};
-
-// Alias for backward compatibility
-export const fetchResources = getResources;
-
-// Dashboard metrics
-export const getDashboardMetrics = async (): Promise<{ success: boolean; data?: DashboardMetrics; error?: string }> => {
-  if (isBrowser) {
-    return {
-      success: true,
-      data: {
-        totalStudents: 125,
-        totalInstructors: 15,
-        totalCourses: 10,
-        totalBatches: 20,
-        activeStudents: 100,
-        coursesPerCategory: [
-          { categoryName: 'Web Development', count: 5 },
-          { categoryName: 'Mobile Development', count: 3 },
-          { categoryName: 'Data Science', count: 2 }
-        ],
-        recentEnrollments: [
-          { 
-            studentName: 'John Doe', 
-            courseName: 'React Fundamentals', 
-            date: new Date()  // Convert to actual Date object
-          },
-          { 
-            studentName: 'Jane Smith', 
-            courseName: 'Advanced React', 
-            date: new Date()  // Convert to actual Date object
-          }
-        ],
-        recentUsers: [
-          { ...mockUsers[0], userId: 6, fullName: 'Recent User 1', email: 'recent1@lms.com' },
-          { ...mockUsers[0], userId: 7, fullName: 'Recent User 2', email: 'recent2@lms.com' }
-        ],
-        upcomingBatches: [
-          {
-            batchId: 3,
-            batchName: 'Upcoming Batch 1',
-            courseId: 1,
-            course: (await getCourses()).data?.[0],
-            instructorId: 4,
-            instructor: (await getUsers(Role.instructor)).data?.[0],
-            startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-            endDate: new Date(Date.now() + 37 * 24 * 60 * 60 * 1000).toISOString(), // 37 days from now
-            students: 0,
-            studentsCount: 0,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
-        ]
-      }
-    };
-  }
-  
-  return { success: false, error: 'Not implemented for server environment' };
-};
-
-// Student enrollment functions
-export const enrollStudentToBatch = async (studentId: number, batchId: number): Promise<{ success: boolean; error?: string }> => {
-  if (isBrowser) {
-    console.log(`Mock enrollStudentToBatch: Student ${studentId} enrolled to batch ${batchId}`);
-    return { success: true };
-  }
-  
-  return { success: false, error: 'Not implemented for server environment' };
-};
-
-export const unenrollStudentFromBatch = async (studentId: number, batchId: number): Promise<{ success: boolean; error?: string }> => {
-  if (isBrowser) {
-    console.log(`Mock unenrollStudentFromBatch: Student ${studentId} unenrolled from batch ${batchId}`);
-    return { success: true };
-  }
-  
-  return { success: false, error: 'Not implemented for server environment' };
-};
-
-export const enrollStudentToCourse = async (studentId: number, courseId: number): Promise<{ success: boolean; error?: string }> => {
-  if (isBrowser) {
-    console.log(`Mock enrollStudentToCourse: Student ${studentId} enrolled to course ${courseId}`);
-    return { success: true };
-  }
-  
-  return { success: false, error: 'Not implemented for server environment' };
-};
-
-export const unenrollStudentFromCourse = async (studentId: number, courseId: number): Promise<{ success: boolean; error?: string }> => {
-  if (isBrowser) {
-    console.log(`Mock unenrollStudentFromCourse: Student ${studentId} unenrolled from course ${courseId}`);
-    return { success: true };
-  }
-  
-  return { success: false, error: 'Not implemented for server environment' };
 };
 
 export const uploadScheduleRecording = async (
@@ -616,10 +688,189 @@ export const uploadScheduleRecording = async (
   scheduleId: number,
   batchId: number
 ): Promise<{ success: boolean; data?: { fileUrl: string }; error?: string }> => {
-  if (isBrowser) {
-    console.log(`Mock uploadScheduleRecording: Uploaded recording for schedule ${scheduleId} in batch ${batchId}`);
-    return { success: true, data: { fileUrl: URL.createObjectURL(file) } };
+  try {
+    const fileUrl = await uploadClassRecording(file, batchId, scheduleId);
+    return {
+      success: true,
+      data: { fileUrl }
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to upload recording'
+    };
   }
-  
-  return { success: false, error: 'Not implemented for server environment' };
+};
+
+// Resources API
+export const fetchResources = async (courseId?: number): Promise<Resource[]> => {
+  const resources: Resource[] = [
+    {
+      id: 1,
+      resourceId: 1,
+      title: 'React Fundamentals Slides',
+      description: 'Slide deck covering React basics and component lifecycle',
+      url: 'https://example.com/resources/react-slides.pdf',
+      type: 'document',
+      courseId: 1,
+      createdAt: dateToString(new Date('2023-05-15')),
+      updatedAt: dateToString(new Date('2023-05-15')),
+    },
+    {
+      id: 2,
+      resourceId: 2,
+      title: 'React Hooks Demo Code',
+      description: 'Example code demonstrating React hooks usage',
+      url: 'https://github.com/example/react-hooks-demo',
+      type: 'code',
+      courseId: 1,
+      createdAt: dateToString(new Date('2023-05-20')),
+      updatedAt: dateToString(new Date('2023-05-20')),
+    },
+    {
+      id: 3,
+      resourceId: 3,
+      title: 'Advanced JavaScript Patterns Handbook',
+      description: 'Comprehensive guide to JS design patterns',
+      url: 'https://example.com/resources/js-patterns.pdf',
+      type: 'document',
+      courseId: 2,
+      createdAt: dateToString(new Date('2023-05-25')),
+      updatedAt: dateToString(new Date('2023-05-25')),
+    },
+    {
+      id: 4,
+      resourceId: 4,
+      title: 'Flutter Setup Guide',
+      description: 'Step-by-step guide for setting up Flutter development environment',
+      url: 'https://example.com/resources/flutter-setup.pdf',
+      type: 'document',
+      courseId: 3,
+      createdAt: dateToString(new Date('2023-05-10')),
+      updatedAt: dateToString(new Date('2023-05-10')),
+    },
+    {
+      id: 5,
+      resourceId: 5,
+      title: 'Python Data Analysis Code Samples',
+      description: 'Sample code for data analysis with pandas and matplotlib',
+      url: 'https://github.com/example/python-data-analysis',
+      type: 'code',
+      courseId: 4,
+      createdAt: dateToString(new Date('2023-06-05')),
+      updatedAt: dateToString(new Date('2023-06-05')),
+    },
+  ];
+
+  if (courseId) {
+    return resources.filter(resource => resource.courseId === courseId);
+  }
+  return resources;
+};
+
+export const getResources = async (courseId?: number): Promise<{ success: boolean; data?: Resource[]; error?: string }> => {
+  try {
+    const resources = await fetchResources(courseId);
+    return { success: true, data: resources };
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch resources' };
+  }
+};
+
+// Dashboard metrics
+export const getDashboardMetrics = async (): Promise<{ success: boolean; data?: DashboardMetrics; error?: string }> => {
+  try {
+    const users = await fetchUsers();
+    const courses = await fetchCourses();
+    const batches = await fetchBatches();
+    
+    const students = users.filter(user => user.role === Role.student);
+    const instructors = users.filter(user => user.role === Role.instructor);
+    
+    const recentUsers: User[] = [...users].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    ).slice(0, 5);
+    
+    const upcomingBatches: Batch[] = [...batches].sort((a, b) => 
+      new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    ).slice(0, 5);
+    
+    const metrics: DashboardMetrics = {
+      totalStudents: students.length,
+      totalInstructors: instructors.length,
+      totalCourses: courses.length,
+      totalBatches: batches.length,
+      activeStudents: Math.floor(students.length * 0.8), // Mock data: 80% of students are active
+      coursesPerCategory: [
+        { categoryName: 'Web Development', count: 2 },
+        { categoryName: 'Mobile Development', count: 1 },
+        { categoryName: 'Data Science', count: 1 },
+        { categoryName: 'DevOps', count: 1 },
+      ],
+      recentEnrollments: [
+        { studentName: 'John Doe', courseName: 'Introduction to React', date: new Date('2023-05-25') },
+        { studentName: 'Robert Brown', courseName: 'Flutter for Beginners', date: new Date('2023-05-20') },
+        { studentName: 'John Doe', courseName: 'Python for Data Science', date: new Date('2023-05-15') },
+        { studentName: 'Robert Brown', courseName: 'Docker Essentials', date: new Date('2023-05-10') },
+      ],
+      recentUsers,
+      upcomingBatches,
+    };
+    
+    return { success: true, data: metrics };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to fetch dashboard metrics' 
+    };
+  }
+};
+
+// Student Batch Management
+export const enrollStudentToBatch = async (studentId: number, batchId: number): Promise<{ success: boolean; error?: string }> => {
+  try {
+    // Check if student already enrolled
+    // In a real app, this would check the database
+    
+    return { success: true };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to enroll student' 
+    };
+  }
+};
+
+export const unenrollStudentFromBatch = async (studentId: number, batchId: number): Promise<{ success: boolean; error?: string }> => {
+  try {
+    return { success: true };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to unenroll student' 
+    };
+  }
+};
+
+// Student Course Management
+export const enrollStudentToCourse = async (studentId: number, courseId: number): Promise<{ success: boolean; error?: string }> => {
+  try {
+    return { success: true };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to enroll student to course' 
+    };
+  }
+};
+
+export const unenrollStudentFromCourse = async (studentId: number, courseId: number): Promise<{ success: boolean; error?: string }> => {
+  try {
+    return { success: true };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to unenroll student from course' 
+    };
+  }
 };

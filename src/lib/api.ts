@@ -1,4 +1,3 @@
-
 import { CourseCategory, Level, Course, User, Role, Batch, Resource, DashboardMetrics, Schedule } from '@/lib/types';
 
 // Check if we're in a browser environment
@@ -537,8 +536,16 @@ export const getDashboardMetrics = async (): Promise<{ success: boolean; data?: 
           { categoryName: 'Data Science', count: 2 }
         ],
         recentEnrollments: [
-          { studentName: 'John Doe', courseName: 'React Fundamentals', date: new Date().toISOString() },
-          { studentName: 'Jane Smith', courseName: 'Advanced React', date: new Date().toISOString() }
+          { 
+            studentName: 'John Doe', 
+            courseName: 'React Fundamentals', 
+            date: new Date()  // Convert to actual Date object
+          },
+          { 
+            studentName: 'Jane Smith', 
+            courseName: 'Advanced React', 
+            date: new Date()  // Convert to actual Date object
+          }
         ],
         recentUsers: [
           { ...mockUsers[0], userId: 6, fullName: 'Recent User 1', email: 'recent1@lms.com' },

@@ -27,7 +27,7 @@ else
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
       node scripts/update-package-json.js
-      node scripts/seed-database.js
+      npx prisma db seed
     fi
   fi
 fi
@@ -58,3 +58,4 @@ fi
 # Start frontend
 echo -e "${BLUE}Starting frontend server...${NC}"
 npm run dev
+

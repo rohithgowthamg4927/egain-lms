@@ -43,7 +43,7 @@ npm install prisma @prisma/client
 # Generate Prisma client
 npx prisma generate
 
-# Push schema to database
+# Push schema to database (If this fails, see Section 7)
 npx prisma db push
 ```
 
@@ -80,6 +80,37 @@ cd ..
 npm run dev
 ```
 
+## 7. Handling Database Conflicts
+
+If you encounter an error about views or rules when running `prisma db push`, like:
+
+```
+ERROR: cannot alter type of a column used by a view or rule
+DETAIL: rule _RETURN on view student_details depends on column "batch_name"
+```
+
+Use our helper script:
+
+```bash
+node scripts/fix-prisma-migration.js
+```
+
+Or manually:
+
+```bash
+# Connect to PostgreSQL using the credentials from your .env file
+psql -U your_username -d lms_db
+
+# Drop the problematic view
+DROP VIEW IF EXISTS student_details;
+
+# Exit PostgreSQL
+\q
+
+# Run Prisma db push again
+npx prisma db push
+```
+
 ## Troubleshooting
 
 If you encounter issues with Prisma:
@@ -88,4 +119,4 @@ If you encounter issues with Prisma:
 2. Verify your database credentials are correct in the .env file
 3. Try reinstalling Prisma: `npm uninstall prisma @prisma/client && npm install prisma @prisma/client`
 4. Check PostgreSQL is listening on the expected port (default 5432)
-
+5. For issues with views or dependencies, see Section 7 above

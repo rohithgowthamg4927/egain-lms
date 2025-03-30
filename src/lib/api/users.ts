@@ -22,7 +22,7 @@ export const createUser = async (userData: Partial<User> & { password?: string }
   });
 };
 
-export const updateUser = async (userId: number, userData: Partial<User>): Promise<{ success: boolean; data?: User; error?: string }> => {
+export const updateUser = async (userId: number, userData: Partial<User> & { password?: string }): Promise<{ success: boolean; data?: User; error?: string }> => {
   // Only send fields that exist in the Prisma schema
   const { fullName, email, role, password, phoneNumber, mustResetPassword } = userData;
   

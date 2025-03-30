@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 const ServerStatusCheck = () => {
   const [status, setStatus] = useState<'checking' | 'online' | 'offline'>('checking');
@@ -9,19 +10,40 @@ const ServerStatusCheck = () => {
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
+        console.log(`Checking server status at: ${apiUrl}/api/health`);
+        
         const response = await fetch(`${apiUrl}/api/health`, { 
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          // Add cache: 'no-store' to prevent caching issues
+          cache: 'no-store'
         });
         
         if (response.ok) {
+          console.log('Server is online');
           setStatus('online');
+          toast({
+            title: "Connected to backend",
+            description: "The backend server is running properly",
+            variant: "default",
+          });
         } else {
+          console.log('Server returned non-OK response:', response.status);
           setStatus('offline');
+          toast({
+            title: "Backend connection issue",
+            description: "Could not connect to the backend server. Please ensure it's running at http://localhost:3001",
+            variant: "destructive",
+          });
         }
       } catch (error) {
         console.error('Server check error:', error);
         setStatus('offline');
+        toast({
+          title: "Backend connection failed",
+          description: "Could not connect to the backend server. Please ensure it's running at http://localhost:3001",
+          variant: "destructive",
+        });
       }
     };
 

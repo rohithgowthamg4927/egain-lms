@@ -23,6 +23,11 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+interface UserProfileData {
+  user: User;
+  courses: Course[];
+}
+
 const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();

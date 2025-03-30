@@ -1,4 +1,3 @@
-
 import { CourseCategory, Level, Course, User, Role, Batch, Resource, DashboardMetrics, Schedule } from '@/lib/types';
 
 // Base API URL - Use environment variable with fallback to localhost
@@ -61,12 +60,12 @@ export const getCurrentUser = async (): Promise<{ success: boolean; data?: User;
 
 export const login = async (email: string, password: string, role: Role): Promise<{ success: boolean; data?: { user: User; token: string }; error?: string }> => {
   console.log("Calling login API with:", { email, role });
-  const response = await apiFetch('/login', {
+  const response = await apiFetch<{ user: User; token: string }>('/login', {
     method: 'POST',
     body: JSON.stringify({ email, password, role }),
   });
   
-  if (response.success && response.data?.user) {
+  if (response.success && response.data) {
     // Store the user in localStorage
     localStorage.setItem('currentUser', JSON.stringify(response.data.user));
     localStorage.setItem('authToken', response.data.token);
@@ -97,8 +96,8 @@ export const updateUser = async (userId: number, userData: Partial<User>, profil
 };
 
 // Get a specific user by ID
-export const getUserById = async (userId: number): Promise<{ success: boolean; data?: User; error?: string }> => {
-  return apiFetch(`/users/${userId}`);
+export const getUserById = async (userId: number): Promise<{ success: boolean; data?: { user: User; courses: Course[] }; error?: string }> => {
+  return apiFetch<{ user: User; courses: Course[] }>(`/users/${userId}`);
 };
 
 // Users API

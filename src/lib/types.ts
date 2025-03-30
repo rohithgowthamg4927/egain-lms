@@ -1,4 +1,3 @@
-
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -93,11 +92,11 @@ export interface Schedule {
   endTime: string;
   createdAt: string;
   updatedAt: string;
+  meetingLink?: string; // Added field for meeting link
   // Additional fields needed by components
   topic?: string;
   platform?: string;
   link?: string;
-  meetingLink?: string; // Added field for meeting link (will use this consistently)
 }
 
 export interface Resource {

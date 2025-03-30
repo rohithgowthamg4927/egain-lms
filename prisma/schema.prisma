@@ -135,6 +135,7 @@ model Schedule {
   dayOfWeek   Int      @map("day_of_week")
   startTime   DateTime @map("start_time") @db.Time()
   endTime     DateTime @map("end_time") @db.Time()
+  meetingLink String?  @map("meeting_link")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @default(now()) @map("updated_at")
   batch       Batch    @relation(fields: [batchId], references: [batchId], onDelete: Cascade)

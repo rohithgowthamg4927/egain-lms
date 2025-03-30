@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -29,7 +28,6 @@ const formSchema = z.object({
   }),
   role: z.enum(['admin', 'instructor', 'student']),
   phoneNumber: z.string().optional(),
-  address: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -54,7 +52,6 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
       email: '',
       role: Role.student,
       phoneNumber: '',
-      address: '',
       ...defaultValues
     }
   });
@@ -185,20 +182,6 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
                 <FormLabel>Phone Number</FormLabel>
                 <FormControl>
                   <Input placeholder="Enter phone number (optional)" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="address"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter address (optional)" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

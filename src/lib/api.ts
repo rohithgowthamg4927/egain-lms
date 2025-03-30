@@ -21,16 +21,30 @@ async function apiFetch<T>(
       },
     });
     
-    const data = await response.json();
-    console.log(`Response from ${url}:`, data);
-    
+    // Check if response is OK before trying to parse JSON
     if (!response.ok) {
-      console.error(`API error: ${response.status} ${response.statusText}`, data);
+      const errorText = await response.text();
+      console.error(`API error: ${response.status} ${response.statusText}`, errorText);
+      
+      let errorMessage;
+      try {
+        // Try to parse error as JSON
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.error || `API error: ${response.status} ${response.statusText}`;
+      } catch (e) {
+        // If it's not JSON, use the text directly
+        errorMessage = `API error: ${response.status} ${response.statusText}`;
+      }
+      
       return { 
         success: false, 
-        error: data.error || `API error: ${response.status} ${response.statusText}` 
+        error: errorMessage
       };
     }
+    
+    // Parse JSON response
+    const data = await response.json();
+    console.log(`Response from ${url}:`, data);
     
     return data;
   } catch (error) {

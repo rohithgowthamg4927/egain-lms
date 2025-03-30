@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -12,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getUserById, deleteUser } from '@/lib/api';
 import { User, Course, Role } from '@/lib/types';
 import { getInitials } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 
 interface UserProfileData {
   user: User;
@@ -20,46 +22,27 @@ interface UserProfileData {
 
 const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [userData, setUserData] = useState<UserProfileData | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!userId) return;
+  const { data: userData, isLoading, error } = useQuery({
+    queryKey: ['user', userId],
+    queryFn: async () => {
+      if (!userId) throw new Error('No user ID provided');
       
-      try {
-        setLoading(true);
-        const parsedUserId = parseInt(userId);
-        
-        if (isNaN(parsedUserId)) {
-          throw new Error('Invalid user ID');
-        }
-        
-        const response = await getUserById(parsedUserId);
-        
-        if (!response.success || !response.data) {
-          throw new Error(response.error || 'Failed to fetch user data');
-        }
-        
-        setUserData(response.data);
-      } catch (err) {
-        console.error('Error fetching user:', err);
-        setError(err instanceof Error ? err.message : 'An error occurred');
-        toast({
-          title: 'Error',
-          description: 'Failed to load user profile',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
+      const parsedUserId = parseInt(userId);
+      if (isNaN(parsedUserId)) throw new Error('Invalid user ID');
+      
+      const response = await getUserById(parsedUserId);
+      
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to fetch user data');
       }
-    };
-    
-    fetchUserData();
-  }, [userId, toast]);
+      
+      return response.data;
+    },
+    retry: 1,
+  });
 
   const handleDeleteUser = async () => {
     if (!userId) return;
@@ -88,19 +71,25 @@ const UserProfile = () => {
         description: 'User has been successfully deleted.',
       });
       
-      // Redirect to the appropriate page after deletion
-      navigate('/users');
+      // Redirect based on the user's role
+      if (userData?.user.role === Role.instructor) {
+        navigate('/instructors');
+      } else if (userData?.user.role === Role.student) {
+        navigate('/students');
+      } else {
+        navigate('/users');
+      }
     } catch (err) {
       console.error('Error deleting user:', err);
       toast({
         title: 'Error',
-        description: 'Failed to delete user',
+        description: err instanceof Error ? err.message : 'Failed to delete user',
         variant: 'destructive',
       });
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -119,7 +108,7 @@ const UserProfile = () => {
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
           <AlertCircle className="h-16 w-16 text-destructive" />
           <h1 className="text-2xl font-bold">Error Loading Profile</h1>
-          <p className="text-muted-foreground">{error || 'User data not found'}</p>
+          <p className="text-muted-foreground">{error instanceof Error ? error.message : 'User data not found'}</p>
           <Button onClick={() => navigate(-1)}>Go Back</Button>
         </div>
       </Layout>

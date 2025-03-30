@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
@@ -96,6 +95,10 @@ app.get('/api/users/:userId', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     
+    if (isNaN(userId)) {
+      return res.status(400).json({ success: false, error: 'Invalid user ID' });
+    }
+    
     const user = await prisma.user.findUnique({
       where: { userId },
       include: { profilePicture: true }
@@ -118,15 +121,11 @@ app.get('/api/users/:userId', async (req, res) => {
       });
       courses = studentCourses.map(sc => sc.course);
     } else if (user.role === 'instructor') {
-      const instructorCourses = await prisma.instructorCourse.findMany({
-        where: { instructorId: userId },
-        include: {
-          course: {
-            include: { category: true }
-          }
-        }
+      const instructorCourses = await prisma.course.findMany({
+        where: { batches: { some: { instructorId: userId } } },
+        include: { category: true }
       });
-      courses = instructorCourses.map(ic => ic.course);
+      courses = instructorCourses;
     }
     
     res.status(200).json({ 

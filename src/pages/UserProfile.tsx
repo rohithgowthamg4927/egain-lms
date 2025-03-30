@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -38,18 +39,24 @@ const UserProfile = () => {
       if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to fetch user data');
       }
-      
-      // Transform the response into the expected UserProfileData shape if needed
-      if ('user' in response.data && 'courses' in response.data) {
-        // Response already has the correct shape
-        return response.data as UserProfileData;
-      } else {
-        // Response is just a User object, transform it to match UserProfileData
-        return {
-          user: response.data as User,
-          courses: []
-        } as UserProfileData;
+
+      // Check if the response data has the correct shape
+      if (response.data && typeof response.data === 'object') {
+        // If response already contains user and courses properties
+        if ('user' in response.data && 'courses' in response.data) {
+          return response.data as UserProfileData;
+        } 
+        // If response is just a User object
+        else {
+          // Create a UserProfileData object with the User and empty courses array
+          return {
+            user: response.data as User,
+            courses: []
+          } as UserProfileData;
+        }
       }
+      
+      throw new Error('Invalid response format from API');
     },
     retry: 2,
     staleTime: 0,

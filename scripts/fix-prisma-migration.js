@@ -15,7 +15,7 @@ console.log('🔄 Starting Prisma migration fix process...');
 
 try {
   // Connect to PostgreSQL and drop the views
-  console.log('🗑️ Dropping the student_details and instructor_details views...');
+  console.log('🗑️ Dropping the student_details, instructor_details, and course_details views...');
   
   // Get database credentials from .env
   const envPath = path.join(__dirname, '..', '.env');
@@ -30,7 +30,7 @@ try {
   
   // Create SQL file to drop views
   const sqlPath = path.join(__dirname, 'drop-views.sql');
-  fs.writeFileSync(sqlPath, 'DROP VIEW IF EXISTS student_details;\nDROP VIEW IF EXISTS instructor_details;');
+  fs.writeFileSync(sqlPath, 'DROP VIEW IF EXISTS student_details;\nDROP VIEW IF EXISTS instructor_details;\nDROP VIEW IF EXISTS course_details;');
   
   // Execute SQL
   const psqlCommand = `PGPASSWORD=${password} psql -h ${host} -p ${port} -U ${user} -d ${database} -f ${sqlPath}`;
@@ -44,7 +44,7 @@ try {
   fs.unlinkSync(sqlPath);
   
   console.log('✅ Database schema updated successfully!');
-  console.log('⚠️ Note: You may need to recreate the student_details and instructor_details views manually.');
+  console.log('⚠️ Note: You may need to recreate the student_details, instructor_details, and course_details views manually.');
 } catch (error) {
   console.error('❌ Error during migration fix:', error.message);
   process.exit(1);

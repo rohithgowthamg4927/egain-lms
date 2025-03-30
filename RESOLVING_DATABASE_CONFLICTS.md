@@ -18,7 +18,14 @@ ERROR: cannot alter type of a column used by a view or rule
 DETAIL: rule _RETURN on view instructor_details depends on column "batch_name"
 ```
 
-This occurs because there are existing views called `student_details` or `instructor_details` in your database that depend on the `batch_name` column, and Prisma cannot alter this column because of the dependency.
+or
+
+```
+ERROR: cannot alter type of a column used by a view or rule
+DETAIL: rule _RETURN on view course_details depends on column "batch_name"
+```
+
+This occurs because there are existing views called `student_details`, `instructor_details`, or `course_details` in your database that depend on the `batch_name` column, and Prisma cannot alter this column because of the dependency.
 
 ## Solution Options
 
@@ -32,7 +39,7 @@ node scripts/fix-prisma-migration.js
 
 This script will:
 1. Connect to your PostgreSQL database using credentials from your .env file
-2. Drop the `student_details` and `instructor_details` views
+2. Drop the `student_details`, `instructor_details`, and `course_details` views
 3. Run `prisma db push` to update your schema
 4. Inform you that you'll need to recreate the views if needed
 
@@ -47,6 +54,7 @@ psql -U your_username -d lms_db
 # Drop the views
 DROP VIEW IF EXISTS student_details;
 DROP VIEW IF EXISTS instructor_details;
+DROP VIEW IF EXISTS course_details;
 
 # Exit PostgreSQL
 \q
@@ -97,6 +105,21 @@ SELECT
 FROM batches b
 JOIN users u ON b.instructor_id = u.user_id
 JOIN courses c ON b.course_id = c.course_id;
+
+CREATE VIEW course_details AS
+SELECT
+  -- Add the original view definition here 
+  -- Example (your actual view might be different):
+  c.course_id,
+  c.course_name,
+  cc.category_name,
+  COUNT(DISTINCT sb.student_id) as student_count,
+  COUNT(DISTINCT b.batch_id) as batch_count
+FROM courses c
+LEFT JOIN course_categories cc ON c.category_id = cc.category_id
+LEFT JOIN batches b ON c.course_id = b.course_id
+LEFT JOIN student_batches sb ON b.batch_id = sb.batch_id
+GROUP BY c.course_id, c.course_name, cc.category_name;
 ```
 
 ## Prevention

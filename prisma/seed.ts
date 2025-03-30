@@ -1,7 +1,19 @@
-
-import { PrismaClient, Role, Level } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
+// Define the enums directly to match the schema
+enum Role {
+  admin = 'admin',
+  instructor = 'instructor',
+  student = 'student'
+}
+
+enum Level {
+  beginner = 'beginner',
+  intermediate = 'intermediate',
+  advanced = 'advanced'
+}
 
 async function main() {
   // Clean up existing data

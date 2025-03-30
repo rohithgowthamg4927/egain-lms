@@ -63,8 +63,8 @@ const Students = () => {
   };
   
   const handleViewStudent = (student: User) => {
-    console.log(`Navigating to student profile with ID: ${student.userId}`);
-    navigate(`/students/${student.userId}`);
+    console.log(`Navigating to user profile with ID: ${student.userId}`);
+    navigate(`/users/${student.userId}`);
   };
 
   const handleEditStudent = (student: User) => {

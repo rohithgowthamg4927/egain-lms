@@ -155,7 +155,7 @@ const Instructors = () => {
     {
       label: 'View Profile',
       onClick: (instructor: User) => {
-        navigate(`/instructors/${instructor.userId}`);
+        navigate(`/users/${instructor.userId}`);
       },
       icon: <Eye className="h-4 w-4" />,
     },

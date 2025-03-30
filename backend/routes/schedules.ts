@@ -1,5 +1,5 @@
 
-import express, { Request, Response } from 'express';
+import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler';
 
@@ -7,7 +7,7 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 // Get all schedules
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (req, res) => {
   try {
     const batchId = req.query.batchId ? parseInt(req.query.batchId as string) : undefined;
     
@@ -23,7 +23,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // Create a schedule
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', async (req, res) => {
   try {
     const scheduleData = req.body;
     const newSchedule = await prisma.schedule.create({

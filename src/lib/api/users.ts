@@ -46,7 +46,7 @@ export const updateUser = async (userId: number, userData: Partial<User> & { pas
 // Get a specific user by ID
 export const getUserById = async (userId: number): Promise<{ success: boolean; data?: User; error?: string }> => {
   console.log(`Calling getUserById API with userId: ${userId}`);
-  // Fix the endpoint path to match the backend implementation
+  // Make sure we're using the right endpoint that matches the backend
   return apiFetch<User>(`/users/${userId}`);
 };
 

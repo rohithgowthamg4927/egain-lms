@@ -14,12 +14,6 @@ echo "This script will help you start both the backend and frontend"
 echo -e "${BLUE}Checking dependencies...${NC}"
 npm install
 
-# Make sure ts-node is installed
-if ! npm list ts-node --depth=0 2>/dev/null | grep -q ts-node; then
-  echo -e "${BLUE}Installing ts-node...${NC}"
-  npm install ts-node --save-dev
-fi
-
 # Check if database exists and run setup if needed
 echo -e "${BLUE}Checking database setup...${NC}"
 if npx prisma db pull --print >/dev/null 2>&1; then
@@ -42,61 +36,28 @@ else
   fi
 fi
 
-# Create a tsconfig for backend to handle ESM
-echo -e "${BLUE}Setting up backend TypeScript configuration...${NC}"
-cat > backend/tsconfig.json << EOF
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "esModuleInterop": true,
-    "outDir": "dist",
-    "strict": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules"]
-}
-EOF
-
 # Start backend in a new terminal
 echo -e "${BLUE}Starting backend server...${NC}"
 if [[ "$OSTYPE" == "darwin"* ]]; then
   # macOS
-  osascript -e 'tell app "Terminal" to do script "cd \"'$(pwd)'\" && cd backend && NODE_OPTIONS=\"--loader ts-node/esm\" node --experimental-specifier-resolution=node server.ts"'
+  osascript -e 'tell app "Terminal" to do script "cd \"'$(pwd)'\" && cd backend && npx ts-node api.ts"'
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   # Linux
   if command -v gnome-terminal &> /dev/null; then
-    gnome-terminal -- bash -c "cd \"$(pwd)/backend\" && NODE_OPTIONS=\"--loader ts-node/esm\" node --experimental-specifier-resolution=node server.ts; exec bash"
+    gnome-terminal -- bash -c "cd \"$(pwd)/backend\" && npx ts-node api.ts; exec bash"
   elif command -v xterm &> /dev/null; then
-    xterm -e "cd \"$(pwd)/backend\" && NODE_OPTIONS=\"--loader ts-node/esm\" node --experimental-specifier-resolution=node server.ts; exec bash" &
+    xterm -e "cd \"$(pwd)/backend\" && npx ts-node api.ts; exec bash" &
   else
     echo -e "${RED}Could not find a suitable terminal. Please start the backend manually in another terminal:${NC}"
-    echo "cd \"$(pwd)/backend\" && NODE_OPTIONS=\"--loader ts-node/esm\" node --experimental-specifier-resolution=node server.ts"
+    echo "cd \"$(pwd)/backend\" && npx ts-node api.ts"
   fi
 elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
   # Windows with Git Bash
-  start cmd.exe /k "cd /d \"$(pwd)\\backend\" && NODE_OPTIONS=\"--loader ts-node/esm\" node --experimental-specifier-resolution=node server.ts"
+  start cmd.exe /k "cd /d \"$(pwd)\\backend\" && npx ts-node api.ts"
 else
   echo -e "${RED}Unknown operating system. Please start the backend manually in another terminal:${NC}"
-  echo "cd \"$(pwd)/backend\" && NODE_OPTIONS=\"--loader ts-node/esm\" node --experimental-specifier-resolution=node server.ts"
+  echo "cd \"$(pwd)/backend\" && npx ts-node api.ts"
 fi
-
-# Create a package.json in the backend directory to specify it uses ES modules
-echo -e "${BLUE}Creating backend package.json for ESM support...${NC}"
-cat > backend/package.json << EOF
-{
-  "name": "lms-backend",
-  "version": "1.0.0",
-  "description": "LMS Backend",
-  "type": "module",
-  "scripts": {
-    "start": "NODE_OPTIONS=\"--loader ts-node/esm\" node --experimental-specifier-resolution=node server.ts"
-  }
-}
-EOF
 
 # Start frontend
 echo -e "${BLUE}Starting frontend server...${NC}"

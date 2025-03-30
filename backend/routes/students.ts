@@ -1,23 +1,20 @@
 
-import express, { Request, Response } from 'express';
+import express from 'express';
 import { PrismaClient } from '@prisma/client';
-import { handleApiError } from '../utils/errorHandler.js';
+import { handleApiError } from '../utils/errorHandler';
 
 const batchRouter = express.Router();
 const courseRouter = express.Router();
 const prisma = new PrismaClient();
 
 // Student-Batch Management
-batchRouter.post('/', async (req: Request, res: Response) => {
+batchRouter.post('/', async (req, res) => {
   try {
     const { studentId, batchId } = req.body;
     
     // Check if already enrolled
     const exists = await prisma.studentBatch.findFirst({
-      where: { 
-        studentId: Number(studentId), 
-        batchId: Number(batchId) 
-      }
+      where: { studentId, batchId }
     });
     
     if (exists) {
@@ -28,10 +25,7 @@ batchRouter.post('/', async (req: Request, res: Response) => {
     }
     
     const enrollment = await prisma.studentBatch.create({
-      data: { 
-        studentId: Number(studentId), 
-        batchId: Number(batchId) 
-      }
+      data: { studentId, batchId }
     });
     
     res.status(201).json({ success: true, data: enrollment });
@@ -40,7 +34,7 @@ batchRouter.post('/', async (req: Request, res: Response) => {
   }
 });
 
-batchRouter.delete('/:studentId/:batchId', async (req: Request, res: Response) => {
+batchRouter.delete('/:studentId/:batchId', async (req, res) => {
   try {
     const studentId = parseInt(req.params.studentId);
     const batchId = parseInt(req.params.batchId);
@@ -56,16 +50,13 @@ batchRouter.delete('/:studentId/:batchId', async (req: Request, res: Response) =
 });
 
 // Student-Course Management
-courseRouter.post('/', async (req: Request, res: Response) => {
+courseRouter.post('/', async (req, res) => {
   try {
     const { studentId, courseId } = req.body;
     
     // Check if already enrolled
     const exists = await prisma.studentCourse.findFirst({
-      where: { 
-        studentId: Number(studentId),
-        courseId: Number(courseId)
-      }
+      where: { studentId, courseId }
     });
     
     if (exists) {
@@ -76,10 +67,7 @@ courseRouter.post('/', async (req: Request, res: Response) => {
     }
     
     const enrollment = await prisma.studentCourse.create({
-      data: { 
-        studentId: Number(studentId),
-        courseId: Number(courseId)
-      }
+      data: { studentId, courseId }
     });
     
     res.status(201).json({ success: true, data: enrollment });
@@ -88,7 +76,7 @@ courseRouter.post('/', async (req: Request, res: Response) => {
   }
 });
 
-courseRouter.delete('/:studentId/:courseId', async (req: Request, res: Response) => {
+courseRouter.delete('/:studentId/:courseId', async (req, res) => {
   try {
     const studentId = parseInt(req.params.studentId);
     const courseId = parseInt(req.params.courseId);

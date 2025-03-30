@@ -1,13 +1,13 @@
 
-import express, { Request, Response } from 'express';
+import express from 'express';
 import { PrismaClient } from '@prisma/client';
-import { handleApiError } from '../utils/errorHandler.js';
+import { handleApiError } from '../utils/errorHandler';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 // Get all courses
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (req, res) => {
   try {
     const courses = await prisma.course.findMany({
       include: {
@@ -34,7 +34,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // Get a specific course
-router.get('/:courseId', async (req: Request, res: Response) => {
+router.get('/:courseId', async (req, res) => {
   try {
     const courseId = parseInt(req.params.courseId);
     
@@ -69,7 +69,7 @@ router.get('/:courseId', async (req: Request, res: Response) => {
 });
 
 // Create a course
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', async (req, res) => {
   try {
     console.log("Creating course with data:", req.body);
     const courseData = req.body;
@@ -95,8 +95,7 @@ router.post('/', async (req: Request, res: Response) => {
     const newCourse = await prisma.course.create({
       data: {
         ...courseData,
-        categoryId: categoryId, // Ensure categoryId is a number
-        courseLevel: courseData.courseLevel as 'beginner' | 'intermediate' | 'advanced'
+        categoryId: categoryId // Ensure categoryId is a number
       },
       include: { category: true }
     });
@@ -111,15 +110,10 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 // Update course
-router.put('/:courseId', async (req: Request, res: Response) => {
+router.put('/:courseId', async (req, res) => {
   try {
     const courseId = parseInt(req.params.courseId);
     const courseData = req.body;
-    
-    // If courseLevel is being updated, ensure it's properly typed
-    if (courseData.courseLevel) {
-      courseData.courseLevel = courseData.courseLevel as 'beginner' | 'intermediate' | 'advanced';
-    }
     
     const updatedCourse = await prisma.course.update({
       where: { courseId },

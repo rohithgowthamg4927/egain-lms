@@ -16,7 +16,15 @@ import UserDetail from './pages/UserDetail';
 import UserProfile from './pages/UserProfile';
 import NotFound from './pages/NotFound';
 
-const queryClient = new QueryClient();
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   return (

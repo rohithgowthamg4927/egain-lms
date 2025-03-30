@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Role } from '@/lib/types';
 import { UserPlus } from 'lucide-react';
+import { createUser } from '@/lib/api';
 
 interface LocationState {
   role?: Role;
@@ -35,11 +36,20 @@ const AddUser = () => {
     setIsSubmitting(true);
     
     try {
-      // In a real app, you would make an API call to create the user
-      console.log('Creating user:', data);
+      // Make a real API call to create the user
+      const response = await createUser({
+        fullName: data.fullName,
+        email: data.email,
+        password: data.password,
+        role: data.role,
+        phoneNumber: data.phoneNumber,
+        bio: data.bio,
+        mustResetPassword: true
+      });
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to create user');
+      }
       
       toast({
         title: 'User created successfully',
@@ -61,7 +71,7 @@ const AddUser = () => {
       console.error('Error creating user:', error);
       toast({
         title: 'Error creating user',
-        description: 'There was an error creating the user. Please try again.',
+        description: error instanceof Error ? error.message : 'There was an error creating the user. Please try again.',
         variant: 'destructive',
       });
     } finally {

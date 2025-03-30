@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -45,7 +44,6 @@ interface UserFormProps {
 export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: UserFormProps) {
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState(generateRandomPassword());
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
@@ -96,34 +94,13 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
   };
 
   const handleSubmit = async (values: FormValues) => {
-    let photoUrl;
-    
-    if (profilePicture) {
-      try {
-        setIsUploading(true);
-        // For now, we'll use a fake user ID of 999 - in a real app, this would be the actual user ID after creation
-        photoUrl = await uploadProfilePicture(profilePicture, 999);
-        toast({
-          title: 'Upload successful',
-          description: 'Profile picture uploaded to S3',
-        });
-      } catch (error) {
-        console.error('Error uploading profile picture:', error);
-        toast({
-          title: 'Upload failed',
-          description: 'Failed to upload profile picture',
-          variant: 'destructive',
-        });
-        return;
-      } finally {
-        setIsUploading(false);
-      }
-    }
+    // For now, we're not uploading profile pictures to S3
+    // In a real app, we'd implement this feature properly
     
     onSubmit({
       ...values,
       password: generatedPassword,
-      photoUrl
+      photoUrl: profilePictureUrl || undefined
     });
   };
 
@@ -304,13 +281,13 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
 
         <Button 
           type="submit" 
-          disabled={isSubmitting || isUploading}
+          disabled={isSubmitting}
           className="w-full md:w-auto"
         >
-          {(isSubmitting || isUploading) && (
+          {(isSubmitting) && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
-          {isUploading ? 'Uploading...' : isSubmitting ? 'Saving...' : 'Add User'}
+          {isSubmitting ? 'Saving...' : 'Add User'}
         </Button>
       </form>
     </Form>

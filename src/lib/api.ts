@@ -1,3 +1,4 @@
+
 import { CourseCategory, Level, Course, User, Role, Batch, Resource, DashboardMetrics, Schedule } from '@/lib/types';
 
 // Base API URL - Use environment variable with fallback to localhost
@@ -55,7 +56,7 @@ export const getCurrentUser = async (): Promise<{ success: boolean; data?: User;
   }
   
   // Fall back to API call
-  return apiFetch('/users/current');
+  return apiFetch<User>('/users/current');
 };
 
 export const login = async (email: string, password: string, role: Role): Promise<{ success: boolean; data?: { user: User; token: string }; error?: string }> => {
@@ -81,15 +82,15 @@ export const logout = async (): Promise<{ success: boolean }> => {
 };
 
 // User Management API
-export const createUser = async (userData: Partial<User>, profilePicture?: File): Promise<{ success: boolean; data?: User; error?: string }> => {
-  return apiFetch('/users', {
+export const createUser = async (userData: Partial<User>): Promise<{ success: boolean; data?: User; error?: string }> => {
+  return apiFetch<User>('/users', {
     method: 'POST',
     body: JSON.stringify(userData),
   });
 };
 
-export const updateUser = async (userId: number, userData: Partial<User>, profilePicture?: File): Promise<{ success: boolean; data?: User; error?: string }> => {
-  return apiFetch(`/users/${userId}`, {
+export const updateUser = async (userId: number, userData: Partial<User>): Promise<{ success: boolean; data?: User; error?: string }> => {
+  return apiFetch<User>(`/users/${userId}`, {
     method: 'PUT',
     body: JSON.stringify(userData),
   });
@@ -101,107 +102,58 @@ export const getUserById = async (userId: number): Promise<{ success: boolean; d
 };
 
 // Users API
-export const fetchUsers = async (role?: Role): Promise<User[]> => {
-  const endpoint = role ? `/users?role=${role}` : '/users';
-  const response = await apiFetch<User[]>(endpoint);
-  
-  if (response.success && response.data) {
-    return response.data;
-  }
-  
-  console.error('Error fetching users:', response.error);
-  return [];
-};
-
-// Alias for fetchUsers to match usage in components
 export const getUsers = async (role?: Role): Promise<{ success: boolean; data?: User[]; error?: string }> => {
   const endpoint = role ? `/users?role=${role}` : '/users';
-  return apiFetch(endpoint);
+  return apiFetch<User[]>(endpoint);
 };
 
 // Course Categories API
-export const fetchCourseCategories = async (): Promise<CourseCategory[]> => {
-  const response = await apiFetch<CourseCategory[]>('/categories');
-  
-  if (response.success && response.data) {
-    return response.data;
-  }
-  
-  console.error('Error fetching categories:', response.error);
-  return [];
-};
-
 export const getCategories = async (): Promise<{ success: boolean; data?: CourseCategory[]; error?: string }> => {
-  return apiFetch('/categories');
+  return apiFetch<CourseCategory[]>('/categories');
 };
 
 export const createCategory = async (categoryData: Partial<CourseCategory>): Promise<{ success: boolean; data?: CourseCategory; error?: string }> => {
-  return apiFetch('/categories', {
+  return apiFetch<CourseCategory>('/categories', {
     method: 'POST',
     body: JSON.stringify(categoryData),
   });
 };
 
 // Courses API
-export const fetchCourses = async (): Promise<Course[]> => {
-  const response = await apiFetch<Course[]>('/courses');
-  
-  if (response.success && response.data) {
-    return response.data;
-  }
-  
-  console.error('Error fetching courses:', response.error);
-  return [];
-};
-
-// Alias for fetchCourses to match usage in components
 export const getCourses = async (): Promise<{ success: boolean; data?: Course[]; error?: string }> => {
-  return apiFetch('/courses');
+  return apiFetch<Course[]>('/courses');
 };
 
 // Fetch a single course by ID
 export const getCourseById = async (courseId: number): Promise<{ success: boolean; data?: Course; error?: string }> => {
-  return apiFetch(`/courses/${courseId}`);
+  return apiFetch<Course>(`/courses/${courseId}`);
 };
 
 // Batches API
-export const fetchBatches = async (courseId?: number): Promise<Batch[]> => {
-  const endpoint = courseId ? `/batches?courseId=${courseId}` : '/batches';
-  const response = await apiFetch<Batch[]>(endpoint);
-  
-  if (response.success && response.data) {
-    return response.data;
-  }
-  
-  console.error('Error fetching batches:', response.error);
-  return [];
-};
-
-// Alias for fetchBatches to match usage in components
 export const getBatches = async (courseId?: number): Promise<{ success: boolean; data?: Batch[]; error?: string }> => {
   const endpoint = courseId ? `/batches?courseId=${courseId}` : '/batches';
-  return apiFetch(endpoint);
+  return apiFetch<Batch[]>(endpoint);
 };
 
 // Get a specific batch by ID
 export const getBatchById = async (batchId: number): Promise<{ success: boolean; data?: Batch; error?: string }> => {
-  return apiFetch(`/batches/${batchId}`);
+  return apiFetch<Batch>(`/batches/${batchId}`);
 };
 
 // Dashboard metrics
 export const getDashboardMetrics = async (): Promise<{ success: boolean; data?: DashboardMetrics; error?: string }> => {
-  return apiFetch('/dashboard-metrics');
+  return apiFetch<DashboardMetrics>('/dashboard-metrics');
 };
 
-export const createCourse = async (courseData: Partial<Course>, thumbnail?: File): Promise<{ success: boolean; data?: Course; error?: string }> => {
-  return apiFetch('/courses', {
+export const createCourse = async (courseData: Partial<Course>): Promise<{ success: boolean; data?: Course; error?: string }> => {
+  return apiFetch<Course>('/courses', {
     method: 'POST',
     body: JSON.stringify(courseData),
   });
 };
 
 export const createBatch = async (batchData: Partial<Batch>): Promise<{ success: boolean; data?: Batch; error?: string }> => {
-  return apiFetch('/batches', {
+  return apiFetch<Batch>('/batches', {
     method: 'POST',
     body: JSON.stringify(batchData),
   });
@@ -210,11 +162,11 @@ export const createBatch = async (batchData: Partial<Batch>): Promise<{ success:
 // Schedules API
 export const getSchedules = async (batchId?: number): Promise<{ success: boolean; data?: Schedule[]; error?: string }> => {
   const endpoint = batchId ? `/schedules?batchId=${batchId}` : '/schedules';
-  return apiFetch(endpoint);
+  return apiFetch<Schedule[]>(endpoint);
 };
 
 export const createSchedule = async (scheduleData: Partial<Schedule>): Promise<{ success: boolean; data?: Schedule; error?: string }> => {
-  return apiFetch('/schedules', {
+  return apiFetch<Schedule>('/schedules', {
     method: 'POST',
     body: JSON.stringify(scheduleData),
   });
@@ -223,11 +175,11 @@ export const createSchedule = async (scheduleData: Partial<Schedule>): Promise<{
 // Resources API
 export const getResources = async (courseId?: number): Promise<{ success: boolean; data?: Resource[]; error?: string }> => {
   const endpoint = courseId ? `/resources?courseId=${courseId}` : '/resources';
-  return apiFetch(endpoint);
+  return apiFetch<Resource[]>(endpoint);
 };
 
 export const createResource = async (resourceData: Partial<Resource>): Promise<{ success: boolean; data?: Resource; error?: string }> => {
-  return apiFetch('/resources', {
+  return apiFetch<Resource>('/resources', {
     method: 'POST',
     body: JSON.stringify(resourceData),
   });

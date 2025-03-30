@@ -126,7 +126,7 @@ const Batches = () => {
     {
       label: 'View',
       onClick: (batch: Batch) => {
-        window.location.href = `/batches/${batch.id}`;
+        window.location.href = `/batches/${batch.batchId}`;
       },
       icon: <Eye className="h-4 w-4" />,
     },
@@ -234,7 +234,7 @@ const Batches = () => {
                 <SelectContent>
                   <SelectItem value="all">All Courses</SelectItem>
                   {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id.toString()}>
+                    <SelectItem key={course.courseId} value={course.courseId.toString()}>
                       {course.courseName}
                     </SelectItem>
                   ))}

@@ -176,7 +176,7 @@ const Courses = () => {
     {
       label: 'View',
       onClick: (course: Course) => {
-        navigate(`/courses/${course.id}`);
+        navigate(`/courses/${course.courseId}`);
       },
       icon: <Eye className="h-4 w-4" />,
     },
@@ -240,7 +240,7 @@ const Courses = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id.toString()}>
+                        <SelectItem key={category.categoryId} value={category.categoryId.toString()}>
                           {category.categoryName}
                         </SelectItem>
                       ))}
@@ -302,7 +302,7 @@ const Courses = () => {
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
                   {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
+                    <SelectItem key={category.categoryId} value={category.categoryId.toString()}>
                       {category.categoryName}
                     </SelectItem>
                   ))}

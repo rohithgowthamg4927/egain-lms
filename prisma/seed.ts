@@ -57,7 +57,6 @@ async function main() {
         password: 'Debajit123',
         role: Role.instructor,
         phoneNumber: '+1987654321',
-        bio: 'AWS expert with 10 years of experience',
         mustResetPassword: true
       }
     }),
@@ -68,7 +67,6 @@ async function main() {
         password: 'Password123',
         role: Role.instructor,
         phoneNumber: '+1122334455',
-        bio: 'K8s specialist focusing on Flutter and React Native',
         mustResetPassword: true
       }
     })

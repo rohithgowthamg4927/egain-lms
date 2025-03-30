@@ -1,4 +1,3 @@
-
 import { CourseCategory, Level, Course, User, Role, Batch, Resource, DashboardMetrics, Schedule } from '@/lib/types';
 
 // Base API URL - Use environment variable with fallback to localhost
@@ -146,6 +145,23 @@ export const getCourseById = async (courseId: number): Promise<{ success: boolea
   return apiFetch<Course>(`/courses/${courseId}`);
 };
 
+// Course creation API
+export const createCourse = async (courseData: Partial<Course>): Promise<{ success: boolean; data?: Course; error?: string }> => {
+  console.log("Creating course with data:", courseData);
+  return apiFetch<Course>('/courses', {
+    method: 'POST',
+    body: JSON.stringify({
+      courseName: courseData.courseName,
+      categoryId: courseData.categoryId,
+      courseLevel: courseData.courseLevel,
+      description: courseData.description,
+      isPublished: courseData.isPublished !== undefined ? courseData.isPublished : true,
+      duration: courseData.duration,
+      thumbnailUrl: courseData.thumbnailUrl
+    }),
+  });
+};
+
 // Batches API
 export const getBatches = async (courseId?: number): Promise<{ success: boolean; data?: Batch[]; error?: string }> => {
   const endpoint = courseId ? `/batches?courseId=${courseId}` : '/batches';
@@ -162,14 +178,8 @@ export const getDashboardMetrics = async (): Promise<{ success: boolean; data?: 
   return apiFetch<DashboardMetrics>('/dashboard-metrics');
 };
 
-export const createCourse = async (courseData: Partial<Course>): Promise<{ success: boolean; data?: Course; error?: string }> => {
-  return apiFetch<Course>('/courses', {
-    method: 'POST',
-    body: JSON.stringify(courseData),
-  });
-};
-
 export const createBatch = async (batchData: Partial<Batch>): Promise<{ success: boolean; data?: Batch; error?: string }> => {
+  console.log("Creating batch with data:", batchData);
   return apiFetch<Batch>('/batches', {
     method: 'POST',
     body: JSON.stringify(batchData),

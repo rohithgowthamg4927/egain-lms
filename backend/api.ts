@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
@@ -302,14 +301,40 @@ app.get('/api/courses/:courseId', async (req, res) => {
 // Create a course
 app.post('/api/courses', async (req, res) => {
   try {
+    console.log("Creating course with data:", req.body);
     const courseData = req.body;
+    
+    // Validate that the required fields exist
+    if (!courseData.courseName || !courseData.categoryId || !courseData.courseLevel) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Required fields missing: courseName, categoryId, and courseLevel are required' 
+      });
+    }
+    
+    // Make sure categoryId is a number
+    const categoryId = parseInt(courseData.categoryId);
+    if (isNaN(categoryId)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid categoryId - must be a number' 
+      });
+    }
+    
+    // Create the course
     const newCourse = await prisma.course.create({
-      data: courseData,
+      data: {
+        ...courseData,
+        categoryId: categoryId // Ensure categoryId is a number
+      },
       include: { category: true }
     });
     
+    console.log("Course created successfully:", newCourse);
+    
     res.status(201).json({ success: true, data: newCourse });
   } catch (error) {
+    console.error("Error creating course:", error);
     handleApiError(res, error);
   }
 });
@@ -396,7 +421,19 @@ app.get('/api/batches/:batchId', async (req, res) => {
 // Create a batch
 app.post('/api/batches', async (req, res) => {
   try {
+    console.log("Creating batch with data:", req.body);
     const batchData = req.body;
+    
+    // Validate that the required fields exist
+    if (!batchData.batchName || !batchData.courseId || !batchData.instructorId || 
+        !batchData.startDate || !batchData.endDate) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Required fields missing for batch creation' 
+      });
+    }
+    
+    // Create the batch
     const newBatch = await prisma.batch.create({
       data: batchData,
       include: {
@@ -405,8 +442,11 @@ app.post('/api/batches', async (req, res) => {
       }
     });
     
+    console.log("Batch created successfully:", newBatch);
+    
     res.status(201).json({ success: true, data: newBatch });
   } catch (error) {
+    console.error("Error creating batch:", error);
     handleApiError(res, error);
   }
 });

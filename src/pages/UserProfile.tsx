@@ -40,6 +40,7 @@ const UserProfile = () => {
         throw new Error(response.error || 'Failed to fetch user data');
       }
       
+      // Cast response.data to UserProfileData since we expect it to have the correct shape
       return response.data as UserProfileData;
     },
     retry: 2,

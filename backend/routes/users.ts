@@ -2,175 +2,159 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler';
+import bcrypt from 'bcrypt';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Get all users
+// Get all users or filtered by role
 router.get('/', async (req, res) => {
   try {
-    const role = req.query.role as string | undefined;
-    let users;
+    const { role } = req.query;
     
-    if (role) {
-      users = await prisma.user.findMany({
-        where: { role: role as any },
-        include: { profilePicture: true }
-      });
-    } else {
-      users = await prisma.user.findMany({
-        include: { profilePicture: true }
-      });
-    }
-    
-    res.status(200).json({ success: true, data: users });
-  } catch (error) {
-    handleApiError(res, error);
-  }
-});
-
-// Current user API
-router.get('/current', async (req, res) => {
-  try {
-    // In a real app, you'd get this from the JWT token
-    // Here we're just returning the first admin for demonstration
-    const user = await prisma.user.findFirst({
-      where: { role: 'admin' },
-      include: { profilePicture: true }
+    const users = await prisma.user.findMany({
+      where: role ? { role: role.toString() } : {},
+      include: {
+        profilePicture: true
+      }
     });
     
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'No user found' });
-    }
-    
-    res.status(200).json({ success: true, data: user });
+    res.json({ success: true, data: users });
   } catch (error) {
     handleApiError(res, error);
   }
 });
 
-// Individual User API
-router.get('/:userId', async (req, res) => {
+// Get user by ID with their courses
+router.get('/:id', async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
-    
-    if (isNaN(userId)) {
-      return res.status(400).json({ success: false, error: 'Invalid user ID' });
-    }
+    const userId = parseInt(req.params.id);
     
     const user = await prisma.user.findUnique({
       where: { userId },
-      include: { profilePicture: true }
+      include: {
+        profilePicture: true
+      }
     });
     
     if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found' });
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
+      });
     }
     
-    // Get courses for this user based on role
+    // Get courses based on user role
     let courses = [];
+    
     if (user.role === 'student') {
+      // Get courses the student is enrolled in
       const studentCourses = await prisma.studentCourse.findMany({
         where: { studentId: userId },
-        include: {
-          course: {
-            include: { category: true }
-          }
-        }
+        include: { course: true }
       });
+      
       courses = studentCourses.map(sc => sc.course);
     } else if (user.role === 'instructor') {
-      // For instructors, get courses from batches they teach
+      // Get courses the instructor teaches
       const batches = await prisma.batch.findMany({
         where: { instructorId: userId },
-        include: {
-          course: {
-            include: { category: true }
-          }
-        }
+        include: { course: true }
       });
-      // Extract unique courses (an instructor might have multiple batches for the same course)
+      
+      // Extract unique courses
       const courseMap = new Map();
       batches.forEach(batch => {
-        if (!courseMap.has(batch.course.courseId)) {
+        if (batch.course && !courseMap.has(batch.course.courseId)) {
           courseMap.set(batch.course.courseId, batch.course);
         }
       });
+      
       courses = Array.from(courseMap.values());
     }
     
-    res.status(200).json({ 
+    res.json({ 
       success: true, 
-      data: { 
-        user,
-        courses
-      } 
+      data: { user, courses } 
     });
   } catch (error) {
     handleApiError(res, error);
   }
 });
 
-// Create User API
+// Create new user
 router.post('/', async (req, res) => {
   try {
-    const userData = req.body;
+    const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = req.body;
     
-    // Check if email is already in use
-    const existingUser = await prisma.user.findFirst({ 
-      where: { email: userData.email } 
+    // Check if user already exists
+    const existingUser = await prisma.user.findFirst({
+      where: { email }
     });
     
     if (existingUser) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Email already in use' 
+      return res.status(400).json({
+        success: false,
+        error: 'A user with this email already exists'
       });
     }
     
-    // Extract fields that are in the User model
-    const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = userData;
-    
-    console.log('Creating user with data:', {
-      fullName,
-      email,
-      role,
-      phoneNumber,
-      address,
-      password: '[REDACTED]',
-      mustResetPassword
-    });
-    
-    // Create the new user with only the valid fields
-    const newUser = await prisma.user.create({
+    // Create the user
+    const user = await prisma.user.create({
       data: {
         fullName,
         email,
         role,
         password,
-        phoneNumber: phoneNumber || null,
-        address: address || null,
-        mustResetPassword: mustResetPassword || true
+        phoneNumber,
+        address,
+        mustResetPassword: mustResetPassword !== undefined ? mustResetPassword : true
       }
     });
     
-    res.status(201).json({ success: true, data: newUser });
+    res.status(201).json({ success: true, data: user });
   } catch (error) {
-    console.error('User creation error:', error);
     handleApiError(res, error);
   }
 });
 
-// Update User API
-router.put('/:userId', async (req, res) => {
+// Update user
+router.put('/:id', async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
-    const userData = req.body;
+    const userId = parseInt(req.params.id);
+    const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = req.body;
     
-    // Extract only fields that exist in the User model
-    const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = userData;
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { userId }
+    });
     
-    const updatedUser = await prisma.user.update({
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+    
+    // Check if email is being changed and already exists
+    if (email && email !== existingUser.email) {
+      const emailExists = await prisma.user.findFirst({
+        where: { 
+          email,
+          userId: { not: userId }
+        }
+      });
+      
+      if (emailExists) {
+        return res.status(400).json({
+          success: false,
+          error: 'A user with this email already exists'
+        });
+      }
+    }
+    
+    // Update the user
+    const user = await prisma.user.update({
       where: { userId },
       data: {
         ...(fullName !== undefined && { fullName }),
@@ -180,46 +164,75 @@ router.put('/:userId', async (req, res) => {
         ...(phoneNumber !== undefined && { phoneNumber }),
         ...(address !== undefined && { address }),
         ...(mustResetPassword !== undefined && { mustResetPassword })
-      },
-      include: { profilePicture: true }
+      }
     });
     
-    res.status(200).json({ success: true, data: updatedUser });
+    res.json({ success: true, data: user });
   } catch (error) {
     handleApiError(res, error);
   }
 });
 
-// Delete User API
-router.delete('/:userId', async (req, res) => {
+// Delete user
+router.delete('/:id', async (req, res) => {
   try {
-    const userId = parseInt(req.params.userId);
+    const userId = parseInt(req.params.id);
     
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { userId }
+    });
+    
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+    
+    // Delete related records first based on role
+    if (existingUser.role === 'student') {
+      // Delete student's batch enrollments
+      await prisma.studentBatch.deleteMany({
+        where: { studentId: userId }
+      });
+      
+      // Delete student's course enrollments
+      await prisma.studentCourse.deleteMany({
+        where: { studentId: userId }
+      });
+      
+      // Delete student's reviews
+      await prisma.courseReview.deleteMany({
+        where: { userId }
+      });
+    } else if (existingUser.role === 'instructor') {
+      // Reassign or delete batches taught by this instructor
+      // For now, we'll just set the instructor to null if possible
+      // This might need to be handled differently based on business logic
+      const batches = await prisma.batch.findMany({
+        where: { instructorId: userId }
+      });
+
+      if (batches.length > 0) {
+        await prisma.batch.updateMany({
+          where: { instructorId: userId },
+          data: { instructorId: null }
+        });
+      }
+    }
+    
+    // Delete profile picture if exists
+    await prisma.profilePicture.deleteMany({
+      where: { userId }
+    });
+    
+    // Finally delete the user
     await prisma.user.delete({
       where: { userId }
     });
     
-    res.status(200).json({ success: true });
-  } catch (error) {
-    handleApiError(res, error);
-  }
-});
-
-// User Password Change
-router.post('/:userId/change-password', async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId);
-    const { newPassword } = req.body;
-    
-    const user = await prisma.user.update({
-      where: { userId },
-      data: { 
-        password: newPassword,
-        mustResetPassword: false
-      }
-    });
-    
-    res.status(200).json({ success: true });
+    res.json({ success: true });
   } catch (error) {
     handleApiError(res, error);
   }

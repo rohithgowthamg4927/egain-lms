@@ -44,9 +44,9 @@ export const updateUser = async (userId: number, userData: Partial<User> & { pas
 };
 
 // Get a specific user by ID
-export const getUserById = async (userId: number): Promise<{ success: boolean; data?: { user: User; courses: Course[] }; error?: string }> => {
+export const getUserById = async (userId: number): Promise<{ success: boolean; data?: User; error?: string }> => {
   console.log(`Calling getUserById API with userId: ${userId}`);
-  return apiFetch<{ user: User; courses: Course[] }>(`/users/${userId}`);
+  return apiFetch<User>(`/users/${userId}`);
 };
 
 // Users API

@@ -5,6 +5,7 @@ import { toast } from '@/components/ui/use-toast';
 
 const ServerStatusCheck = () => {
   const [status, setStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
   useEffect(() => {
@@ -22,6 +23,7 @@ const ServerStatusCheck = () => {
         if (response.ok) {
           console.log('Server is online');
           setStatus('online');
+          setErrorDetails(null);
           toast({
             title: "Connected to backend",
             description: "The backend server is running properly",
@@ -30,6 +32,7 @@ const ServerStatusCheck = () => {
         } else {
           console.log('Server returned non-OK response:', response.status);
           setStatus('offline');
+          setErrorDetails(`Server responded with status: ${response.status}`);
           toast({
             title: "Backend connection issue",
             description: "Could not connect to the backend server. Please ensure it's running at http://localhost:3001",
@@ -39,6 +42,7 @@ const ServerStatusCheck = () => {
       } catch (error) {
         console.error('Server check error:', error);
         setStatus('offline');
+        setErrorDetails(error instanceof Error ? error.message : 'Unknown error');
         toast({
           title: "Backend connection failed",
           description: "Could not connect to the backend server. Please ensure it's running at http://localhost:3001",
@@ -56,25 +60,40 @@ const ServerStatusCheck = () => {
   }, [apiUrl]);
 
   return (
-    <div className="flex items-center justify-center space-x-2 text-sm">
+    <div className="flex flex-col items-center justify-center space-y-2 text-sm">
       {status === 'checking' && (
         <>
-          <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
-          <span className="text-gray-500">Checking server status...</span>
+          <div className="flex items-center">
+            <Loader2 className="h-4 w-4 animate-spin text-amber-500 mr-2" />
+            <span className="text-gray-500">Checking server status...</span>
+          </div>
         </>
       )}
       
       {status === 'online' && (
         <>
-          <CheckCircle className="h-4 w-4 text-green-500" />
-          <span className="text-green-600">Server is online</span>
+          <div className="flex items-center">
+            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+            <span className="text-green-600">Server is online</span>
+          </div>
         </>
       )}
       
       {status === 'offline' && (
         <>
-          <AlertCircle className="h-4 w-4 text-red-500" />
-          <span className="text-red-600">Server is offline - Please start your backend server</span>
+          <div className="flex items-center">
+            <AlertCircle className="h-4 w-4 text-red-500 mr-2" />
+            <span className="text-red-600">Server is offline - Please start your backend server</span>
+          </div>
+          {errorDetails && (
+            <div className="text-xs text-gray-500 max-w-xs text-center">
+              Error: {errorDetails}
+            </div>
+          )}
+          <div className="text-xs mt-1 bg-slate-100 p-2 rounded-md dark:bg-slate-800">
+            Make sure Express is installed by running:<br />
+            <code className="text-xs">npm install express @types/express</code>
+          </div>
         </>
       )}
     </div>

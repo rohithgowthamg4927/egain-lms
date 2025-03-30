@@ -10,6 +10,10 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}=== LMS Application Starter ===${NC}"
 echo "This script will help you start both the backend and frontend"
 
+# Install dependencies if needed
+echo -e "${BLUE}Checking dependencies...${NC}"
+npm install
+
 # Check if database exists and run setup if needed
 echo -e "${BLUE}Checking database setup...${NC}"
 if npx prisma db pull --print >/dev/null 2>&1; then
@@ -36,26 +40,25 @@ fi
 echo -e "${BLUE}Starting backend server...${NC}"
 if [[ "$OSTYPE" == "darwin"* ]]; then
   # macOS
-  osascript -e 'tell app "Terminal" to do script "cd \"'$(pwd)'\" && cd backend && ts-node api.ts"'
+  osascript -e 'tell app "Terminal" to do script "cd \"'$(pwd)'\" && cd backend && npx ts-node api.ts"'
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   # Linux
   if command -v gnome-terminal &> /dev/null; then
-    gnome-terminal -- bash -c "cd \"$(pwd)/backend\" && ts-node api.ts; exec bash"
+    gnome-terminal -- bash -c "cd \"$(pwd)/backend\" && npx ts-node api.ts; exec bash"
   elif command -v xterm &> /dev/null; then
-    xterm -e "cd \"$(pwd)/backend\" && ts-node api.ts; exec bash" &
+    xterm -e "cd \"$(pwd)/backend\" && npx ts-node api.ts; exec bash" &
   else
     echo -e "${RED}Could not find a suitable terminal. Please start the backend manually in another terminal:${NC}"
-    echo "cd \"$(pwd)/backend\" && ts-node api.ts"
+    echo "cd \"$(pwd)/backend\" && npx ts-node api.ts"
   fi
 elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
   # Windows with Git Bash
-  start cmd.exe /k "cd /d \"$(pwd)\\backend\" && ts-node api.ts"
+  start cmd.exe /k "cd /d \"$(pwd)\\backend\" && npx ts-node api.ts"
 else
   echo -e "${RED}Unknown operating system. Please start the backend manually in another terminal:${NC}"
-  echo "cd \"$(pwd)/backend\" && ts-node api.ts"
+  echo "cd \"$(pwd)/backend\" && npx ts-node api.ts"
 fi
 
 # Start frontend
 echo -e "${BLUE}Starting frontend server...${NC}"
 npm run dev
-

@@ -21,8 +21,8 @@ interface FormData {
   password: string;
   role: Role;
   phoneNumber?: string;
+  address?: string;
   photoUrl?: string;
-  // Address removed temporarily
 }
 
 const AddUser = () => {
@@ -46,6 +46,7 @@ const AddUser = () => {
         email: userData.email,
         role: userData.role,
         phoneNumber: userData.phoneNumber || null,
+        address: userData.address || null,
         mustResetPassword: true,
         password  // Passing password directly to the API
       });

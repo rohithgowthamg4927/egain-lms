@@ -1,9 +1,11 @@
+
 import { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Form,
@@ -28,6 +30,7 @@ const formSchema = z.object({
   }),
   role: z.enum(['admin', 'instructor', 'student']),
   phoneNumber: z.string().optional(),
+  address: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -52,6 +55,7 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
       email: '',
       role: Role.student,
       phoneNumber: '',
+      address: '',
       ...defaultValues
     }
   });
@@ -223,6 +227,25 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
           </div>
         </div>
 
+        {/* Add the address field here */}
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Address</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Enter address (optional)" 
+                  className="resize-none" 
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="role"
@@ -273,4 +296,4 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
       </form>
     </Form>
   );
-};
+}

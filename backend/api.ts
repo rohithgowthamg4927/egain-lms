@@ -314,6 +314,24 @@ app.post('/api/courses', async (req, res) => {
   }
 });
 
+// Add a missing endpoint for updating courses
+app.put('/api/courses/:courseId', async (req, res) => {
+  try {
+    const courseId = parseInt(req.params.courseId);
+    const courseData = req.body;
+    
+    const updatedCourse = await prisma.course.update({
+      where: { courseId },
+      data: courseData,
+      include: { category: true }
+    });
+    
+    res.status(200).json({ success: true, data: updatedCourse });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
 // Batches API
 app.get('/api/batches', async (req, res) => {
   try {

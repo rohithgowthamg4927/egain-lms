@@ -21,7 +21,6 @@ interface FormData {
   password: string;
   role: Role;
   phoneNumber?: string;
-  bio?: string;
   photoUrl?: string;
 }
 
@@ -46,7 +45,6 @@ const AddUser = () => {
         email: userData.email,
         role: userData.role,
         phoneNumber: userData.phoneNumber || null,
-        bio: userData.bio === '' ? null : userData.bio, // Handle empty strings as null
         mustResetPassword: true,
         password  // Passing password directly to the API
       });

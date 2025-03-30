@@ -4,10 +4,16 @@ import { apiFetch } from './core';
 
 // User Management API
 export const createUser = async (userData: Partial<User> & { password?: string }): Promise<{ success: boolean; data?: User; error?: string }> => {
-  // Sanitize data - ensure bio is not undefined
+  // Only send fields that exist in the Prisma schema
+  const { fullName, email, role, password, phoneNumber, mustResetPassword } = userData;
+  
   const sanitizedData = {
-    ...userData,
-    bio: userData.bio === undefined ? null : userData.bio // Ensure bio is null if undefined
+    fullName,
+    email,
+    role,
+    password,
+    phoneNumber: phoneNumber || null,
+    mustResetPassword: mustResetPassword || true
   };
   
   return apiFetch<User>('/users', {
@@ -17,10 +23,16 @@ export const createUser = async (userData: Partial<User> & { password?: string }
 };
 
 export const updateUser = async (userId: number, userData: Partial<User>): Promise<{ success: boolean; data?: User; error?: string }> => {
-  // Sanitize data - ensure bio is not undefined
+  // Only send fields that exist in the Prisma schema
+  const { fullName, email, role, password, phoneNumber, mustResetPassword } = userData;
+  
   const sanitizedData = {
-    ...userData,
-    bio: userData.bio === undefined ? null : userData.bio // Ensure bio is null if undefined
+    ...(fullName !== undefined && { fullName }),
+    ...(email !== undefined && { email }),
+    ...(role !== undefined && { role }),
+    ...(password !== undefined && { password }),
+    ...(phoneNumber !== undefined && { phoneNumber }),
+    ...(mustResetPassword !== undefined && { mustResetPassword })
   };
   
   return apiFetch<User>(`/users/${userId}`, {

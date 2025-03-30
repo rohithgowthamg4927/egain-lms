@@ -1,10 +1,10 @@
+
 import { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Form,
@@ -30,7 +30,6 @@ const formSchema = z.object({
   }),
   role: z.enum(['admin', 'instructor', 'student']),
   phoneNumber: z.string().optional(),
-  bio: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -55,7 +54,6 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
       email: '',
       role: Role.student,
       phoneNumber: '',
-      bio: '',
       ...defaultValues
     }
   });
@@ -97,14 +95,8 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
     // For now, we're not uploading profile pictures to S3
     // In a real app, we'd implement this feature properly
     
-    // Make sure bio is properly handled
-    const formattedValues = {
-      ...values,
-      bio: values.bio === '' ? null : values.bio // Handle empty string as null
-    };
-    
     onSubmit({
-      ...formattedValues,
+      ...values,
       password: generatedPassword,
       photoUrl: profilePictureUrl || undefined
     });
@@ -267,24 +259,6 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="bio"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Bio</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Enter user bio (optional)"
-                  className="resize-none min-h-[100px]"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <Button 
           type="submit" 
           disabled={isSubmitting}
@@ -298,4 +272,4 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
       </form>
     </Form>
   );
-}
+};

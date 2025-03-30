@@ -1,3 +1,4 @@
+
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler';
@@ -127,22 +128,28 @@ router.post('/', async (req, res) => {
       });
     }
     
-    // Clean up the userData to ensure it matches the Prisma schema
-    // Make sure all fields that should be null (not undefined) are properly set
-    const sanitizedUserData = {
-      ...userData,
-      phoneNumber: userData.phoneNumber || null,
-      bio: userData.bio || null
-    };
+    // Extract fields that are in the User model
+    const { fullName, email, role, password, phoneNumber, mustResetPassword } = userData;
     
     console.log('Creating user with data:', {
-      ...sanitizedUserData,
-      password: '[REDACTED]'
+      fullName,
+      email,
+      role,
+      phoneNumber,
+      password: '[REDACTED]',
+      mustResetPassword
     });
     
-    // Create the new user with the provided data
+    // Create the new user with only the valid fields
     const newUser = await prisma.user.create({
-      data: sanitizedUserData
+      data: {
+        fullName,
+        email,
+        role,
+        password,
+        phoneNumber: phoneNumber || null,
+        mustResetPassword: mustResetPassword || true
+      }
     });
     
     res.status(201).json({ success: true, data: newUser });
@@ -158,9 +165,19 @@ router.put('/:userId', async (req, res) => {
     const userId = parseInt(req.params.userId);
     const userData = req.body;
     
+    // Extract only fields that exist in the User model
+    const { fullName, email, role, password, phoneNumber, mustResetPassword } = userData;
+    
     const updatedUser = await prisma.user.update({
       where: { userId },
-      data: userData,
+      data: {
+        ...(fullName !== undefined && { fullName }),
+        ...(email !== undefined && { email }),
+        ...(role !== undefined && { role }),
+        ...(password !== undefined && { password }),
+        ...(phoneNumber !== undefined && { phoneNumber }),
+        ...(mustResetPassword !== undefined && { mustResetPassword })
+      },
       include: { profilePicture: true }
     });
     

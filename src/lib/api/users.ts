@@ -1,5 +1,5 @@
 
-import { User, Role } from '@/lib/types';
+import { User, Role, Course } from '@/lib/types';
 import { apiFetch } from './core';
 
 // User Management API

@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import CourseGrid from '@/components/courses/CourseGrid';
 import { DataTable } from '@/components/ui/data-table';
-import { getCourses, getCategories } from '@/lib/api';
+import { getCourses, getCategories, createCourse } from '@/lib/api';
 import { Course, CourseCategory, Level } from '@/lib/types';
 import { Plus, Search, ListFilter, Grid, List, Eye, Edit, Trash } from 'lucide-react';
 import {
@@ -39,12 +39,35 @@ const Courses = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedLevel, setSelectedLevel] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form states for creating a new course
   const [newCourseName, setNewCourseName] = useState('');
   const [newCourseCategory, setNewCourseCategory] = useState('');
   const [newCourseLevel, setNewCourseLevel] = useState('');
   const [newCourseDescription, setNewCourseDescription] = useState('');
+
+  const fetchCourses = async () => {
+    try {
+      const coursesResponse = await getCourses();
+      if (coursesResponse.success && coursesResponse.data) {
+        setCourses(coursesResponse.data);
+      } else {
+        toast({
+          title: 'Error',
+          description: coursesResponse.error || 'Failed to fetch courses',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch courses',
+        variant: 'destructive',
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -104,24 +127,49 @@ const Courses = () => {
   });
 
   const handleCreateCourse = async () => {
-    try {
-      // Logic to create a new course
+    if (!newCourseName || !newCourseCategory || !newCourseLevel) {
       toast({
-        title: 'Course created',
-        description: `Course "${newCourseName}" has been created successfully.`,
+        title: 'Validation Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive',
       });
-      setIsCreateDialogOpen(false);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Create the actual course in the database
+      const response = await createCourse({
+        courseName: newCourseName,
+        categoryId: parseInt(newCourseCategory),
+        courseLevel: newCourseLevel as Level,
+        description: newCourseDescription,
+        isPublished: true
+      });
       
-      // Reset form fields
-      setNewCourseName('');
-      setNewCourseCategory('');
-      setNewCourseLevel('');
-      setNewCourseDescription('');
-      
-      // Refetch courses
-      const coursesResponse = await getCourses();
-      if (coursesResponse.success && coursesResponse.data) {
-        setCourses(coursesResponse.data);
+      if (response.success && response.data) {
+        toast({
+          title: 'Course created',
+          description: `Course "${newCourseName}" has been created successfully.`,
+        });
+        
+        // Reset form fields
+        setNewCourseName('');
+        setNewCourseCategory('');
+        setNewCourseLevel('');
+        setNewCourseDescription('');
+        
+        // Close the dialog
+        setIsCreateDialogOpen(false);
+        
+        // Refresh the courses list
+        fetchCourses();
+      } else {
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to create course',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Error creating course:', error);
@@ -130,6 +178,8 @@ const Courses = () => {
         description: 'Failed to create course',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -254,9 +304,9 @@ const Courses = () => {
                       <SelectValue placeholder="Select level" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="BEGINNER">Beginner</SelectItem>
-                      <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
-                      <SelectItem value="ADVANCED">Advanced</SelectItem>
+                      <SelectItem value="beginner">Beginner</SelectItem>
+                      <SelectItem value="intermediate">Intermediate</SelectItem>
+                      <SelectItem value="advanced">Advanced</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -274,7 +324,12 @@ const Courses = () => {
                 <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreateCourse}>Create Course</Button>
+                <Button 
+                  onClick={handleCreateCourse} 
+                  disabled={isSubmitting || !newCourseName || !newCourseCategory || !newCourseLevel}
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Course'}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -318,9 +373,9 @@ const Courses = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="BEGINNER">Beginner</SelectItem>
-                  <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
-                  <SelectItem value="ADVANCED">Advanced</SelectItem>
+                  <SelectItem value="beginner">Beginner</SelectItem>
+                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                  <SelectItem value="advanced">Advanced</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
@@ -71,15 +70,49 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-app.post('/api/users', async (req, res) => {
+// Individual User API
+app.get('/api/users/:userId', async (req, res) => {
   try {
-    const userData = req.body;
-    const newUser = await prisma.user.create({
-      data: userData,
+    const userId = parseInt(req.params.userId);
+    
+    const user = await prisma.user.findUnique({
+      where: { userId },
       include: { profilePicture: true }
     });
     
-    res.status(201).json({ success: true, data: newUser });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    
+    // Get courses for this user based on role
+    let courses = [];
+    if (user.role === 'student') {
+      courses = await prisma.course.findMany({
+        where: {
+          studentCourses: {
+            some: { studentId: userId }
+          }
+        },
+        include: { category: true }
+      });
+    } else if (user.role === 'instructor') {
+      courses = await prisma.course.findMany({
+        where: {
+          instructorCourses: {
+            some: { instructorId: userId }
+          }
+        },
+        include: { category: true }
+      });
+    }
+    
+    res.status(200).json({ 
+      success: true, 
+      data: { 
+        user,
+        courses
+      } 
+    });
   } catch (error) {
     handleApiError(res, error);
   }
@@ -261,6 +294,64 @@ app.get('/api/dashboard-metrics', async (req, res) => {
     };
     
     res.status(200).json({ success: true, data: metrics });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Resources API
+app.get('/api/resources', async (req, res) => {
+  try {
+    const courseId = req.query.courseId ? parseInt(req.query.courseId as string) : undefined;
+    
+    const resources = await prisma.resource.findMany({
+      where: courseId ? { courseId } : undefined,
+      include: { course: true }
+    });
+    
+    res.status(200).json({ success: true, data: resources });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+app.post('/api/resources', async (req, res) => {
+  try {
+    const resourceData = req.body;
+    const newResource = await prisma.resource.create({
+      data: resourceData
+    });
+    
+    res.status(201).json({ success: true, data: newResource });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Schedule API - Added meetingLink field
+app.get('/api/schedules', async (req, res) => {
+  try {
+    const batchId = req.query.batchId ? parseInt(req.query.batchId as string) : undefined;
+    
+    const schedules = await prisma.schedule.findMany({
+      where: batchId ? { batchId } : undefined,
+      include: { batch: true }
+    });
+    
+    res.status(200).json({ success: true, data: schedules });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+app.post('/api/schedules', async (req, res) => {
+  try {
+    const scheduleData = req.body;
+    const newSchedule = await prisma.schedule.create({
+      data: scheduleData
+    });
+    
+    res.status(201).json({ success: true, data: newSchedule });
   } catch (error) {
     handleApiError(res, error);
   }

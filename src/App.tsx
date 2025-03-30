@@ -11,6 +11,7 @@ import Courses from "./pages/Courses";
 import Batches from "./pages/Batches";
 import Students from "./pages/Students";
 import Instructors from "./pages/Instructors";
+import Resources from "./pages/Resources";
 import Profile from "./pages/Profile";
 import AddUser from "./pages/AddUser";
 import UserProfile from "./pages/UserProfile";
@@ -41,6 +42,7 @@ const App = () => {
               <Route path="/students/:userId" element={<UserProfile />} />
               <Route path="/instructors" element={<Instructors />} />
               <Route path="/instructors/:userId" element={<UserProfile />} />
+              <Route path="/resources" element={<Resources />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/add-user" element={<AddUser />} />
               <Route path="*" element={<NotFound />} />

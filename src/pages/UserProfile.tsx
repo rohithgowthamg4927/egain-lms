@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -13,6 +12,20 @@ import { useToast } from '@/hooks/use-toast';
 import { getInitials } from '@/lib/utils';
 import { CheckCircle, XCircle, Info, Mail, Phone, CalendarDays, BookOpen, Users, Clock, Award, Copy, Loader2, Edit, School, User as UserIcon } from 'lucide-react';
 
+const fetchUserData = async (userId: string) => {
+  try {
+    const response = await fetch(`http://localhost:3001/api/users/${userId}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch user data');
+    }
+    const data = await response.json();
+    return data.success ? data.data : null;
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    return null;
+  }
+};
+
 const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
   const [user, setUser] = useState<User | null>(null);
@@ -23,67 +36,75 @@ const UserProfile = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const loadUserData = async () => {
       setIsLoading(true);
       try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (!userId) {
+          throw new Error('User ID is required');
+        }
         
-        // Mock user data - in a real app, this would be fetched from API
-        const mockUser: User = {
-          userId: parseInt(userId || '1'),
-          fullName: 'John Doe',
-          email: 'john.doe@example.com',
-          phoneNumber: '+1 (555) 123-4567',
-          role: parseInt(userId || '1') % 2 === 0 ? Role.instructor : Role.student,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          mustResetPassword: true,
-          profilePicture: {
-            pictureId: 1,
+        const userData = await fetchUserData(userId);
+        
+        if (userData && userData.user) {
+          setUser(userData.user);
+          setEnrolledCourses(userData.courses || []);
+        } else {
+          console.log('Using mock data as fallback');
+          
+          const mockUser: User = {
             userId: parseInt(userId || '1'),
-            fileName: 'profile.jpg',
-            fileUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
-            fileType: 'image/jpeg',
-            fileSize: 12345,
+            fullName: 'John Doe',
+            email: 'john.doe@example.com',
+            phoneNumber: '+1 (555) 123-4567',
+            role: parseInt(userId || '1') % 2 === 0 ? Role.instructor : Role.student,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-          }
-        };
-        
-        setUser(mockUser);
-        
-        // Mock enrolled courses
-        const mockCourses: Course[] = [
-          {
-            courseId: 1,
-            courseName: 'Introduction to JavaScript',
-            courseLevel: 'beginner' as Level,
-            categoryId: 1,
-            description: 'Learn the basics of JavaScript programming language',
-            thumbnailUrl: 'https://via.placeholder.com/150',
-            duration: 30,
-            isPublished: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          {
-            courseId: 2,
-            courseName: 'Advanced React Techniques',
-            courseLevel: 'intermediate' as Level,
-            categoryId: 2,
-            description: 'Master advanced React concepts',
-            thumbnailUrl: 'https://via.placeholder.com/150',
-            duration: 45,
-            isPublished: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        ];
-        
-        setEnrolledCourses(mockCourses);
+            mustResetPassword: true,
+            profilePicture: {
+              pictureId: 1,
+              userId: parseInt(userId || '1'),
+              fileName: 'profile.jpg',
+              fileUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
+              fileType: 'image/jpeg',
+              fileSize: 12345,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            }
+          };
+          
+          setUser(mockUser);
+          
+          const mockCourses: Course[] = [
+            {
+              courseId: 1,
+              courseName: 'Introduction to JavaScript',
+              courseLevel: 'beginner' as Level,
+              categoryId: 1,
+              description: 'Learn the basics of JavaScript programming language',
+              thumbnailUrl: 'https://via.placeholder.com/150',
+              duration: 30,
+              isPublished: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              courseId: 2,
+              courseName: 'Advanced React Techniques',
+              courseLevel: 'intermediate' as Level,
+              categoryId: 2,
+              description: 'Master advanced React concepts',
+              thumbnailUrl: 'https://via.placeholder.com/150',
+              duration: 45,
+              isPublished: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ];
+          
+          setEnrolledCourses(mockCourses);
+        }
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Error loading user data:', error);
         toast({
           title: 'Error',
           description: 'Failed to load user profile',
@@ -94,7 +115,7 @@ const UserProfile = () => {
       }
     };
     
-    fetchUserData();
+    loadUserData();
   }, [userId, toast]);
 
   const handleEditUser = () => {
@@ -102,7 +123,6 @@ const UserProfile = () => {
   };
 
   const handleResetPassword = () => {
-    // In a real app, you would call an API to reset the password
     const temporaryPassword = 'yC34qQVaaPT';
     
     toast({

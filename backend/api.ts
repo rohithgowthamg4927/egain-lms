@@ -1,3 +1,4 @@
+
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
@@ -121,11 +122,23 @@ app.get('/api/users/:userId', async (req, res) => {
       });
       courses = studentCourses.map(sc => sc.course);
     } else if (user.role === 'instructor') {
-      const instructorCourses = await prisma.course.findMany({
-        where: { batches: { some: { instructorId: userId } } },
-        include: { category: true }
+      // For instructors, get courses from batches they teach
+      const batches = await prisma.batch.findMany({
+        where: { instructorId: userId },
+        include: {
+          course: {
+            include: { category: true }
+          }
+        }
       });
-      courses = instructorCourses;
+      // Extract unique courses (an instructor might have multiple batches for the same course)
+      const courseMap = new Map();
+      batches.forEach(batch => {
+        if (!courseMap.has(batch.course.courseId)) {
+          courseMap.set(batch.course.courseId, batch.course);
+        }
+      });
+      courses = Array.from(courseMap.values());
     }
     
     res.status(200).json({ 

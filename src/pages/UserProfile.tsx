@@ -25,7 +25,7 @@ const UserProfile = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const { data: userData, isLoading, error } = useQuery({
+  const { data: userData, isLoading, error, refetch } = useQuery({
     queryKey: ['user', userId],
     queryFn: async () => {
       if (!userId) throw new Error('No user ID provided');
@@ -33,6 +33,7 @@ const UserProfile = () => {
       const parsedUserId = parseInt(userId);
       if (isNaN(parsedUserId)) throw new Error('Invalid user ID');
       
+      console.log(`Fetching user data for ID: ${parsedUserId}`);
       const response = await getUserById(parsedUserId);
       
       if (!response.success || !response.data) {
@@ -41,7 +42,7 @@ const UserProfile = () => {
       
       return response.data;
     },
-    retry: 1,
+    retry: 2, // Increase retry attempts
   });
 
   const handleDeleteUser = async () => {
@@ -89,6 +90,15 @@ const UserProfile = () => {
     }
   };
 
+  // Add manual retry button for better UX
+  const handleRetry = () => {
+    refetch();
+    toast({
+      title: 'Retrying',
+      description: 'Attempting to fetch user data again...',
+    });
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -109,7 +119,10 @@ const UserProfile = () => {
           <AlertCircle className="h-16 w-16 text-destructive" />
           <h1 className="text-2xl font-bold">Error Loading Profile</h1>
           <p className="text-muted-foreground">{error instanceof Error ? error.message : 'User data not found'}</p>
-          <Button onClick={() => navigate(-1)}>Go Back</Button>
+          <div className="flex gap-2">
+            <Button onClick={handleRetry} variant="outline">Retry</Button>
+            <Button onClick={() => navigate(-1)}>Go Back</Button>
+          </div>
         </div>
       </Layout>
     );
@@ -185,8 +198,10 @@ const UserProfile = () => {
         {courses && courses.length > 0 && (
           <Card className="w-full">
             <CardHeader>
-              <CardTitle>Enrolled Courses</CardTitle>
-              <CardDescription>List of courses the user is enrolled in</CardDescription>
+              <CardTitle>Courses</CardTitle>
+              <CardDescription>
+                {user.role === 'instructor' ? 'Courses this instructor teaches' : 'Courses the user is enrolled in'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[200px] w-full rounded-md border">

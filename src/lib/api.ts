@@ -4,7 +4,7 @@ import { CourseCategory, Level, Course, User, Role, Batch, Resource, DashboardMe
 // Base API URL - Use environment variable with fallback to localhost
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-// Generic fetch wrapper with error handling
+// Generic fetch wrapper with improved error handling
 async function apiFetch<T>(
   endpoint: string, 
   options: RequestInit = {}
@@ -23,23 +23,25 @@ async function apiFetch<T>(
     
     // Check if response is OK before trying to parse JSON
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`API error: ${response.status} ${response.statusText}`, errorText);
+      const contentType = response.headers.get('content-type');
       
-      let errorMessage;
-      try {
-        // Try to parse error as JSON
-        const errorJson = JSON.parse(errorText);
-        errorMessage = errorJson.error || `API error: ${response.status} ${response.statusText}`;
-      } catch (e) {
-        // If it's not JSON, use the text directly
-        errorMessage = `API error: ${response.status} ${response.statusText}`;
+      if (contentType && contentType.includes('application/json')) {
+        // JSON error response
+        const errorData = await response.json();
+        console.error(`API error: ${response.status} ${response.statusText}`, errorData);
+        return { 
+          success: false, 
+          error: errorData.error || `API error: ${response.status} ${response.statusText}`
+        };
+      } else {
+        // Non-JSON error response (like HTML)
+        const errorText = await response.text();
+        console.error(`API error: ${response.status} ${response.statusText}`, errorText);
+        return {
+          success: false,
+          error: `API error: ${response.status} ${response.statusText}`
+        };
       }
-      
-      return { 
-        success: false, 
-        error: errorMessage
-      };
     }
     
     // Parse JSON response
@@ -112,6 +114,7 @@ export const updateUser = async (userId: number, userData: Partial<User>): Promi
 
 // Get a specific user by ID
 export const getUserById = async (userId: number): Promise<{ success: boolean; data?: { user: User; courses: Course[] }; error?: string }> => {
+  console.log(`Calling getUserById API with userId: ${userId}`);
   return apiFetch<{ user: User; courses: Course[] }>(`/users/${userId}`);
 };
 

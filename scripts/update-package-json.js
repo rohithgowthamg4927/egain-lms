@@ -2,8 +2,13 @@
 /**
  * This script updates package.json to include Prisma seed configuration
  */
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get the directory name correctly in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 console.log('📝 Updating package.json with Prisma seed configuration...');
 

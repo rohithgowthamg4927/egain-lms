@@ -1,8 +1,7 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { fetchUsers, login as apiLogin, logout as apiLogout } from '@/lib/api';
+import { getUsers, login as apiLogin, logout as apiLogout } from '@/lib/api';
 import { Role, User } from '@/lib/types';
 
 interface AuthContextType {
@@ -27,7 +26,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       
       try {
-        // Check if there's a user session in localStorage
         const storedUser = localStorage.getItem('currentUser');
         if (storedUser) {
           console.log("Found stored user in localStorage");
@@ -53,7 +51,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log("Attempting login with:", { email, role });
       
-      // Call the API login function
       const response = await apiLogin(email, password, role);
       console.log("Login response:", response);
       
@@ -62,10 +59,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("Login successful, user data:", userData);
         setUser(userData);
         
-        // Store user in localStorage
         localStorage.setItem('currentUser', JSON.stringify(userData));
         
-        // Redirect based on role
         switch (userData.role) {
           case Role.admin:
             console.log("Redirecting to admin dashboard");
@@ -114,7 +109,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    // Remove user from localStorage
     localStorage.removeItem('currentUser');
     setUser(null);
     navigate('/');

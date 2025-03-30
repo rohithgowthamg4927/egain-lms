@@ -37,14 +37,19 @@ const AddUser = () => {
     
     try {
       // Make a real API call to create the user
+      // Remove the password from the User object and pass it separately
+      const { password, ...userData } = data;
+      
       const response = await createUser({
-        fullName: data.fullName,
-        email: data.email,
-        password: data.password,
-        role: data.role,
-        phoneNumber: data.phoneNumber,
-        bio: data.bio,
-        mustResetPassword: true
+        userData: {
+          fullName: userData.fullName,
+          email: userData.email,
+          role: userData.role,
+          phoneNumber: userData.phoneNumber,
+          bio: userData.bio,
+          mustResetPassword: true
+        },
+        password: password
       });
       
       if (!response.success) {

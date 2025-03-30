@@ -41,6 +41,8 @@ const UserProfile = () => {
         throw new Error(response.error || 'Failed to fetch user data');
       }
 
+      console.log("User data fetched successfully:", response.data);
+      
       // Check if the response data has the correct shape
       if (response.data && typeof response.data === 'object') {
         // If response already contains user and courses properties

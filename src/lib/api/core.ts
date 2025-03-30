@@ -28,15 +28,15 @@ export async function apiFetch<T>(
       if (contentType && contentType.includes('application/json')) {
         // JSON error response
         const errorData = await response.json();
-        console.error(`API error: ${response.status} ${response.statusText}`, errorData);
+        console.error(`API error (${response.status}): `, errorData);
         return { 
           success: false, 
           error: errorData.error || `API error: ${response.status} ${response.statusText}`
         };
       } else {
         // Non-JSON error response (like HTML)
-        const errorText = await response.text();
-        console.error(`API error: ${response.status} ${response.statusText}`, errorText);
+        const errorText = await response.text().catch(() => 'Failed to read error response');
+        console.error(`API error (${response.status}): ${errorText.substring(0, 150)}...`);
         return {
           success: false,
           error: `API error: ${response.status} ${response.statusText}`

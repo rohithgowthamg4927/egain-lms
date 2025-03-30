@@ -30,13 +30,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Check if there's a user session in localStorage
         const storedUser = localStorage.getItem('currentUser');
         if (storedUser) {
+          console.log("Found stored user in localStorage");
           setUser(JSON.parse(storedUser));
         } else {
+          console.log("No stored user found in localStorage");
           setUser(null);
         }
       } catch (error) {
+        console.error('Error loading user from localStorage', error);
         setUser(null);
-        console.error('Error loading user', error);
       } finally {
         setIsLoading(false);
       }
@@ -53,9 +55,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Call the API login function
       const response = await apiLogin(email, password, role);
+      console.log("Login response:", response);
       
       if (response.success && response.data) {
         const userData = response.data.user;
+        console.log("Login successful, user data:", userData);
         setUser(userData);
         
         // Store user in localStorage
@@ -64,15 +68,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Redirect based on role
         switch (userData.role) {
           case Role.admin:
+            console.log("Redirecting to admin dashboard");
             navigate('/dashboard');
             break;
           case Role.instructor:
+            console.log("Redirecting to instructor dashboard");
             navigate('/instructor-dashboard');
             break;
           case Role.student:
+            console.log("Redirecting to student dashboard");
             navigate('/student-dashboard');
             break;
           default:
+            console.log("Role not recognized, redirecting to main dashboard");
             navigate('/dashboard');
         }
         
@@ -83,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         return true;
       } else {
+        console.error("Login failed:", response.error);
         toast({
           title: 'Login Failed',
           description: response.error || 'Invalid credentials',
@@ -92,12 +101,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred during login';
+      console.error("Login error:", error);
       toast({
         title: 'Login Error',
         description: errorMessage,
         variant: 'destructive',
       });
-      console.error("Login error:", error);
       return false;
     } finally {
       setIsLoading(false);

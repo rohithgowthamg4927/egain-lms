@@ -1,4 +1,3 @@
-
 import { CourseCategory, Level, Course, User, Role, Batch, Resource, DashboardMetrics, Schedule } from '@/lib/types';
 import { uploadProfilePicture, uploadCourseThumbnail, uploadClassRecording } from '@/lib/s3-upload';
 import { generateRandomPassword } from '@/lib/utils';
@@ -15,7 +14,7 @@ async function apiFetch<T>(
 ): Promise<{ success: boolean; data?: T; error?: string }> {
   try {
     const url = `${API_BASE_URL}${endpoint}`;
-    console.log(`Fetching from: ${url}`);
+    console.log(`Fetching from: ${url}`, options);
     
     const response = await fetch(url, {
       ...options,
@@ -26,8 +25,10 @@ async function apiFetch<T>(
     });
     
     const data = await response.json();
+    console.log(`Response from ${url}:`, data);
     
     if (!response.ok) {
+      console.error(`API error: ${response.status} ${response.statusText}`, data);
       return { 
         success: false, 
         error: data.error || `API error: ${response.status} ${response.statusText}` 
@@ -51,6 +52,7 @@ export const getCurrentUser = async (): Promise<{ success: boolean; data?: User;
 };
 
 export const login = async (email: string, password: string, role: Role): Promise<{ success: boolean; data?: { user: User; token: string }; error?: string }> => {
+  console.log("Calling login API with:", { email, role });
   return apiFetch('/login', {
     method: 'POST',
     body: JSON.stringify({ email, password, role }),

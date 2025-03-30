@@ -21,7 +21,8 @@ const Layout = ({ children, requireAuth = true }: LayoutProps) => {
     // Only redirect if authentication is required, the auth check is completed, 
     // the user is not authenticated, and they're not already on the login page
     if (!isLoading && requireAuth && !isAuthenticated && location.pathname !== '/') {
-      console.log("Redirecting to login from:", location.pathname);
+      console.log("Not authenticated, redirecting to login from:", location.pathname);
+      console.log("Auth state:", { isAuthenticated, isLoading, requireAuth });
       navigate('/', { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate, requireAuth, location.pathname]);
@@ -32,6 +33,7 @@ const Layout = ({ children, requireAuth = true }: LayoutProps) => {
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
           <h2 className="mt-4 text-xl font-medium">Loading...</h2>
+          <p className="text-sm text-muted-foreground">Please wait while we load your data</p>
         </div>
       </div>
     );
@@ -42,6 +44,9 @@ const Layout = ({ children, requireAuth = true }: LayoutProps) => {
     return <>{children}</>;
   }
 
+  // For authenticated pages with debugging
+  console.log("Rendering authenticated layout, isAuthenticated:", isAuthenticated);
+  
   // For authenticated pages
   return (
     <div className="min-h-screen bg-background flex">

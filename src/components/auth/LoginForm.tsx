@@ -32,10 +32,18 @@ const LoginForm = () => {
       const success = await login(email, password, role);
       
       if (success) {
-        // The login function handles navigation in useAuth
+        console.log("Login successful, redirecting to dashboard");
         toast({
           title: "Login successful",
           description: "Redirecting to dashboard...",
+        });
+      } else {
+        console.log("Login failed");
+        setErrorMessage("Invalid credentials or server error");
+        toast({
+          title: "Login failed",
+          description: "Please check your credentials and try again",
+          variant: "destructive",
         });
       }
     } catch (error) {

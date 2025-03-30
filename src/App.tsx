@@ -14,6 +14,7 @@ import { AuthProvider } from './hooks/use-auth';
 import { Toaster } from '@/components/ui/toaster';
 import UserDetail from './pages/UserDetail';
 import UserProfile from './pages/UserProfile';
+import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
 
@@ -32,9 +33,10 @@ function App() {
               <Route path="/courses" element={<Courses />} />
               <Route path="/resources" element={<Resources />} />
               <Route path="/schedules" element={<Schedules />} />
-              <Route path="/students/:userId" element={<UserDetail />} />
-              <Route path="/instructors/:userId" element={<UserDetail />} />
+              <Route path="/students/:userId" element={<UserProfile />} />
+              <Route path="/instructors/:userId" element={<UserProfile />} />
               <Route path="/users/:userId" element={<UserProfile />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />
           </AuthProvider>

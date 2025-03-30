@@ -75,7 +75,10 @@ router.get('/:id', async (req, res) => {
     
     res.json({ 
       success: true, 
-      data: { user, courses } 
+      data: { 
+        user, 
+        courses 
+      } 
     });
   } catch (error) {
     handleApiError(res, error);
@@ -85,7 +88,7 @@ router.get('/:id', async (req, res) => {
 // Create new user
 router.post('/', async (req, res) => {
   try {
-    const { fullName, email, role, password, phoneNumber, mustResetPassword } = req.body;
+    const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = req.body;
     
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
@@ -99,7 +102,7 @@ router.post('/', async (req, res) => {
       });
     }
     
-    // Create the user - removing address field
+    // Create the user with address field
     const user = await prisma.user.create({
       data: {
         fullName,
@@ -107,6 +110,7 @@ router.post('/', async (req, res) => {
         role,
         password,
         phoneNumber,
+        address,
         mustResetPassword: mustResetPassword !== undefined ? mustResetPassword : true
       },
       include: {
@@ -124,7 +128,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
-    const { fullName, email, role, password, phoneNumber, mustResetPassword } = req.body;
+    const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = req.body;
     
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -155,7 +159,7 @@ router.put('/:id', async (req, res) => {
       }
     }
     
-    // Update the user - removing address field
+    // Update the user including address field
     const user = await prisma.user.update({
       where: { userId },
       data: {
@@ -164,6 +168,7 @@ router.put('/:id', async (req, res) => {
         ...(role !== undefined && { role }),
         ...(password !== undefined && { password }),
         ...(phoneNumber !== undefined && { phoneNumber }),
+        ...(address !== undefined && { address }),
         ...(mustResetPassword !== undefined && { mustResetPassword })
       }
     });

@@ -1,18 +1,19 @@
+
 import { User, Role, Course } from '@/lib/types';
 import { apiFetch } from './core';
 
 // User Management API
 export const createUser = async (userData: Partial<User> & { password?: string }): Promise<{ success: boolean; data?: User; error?: string }> => {
-  // Only send fields that exist in the Prisma schema
-  const { fullName, email, role, password, phoneNumber, mustResetPassword } = userData;
+  // Include all fields that exist in the Prisma schema
+  const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = userData;
   
-  // Temporarily remove address field
   const sanitizedData = {
     fullName,
     email,
     role,
     password,
     phoneNumber: phoneNumber || null,
+    address: address || null,
     mustResetPassword: mustResetPassword || true
   };
   
@@ -23,16 +24,16 @@ export const createUser = async (userData: Partial<User> & { password?: string }
 };
 
 export const updateUser = async (userId: number, userData: Partial<User> & { password?: string }): Promise<{ success: boolean; data?: User; error?: string }> => {
-  // Only send fields that exist in the Prisma schema
-  const { fullName, email, role, password, phoneNumber, mustResetPassword } = userData;
+  // Include all fields that exist in the Prisma schema
+  const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = userData;
   
-  // Temporarily remove address field
   const sanitizedData = {
     ...(fullName !== undefined && { fullName }),
     ...(email !== undefined && { email }),
     ...(role !== undefined && { role }),
     ...(password !== undefined && { password }),
     ...(phoneNumber !== undefined && { phoneNumber }),
+    ...(address !== undefined && { address }),
     ...(mustResetPassword !== undefined && { mustResetPassword })
   };
   
@@ -45,6 +46,7 @@ export const updateUser = async (userId: number, userData: Partial<User> & { pas
 // Get a specific user by ID
 export const getUserById = async (userId: number): Promise<{ success: boolean; data?: User; error?: string }> => {
   console.log(`Calling getUserById API with userId: ${userId}`);
+  // Fix the endpoint path to match the backend implementation
   return apiFetch<User>(`/users/${userId}`);
 };
 

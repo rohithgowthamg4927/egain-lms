@@ -95,7 +95,8 @@ router.post('/', async (req, res) => {
     const newCourse = await prisma.course.create({
       data: {
         ...courseData,
-        categoryId: categoryId // Ensure categoryId is a number
+        categoryId: categoryId, // Ensure categoryId is a number
+        courseLevel: courseData.courseLevel as 'beginner' | 'intermediate' | 'advanced'
       },
       include: { category: true }
     });
@@ -114,6 +115,11 @@ router.put('/:courseId', async (req, res) => {
   try {
     const courseId = parseInt(req.params.courseId);
     const courseData = req.body;
+    
+    // If courseLevel is being updated, ensure it's properly typed
+    if (courseData.courseLevel) {
+      courseData.courseLevel = courseData.courseLevel as 'beginner' | 'intermediate' | 'advanced';
+    }
     
     const updatedCourse = await prisma.course.update({
       where: { courseId },

@@ -40,23 +40,23 @@ fi
 echo -e "${BLUE}Starting backend server...${NC}"
 if [[ "$OSTYPE" == "darwin"* ]]; then
   # macOS
-  osascript -e 'tell app "Terminal" to do script "cd \"'$(pwd)'\" && cd backend && npx ts-node api.ts"'
+  osascript -e 'tell app "Terminal" to do script "cd \"'$(pwd)'\" && cd backend && node --loader ts-node/esm server.ts"'
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   # Linux
   if command -v gnome-terminal &> /dev/null; then
-    gnome-terminal -- bash -c "cd \"$(pwd)/backend\" && npx ts-node api.ts; exec bash"
+    gnome-terminal -- bash -c "cd \"$(pwd)/backend\" && node --loader ts-node/esm server.ts; exec bash"
   elif command -v xterm &> /dev/null; then
-    xterm -e "cd \"$(pwd)/backend\" && npx ts-node api.ts; exec bash" &
+    xterm -e "cd \"$(pwd)/backend\" && node --loader ts-node/esm server.ts; exec bash" &
   else
     echo -e "${RED}Could not find a suitable terminal. Please start the backend manually in another terminal:${NC}"
-    echo "cd \"$(pwd)/backend\" && npx ts-node api.ts"
+    echo "cd \"$(pwd)/backend\" && node --loader ts-node/esm server.ts"
   fi
 elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
   # Windows with Git Bash
-  start cmd.exe /k "cd /d \"$(pwd)\\backend\" && npx ts-node api.ts"
+  start cmd.exe /k "cd /d \"$(pwd)\\backend\" && node --loader ts-node/esm server.ts"
 else
   echo -e "${RED}Unknown operating system. Please start the backend manually in another terminal:${NC}"
-  echo "cd \"$(pwd)/backend\" && npx ts-node api.ts"
+  echo "cd \"$(pwd)/backend\" && node --loader ts-node/esm server.ts"
 fi
 
 # Start frontend

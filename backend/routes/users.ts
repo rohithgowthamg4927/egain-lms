@@ -13,7 +13,9 @@ router.get('/', async (req, res) => {
     const { role } = req.query;
     
     const users = await prisma.user.findMany({
-      where: role ? { role: role.toString() } : {},
+      where: role ? { 
+        role: role.toString() as 'admin' | 'instructor' | 'student'
+      } : {},
       include: {
         profilePicture: true
       }
@@ -107,7 +109,7 @@ router.post('/', async (req, res) => {
       data: {
         fullName,
         email,
-        role,
+        role: role as 'admin' | 'instructor' | 'student',
         password,
         phoneNumber,
         address,
@@ -165,7 +167,7 @@ router.put('/:id', async (req, res) => {
       data: {
         ...(fullName !== undefined && { fullName }),
         ...(email !== undefined && { email }),
-        ...(role !== undefined && { role }),
+        ...(role !== undefined && { role: role as 'admin' | 'instructor' | 'student' }),
         ...(password !== undefined && { password }),
         ...(phoneNumber !== undefined && { phoneNumber }),
         ...(address !== undefined && { address }),

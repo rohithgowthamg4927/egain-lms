@@ -14,7 +14,10 @@ batchRouter.post('/', async (req, res) => {
     
     // Check if already enrolled
     const exists = await prisma.studentBatch.findFirst({
-      where: { studentId, batchId }
+      where: { 
+        studentId: Number(studentId), 
+        batchId: Number(batchId) 
+      }
     });
     
     if (exists) {
@@ -25,7 +28,10 @@ batchRouter.post('/', async (req, res) => {
     }
     
     const enrollment = await prisma.studentBatch.create({
-      data: { studentId, batchId }
+      data: { 
+        studentId: Number(studentId), 
+        batchId: Number(batchId) 
+      }
     });
     
     res.status(201).json({ success: true, data: enrollment });
@@ -56,7 +62,10 @@ courseRouter.post('/', async (req, res) => {
     
     // Check if already enrolled
     const exists = await prisma.studentCourse.findFirst({
-      where: { studentId, courseId }
+      where: { 
+        studentId: Number(studentId),
+        courseId: Number(courseId)
+      }
     });
     
     if (exists) {
@@ -67,7 +76,10 @@ courseRouter.post('/', async (req, res) => {
     }
     
     const enrollment = await prisma.studentCourse.create({
-      data: { studentId, courseId }
+      data: { 
+        studentId: Number(studentId),
+        courseId: Number(courseId)
+      }
     });
     
     res.status(201).json({ success: true, data: enrollment });

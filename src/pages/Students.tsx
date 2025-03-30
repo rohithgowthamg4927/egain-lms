@@ -62,18 +62,9 @@ const Students = () => {
     navigate('/add-user', { state: { role: Role.student } });
   };
   
-  const handleViewStudent = (student: User) => {
-    console.log(`Navigating to user profile with ID: ${student.userId}`);
-    navigate(`/users/${student.userId}`);
-  };
-
-  const handleEditStudent = (student: User) => {
-    console.log(`Navigating to edit student with ID: ${student.userId}`);
-    navigate(`/add-user`, { state: { userId: student.userId, role: Role.student } });
-  };
-  
   const handleDeleteStudent = async (student: User) => {
     try {
+      // Confirm before deleting
       const confirmed = window.confirm(`Are you sure you want to delete ${student.fullName}?`);
       
       if (!confirmed) {
@@ -85,10 +76,10 @@ const Students = () => {
       const response = await deleteUser(student.userId);
       
       if (!response.success) {
-        console.error('Delete student API error:', response.error);
         throw new Error(response.error || 'Failed to delete student');
       }
       
+      // Update the local state
       setStudents(students.filter(s => s.userId !== student.userId));
       
       toast({
@@ -156,12 +147,16 @@ const Students = () => {
   const studentActions = [
     {
       label: 'View Profile',
-      onClick: handleViewStudent,
+      onClick: (student: User) => {
+        navigate(`/students/${student.userId}`);
+      },
       icon: <Eye className="h-4 w-4" />,
     },
     {
       label: 'Edit',
-      onClick: handleEditStudent,
+      onClick: (student: User) => {
+        navigate(`/add-user`, { state: { userId: student.userId, role: Role.student } });
+      },
       icon: <Edit className="h-4 w-4" />,
     },
     {

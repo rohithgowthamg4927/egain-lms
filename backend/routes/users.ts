@@ -1,158 +1,246 @@
+
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler';
+import bcrypt from 'bcrypt';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Get all users with optional role filter
+// Get all users or filtered by role
 router.get('/', async (req, res) => {
   try {
     const { role } = req.query;
     
     const users = await prisma.user.findMany({
-      where: role ? { role: role as string } : undefined,
-      include: { profilePicture: true },
+      where: role ? { role: role.toString() } : {},
+      include: {
+        profilePicture: true
+      }
     });
     
-    return res.json({
-      success: true,
-      data: users,
-    });
+    res.json({ success: true, data: users });
   } catch (error) {
-    return handleApiError(res, error);
+    handleApiError(res, error);
   }
 });
 
-// Get a specific user by ID
+// Get user by ID with their courses
 router.get('/:id', async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
     
-    if (isNaN(userId)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid user ID format'
-      });
-    }
-    
-    console.log(`Processing GET request for user with ID: ${userId}`);
-    
     const user = await prisma.user.findUnique({
       where: { userId },
-      include: { profilePicture: true }
+      include: {
+        profilePicture: true
+      }
     });
     
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: `User with ID ${userId} not found`
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
       });
     }
     
-    console.log(`Found user:`, user);
+    // Get courses based on user role
+    let courses = [];
     
-    return res.json({
-      success: true,
-      data: user
+    if (user.role === 'student') {
+      // Get courses the student is enrolled in
+      const studentCourses = await prisma.studentCourse.findMany({
+        where: { studentId: userId },
+        include: { course: true }
+      });
+      
+      courses = studentCourses.map(sc => sc.course);
+    } else if (user.role === 'instructor') {
+      // Get courses the instructor teaches
+      const batches = await prisma.batch.findMany({
+        where: { instructorId: userId },
+        include: { course: true }
+      });
+      
+      // Extract unique courses
+      const courseMap = new Map();
+      batches.forEach(batch => {
+        if (batch.course && !courseMap.has(batch.course.courseId)) {
+          courseMap.set(batch.course.courseId, batch.course);
+        }
+      });
+      
+      courses = Array.from(courseMap.values());
+    }
+    
+    res.json({ 
+      success: true, 
+      data: { 
+        user, 
+        courses 
+      } 
     });
   } catch (error) {
-    console.error('Error fetching user by ID:', error);
-    return handleApiError(res, error);
+    handleApiError(res, error);
   }
 });
 
-// Create a new user
+// Create new user
 router.post('/', async (req, res) => {
   try {
     const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = req.body;
     
-    // Validate required fields
-    if (!fullName || !email || !role || !password) {
+    // Check if user already exists
+    const existingUser = await prisma.user.findFirst({
+      where: { email }
+    });
+    
+    if (existingUser) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: fullName, email, role, and password are required',
+        error: 'A user with this email already exists'
       });
     }
     
-    const newUser = await prisma.user.create({
+    // Create the user with address field
+    const user = await prisma.user.create({
       data: {
         fullName,
         email,
         role,
-        password, // In a real app, this should be hashed
+        password,
         phoneNumber,
         address,
-        mustResetPassword: mustResetPassword ?? true,
+        mustResetPassword: mustResetPassword !== undefined ? mustResetPassword : true
       },
+      include: {
+        profilePicture: true
+      }
     });
     
-    return res.status(201).json({
-      success: true,
-      data: newUser,
-    });
+    res.status(201).json({ success: true, data: user });
   } catch (error) {
-    return handleApiError(res, error);
+    handleApiError(res, error);
   }
 });
 
-// Update a user
+// Update user
 router.put('/:id', async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
     const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = req.body;
     
-    if (isNaN(userId)) {
-      return res.status(400).json({
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { userId }
+    });
+    
+    if (!existingUser) {
+      return res.status(404).json({
         success: false,
-        error: 'Invalid user ID',
+        error: 'User not found'
       });
     }
     
-    const updatedUser = await prisma.user.update({
+    // Check if email is being changed and already exists
+    if (email && email !== existingUser.email) {
+      const emailExists = await prisma.user.findFirst({
+        where: { 
+          email,
+          userId: { not: userId }
+        }
+      });
+      
+      if (emailExists) {
+        return res.status(400).json({
+          success: false,
+          error: 'A user with this email already exists'
+        });
+      }
+    }
+    
+    // Update the user including address field
+    const user = await prisma.user.update({
       where: { userId },
       data: {
         ...(fullName !== undefined && { fullName }),
         ...(email !== undefined && { email }),
         ...(role !== undefined && { role }),
-        ...(password !== undefined && { password }), // Should be hashed in a real app
+        ...(password !== undefined && { password }),
         ...(phoneNumber !== undefined && { phoneNumber }),
         ...(address !== undefined && { address }),
-        ...(mustResetPassword !== undefined && { mustResetPassword }),
-      },
+        ...(mustResetPassword !== undefined && { mustResetPassword })
+      }
     });
     
-    return res.json({
-      success: true,
-      data: updatedUser,
-    });
+    res.json({ success: true, data: user });
   } catch (error) {
-    return handleApiError(res, error);
+    handleApiError(res, error);
   }
 });
 
-// Delete a user
+// Delete user
 router.delete('/:id', async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
     
-    if (isNaN(userId)) {
-      return res.status(400).json({
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { userId }
+    });
+    
+    if (!existingUser) {
+      return res.status(404).json({
         success: false,
-        error: 'Invalid user ID',
+        error: 'User not found'
       });
     }
     
-    await prisma.user.delete({
-      where: { userId },
+    // Delete related records first based on role
+    if (existingUser.role === 'student') {
+      // Delete student's batch enrollments
+      await prisma.studentBatch.deleteMany({
+        where: { studentId: userId }
+      });
+      
+      // Delete student's course enrollments
+      await prisma.studentCourse.deleteMany({
+        where: { studentId: userId }
+      });
+      
+      // Delete student's reviews
+      await prisma.courseReview.deleteMany({
+        where: { userId }
+      });
+    } else if (existingUser.role === 'instructor') {
+      // Reassign or delete batches taught by this instructor
+      // For now, we'll just set the instructor to null if possible
+      // This might need to be handled differently based on business logic
+      const batches = await prisma.batch.findMany({
+        where: { instructorId: userId }
+      });
+
+      if (batches.length > 0) {
+        await prisma.batch.updateMany({
+          where: { instructorId: userId },
+          data: { instructorId: null }
+        });
+      }
+    }
+    
+    // Delete profile picture if exists
+    await prisma.profilePicture.deleteMany({
+      where: { userId }
     });
     
-    return res.json({
-      success: true,
-      message: `User with ID ${userId} has been deleted`,
+    // Finally delete the user
+    await prisma.user.delete({
+      where: { userId }
     });
+    
+    res.json({ success: true });
   } catch (error) {
-    return handleApiError(res, error);
+    handleApiError(res, error);
   }
 });
 

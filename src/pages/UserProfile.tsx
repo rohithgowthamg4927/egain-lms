@@ -25,7 +25,7 @@ const UserProfile = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const { data: userData, isLoading, error, refetch, isError } = useQuery({
+  const { data: userData, isLoading, error, refetch } = useQuery({
     queryKey: ['user', userId],
     queryFn: async () => {
       if (!userId) throw new Error('No user ID provided');
@@ -37,12 +37,9 @@ const UserProfile = () => {
       const response = await getUserById(parsedUserId);
       
       if (!response.success || !response.data) {
-        console.error("Error in getUserById response:", response);
         throw new Error(response.error || 'Failed to fetch user data');
       }
 
-      console.log("User data fetched successfully:", response.data);
-      
       // Check if the response data has the correct shape
       if (response.data && typeof response.data === 'object') {
         // If response already contains user and courses properties
@@ -61,7 +58,7 @@ const UserProfile = () => {
       
       throw new Error('Invalid response format from API');
     },
-    retry: 1,
+    retry: 2,
     staleTime: 0,
     refetchOnMount: true,
   });
@@ -82,10 +79,7 @@ const UserProfile = () => {
         return; // If the user cancels, do nothing
       }
       
-      console.log(`Attempting to delete user with ID: ${parsedUserId}`);
       const response = await deleteUser(parsedUserId);
-      
-      console.log(`Delete user response:`, response);
       
       if (!response.success) {
         throw new Error(response.error || 'Failed to delete user');
@@ -135,7 +129,7 @@ const UserProfile = () => {
     );
   }
 
-  if (isError || !userData) {
+  if (error || !userData) {
     return (
       <Layout>
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">

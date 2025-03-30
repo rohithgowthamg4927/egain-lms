@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -38,12 +39,14 @@ const AddUser = () => {
       // Extract password and prepare user data
       const { password, ...userData } = data;
       
+      console.log('Submitting user data:', { ...userData, password: '[REDACTED]' });
+      
       const response = await createUser({
         fullName: userData.fullName,
         email: userData.email,
         role: userData.role,
-        phoneNumber: userData.phoneNumber,
-        bio: userData.bio,
+        phoneNumber: userData.phoneNumber || null,
+        bio: userData.bio || null, // Ensure bio is null if empty
         mustResetPassword: true,
         password  // Passing password directly to the API
       });

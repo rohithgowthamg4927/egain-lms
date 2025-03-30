@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler';
@@ -128,13 +127,27 @@ router.post('/', async (req, res) => {
       });
     }
     
+    // Clean up the userData to ensure it matches the Prisma schema
+    // Make sure all fields that should be null (not undefined) are properly set
+    const sanitizedUserData = {
+      ...userData,
+      phoneNumber: userData.phoneNumber || null,
+      bio: userData.bio || null
+    };
+    
+    console.log('Creating user with data:', {
+      ...sanitizedUserData,
+      password: '[REDACTED]'
+    });
+    
     // Create the new user with the provided data
     const newUser = await prisma.user.create({
-      data: userData
+      data: sanitizedUserData
     });
     
     res.status(201).json({ success: true, data: newUser });
   } catch (error) {
+    console.error('User creation error:', error);
     handleApiError(res, error);
   }
 });

@@ -1,12 +1,17 @@
-
 import { User, Role, Course } from '@/lib/types';
 import { apiFetch } from './core';
 
 // User Management API
 export const createUser = async (userData: Partial<User> & { password?: string }): Promise<{ success: boolean; data?: User; error?: string }> => {
+  // Sanitize data - ensure bio is not undefined
+  const sanitizedData = {
+    ...userData,
+    bio: userData.bio || null // Ensure bio is null if undefined
+  };
+  
   return apiFetch<User>('/users', {
     method: 'POST',
-    body: JSON.stringify(userData),
+    body: JSON.stringify(sanitizedData),
   });
 };
 

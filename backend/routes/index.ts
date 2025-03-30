@@ -1,6 +1,6 @@
 
 import express from 'express';
-import userRoutes from './users.js';
+import userRoutes from './users/index.js';
 import categoryRoutes from './categories.js';
 import courseRoutes from './courses.js';
 import batchRoutes from './batches.js';

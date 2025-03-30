@@ -13,6 +13,7 @@ import Schedules from './pages/Schedules';
 import { AuthProvider } from './hooks/use-auth';
 import { Toaster } from '@/components/ui/toaster';
 import UserDetail from './pages/UserDetail';
+import UserProfile from './pages/UserProfile';
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ function App() {
               <Route path="/schedules" element={<Schedules />} />
               <Route path="/students/:userId" element={<UserDetail />} />
               <Route path="/instructors/:userId" element={<UserDetail />} />
+              <Route path="/users/:userId" element={<UserProfile />} />
             </Routes>
             <Toaster />
           </AuthProvider>

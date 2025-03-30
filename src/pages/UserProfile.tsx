@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -40,8 +39,17 @@ const UserProfile = () => {
         throw new Error(response.error || 'Failed to fetch user data');
       }
       
-      // Cast response.data to UserProfileData since we expect it to have the correct shape
-      return response.data as UserProfileData;
+      // Transform the response into the expected UserProfileData shape if needed
+      if ('user' in response.data && 'courses' in response.data) {
+        // Response already has the correct shape
+        return response.data as UserProfileData;
+      } else {
+        // Response is just a User object, transform it to match UserProfileData
+        return {
+          user: response.data as User,
+          courses: []
+        } as UserProfileData;
+      }
     },
     retry: 2,
     staleTime: 0,
@@ -93,7 +101,6 @@ const UserProfile = () => {
     }
   };
 
-  // Add manual retry button for better UX
   const handleRetry = () => {
     refetch();
     toast({

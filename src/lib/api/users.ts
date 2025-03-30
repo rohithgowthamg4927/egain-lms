@@ -1,3 +1,4 @@
+
 import { User, Role, Course } from '@/lib/types';
 import { apiFetch } from './core';
 
@@ -6,7 +7,7 @@ export const createUser = async (userData: Partial<User> & { password?: string }
   // Sanitize data - ensure bio is not undefined
   const sanitizedData = {
     ...userData,
-    bio: userData.bio || null // Ensure bio is null if undefined
+    bio: userData.bio === undefined ? null : userData.bio // Ensure bio is null if undefined
   };
   
   return apiFetch<User>('/users', {
@@ -16,9 +17,15 @@ export const createUser = async (userData: Partial<User> & { password?: string }
 };
 
 export const updateUser = async (userId: number, userData: Partial<User>): Promise<{ success: boolean; data?: User; error?: string }> => {
+  // Sanitize data - ensure bio is not undefined
+  const sanitizedData = {
+    ...userData,
+    bio: userData.bio === undefined ? null : userData.bio // Ensure bio is null if undefined
+  };
+  
   return apiFetch<User>(`/users/${userId}`, {
     method: 'PUT',
-    body: JSON.stringify(userData),
+    body: JSON.stringify(sanitizedData),
   });
 };
 

@@ -97,8 +97,14 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
     // For now, we're not uploading profile pictures to S3
     // In a real app, we'd implement this feature properly
     
-    onSubmit({
+    // Make sure bio is properly handled
+    const formattedValues = {
       ...values,
+      bio: values.bio === '' ? null : values.bio // Handle empty string as null
+    };
+    
+    onSubmit({
+      ...formattedValues,
       password: generatedPassword,
       photoUrl: profilePictureUrl || undefined
     });

@@ -25,7 +25,7 @@ const UserProfile = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const { data: userData, isLoading, error, refetch } = useQuery({
+  const { data: userData, isLoading, error, refetch, isError } = useQuery({
     queryKey: ['user', userId],
     queryFn: async () => {
       if (!userId) throw new Error('No user ID provided');
@@ -37,6 +37,7 @@ const UserProfile = () => {
       const response = await getUserById(parsedUserId);
       
       if (!response.success || !response.data) {
+        console.error("Error in getUserById response:", response);
         throw new Error(response.error || 'Failed to fetch user data');
       }
 
@@ -58,7 +59,7 @@ const UserProfile = () => {
       
       throw new Error('Invalid response format from API');
     },
-    retry: 2,
+    retry: 1,
     staleTime: 0,
     refetchOnMount: true,
   });
@@ -79,7 +80,10 @@ const UserProfile = () => {
         return; // If the user cancels, do nothing
       }
       
+      console.log(`Attempting to delete user with ID: ${parsedUserId}`);
       const response = await deleteUser(parsedUserId);
+      
+      console.log(`Delete user response:`, response);
       
       if (!response.success) {
         throw new Error(response.error || 'Failed to delete user');
@@ -129,7 +133,7 @@ const UserProfile = () => {
     );
   }
 
-  if (error || !userData) {
+  if (isError || !userData) {
     return (
       <Layout>
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">

@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { Role } from '@/lib/types';
-import { BookOpen, Calendar, LayoutDashboard, Lightbulb, Users, Settings, Menu, X, Compass, ChevronRight, GraduationCap, SlidersHorizontal } from 'lucide-react';
+import { BookOpen, Calendar, LayoutDashboard, Lightbulb, Users, Settings, Menu, X, Compass, ChevronRight, GraduationCap, SlidersHorizontal, Clock } from 'lucide-react';
 
 interface NavItem {
   title: string;
@@ -43,6 +43,12 @@ const Sidebar = () => {
       href: '/batches',
       icon: <Calendar className="h-5 w-5" />,
       roles: [Role.admin, Role.instructor],
+    },
+    {
+      title: 'Schedules',
+      href: '/schedules',
+      icon: <Clock className="h-5 w-5" />,
+      roles: [Role.admin, Role.instructor, Role.student],
     },
     {
       title: 'Students',

@@ -6,58 +6,66 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Layout from '@/components/layout/Layout';
 import { DataTable } from '@/components/ui/data-table';
-import { Resource } from '@/lib/types';
+import { Resource, Course } from '@/lib/types';
 import { Plus, Search, File, Link, Book } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { getResources, getCourses, createResource } from '@/lib/api';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 const Resources = () => {
-  const navigate = useNavigate();
   const [resources, setResources] = useState<Resource[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
+
+  // Form states for creating a new resource
+  const [newResourceTitle, setNewResourceTitle] = useState('');
+  const [newResourceType, setNewResourceType] = useState('document');
+  const [newResourceCourseId, setNewResourceCourseId] = useState('');
+  const [newResourceUrl, setNewResourceUrl] = useState('');
+  const [newResourceDescription, setNewResourceDescription] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       
       try {
-        // For now, we'll use mock data
-        // In a real app, you would use an API call
-        const mockResources: Resource[] = [
-          {
-            resourceId: 1,
-            courseId: 1,
-            title: 'React Fundamentals Slides',
-            type: 'document',
-            url: 'https://example.com/resources/react-slides.pdf',
-            description: 'Slide deck covering React basics',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          {
-            resourceId: 2,
-            courseId: 1,
-            title: 'React Hooks Demo Code',
-            type: 'code',
-            url: 'https://github.com/example/react-hooks-demo',
-            description: 'Code examples for React hooks',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          {
-            resourceId: 3,
-            courseId: 2,
-            title: 'Azure Setup Guide',
-            type: 'document',
-            url: 'https://example.com/resources/azure-setup.pdf',
-            description: 'Step-by-step guide for Azure setup',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          }
-        ];
+        const [resourcesResponse, coursesResponse] = await Promise.all([
+          getResources(),
+          getCourses(),
+        ]);
         
-        setResources(mockResources);
+        if (resourcesResponse.success && resourcesResponse.data) {
+          setResources(resourcesResponse.data);
+        } else {
+          toast({
+            title: 'Error',
+            description: resourcesResponse.error || 'Failed to fetch resources',
+            variant: 'destructive',
+          });
+        }
+        
+        if (coursesResponse.success && coursesResponse.data) {
+          setCourses(coursesResponse.data);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
         toast({
@@ -75,14 +83,65 @@ const Resources = () => {
 
   const filteredResources = resources.filter((resource) =>
     resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    resource.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    (resource.description && resource.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleAddResource = () => {
-    toast({
-      title: 'Add Resource',
-      description: 'Resource creation feature coming soon',
-    });
+  const handleAddResource = async () => {
+    if (!newResourceTitle || !newResourceType || !newResourceCourseId || !newResourceUrl) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const resourceData = {
+        title: newResourceTitle,
+        type: newResourceType,
+        courseId: parseInt(newResourceCourseId),
+        url: newResourceUrl,
+        description: newResourceDescription,
+      };
+
+      const response = await createResource(resourceData);
+      
+      if (response.success) {
+        toast({
+          title: 'Resource created',
+          description: `Resource "${newResourceTitle}" has been created successfully.`,
+        });
+        
+        // Reset form fields
+        setNewResourceTitle('');
+        setNewResourceType('document');
+        setNewResourceCourseId('');
+        setNewResourceUrl('');
+        setNewResourceDescription('');
+        
+        setIsCreateDialogOpen(false);
+        
+        // Refetch resources
+        const resourcesResponse = await getResources();
+        if (resourcesResponse.success && resourcesResponse.data) {
+          setResources(resourcesResponse.data);
+        }
+      } else {
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to create resource',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error creating resource:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Fixed by ensuring accessorKey matches exact keys in Resource type
@@ -117,14 +176,8 @@ const Resources = () => {
       accessorKey: 'courseId' as keyof Resource,
       header: 'Course',
       cell: (row: Resource) => {
-        // Mock course names based on courseId
-        const courseNames: Record<number, string> = {
-          1: 'Introduction to React',
-          2: 'Azure Certification Training',
-          3: 'Advanced K8s concepts'
-        };
-        
-        return courseNames[row.courseId] || 'Unknown Course';
+        const course = courses.find(c => c.courseId === row.courseId);
+        return course ? course.courseName : 'Unknown Course';
       },
     },
     {
@@ -173,10 +226,87 @@ const Resources = () => {
       <div className="animate-fade-in">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
           <h1 className="text-3xl font-bold">Learning Resources</h1>
-          <Button onClick={handleAddResource}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Resource
-          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Resource
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[525px]">
+              <DialogHeader>
+                <DialogTitle>Add New Learning Resource</DialogTitle>
+                <DialogDescription>
+                  Share materials, links, and documents with your students.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="resourceTitle">Resource Title</Label>
+                  <Input
+                    id="resourceTitle"
+                    value={newResourceTitle}
+                    onChange={(e) => setNewResourceTitle(e.target.value)}
+                    placeholder="Enter resource title"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="resourceType">Resource Type</Label>
+                  <Select value={newResourceType} onValueChange={setNewResourceType}>
+                    <SelectTrigger id="resourceType">
+                      <SelectValue placeholder="Select resource type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="document">Document</SelectItem>
+                      <SelectItem value="video">Video</SelectItem>
+                      <SelectItem value="code">Code</SelectItem>
+                      <SelectItem value="link">Link</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="resourceCourse">Course</Label>
+                  <Select value={newResourceCourseId} onValueChange={setNewResourceCourseId}>
+                    <SelectTrigger id="resourceCourse">
+                      <SelectValue placeholder="Select course" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courses.map((course) => (
+                        <SelectItem key={course.courseId} value={course.courseId.toString()}>
+                          {course.courseName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="resourceUrl">Resource URL</Label>
+                  <Input
+                    id="resourceUrl"
+                    value={newResourceUrl}
+                    onChange={(e) => setNewResourceUrl(e.target.value)}
+                    placeholder="Enter resource URL"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="resourceDescription">Description (Optional)</Label>
+                  <Textarea
+                    id="resourceDescription"
+                    value={newResourceDescription}
+                    onChange={(e) => setNewResourceDescription(e.target.value)}
+                    placeholder="Enter resource description"
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleAddResource}>Add Resource</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">

@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Courses from "./pages/Courses";
 import Batches from "./pages/Batches";
+import Schedules from "./pages/Schedules";
 import Students from "./pages/Students";
 import Instructors from "./pages/Instructors";
 import Resources from "./pages/Resources";
@@ -38,6 +39,7 @@ const App = () => {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/courses" element={<Courses />} />
               <Route path="/batches" element={<Batches />} />
+              <Route path="/schedules" element={<Schedules />} />
               <Route path="/students" element={<Students />} />
               <Route path="/students/:userId" element={<UserProfile />} />
               <Route path="/instructors" element={<Instructors />} />

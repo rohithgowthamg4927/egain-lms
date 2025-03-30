@@ -1,3 +1,4 @@
+
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
@@ -70,6 +71,26 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
+// Current user API
+app.get('/api/users/current', async (req, res) => {
+  try {
+    // In a real app, you'd get this from the JWT token
+    // Here we're just returning the first admin for demonstration
+    const user = await prisma.user.findFirst({
+      where: { role: 'admin' },
+      include: { profilePicture: true }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'No user found' });
+    }
+    
+    res.status(200).json({ success: true, data: user });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
 // Individual User API
 app.get('/api/users/:userId', async (req, res) => {
   try {
@@ -87,23 +108,25 @@ app.get('/api/users/:userId', async (req, res) => {
     // Get courses for this user based on role
     let courses = [];
     if (user.role === 'student') {
-      courses = await prisma.course.findMany({
-        where: {
-          studentCourses: {
-            some: { studentId: userId }
+      const studentCourses = await prisma.studentCourse.findMany({
+        where: { studentId: userId },
+        include: {
+          course: {
+            include: { category: true }
           }
-        },
-        include: { category: true }
+        }
       });
+      courses = studentCourses.map(sc => sc.course);
     } else if (user.role === 'instructor') {
-      courses = await prisma.course.findMany({
-        where: {
-          instructorCourses: {
-            some: { instructorId: userId }
+      const instructorCourses = await prisma.instructorCourse.findMany({
+        where: { instructorId: userId },
+        include: {
+          course: {
+            include: { category: true }
           }
-        },
-        include: { category: true }
+        }
       });
+      courses = instructorCourses.map(ic => ic.course);
     }
     
     res.status(200).json({ 
@@ -113,6 +136,66 @@ app.get('/api/users/:userId', async (req, res) => {
         courses
       } 
     });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Create User API
+app.post('/api/users', async (req, res) => {
+  try {
+    const userData = req.body;
+    
+    // Check if email is already in use
+    const existingUser = await prisma.user.findFirst({ 
+      where: { email: userData.email } 
+    });
+    
+    if (existingUser) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Email already in use' 
+      });
+    }
+    
+    const newUser = await prisma.user.create({
+      data: userData
+    });
+    
+    res.status(201).json({ success: true, data: newUser });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Update User API
+app.put('/api/users/:userId', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const userData = req.body;
+    
+    const updatedUser = await prisma.user.update({
+      where: { userId },
+      data: userData,
+      include: { profilePicture: true }
+    });
+    
+    res.status(200).json({ success: true, data: updatedUser });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Delete User API
+app.delete('/api/users/:userId', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    await prisma.user.delete({
+      where: { userId }
+    });
+    
+    res.status(200).json({ success: true });
   } catch (error) {
     handleApiError(res, error);
   }
@@ -168,6 +251,56 @@ app.get('/api/courses', async (req, res) => {
   }
 });
 
+// Get a specific course
+app.get('/api/courses/:courseId', async (req, res) => {
+  try {
+    const courseId = parseInt(req.params.courseId);
+    
+    const course = await prisma.course.findUnique({
+      where: { courseId },
+      include: {
+        category: true,
+        reviews: true,
+        batches: true,
+        studentCourses: true,
+        resources: true
+      }
+    });
+    
+    if (!course) {
+      return res.status(404).json({ success: false, error: 'Course not found' });
+    }
+    
+    const enrichedCourse = {
+      ...course,
+      students: course.studentCourses.length,
+      batches: course.batches.length,
+      averageRating: course.reviews.length > 0 
+        ? course.reviews.reduce((sum, review) => sum + review.rating, 0) / course.reviews.length 
+        : null
+    };
+    
+    res.status(200).json({ success: true, data: enrichedCourse });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Create a course
+app.post('/api/courses', async (req, res) => {
+  try {
+    const courseData = req.body;
+    const newCourse = await prisma.course.create({
+      data: courseData,
+      include: { category: true }
+    });
+    
+    res.status(201).json({ success: true, data: newCourse });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
 // Batches API
 app.get('/api/batches', async (req, res) => {
   try {
@@ -191,6 +324,57 @@ app.get('/api/batches', async (req, res) => {
     }));
     
     res.status(200).json({ success: true, data: enrichedBatches });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Get a specific batch
+app.get('/api/batches/:batchId', async (req, res) => {
+  try {
+    const batchId = parseInt(req.params.batchId);
+    
+    const batch = await prisma.batch.findUnique({
+      where: { batchId },
+      include: {
+        course: {
+          include: { category: true }
+        },
+        instructor: true,
+        students: true,
+        schedules: true
+      }
+    });
+    
+    if (!batch) {
+      return res.status(404).json({ success: false, error: 'Batch not found' });
+    }
+    
+    const enrichedBatch = {
+      ...batch,
+      students: batch.students.length,
+      studentsCount: batch.students.length
+    };
+    
+    res.status(200).json({ success: true, data: enrichedBatch });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Create a batch
+app.post('/api/batches', async (req, res) => {
+  try {
+    const batchData = req.body;
+    const newBatch = await prisma.batch.create({
+      data: batchData,
+      include: {
+        course: true,
+        instructor: true
+      }
+    });
+    
+    res.status(201).json({ success: true, data: newBatch });
   } catch (error) {
     handleApiError(res, error);
   }
@@ -242,7 +426,8 @@ app.get('/api/dashboard-metrics', async (req, res) => {
     const batches = await prisma.batch.findMany({
       include: {
         course: true,
-        instructor: true
+        instructor: true,
+        students: true
       },
       orderBy: { startDate: 'asc' }
     });
@@ -264,13 +449,21 @@ app.get('/api/dashboard-metrics', async (req, res) => {
       count: categoryCount.get(category.categoryId) || 0
     }));
     
-    // Mock data for student enrollments (would come from real DB in production)
-    const recentEnrollments = [
-      { studentName: 'John Doe', courseName: 'Introduction to React', date: new Date('2023-05-25') },
-      { studentName: 'Robert Brown', courseName: 'Flutter for Beginners', date: new Date('2023-05-20') },
-      { studentName: 'John Doe', courseName: 'Python for Data Science', date: new Date('2023-05-15') },
-      { studentName: 'Robert Brown', courseName: 'Docker Essentials', date: new Date('2023-05-10') },
-    ];
+    // Get actual enrollments
+    const studentCourses = await prisma.studentCourse.findMany({
+      include: {
+        student: true,
+        course: true
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5
+    });
+    
+    const recentEnrollments = studentCourses.map(enrollment => ({
+      studentName: enrollment.student.fullName,
+      courseName: enrollment.course.courseName,
+      date: enrollment.createdAt
+    }));
     
     const recentUsers = users
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -286,7 +479,7 @@ app.get('/api/dashboard-metrics', async (req, res) => {
       totalInstructors: instructors.length,
       totalCourses: courses.length,
       totalBatches: batches.length,
-      activeStudents: Math.floor(students.length * 0.8), // Mock data: 80% of students are active
+      activeStudents: batches.reduce((total, batch) => total + batch.students.length, 0),
       coursesPerCategory,
       recentEnrollments,
       recentUsers,
@@ -328,14 +521,14 @@ app.post('/api/resources', async (req, res) => {
   }
 });
 
-// Schedule API - Added meetingLink field
+// Schedule API
 app.get('/api/schedules', async (req, res) => {
   try {
     const batchId = req.query.batchId ? parseInt(req.query.batchId as string) : undefined;
     
     const schedules = await prisma.schedule.findMany({
       where: batchId ? { batchId } : undefined,
-      include: { batch: true }
+      include: { batch: { include: { course: true, instructor: true } } }
     });
     
     res.status(200).json({ success: true, data: schedules });
@@ -348,10 +541,115 @@ app.post('/api/schedules', async (req, res) => {
   try {
     const scheduleData = req.body;
     const newSchedule = await prisma.schedule.create({
-      data: scheduleData
+      data: scheduleData,
+      include: { batch: true }
     });
     
     res.status(201).json({ success: true, data: newSchedule });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Student-Batch Management
+app.post('/api/student-batches', async (req, res) => {
+  try {
+    const { studentId, batchId } = req.body;
+    
+    // Check if already enrolled
+    const exists = await prisma.studentBatch.findFirst({
+      where: { studentId, batchId }
+    });
+    
+    if (exists) {
+      return res.status(400).json({
+        success: false,
+        error: 'Student is already enrolled in this batch'
+      });
+    }
+    
+    const enrollment = await prisma.studentBatch.create({
+      data: { studentId, batchId }
+    });
+    
+    res.status(201).json({ success: true, data: enrollment });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+app.delete('/api/student-batches/:studentId/:batchId', async (req, res) => {
+  try {
+    const studentId = parseInt(req.params.studentId);
+    const batchId = parseInt(req.params.batchId);
+    
+    await prisma.studentBatch.deleteMany({
+      where: { studentId, batchId }
+    });
+    
+    res.status(200).json({ success: true });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Student-Course Management
+app.post('/api/student-courses', async (req, res) => {
+  try {
+    const { studentId, courseId } = req.body;
+    
+    // Check if already enrolled
+    const exists = await prisma.studentCourse.findFirst({
+      where: { studentId, courseId }
+    });
+    
+    if (exists) {
+      return res.status(400).json({
+        success: false,
+        error: 'Student is already enrolled in this course'
+      });
+    }
+    
+    const enrollment = await prisma.studentCourse.create({
+      data: { studentId, courseId }
+    });
+    
+    res.status(201).json({ success: true, data: enrollment });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+app.delete('/api/student-courses/:studentId/:courseId', async (req, res) => {
+  try {
+    const studentId = parseInt(req.params.studentId);
+    const courseId = parseInt(req.params.courseId);
+    
+    await prisma.studentCourse.deleteMany({
+      where: { studentId, courseId }
+    });
+    
+    res.status(200).json({ success: true });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// User Password Change
+app.post('/api/users/:userId/change-password', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const { newPassword } = req.body;
+    
+    const user = await prisma.user.update({
+      where: { userId },
+      data: { 
+        password: newPassword,
+        mustResetPassword: false
+      }
+    });
+    
+    res.status(200).json({ success: true });
   } catch (error) {
     handleApiError(res, error);
   }

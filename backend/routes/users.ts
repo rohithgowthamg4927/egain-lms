@@ -1,8 +1,7 @@
 
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
-import { handleApiError } from '../utils/errorHandler';
-import bcrypt from 'bcrypt';
+import { handleApiError } from '../utils/errorHandler.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -215,17 +214,15 @@ router.delete('/:id', async (req, res) => {
         where: { userId }
       });
     } else if (existingUser.role === 'instructor') {
-      // Reassign or delete batches taught by this instructor
-      // For now, we'll just set the instructor to null if possible
-      // This might need to be handled differently based on business logic
+      // Check if instructor is teaching any batches
       const batches = await prisma.batch.findMany({
         where: { instructorId: userId }
       });
 
       if (batches.length > 0) {
-        await prisma.batch.updateMany({
-          where: { instructorId: userId },
-          data: { instructorId: null }
+        return res.status(400).json({
+          success: false,
+          error: 'Cannot delete instructor who is teaching active batches'
         });
       }
     }

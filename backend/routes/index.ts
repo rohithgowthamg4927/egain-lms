@@ -1,14 +1,14 @@
 
 import express from 'express';
-import userRoutes from './users';
-import categoryRoutes from './categories';
-import courseRoutes from './courses';
-import batchRoutes from './batches';
-import resourceRoutes from './resources';
-import scheduleRoutes from './schedules';
-import studentRoutes from './students';
-import authRoutes from './auth';
-import dashboardRoutes from './dashboard';
+import userRoutes from './users.js';
+import categoryRoutes from './categories.js';
+import courseRoutes from './courses.js';
+import batchRoutes from './batches.js';
+import resourceRoutes from './resources.js';
+import scheduleRoutes from './schedules.js';
+import studentRoutes from './students.js';
+import authRoutes from './auth.js';
+import dashboardRoutes from './dashboard.js';
 
 const router = express.Router();
 

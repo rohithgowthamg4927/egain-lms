@@ -1,7 +1,7 @@
 
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
-import { handleApiError } from '../utils/errorHandler';
+import { handleApiError } from '../utils/errorHandler.js';
 
 const batchRouter = express.Router();
 const courseRouter = express.Router();

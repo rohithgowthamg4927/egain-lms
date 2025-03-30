@@ -85,53 +85,54 @@ const Resources = () => {
     });
   };
 
+  // Fixed by ensuring accessorKey matches exact keys in Resource type
   const resourceColumns = [
     {
-      accessorKey: 'title',
+      accessorKey: 'title' as keyof Resource,
       header: 'Resource Title',
-      cell: (resource: Resource) => (
+      cell: (row: Resource) => (
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded bg-primary/10 flex items-center justify-center">
-            {resource.type === 'document' ? (
+            {row.type === 'document' ? (
               <File className="h-5 w-5 text-primary" />
             ) : (
               <Book className="h-5 w-5 text-primary" />
             )}
           </div>
           <div>
-            <p className="font-medium">{resource.title}</p>
-            <p className="text-sm text-muted-foreground line-clamp-1">{resource.description}</p>
+            <p className="font-medium">{row.title}</p>
+            <p className="text-sm text-muted-foreground line-clamp-1">{row.description}</p>
           </div>
         </div>
       ),
     },
     {
-      accessorKey: 'type',
+      accessorKey: 'type' as keyof Resource,
       header: 'Type',
-      cell: (resource: Resource) => (
-        <span className="capitalize">{resource.type}</span>
+      cell: (row: Resource) => (
+        <span className="capitalize">{row.type}</span>
       ),
     },
     {
-      accessorKey: 'courseId',
+      accessorKey: 'courseId' as keyof Resource,
       header: 'Course',
-      cell: (resource: Resource) => {
+      cell: (row: Resource) => {
         // Mock course names based on courseId
-        const courseNames = {
+        const courseNames: Record<number, string> = {
           1: 'Introduction to React',
           2: 'Azure Certification Training',
           3: 'Advanced K8s concepts'
         };
         
-        return courseNames[resource.courseId as keyof typeof courseNames] || 'Unknown Course';
+        return courseNames[row.courseId] || 'Unknown Course';
       },
     },
     {
-      accessorKey: 'url',
+      accessorKey: 'url' as keyof Resource,
       header: 'Resource Link',
-      cell: (resource: Resource) => (
+      cell: (row: Resource) => (
         <a 
-          href={resource.url} 
+          href={row.url} 
           target="_blank" 
           rel="noopener noreferrer"
           className="flex items-center text-blue-600 hover:underline"

@@ -1,3 +1,4 @@
+
 import { CourseCategory, Level, Course, User, Role, Batch, Resource, DashboardMetrics, Schedule } from '@/lib/types';
 
 // Base API URL - Use environment variable with fallback to localhost

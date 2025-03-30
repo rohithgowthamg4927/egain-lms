@@ -12,6 +12,11 @@ import { useToast } from '@/hooks/use-toast';
 import { ChevronLeft, Mail, Phone, MapPin, Book, CalendarClock, Shield } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 
+interface UserResponse {
+  user: User;
+  courses: Course[];
+}
+
 const UserDetail = () => {
   const { userId } = useParams<{ userId: string }>();
   const [user, setUser] = useState<User | null>(null);
@@ -41,11 +46,12 @@ const UserDetail = () => {
         if (response.success && response.data) {
           // If the API returns user and courses in one call
           if ('user' in response.data && 'courses' in response.data) {
-            setUser(response.data.user);
-            setCourses(response.data.courses || []);
+            const userData = response.data as UserResponse;
+            setUser(userData.user);
+            setCourses(userData.courses || []);
           } else {
             // If API just returns user data
-            setUser(response.data as unknown as User);
+            setUser(response.data as User);
             setCourses([]);
           }
         } else {
@@ -114,13 +120,13 @@ const UserDetail = () => {
             <CardHeader className="text-center pb-2">
               <div className="mx-auto mb-4">
                 <Avatar className="w-24 h-24">
-                  <AvatarImage src={user.profilePicture?.fileUrl} alt={user.fullName} />
-                  <AvatarFallback className="text-2xl">{getInitials(user.fullName)}</AvatarFallback>
+                  <AvatarImage src={user?.profilePicture?.fileUrl} alt={user?.fullName} />
+                  <AvatarFallback className="text-2xl">{user ? getInitials(user.fullName) : ''}</AvatarFallback>
                 </Avatar>
               </div>
-              <CardTitle className="text-2xl">{user.fullName}</CardTitle>
+              <CardTitle className="text-2xl">{user?.fullName}</CardTitle>
               <div className="inline-flex items-center mt-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                {user?.role.charAt(0).toUpperCase() + user?.role.slice(1)}
               </div>
             </CardHeader>
             <CardContent>
@@ -129,11 +135,11 @@ const UserDetail = () => {
                   <Mail className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium">Email</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <p className="text-sm text-muted-foreground">{user?.email}</p>
                   </div>
                 </div>
                 
-                {user.phoneNumber && (
+                {user?.phoneNumber && (
                   <div className="flex items-start">
                     <Phone className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
                     <div>
@@ -143,7 +149,7 @@ const UserDetail = () => {
                   </div>
                 )}
                 
-                {user.address && (
+                {user?.address && (
                   <div className="flex items-start">
                     <MapPin className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
                     <div>
@@ -153,29 +159,33 @@ const UserDetail = () => {
                   </div>
                 )}
                 
-                <div className="flex items-start">
-                  <CalendarClock className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Joined</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(user.createdAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </p>
+                {user && (
+                  <div className="flex items-start">
+                    <CalendarClock className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium">Joined</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(user.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
                 
-                <div className="flex items-start">
-                  <Shield className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Password Status</p>
-                    <p className="text-sm text-muted-foreground">
-                      {user.mustResetPassword ? 'Must reset password' : 'Password updated'}
-                    </p>
+                {user && (
+                  <div className="flex items-start">
+                    <Shield className="h-5 w-5 text-muted-foreground mr-2 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium">Password Status</p>
+                      <p className="text-sm text-muted-foreground">
+                        {user.mustResetPassword ? 'Must reset password' : 'Password updated'}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               
               <Separator className="my-6" />
@@ -184,7 +194,7 @@ const UserDetail = () => {
                 <Button 
                   variant="outline" 
                   className="w-full"
-                  onClick={() => navigate(`/add-user`, { state: { userId: user.userId, role: user.role } })}
+                  onClick={() => navigate(`/add-user`, { state: { userId: user?.userId, role: user?.role } })}
                 >
                   Edit Profile
                 </Button>
@@ -197,7 +207,7 @@ const UserDetail = () => {
               <CardTitle>User Details</CardTitle>
             </CardHeader>
             <CardContent>
-              {user.role === 'student' && (
+              {user?.role === 'student' && (
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-medium mb-4">Enrolled Courses</h3>
@@ -222,7 +232,7 @@ const UserDetail = () => {
                 </div>
               )}
               
-              {user.role === 'instructor' && (
+              {user?.role === 'instructor' && (
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-medium mb-4">Teaching Courses</h3>

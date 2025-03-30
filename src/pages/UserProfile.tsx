@@ -40,7 +40,7 @@ const UserProfile = () => {
         throw new Error(response.error || 'Failed to fetch user data');
       }
       
-      return response.data;
+      return response.data as UserProfileData;
     },
     retry: 2,
     staleTime: 0,
@@ -48,7 +48,7 @@ const UserProfile = () => {
   });
 
   const handleDeleteUser = async () => {
-    if (!userId) return;
+    if (!userId || !userData) return;
     
     try {
       const parsedUserId = parseInt(userId);
@@ -75,9 +75,9 @@ const UserProfile = () => {
       });
       
       // Redirect based on the user's role
-      if (userData?.user.role === Role.instructor) {
+      if (userData.user.role === Role.instructor) {
         navigate('/instructors');
-      } else if (userData?.user.role === Role.student) {
+      } else if (userData.user.role === Role.student) {
         navigate('/students');
       } else {
         navigate('/dashboard');

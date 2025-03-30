@@ -11,7 +11,14 @@ ERROR: cannot alter type of a column used by a view or rule
 DETAIL: rule _RETURN on view student_details depends on column "batch_name"
 ```
 
-This occurs because there's an existing view called `student_details` in your database that depends on the `batch_name` column, and Prisma cannot alter this column because of the dependency.
+or
+
+```
+ERROR: cannot alter type of a column used by a view or rule
+DETAIL: rule _RETURN on view instructor_details depends on column "batch_name"
+```
+
+This occurs because there are existing views called `student_details` or `instructor_details` in your database that depend on the `batch_name` column, and Prisma cannot alter this column because of the dependency.
 
 ## Solution Options
 
@@ -25,9 +32,9 @@ node scripts/fix-prisma-migration.js
 
 This script will:
 1. Connect to your PostgreSQL database using credentials from your .env file
-2. Drop the `student_details` view
+2. Drop the `student_details` and `instructor_details` views
 3. Run `prisma db push` to update your schema
-4. Inform you that you'll need to recreate the view if needed
+4. Inform you that you'll need to recreate the views if needed
 
 ### Option 2: Manual Approach
 
@@ -37,8 +44,9 @@ If you prefer to do this manually or the script doesn't work:
 # Connect to PostgreSQL
 psql -U your_username -d lms_db
 
-# Drop the view
+# Drop the views
 DROP VIEW IF EXISTS student_details;
+DROP VIEW IF EXISTS instructor_details;
 
 # Exit PostgreSQL
 \q
@@ -61,7 +69,7 @@ npx prisma db pull
 
 ## After Fixing
 
-Once you've successfully pushed your schema, you might want to recreate the view:
+Once you've successfully pushed your schema, you might want to recreate the views:
 
 ```sql
 CREATE VIEW student_details AS
@@ -76,6 +84,18 @@ SELECT
 FROM student_batches s
 JOIN users u ON s.student_id = u.user_id
 JOIN batches b ON s.batch_id = b.batch_id
+JOIN courses c ON b.course_id = c.course_id;
+
+CREATE VIEW instructor_details AS
+SELECT 
+  -- Add the original view definition here
+  -- Example (your actual view might be different):
+  b.instructor_id,
+  u.full_name as instructor_name,
+  b.batch_name,
+  c.course_name
+FROM batches b
+JOIN users u ON b.instructor_id = u.user_id
 JOIN courses c ON b.course_id = c.course_id;
 ```
 

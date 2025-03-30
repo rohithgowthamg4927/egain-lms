@@ -1,7 +1,7 @@
 
 import express from 'express';
 import cors from 'cors';
-import apiRoutes from './routes/index'; // Fixed import path to point to the index.ts file
+import apiRoutes from './routes/index.ts'; // Added .ts extension to fix the import
 import { handleApiError } from './utils/errorHandler';
 import { PrismaClient } from '@prisma/client';
 

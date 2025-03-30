@@ -6,9 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+import { TabsList, TabsTrigger, TabsContent, Tabs } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertCircle, Edit, Trash } from 'lucide-react';
+import { AlertCircle, Edit, Trash, Mail, Phone, MapPin, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getUserById, deleteUser } from '@/lib/api';
 import { User, Course, Role } from '@/lib/types';
@@ -42,9 +42,9 @@ const UserProfile = () => {
       
       return response.data;
     },
-    retry: 2, // Increase retry attempts
-    staleTime: 0, // Don't cache data
-    refetchOnMount: true, // Always refetch when component mounts
+    retry: 2,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   const handleDeleteUser = async () => {
@@ -80,7 +80,7 @@ const UserProfile = () => {
       } else if (userData?.user.role === Role.student) {
         navigate('/students');
       } else {
-        navigate('/users');
+        navigate('/dashboard');
       }
     } catch (err) {
       console.error('Error deleting user:', err);
@@ -131,98 +131,164 @@ const UserProfile = () => {
   }
 
   const { user, courses } = userData;
+  const userType = user.role.charAt(0).toUpperCase() + user.role.slice(1);
 
   return (
     <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">User Profile</h1>
+            <h1 className="text-3xl font-bold">{userType} Profile</h1>
             <p className="text-muted-foreground mt-1">
-              View and manage user information
+              View and manage {userType.toLowerCase()} information
             </p>
           </div>
           <div className="space-x-2">
-            <Button variant="outline" onClick={() => navigate(`/add-user`, { state: { userId: user.userId } })}>
+            <Button variant="outline" onClick={() => navigate(`/add-user`, { state: { userId: user.userId, role: user.role } })}>
               <Edit className="h-4 w-4 mr-2" />
               Edit Profile
             </Button>
             <Button variant="destructive" onClick={handleDeleteUser}>
               <Trash className="h-4 w-4 mr-2" />
-              Delete User
+              Delete {userType}
             </Button>
           </div>
         </div>
 
         <Separator />
 
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
-            <CardDescription>Details about the user's personal information</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={user.profilePicture?.fileUrl} alt={user.fullName} />
-                <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <h2 className="text-lg font-semibold">{user.fullName}</h2>
-                <p className="text-muted-foreground">{user.email}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <span className="text-sm font-medium">Role:</span>
-                <p className="text-muted-foreground">{user.role}</p>
-              </div>
-              <div>
-                <span className="text-sm font-medium">Phone Number:</span>
-                <p className="text-muted-foreground">{user.phoneNumber || 'N/A'}</p>
-              </div>
-              <div>
-                <span className="text-sm font-medium">Joined:</span>
-                <p className="text-muted-foreground">{new Date(user.createdAt).toLocaleDateString()}</p>
-              </div>
-              <div>
-                <span className="text-sm font-medium">Status:</span>
-                <Badge variant="secondary">Active</Badge>
-              </div>
-            </div>
-            <div>
-              <span className="text-sm font-medium">Bio:</span>
-              <p className="text-muted-foreground">{user.bio || 'N/A'}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {courses && courses.length > 0 && (
-          <Card className="w-full">
-            <CardHeader>
-              <CardTitle>Courses</CardTitle>
-              <CardDescription>
-                {user.role === 'instructor' ? 'Courses this instructor teaches' : 'Courses the user is enrolled in'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[200px] w-full rounded-md border">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-3">
-                  {courses.map((course) => (
-                    <div 
-                      key={course.courseId} 
-                      className="border rounded-md p-3 cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/courses/${course.courseId}`)}
-                    >
-                      <h3 className="text-md font-semibold">{course.courseName}</h3>
-                      <p className="text-sm text-muted-foreground">{course.description}</p>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="md:w-1/3">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex flex-col items-center">
+                    <Avatar className="h-24 w-24 mb-4">
+                      <AvatarImage src={user.profilePicture?.fileUrl} alt={user.fullName} />
+                      <AvatarFallback className="text-xl">{getInitials(user.fullName)}</AvatarFallback>
+                    </Avatar>
+                    <h2 className="text-xl font-bold">{user.fullName}</h2>
+                    <p className="text-muted-foreground">{userType}</p>
+                    
+                    <div className="w-full mt-6 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{user.email}</span>
+                      </div>
+                      
+                      {user.phoneNumber && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{user.phoneNumber}</span>
+                        </div>
+                      )}
+                      
+                      {user.address && (
+                        <div className="flex items-start gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                          <span className="text-sm">{user.address}</span>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="flex-1">
+              <Tabs defaultValue="details">
+                <Card>
+                  <CardHeader className="pb-1">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="details">{userType} Details</TabsTrigger>
+                      <TabsTrigger value="credentials">Credentials</TabsTrigger>
+                      <TabsTrigger value="courses">Courses</TabsTrigger>
+                    </TabsList>
+                  </CardHeader>
+                  
+                  <CardContent className="pt-4">
+                    <TabsContent value="details" className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <h3 className="text-sm font-medium">Full Name</h3>
+                          <p className="text-muted-foreground">{user.fullName}</p>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium">Email</h3>
+                          <p className="text-muted-foreground">{user.email}</p>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium">Phone Number</h3>
+                          <p className="text-muted-foreground">{user.phoneNumber || 'Not provided'}</p>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium">Role</h3>
+                          <p className="text-muted-foreground capitalize">{user.role}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <h3 className="text-sm font-medium">Address</h3>
+                          <p className="text-muted-foreground">{user.address || 'Not provided'}</p>
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="credentials">
+                      <div className="space-y-4">
+                        <div>
+                          <h3 className="text-sm font-medium">Password Reset Required</h3>
+                          <p className="text-muted-foreground">{user.mustResetPassword ? 'Yes' : 'No'}</p>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium">Last Password Reset</h3>
+                          <p className="text-muted-foreground">Not available</p>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            toast({
+                              title: "Reset Password",
+                              description: "This feature is not yet implemented.",
+                            });
+                          }}
+                        >
+                          Reset Password
+                        </Button>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="courses">
+                      {courses && courses.length > 0 ? (
+                        <ScrollArea className="h-[200px] w-full rounded-md">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {courses.map((course) => (
+                              <div 
+                                key={course.courseId} 
+                                className="border rounded-md p-3 cursor-pointer hover:bg-muted/50"
+                                onClick={() => navigate(`/courses/${course.courseId}`)}
+                              >
+                                <h3 className="text-md font-semibold">{course.courseName}</h3>
+                                <p className="text-sm text-muted-foreground">{course.description || 'No description'}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          No courses found for this {userType.toLowerCase()}.
+                        </div>
+                      )}
+                    </TabsContent>
+                  </CardContent>
+                </Card>
+              </Tabs>
+            </div>
+          </div>
+        </div>
       </div>
     </Layout>
   );

@@ -129,13 +129,14 @@ router.post('/', async (req, res) => {
     }
     
     // Extract fields that are in the User model
-    const { fullName, email, role, password, phoneNumber, mustResetPassword } = userData;
+    const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = userData;
     
     console.log('Creating user with data:', {
       fullName,
       email,
       role,
       phoneNumber,
+      address,
       password: '[REDACTED]',
       mustResetPassword
     });
@@ -148,6 +149,7 @@ router.post('/', async (req, res) => {
         role,
         password,
         phoneNumber: phoneNumber || null,
+        address: address || null,
         mustResetPassword: mustResetPassword || true
       }
     });
@@ -166,7 +168,7 @@ router.put('/:userId', async (req, res) => {
     const userData = req.body;
     
     // Extract only fields that exist in the User model
-    const { fullName, email, role, password, phoneNumber, mustResetPassword } = userData;
+    const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = userData;
     
     const updatedUser = await prisma.user.update({
       where: { userId },
@@ -176,6 +178,7 @@ router.put('/:userId', async (req, res) => {
         ...(role !== undefined && { role }),
         ...(password !== undefined && { password }),
         ...(phoneNumber !== undefined && { phoneNumber }),
+        ...(address !== undefined && { address }),
         ...(mustResetPassword !== undefined && { mustResetPassword })
       },
       include: { profilePicture: true }

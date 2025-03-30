@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Layout from '@/components/layout/Layout';
 import { DataTable } from '@/components/ui/data-table';
-import { getUsers } from '@/lib/api';
+import { getUsers, deleteUser } from '@/lib/api';
 import { Role, User } from '@/lib/types';
 import { Plus, Search, Award, BookOpen, Users, Eye, Edit, Trash } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -19,38 +20,38 @@ const Instructors = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
+  const fetchInstructors = async () => {
+    setIsLoading(true);
+    
+    try {
+      console.log('Fetching instructors...');
+      const response = await getUsers(Role.instructor);
+      console.log('Response:', response);
       
-      try {
-        console.log('Fetching instructors...');
-        const response = await getUsers(Role.instructor);
-        console.log('Response:', response);
-        
-        if (response.success && response.data) {
-          setInstructors(response.data);
-        } else {
-          console.error('API error:', response.error);
-          toast({
-            title: 'Error',
-            description: response.error || 'Failed to fetch instructors',
-            variant: 'destructive',
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
+      if (response.success && response.data) {
+        setInstructors(response.data);
+      } else {
+        console.error('API error:', response.error);
         toast({
           title: 'Error',
-          description: 'An unexpected error occurred while fetching instructors',
+          description: response.error || 'Failed to fetch instructors',
           variant: 'destructive',
         });
-      } finally {
-        setIsLoading(false);
       }
-    };
-    
-    fetchData();
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred while fetching instructors',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchInstructors();
   }, [toast]);
 
   const filteredInstructors = instructors.filter((instructor) =>
@@ -60,6 +61,40 @@ const Instructors = () => {
 
   const handleAddInstructor = () => {
     navigate('/add-user', { state: { role: Role.instructor } });
+  };
+  
+  const handleDeleteInstructor = async (instructor: User) => {
+    try {
+      // Confirm before deleting
+      const confirmed = window.confirm(`Are you sure you want to delete ${instructor.fullName}?`);
+      
+      if (!confirmed) {
+        return;
+      }
+      
+      console.log(`Deleting instructor with ID: ${instructor.userId}`);
+      
+      const response = await deleteUser(instructor.userId);
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to delete instructor');
+      }
+      
+      // Update the local state
+      setInstructors(instructors.filter(i => i.userId !== instructor.userId));
+      
+      toast({
+        title: 'Instructor deleted',
+        description: `${instructor.fullName} has been deleted successfully`,
+      });
+    } catch (error) {
+      console.error('Error deleting instructor:', error);
+      toast({
+        title: 'Error deleting instructor',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    }
   };
 
   const instructorColumns = [
@@ -82,14 +117,24 @@ const Instructors = () => {
     {
       accessorKey: 'email' as keyof User,
       header: 'Email',
-      cell: () => null,
+      cell: (instructor: User) => instructor.email,
     },
     {
-      accessorKey: 'bio' as keyof User,
-      header: 'Specialization',
-      cell: (instructor: User) => (
-        <p className="line-clamp-2 text-sm">{instructor.bio || 'No specialization provided'}</p>
-      ),
+      accessorKey: 'phoneNumber' as keyof User,
+      header: 'Phone',
+      cell: (instructor: User) => instructor.phoneNumber || 'N/A',
+    },
+    {
+      accessorKey: 'createdAt' as keyof User,
+      header: 'Joined',
+      cell: (instructor: User) => {
+        const date = new Date(instructor.createdAt);
+        return new Intl.DateTimeFormat('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        }).format(date);
+      },
     },
     {
       accessorKey: 'courses' as keyof User,
@@ -103,19 +148,6 @@ const Instructors = () => {
       header: 'Students',
       cell: () => {
         return Math.floor(Math.random() * 30) + 10;
-      },
-    },
-    {
-      accessorKey: 'rating' as keyof User,
-      header: 'Rating',
-      cell: () => {
-        const rating = (Math.random() * 2 + 3).toFixed(1);
-        return (
-          <div className="flex items-center">
-            <span className="text-amber-500 mr-1">★</span>
-            {rating}
-          </div>
-        );
       },
     },
   ];
@@ -137,13 +169,7 @@ const Instructors = () => {
     },
     {
       label: 'Delete',
-      onClick: (instructor: User) => {
-        toast({
-          title: 'Delete Instructor',
-          description: `Are you sure you want to delete ${instructor.fullName}?`,
-          variant: 'destructive',
-        });
-      },
+      onClick: handleDeleteInstructor,
       icon: <Trash className="h-4 w-4" />,
     },
   ];

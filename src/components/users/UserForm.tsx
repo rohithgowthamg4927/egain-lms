@@ -16,8 +16,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Role } from '@/lib/types';
-import { uploadProfilePicture } from '@/lib/s3-upload';
-import { X, Upload, Loader2, User, Copy, Check } from 'lucide-react';
+import { Upload, Loader2, User, Copy, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateRandomPassword } from '@/lib/utils';
 
@@ -30,6 +29,7 @@ const formSchema = z.object({
   }),
   role: z.enum(['admin', 'instructor', 'student']),
   phoneNumber: z.string().optional(),
+  address: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -54,6 +54,7 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
       email: '',
       role: Role.student,
       phoneNumber: '',
+      address: '',
       ...defaultValues
     }
   });
@@ -119,7 +120,10 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
                   onClick={removeProfilePicture}
                   className="absolute top-0 right-0 p-1 bg-black/70 rounded-full text-white hover:bg-black"
                 >
-                  <X className="h-3 w-3" />
+                  <span className="sr-only">Remove</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
                 </button>
               </>
             ) : (
@@ -181,6 +185,20 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
                 <FormLabel>Phone Number</FormLabel>
                 <FormControl>
                   <Input placeholder="Enter phone number (optional)" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Address</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter address (optional)" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

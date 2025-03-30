@@ -1,3 +1,4 @@
+
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -16,6 +17,7 @@ export interface User {
   fullName: string;
   email: string;
   phoneNumber?: string;
+  address?: string;
   role: Role;
   createdAt: string;
   updatedAt: string;

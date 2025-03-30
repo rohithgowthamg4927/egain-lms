@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -36,20 +35,17 @@ const AddUser = () => {
     setIsSubmitting(true);
     
     try {
-      // Make a real API call to create the user
-      // Remove the password from the User object and pass it separately
+      // Extract password and prepare user data
       const { password, ...userData } = data;
       
       const response = await createUser({
-        userData: {
-          fullName: userData.fullName,
-          email: userData.email,
-          role: userData.role,
-          phoneNumber: userData.phoneNumber,
-          bio: userData.bio,
-          mustResetPassword: true
-        },
-        password: password
+        fullName: userData.fullName,
+        email: userData.email,
+        role: userData.role,
+        phoneNumber: userData.phoneNumber,
+        bio: userData.bio,
+        mustResetPassword: true,
+        password  // Passing password directly to the API
       });
       
       if (!response.success) {

@@ -82,7 +82,7 @@ export const logout = async (): Promise<{ success: boolean }> => {
 };
 
 // User Management API
-export const createUser = async (userData: Partial<User>): Promise<{ success: boolean; data?: User; error?: string }> => {
+export const createUser = async (userData: Partial<User> & { password?: string }): Promise<{ success: boolean; data?: User; error?: string }> => {
   return apiFetch<User>('/users', {
     method: 'POST',
     body: JSON.stringify(userData),

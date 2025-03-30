@@ -158,6 +158,7 @@ app.post('/api/users', async (req, res) => {
       });
     }
     
+    // Create the new user with the provided data
     const newUser = await prisma.user.create({
       data: userData
     });

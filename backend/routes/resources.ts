@@ -1,5 +1,5 @@
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler';
 
@@ -7,7 +7,7 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 // Get all resources
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const courseId = req.query.courseId ? parseInt(req.query.courseId as string) : undefined;
     
@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create a resource
-router.post('/', async (req, res) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     const resourceData = req.body;
     const newResource = await prisma.resource.create({

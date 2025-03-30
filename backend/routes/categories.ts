@@ -1,5 +1,5 @@
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler';
 
@@ -7,7 +7,7 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 // Get all categories
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const categories = await prisma.courseCategory.findMany();
     res.status(200).json({ success: true, data: categories });
@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create a category
-router.post('/', async (req, res) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     const categoryData = req.body;
     const newCategory = await prisma.courseCategory.create({

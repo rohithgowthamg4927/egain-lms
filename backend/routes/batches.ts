@@ -1,5 +1,5 @@
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
 
@@ -7,7 +7,7 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 // Get all batches
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const courseId = req.query.courseId ? parseInt(req.query.courseId as string) : undefined;
     
@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get a specific batch
-router.get('/:batchId', async (req, res) => {
+router.get('/:batchId', async (req: Request, res: Response) => {
   try {
     const batchId = parseInt(req.params.batchId);
     
@@ -68,7 +68,7 @@ router.get('/:batchId', async (req, res) => {
 });
 
 // Create a batch
-router.post('/', async (req, res) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     console.log("Creating batch with data:", req.body);
     const batchData = req.body;

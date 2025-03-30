@@ -1,5 +1,5 @@
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
 
@@ -7,7 +7,7 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 // Dashboard Metrics API
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany();
     const students = users.filter(user => user.role === 'student');

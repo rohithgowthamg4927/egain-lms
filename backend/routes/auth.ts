@@ -1,5 +1,5 @@
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
 
@@ -7,7 +7,7 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 // Login API
-router.post('/login', async (req, res) => {
+router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password, role } = req.body;
     
@@ -39,7 +39,7 @@ router.post('/login', async (req, res) => {
 });
 
 // Database setup endpoint
-router.post('/setup-database', async (req, res) => {
+router.post('/setup-database', async (req: Request, res: Response) => {
   try {
     // Example database setup logic
     const adminExists = await prisma.user.findFirst({ where: { role: 'admin' } });
@@ -63,7 +63,7 @@ router.post('/setup-database', async (req, res) => {
 });
 
 // Basic health check
-router.get('/health', (req, res) => {
+router.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });
 });
 

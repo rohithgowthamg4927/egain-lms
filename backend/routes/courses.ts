@@ -1,5 +1,5 @@
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
 
@@ -7,7 +7,7 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 // Get all courses
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const courses = await prisma.course.findMany({
       include: {
@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get a specific course
-router.get('/:courseId', async (req, res) => {
+router.get('/:courseId', async (req: Request, res: Response) => {
   try {
     const courseId = parseInt(req.params.courseId);
     
@@ -69,7 +69,7 @@ router.get('/:courseId', async (req, res) => {
 });
 
 // Create a course
-router.post('/', async (req, res) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     console.log("Creating course with data:", req.body);
     const courseData = req.body;
@@ -111,7 +111,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update course
-router.put('/:courseId', async (req, res) => {
+router.put('/:courseId', async (req: Request, res: Response) => {
   try {
     const courseId = parseInt(req.params.courseId);
     const courseData = req.body;

@@ -1,5 +1,5 @@
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
 
@@ -8,7 +8,7 @@ const courseRouter = express.Router();
 const prisma = new PrismaClient();
 
 // Student-Batch Management
-batchRouter.post('/', async (req, res) => {
+batchRouter.post('/', async (req: Request, res: Response) => {
   try {
     const { studentId, batchId } = req.body;
     
@@ -40,7 +40,7 @@ batchRouter.post('/', async (req, res) => {
   }
 });
 
-batchRouter.delete('/:studentId/:batchId', async (req, res) => {
+batchRouter.delete('/:studentId/:batchId', async (req: Request, res: Response) => {
   try {
     const studentId = parseInt(req.params.studentId);
     const batchId = parseInt(req.params.batchId);
@@ -56,7 +56,7 @@ batchRouter.delete('/:studentId/:batchId', async (req, res) => {
 });
 
 // Student-Course Management
-courseRouter.post('/', async (req, res) => {
+courseRouter.post('/', async (req: Request, res: Response) => {
   try {
     const { studentId, courseId } = req.body;
     
@@ -88,7 +88,7 @@ courseRouter.post('/', async (req, res) => {
   }
 });
 
-courseRouter.delete('/:studentId/:courseId', async (req, res) => {
+courseRouter.delete('/:studentId/:courseId', async (req: Request, res: Response) => {
   try {
     const studentId = parseInt(req.params.studentId);
     const courseId = parseInt(req.params.courseId);

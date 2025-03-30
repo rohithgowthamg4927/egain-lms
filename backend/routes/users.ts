@@ -1,5 +1,5 @@
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
 
@@ -7,7 +7,7 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 // Get all users or filtered by role
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const { role } = req.query;
     
@@ -27,7 +27,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get user by ID with their courses
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
     
@@ -87,7 +87,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create new user
-router.post('/', async (req, res) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = req.body;
     
@@ -126,7 +126,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update user
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
     const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = req.body;
@@ -181,7 +181,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete user
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
     

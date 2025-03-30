@@ -1,19 +1,24 @@
+
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Define the enums directly to match the schema
-enum Role {
-  admin = 'admin',
-  instructor = 'instructor',
-  student = 'student'
-}
+// Define the enum values as constants instead of using enum
+const Role = {
+  admin: 'admin',
+  instructor: 'instructor',
+  student: 'student'
+} as const;
 
-enum Level {
-  beginner = 'beginner',
-  intermediate = 'intermediate',
-  advanced = 'advanced'
-}
+const Level = {
+  beginner: 'beginner',
+  intermediate: 'intermediate',
+  advanced: 'advanced'
+} as const;
+
+// Create types from the const objects
+type RoleType = typeof Role[keyof typeof Role];
+type LevelType = typeof Level[keyof typeof Level];
 
 async function main() {
   // Clean up existing data
@@ -37,7 +42,7 @@ async function main() {
       fullName: 'Admin',
       email: 'admin@lms.com',
       password: 'Admin@123', // In a real app, this would be hashed
-      role: Role.admin,
+      role: Role.admin as RoleType,
       phoneNumber: '9663040591',
       mustResetPassword: false
     }
@@ -67,7 +72,7 @@ async function main() {
         fullName: 'Debajit Chandra',
         email: 'debajit@gmail.com',
         password: 'Debajit123',
-        role: Role.instructor,
+        role: Role.instructor as RoleType,
         phoneNumber: '+1987654321',
         mustResetPassword: true
       }
@@ -77,7 +82,7 @@ async function main() {
         fullName: 'Rohith Gowtham G',
         email: 'rohithgowthamg4927@gmail.com',
         password: 'Password123',
-        role: Role.instructor,
+        role: Role.instructor as RoleType,
         phoneNumber: '+1122334455',
         mustResetPassword: true
       }
@@ -93,7 +98,7 @@ async function main() {
         fullName: 'Michael Brown',
         email: 'michael.brown@example.com',
         password: 'Password123',
-        role: Role.student,
+        role: Role.student as RoleType,
         phoneNumber: '+1555666777',
         mustResetPassword: true
       }
@@ -103,7 +108,7 @@ async function main() {
         fullName: 'Sarah Davis',
         email: 'sarah.davis@example.com',
         password: 'Password123',
-        role: Role.student,
+        role: Role.student as RoleType,
         phoneNumber: '+1444555666',
         mustResetPassword: true
       }
@@ -113,7 +118,7 @@ async function main() {
         fullName: 'Robert Wilson',
         email: 'robert.wilson@example.com',
         password: 'Password123',
-        role: Role.student,
+        role: Role.student as RoleType,
         phoneNumber: '+1333444555',
         mustResetPassword: true
       }
@@ -128,7 +133,7 @@ async function main() {
       data: {
         courseName: 'Introduction to React',
         description: 'Learn the fundamentals of AWS.',
-        courseLevel: Level.beginner,
+        courseLevel: Level.beginner as LevelType,
         categoryId: categories[0].categoryId,
         duration: 40,
         isPublished: true
@@ -138,7 +143,7 @@ async function main() {
       data: {
         courseName: 'Azure Certification Training',
         description: 'Prepare for the Azure certification exam with hands-on labs.',
-        courseLevel: Level.beginner,
+        courseLevel: Level.beginner as LevelType,
         categoryId: categories[1].categoryId,
         duration: 35,
         isPublished: true
@@ -148,7 +153,7 @@ async function main() {
       data: {
         courseName: 'Advanced K8s concepts',
         description: 'Dive deep into advanced Kubernetes patterns and techniques.',
-        courseLevel: Level.advanced,
+        courseLevel: Level.advanced as LevelType,
         categoryId: categories[0].categoryId,
         duration: 50,
         isPublished: true
@@ -158,7 +163,7 @@ async function main() {
       data: {
         courseName: 'Python for Cloud',
         description: 'Learn how to use Python for Cloud and automation.',
-        courseLevel: Level.intermediate,
+        courseLevel: Level.intermediate as LevelType,
         categoryId: categories[2].categoryId,
         duration: 60,
         isPublished: true

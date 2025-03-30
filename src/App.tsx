@@ -2,7 +2,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/use-auth";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index";
@@ -38,7 +38,9 @@ const App = () => {
               <Route path="/" element={<Index />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/courses" element={<Courses />} />
+              <Route path="/courses/:courseId" element={<Courses />} />
               <Route path="/batches" element={<Batches />} />
+              <Route path="/batches/:batchId" element={<Batches />} />
               <Route path="/schedules" element={<Schedules />} />
               <Route path="/students" element={<Students />} />
               <Route path="/students/:userId" element={<UserProfile />} />

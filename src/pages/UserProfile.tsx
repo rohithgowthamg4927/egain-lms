@@ -43,6 +43,8 @@ const UserProfile = () => {
       return response.data;
     },
     retry: 2, // Increase retry attempts
+    staleTime: 0, // Don't cache data
+    refetchOnMount: true, // Always refetch when component mounts
   });
 
   const handleDeleteUser = async () => {
@@ -207,7 +209,11 @@ const UserProfile = () => {
               <ScrollArea className="h-[200px] w-full rounded-md border">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-3">
                   {courses.map((course) => (
-                    <div key={course.courseId} className="border rounded-md p-3">
+                    <div 
+                      key={course.courseId} 
+                      className="border rounded-md p-3 cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/courses/${course.courseId}`)}
+                    >
                       <h3 className="text-md font-semibold">{course.courseName}</h3>
                       <p className="text-sm text-muted-foreground">{course.description}</p>
                     </div>

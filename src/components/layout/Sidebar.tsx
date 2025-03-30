@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
@@ -17,6 +17,7 @@ interface NavItem {
 
 const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { hasRole } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -81,6 +82,10 @@ const Sidebar = () => {
     return hasRole(item.roles);
   });
 
+  const handleNavigation = (href: string) => {
+    navigate(href);
+  };
+
   return (
     <>
       <Button
@@ -140,25 +145,24 @@ const Sidebar = () => {
 
         <nav className="space-y-1 px-3 py-4">
           {filteredNavItems.map((item) => (
-            <NavLink
+            <Button
               key={item.href}
-              to={item.href}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors",
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                  isCollapsed && "justify-center px-0"
-                )
-              }
+              variant="ghost"
+              className={cn(
+                "flex w-full items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors justify-start",
+                location.pathname === item.href
+                  ? "bg-primary/10 text-primary"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                isCollapsed && "justify-center px-0"
+              )}
+              onClick={() => handleNavigation(item.href)}
             >
               <div className={cn("flex items-center", isCollapsed && "flex-col")}>
                 {item.icon}
                 {!isCollapsed && <span className="ml-3">{item.title}</span>}
                 {isCollapsed && <span className="mt-1 text-[10px]">{item.title}</span>}
               </div>
-            </NavLink>
+            </Button>
           ))}
         </nav>
 
@@ -172,7 +176,7 @@ const Sidebar = () => {
               "w-full justify-start",
               isCollapsed && "justify-center"
             )} 
-            onClick={() => window.location.href = '/profile'}
+            onClick={() => navigate('/profile')}
           >
             <SlidersHorizontal className="h-5 w-5" />
             {!isCollapsed && <span className="ml-2">Preferences</span>}

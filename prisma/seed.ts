@@ -22,11 +22,11 @@ async function main() {
   // Create admin user
   const admin = await prisma.user.create({
     data: {
-      fullName: 'Admin User',
+      fullName: 'Admin',
       email: 'admin@lms.com',
       password: 'Admin@123', // In a real app, this would be hashed
       role: Role.admin,
-      phoneNumber: '+1234567890',
+      phoneNumber: '9663040591',
       mustResetPassword: false
     }
   });
@@ -36,19 +36,13 @@ async function main() {
   // Create course categories
   const categories = await Promise.all([
     prisma.courseCategory.create({
-      data: { categoryName: 'Web Development' }
-    }),
-    prisma.courseCategory.create({
-      data: { categoryName: 'Mobile Development' }
-    }),
-    prisma.courseCategory.create({
-      data: { categoryName: 'Data Science' }
-    }),
-    prisma.courseCategory.create({
-      data: { categoryName: 'Cloud Computing' }
+      data: { categoryName: 'AWS' }
     }),
     prisma.courseCategory.create({
       data: { categoryName: 'DevOps' }
+    }),
+    prisma.courseCategory.create({
+      data: { categoryName: 'Azure' }
     })
   ]);
 
@@ -58,23 +52,23 @@ async function main() {
   const instructors = await Promise.all([
     prisma.user.create({
       data: {
-        fullName: 'John Smith',
-        email: 'john.smith@example.com',
-        password: 'Password123',
+        fullName: 'Debajit Chandra',
+        email: 'debajit@gmail.com',
+        password: 'Debajit123',
         role: Role.instructor,
         phoneNumber: '+1987654321',
-        bio: 'Web development expert with 10 years of experience',
+        bio: 'AWS expert with 10 years of experience',
         mustResetPassword: true
       }
     }),
     prisma.user.create({
       data: {
-        fullName: 'Emily Johnson',
-        email: 'emily.johnson@example.com',
+        fullName: 'Rohith Gowtham G',
+        email: 'rohithgowthamg4927@gmail.com',
         password: 'Password123',
         role: Role.instructor,
         phoneNumber: '+1122334455',
-        bio: 'Mobile app development specialist focusing on Flutter and React Native',
+        bio: 'K8s specialist focusing on Flutter and React Native',
         mustResetPassword: true
       }
     })
@@ -123,7 +117,7 @@ async function main() {
     prisma.course.create({
       data: {
         courseName: 'Introduction to React',
-        description: 'Learn the fundamentals of React, including components, state, and props.',
+        description: 'Learn the fundamentals of AWS.',
         courseLevel: Level.beginner,
         categoryId: categories[0].categoryId,
         duration: 40,
@@ -132,8 +126,8 @@ async function main() {
     }),
     prisma.course.create({
       data: {
-        courseName: 'Flutter for Beginners',
-        description: 'Get started with Flutter development and build your first mobile app.',
+        courseName: 'Azure Certification Training',
+        description: 'Prepare for the Azure certification exam with hands-on labs.',
         courseLevel: Level.beginner,
         categoryId: categories[1].categoryId,
         duration: 35,
@@ -142,8 +136,8 @@ async function main() {
     }),
     prisma.course.create({
       data: {
-        courseName: 'Advanced JavaScript Patterns',
-        description: 'Dive deep into advanced JavaScript patterns and techniques.',
+        courseName: 'Advanced K8s concepts',
+        description: 'Dive deep into advanced Kubernetes patterns and techniques.',
         courseLevel: Level.advanced,
         categoryId: categories[0].categoryId,
         duration: 50,
@@ -152,8 +146,8 @@ async function main() {
     }),
     prisma.course.create({
       data: {
-        courseName: 'Python for Data Science',
-        description: 'Learn how to use Python for data analysis and visualization.',
+        courseName: 'Python for Cloud',
+        description: 'Learn how to use Python for Cloud and automation.',
         courseLevel: Level.intermediate,
         categoryId: categories[2].categoryId,
         duration: 60,
@@ -169,7 +163,7 @@ async function main() {
   const batches = await Promise.all([
     prisma.batch.create({
       data: {
-        batchName: 'React Weekday Batch',
+        batchName: 'AWS Weekday Batch',
         courseId: courses[0].courseId,
         instructorId: instructors[0].userId,
         startDate: new Date(now.getFullYear(), now.getMonth() + 1, 1),
@@ -178,7 +172,7 @@ async function main() {
     }),
     prisma.batch.create({
       data: {
-        batchName: 'Flutter Weekend Batch',
+        batchName: 'Azure Weekend Batch',
         courseId: courses[1].courseId,
         instructorId: instructors[1].userId,
         startDate: new Date(now.getFullYear(), now.getMonth() + 1, 5),
@@ -187,7 +181,7 @@ async function main() {
     }),
     prisma.batch.create({
       data: {
-        batchName: 'JavaScript Advanced Evening',
+        batchName: 'Kubernetes Advanced Evening',
         courseId: courses[2].courseId,
         instructorId: instructors[0].userId,
         startDate: new Date(now.getFullYear(), now.getMonth() + 2, 10),

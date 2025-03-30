@@ -37,16 +37,16 @@ const AddUser = () => {
     
     try {
       // Extract password and prepare user data
-      const { password, ...userData } = data;
+      const { password, address, ...userData } = data;
       
-      console.log('Submitting user data:', { ...userData, password: '[REDACTED]' });
+      console.log('Submitting user data:', { ...userData, address, password: '[REDACTED]' });
       
+      // Don't pass address to API for now
       const response = await createUser({
         fullName: userData.fullName,
         email: userData.email,
         role: userData.role,
         phoneNumber: userData.phoneNumber || null,
-        address: userData.address || null,
         mustResetPassword: true,
         password  // Passing password directly to the API
       });

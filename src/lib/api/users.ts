@@ -1,19 +1,18 @@
-
 import { User, Role, Course } from '@/lib/types';
 import { apiFetch } from './core';
 
 // User Management API
 export const createUser = async (userData: Partial<User> & { password?: string }): Promise<{ success: boolean; data?: User; error?: string }> => {
   // Only send fields that exist in the Prisma schema
-  const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = userData;
+  const { fullName, email, role, password, phoneNumber, mustResetPassword } = userData;
   
+  // Temporarily remove address field
   const sanitizedData = {
     fullName,
     email,
     role,
     password,
     phoneNumber: phoneNumber || null,
-    address: address || null,
     mustResetPassword: mustResetPassword || true
   };
   
@@ -25,15 +24,15 @@ export const createUser = async (userData: Partial<User> & { password?: string }
 
 export const updateUser = async (userId: number, userData: Partial<User> & { password?: string }): Promise<{ success: boolean; data?: User; error?: string }> => {
   // Only send fields that exist in the Prisma schema
-  const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = userData;
+  const { fullName, email, role, password, phoneNumber, mustResetPassword } = userData;
   
+  // Temporarily remove address field
   const sanitizedData = {
     ...(fullName !== undefined && { fullName }),
     ...(email !== undefined && { email }),
     ...(role !== undefined && { role }),
     ...(password !== undefined && { password }),
     ...(phoneNumber !== undefined && { phoneNumber }),
-    ...(address !== undefined && { address }),
     ...(mustResetPassword !== undefined && { mustResetPassword })
   };
   

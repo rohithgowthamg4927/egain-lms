@@ -47,8 +47,10 @@ const LoginForm = () => {
         
         // Force navigation to dashboard
         setTimeout(() => {
+          const user = localStorage.getItem('currentUser');
+          console.log("User in localStorage after login:", user);
           navigate('/dashboard', { replace: true });
-        }, 100);
+        }, 500);
       } else {
         console.log("Login failed");
         setErrorMessage("Invalid credentials. Please check your email, password, and role.");

@@ -46,9 +46,11 @@ router.post('/login', async (req, res) => {
       });
     }
     
-    console.log(`Comparing passwords: '${password}' vs '${user.password}'`);
+    // Debug the passwords to see what's happening
+    console.log(`User password in DB: '${user.password}'`);
+    console.log(`Password received: '${password}'`);
     
-    // Simple password check - remove string trimming and ensure exact match
+    // Exact string comparison without any trimming
     if (password === user.password) {
       // Successful login
       console.log(`User logged in successfully: ${user.email} with role: ${user.role}`);
@@ -63,7 +65,6 @@ router.post('/login', async (req, res) => {
       });
     } else {
       console.log(`Password mismatch for user: ${email}`);
-      console.log(`Received password: '${password}', stored password: '${user.password}'`);
       res.status(401).json({
         success: false,
         error: 'Invalid credentials'

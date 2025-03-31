@@ -22,9 +22,7 @@ export const createBatch = async (batchData: Partial<Batch>): Promise<{ success:
       startDate: batchData.startDate,
       endDate: batchData.endDate,
       courseId: batchData.courseId,
-      instructorId: batchData.instructorId,
-      capacity: batchData.capacity || 30,
-      meetingLink: batchData.meetingLink || ''
+      instructorId: batchData.instructorId
     }),
   });
 };
@@ -38,9 +36,7 @@ export const updateBatch = async (batchId: number, batchData: Partial<Batch>): P
       startDate: batchData.startDate,
       endDate: batchData.endDate,
       courseId: batchData.courseId,
-      instructorId: batchData.instructorId,
-      capacity: batchData.capacity,
-      meetingLink: batchData.meetingLink
+      instructorId: batchData.instructorId
     }),
   });
 };
@@ -61,7 +57,7 @@ export const enrollStudentToBatch = async (studentId: number, batchId: number): 
 };
 
 export const unenrollStudentFromBatch = async (studentId: number, batchId: number): Promise<{ success: boolean; error?: string }> => {
-  return apiFetch(`/student-batches/${studentId}/${batchId}`, {
+  return apiFetch(`/batches/${batchId}/students/${studentId}`, {
     method: 'DELETE',
   });
 };

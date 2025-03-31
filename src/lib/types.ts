@@ -77,8 +77,6 @@ export interface Batch {
   endDate: string;
   createdAt: string;
   updatedAt: string;
-  capacity?: number; // Maximum number of students
-  meetingLink?: string; // Online meeting URL
   course?: Course;
   instructor?: User;
   // Additional fields needed by components
@@ -96,11 +94,10 @@ export interface Schedule {
   endTime: string;
   createdAt: string;
   updatedAt: string;
-  meetingLink?: string; // Added field for meeting link
+  meetingLink?: string; // Meeting link field
   // Additional fields needed by components
   topic?: string;
   platform?: string;
-  link?: string;
 }
 
 export interface StudentBatch {
@@ -136,16 +133,17 @@ export interface CourseReview {
 }
 
 export interface DashboardMetrics {
-  totalStudents: number;
-  totalInstructors: number;
-  totalCourses: number;
-  totalBatches: number;
-  recentUsers: User[];
-  upcomingBatches: Batch[];
-  // Additional fields needed by components
-  activeStudents?: number;
-  coursesPerCategory?: {categoryName: string, count: number}[];
-  recentEnrollments?: {studentName: string, courseName: string, date: Date}[];
+  counts: {
+    students: number;
+    instructors: number;
+    courses: number;
+    batches: number;
+    categories: number;
+    resources: number;
+  };
+  recentBatches: Batch[];
+  popularCourses: Course[];
+  upcomingSchedules: Schedule[];
 }
 
 export interface UserFormData {

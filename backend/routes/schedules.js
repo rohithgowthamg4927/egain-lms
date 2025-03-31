@@ -9,7 +9,12 @@ const prisma = new PrismaClient();
 // Get all schedules
 router.get('/', async (req, res) => {
   try {
+    const { batchId } = req.query;
+    
+    const whereClause = batchId ? { batchId: parseInt(batchId) } : {};
+    
     const schedules = await prisma.schedule.findMany({
+      where: whereClause,
       include: {
         batch: {
           include: {
@@ -17,23 +22,8 @@ router.get('/', async (req, res) => {
             instructor: true
           }
         }
-      }
-    });
-    
-    res.json({ success: true, data: schedules });
-  } catch (error) {
-    handleApiError(res, error);
-  }
-});
-
-// Get schedules for a specific batch
-router.get('/batch/:batchId', async (req, res) => {
-  try {
-    const batchId = parseInt(req.params.batchId);
-    
-    const schedules = await prisma.schedule.findMany({
-      where: { batchId },
-      orderBy: { startTime: 'asc' }
+      },
+      orderBy: { dayOfWeek: 'asc' }
     });
     
     res.json({ success: true, data: schedules });
@@ -80,18 +70,20 @@ router.post('/', async (req, res) => {
       description,
       startTime,
       endTime,
-      day,
+      dayOfWeek,
       batchId,
-      meetingLink
+      meetingLink,
+      platform,
+      topic
     } = req.body;
     
     const schedule = await prisma.schedule.create({
       data: {
-        title,
-        description,
-        startTime,
-        endTime,
-        day,
+        topic: topic,
+        platform: platform,
+        startTime: new Date(`1970-01-01T${startTime}`),
+        endTime: new Date(`1970-01-01T${endTime}`),
+        dayOfWeek: parseInt(dayOfWeek),
         batchId: parseInt(batchId),
         meetingLink
       }
@@ -108,11 +100,11 @@ router.put('/:id', async (req, res) => {
   try {
     const scheduleId = parseInt(req.params.id);
     const { 
-      title,
-      description,
+      topic,
+      platform,
       startTime,
       endTime,
-      day,
+      dayOfWeek,
       batchId,
       meetingLink
     } = req.body;
@@ -120,11 +112,11 @@ router.put('/:id', async (req, res) => {
     const schedule = await prisma.schedule.update({
       where: { scheduleId },
       data: {
-        ...(title !== undefined && { title }),
-        ...(description !== undefined && { description }),
-        ...(startTime !== undefined && { startTime }),
-        ...(endTime !== undefined && { endTime }),
-        ...(day !== undefined && { day }),
+        ...(topic !== undefined && { topic }),
+        ...(platform !== undefined && { platform }),
+        ...(startTime !== undefined && { startTime: new Date(`1970-01-01T${startTime}`) }),
+        ...(endTime !== undefined && { endTime: new Date(`1970-01-01T${endTime}`) }),
+        ...(dayOfWeek !== undefined && { dayOfWeek: parseInt(dayOfWeek) }),
         ...(batchId !== undefined && { batchId: parseInt(batchId) }),
         ...(meetingLink !== undefined && { meetingLink })
       }

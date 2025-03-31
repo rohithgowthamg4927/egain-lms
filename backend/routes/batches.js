@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
       include: {
         course: true,
         instructor: true,
-        schedule: true,
+        schedules: true,
         students: {
           include: {
             student: true
@@ -48,7 +48,7 @@ router.get('/:id', async (req, res) => {
       include: {
         course: true,
         instructor: true,
-        schedule: true,
+        schedules: true,
         students: {
           include: {
             student: true
@@ -136,9 +136,7 @@ router.post('/', async (req, res) => {
       startDate,
       endDate,
       courseId,
-      instructorId,
-      capacity,
-      meetingLink
+      instructorId
     } = req.body;
     
     const batch = await prisma.batch.create({
@@ -147,9 +145,7 @@ router.post('/', async (req, res) => {
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         courseId: parseInt(courseId),
-        instructorId: instructorId ? parseInt(instructorId) : null,
-        capacity: capacity ? parseInt(capacity) : null,
-        meetingLink
+        instructorId: instructorId ? parseInt(instructorId) : null
       }
     });
     
@@ -168,9 +164,7 @@ router.put('/:id', async (req, res) => {
       startDate,
       endDate,
       courseId,
-      instructorId,
-      capacity,
-      meetingLink
+      instructorId
     } = req.body;
     
     const batch = await prisma.batch.update({
@@ -180,9 +174,7 @@ router.put('/:id', async (req, res) => {
         ...(startDate !== undefined && { startDate: new Date(startDate) }),
         ...(endDate !== undefined && { endDate: new Date(endDate) }),
         ...(courseId !== undefined && { courseId: parseInt(courseId) }),
-        ...(instructorId !== undefined && { instructorId: instructorId ? parseInt(instructorId) : null }),
-        ...(capacity !== undefined && { capacity: capacity ? parseInt(capacity) : null }),
-        ...(meetingLink !== undefined && { meetingLink })
+        ...(instructorId !== undefined && { instructorId: instructorId ? parseInt(instructorId) : null })
       }
     });
     
@@ -247,14 +239,6 @@ router.post('/:id/students', async (req, res) => {
       return res.status(400).json({
         success: false,
         error: 'Student is already enrolled in this batch'
-      });
-    }
-    
-    // Check if batch is at capacity
-    if (batch.capacity && batch.students.length >= batch.capacity) {
-      return res.status(400).json({
-        success: false,
-        error: 'Batch is at full capacity'
       });
     }
     

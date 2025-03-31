@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select';
 import Layout from '@/components/layout/Layout';
 import { DataTable } from '@/components/ui/data-table';
-import { getSchedules, getBatches } from '@/lib/api';
+import { getSchedules, getBatches, createSchedule } from '@/lib/api';
 import { Schedule, Batch } from '@/lib/types';
 import { Plus, Search, Calendar, Clock, Video, Edit, Trash, Link as LinkIcon } from 'lucide-react';
 import { format } from 'date-fns';
@@ -27,6 +27,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 // Days of the week for display
 const daysOfWeek = [
@@ -50,42 +51,43 @@ const Schedules = () => {
   const [newScheduleTopic, setNewScheduleTopic] = useState('');
   const [newSchedulePlatform, setNewSchedulePlatform] = useState('zoom');
   const [newScheduleMeetingLink, setNewScheduleMeetingLink] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
+  const fetchData = async () => {
+    setIsLoading(true);
+    
+    try {
+      const [schedulesResponse, batchesResponse] = await Promise.all([
+        getSchedules(),
+        getBatches(),
+      ]);
       
-      try {
-        const [schedulesResponse, batchesResponse] = await Promise.all([
-          getSchedules(),
-          getBatches(),
-        ]);
-        
-        if (schedulesResponse.success && schedulesResponse.data) {
-          setSchedules(schedulesResponse.data);
-        } else {
-          toast({
-            title: 'Error',
-            description: schedulesResponse.error || 'Failed to fetch schedules',
-            variant: 'destructive',
-          });
-        }
-        
-        if (batchesResponse.success && batchesResponse.data) {
-          setBatches(batchesResponse.data);
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
+      if (schedulesResponse.success && schedulesResponse.data) {
+        setSchedules(schedulesResponse.data);
+      } else {
         toast({
           title: 'Error',
-          description: 'An unexpected error occurred',
+          description: schedulesResponse.error || 'Failed to fetch schedules',
           variant: 'destructive',
         });
-      } finally {
-        setIsLoading(false);
       }
-    };
-    
+      
+      if (batchesResponse.success && batchesResponse.data) {
+        setBatches(batchesResponse.data);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [toast]);
 
@@ -102,7 +104,7 @@ const Schedules = () => {
   });
 
   const handleCreateSchedule = async () => {
-    if (!newScheduleBatchId || !newScheduleStartTime || !newScheduleEndTime) {
+    if (!newScheduleBatchId || !newScheduleStartTime || !newScheduleEndTime || !newScheduleTopic) {
       toast({
         title: 'Validation Error',
         description: 'Please fill in all required fields',
@@ -111,36 +113,29 @@ const Schedules = () => {
       return;
     }
 
+    setIsSubmitting(true);
+    
     try {
       const scheduleData = {
         batchId: parseInt(newScheduleBatchId),
         dayOfWeek: parseInt(newScheduleDayOfWeek),
-        startTime: new Date(`1970-01-01T${newScheduleStartTime}`).toISOString(),
-        endTime: new Date(`1970-01-01T${newScheduleEndTime}`).toISOString(),
+        startTime: newScheduleStartTime,
+        endTime: newScheduleEndTime,
         topic: newScheduleTopic,
         platform: newSchedulePlatform,
         meetingLink: newScheduleMeetingLink,
       };
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/schedules`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(scheduleData),
-      });
+      const response = await createSchedule(scheduleData);
 
-      if (response.ok) {
+      if (response.success) {
         toast({
           title: 'Schedule created',
           description: 'The schedule has been created successfully',
         });
         
         // Refresh schedules
-        const schedulesResponse = await getSchedules();
-        if (schedulesResponse.success && schedulesResponse.data) {
-          setSchedules(schedulesResponse.data);
-        }
+        fetchData();
         
         // Reset form and close dialog
         setNewScheduleBatchId('');
@@ -152,15 +147,48 @@ const Schedules = () => {
         setNewScheduleMeetingLink('');
         setIsCreateDialogOpen(false);
       } else {
-        const errorData = await response.json();
         toast({
           title: 'Error',
-          description: errorData.error || 'Failed to create schedule',
+          description: response.error || 'Failed to create schedule',
           variant: 'destructive',
         });
       }
     } catch (error) {
       console.error('Error creating schedule:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSchedule = async (schedule: Schedule) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/schedules/${schedule.scheduleId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast({
+          title: 'Schedule deleted',
+          description: 'The schedule has been deleted successfully',
+        });
+        
+        // Refresh schedules
+        fetchData();
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: 'Error',
+          description: errorData.error || 'Failed to delete schedule',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting schedule:', error);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred',
@@ -173,7 +201,8 @@ const Schedules = () => {
     {
       accessorKey: 'batch' as keyof Schedule,
       header: 'Batch & Course',
-      cell: (row: Schedule) => {
+      cell: (info: any) => {
+        const row = info.row.original as Schedule;
         const batch = batches.find(b => b.batchId === row.batchId);
         return (
           <div>
@@ -186,50 +215,65 @@ const Schedules = () => {
     {
       accessorKey: 'dayOfWeek' as keyof Schedule,
       header: 'Day',
-      cell: (row: Schedule) => daysOfWeek[row.dayOfWeek] || 'Unknown',
+      cell: (info: any) => {
+        const row = info.row.original as Schedule;
+        return daysOfWeek[row.dayOfWeek] || 'Unknown';
+      },
     },
     {
       accessorKey: 'topic' as keyof Schedule,
       header: 'Topic',
-      cell: (row: Schedule) => row.topic || 'No topic',
+      cell: (info: any) => {
+        const row = info.row.original as Schedule;
+        return row.topic || 'No topic';
+      },
     },
     {
       accessorKey: 'startTime' as keyof Schedule,
       header: 'Time',
-      cell: (row: Schedule) => (
-        <div className="flex items-center">
-          <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-          {new Date(row.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          {' - '}
-          {new Date(row.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </div>
-      ),
+      cell: (info: any) => {
+        const row = info.row.original as Schedule;
+        return (
+          <div className="flex items-center">
+            <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+            {new Date(row.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {' - '}
+            {new Date(row.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'platform' as keyof Schedule,
       header: 'Platform',
-      cell: (row: Schedule) => (
-        <span className="capitalize">{row.platform || 'N/A'}</span>
-      ),
+      cell: (info: any) => {
+        const row = info.row.original as Schedule;
+        return (
+          <span className="capitalize">{row.platform || 'N/A'}</span>
+        );
+      },
     },
     {
       accessorKey: 'meetingLink' as keyof Schedule,
       header: 'Meeting Link',
-      cell: (row: Schedule) => (
-        row.meetingLink ? (
-          <a 
-            href={row.meetingLink} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center text-blue-600 hover:underline"
-          >
-            <LinkIcon className="h-4 w-4 mr-1" />
-            Join Meeting
-          </a>
-        ) : (
-          <span className="text-muted-foreground">No link available</span>
-        )
-      ),
+      cell: (info: any) => {
+        const row = info.row.original as Schedule;
+        return (
+          row.meetingLink ? (
+            <a 
+              href={row.meetingLink} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center text-blue-600 hover:underline"
+            >
+              <LinkIcon className="h-4 w-4 mr-1" />
+              Join Meeting
+            </a>
+          ) : (
+            <span className="text-muted-foreground">No link available</span>
+          )
+        );
+      },
     },
   ];
 
@@ -241,17 +285,14 @@ const Schedules = () => {
           title: 'Edit Schedule',
           description: `Editing schedule for ${daysOfWeek[schedule.dayOfWeek]}`,
         });
+        // Implement edit functionality
       },
       icon: <Edit className="h-4 w-4" />,
     },
     {
       label: 'Delete',
       onClick: (schedule: Schedule) => {
-        toast({
-          title: 'Delete Schedule',
-          description: `Are you sure you want to delete this schedule?`,
-          variant: 'destructive',
-        });
+        handleDeleteSchedule(schedule);
       },
       icon: <Trash className="h-4 w-4" />,
     },
@@ -293,6 +334,15 @@ const Schedules = () => {
                   </Select>
                 </div>
                 <div className="grid gap-2">
+                  <Label htmlFor="topic">Topic</Label>
+                  <Input
+                    id="topic"
+                    value={newScheduleTopic}
+                    onChange={(e) => setNewScheduleTopic(e.target.value)}
+                    placeholder="Enter class topic"
+                  />
+                </div>
+                <div className="grid gap-2">
                   <Label htmlFor="dayOfWeek">Day of Week</Label>
                   <Select value={newScheduleDayOfWeek} onValueChange={setNewScheduleDayOfWeek}>
                     <SelectTrigger id="dayOfWeek">
@@ -328,15 +378,6 @@ const Schedules = () => {
                   </div>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="topic">Topic</Label>
-                  <Input
-                    id="topic"
-                    value={newScheduleTopic}
-                    onChange={(e) => setNewScheduleTopic(e.target.value)}
-                    placeholder="Enter class topic"
-                  />
-                </div>
-                <div className="grid gap-2">
                   <Label htmlFor="platform">Platform</Label>
                   <Select value={newSchedulePlatform} onValueChange={setNewSchedulePlatform}>
                     <SelectTrigger id="platform">
@@ -364,7 +405,12 @@ const Schedules = () => {
                 <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreateSchedule}>Create Schedule</Button>
+                <Button 
+                  onClick={handleCreateSchedule}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Schedule'}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

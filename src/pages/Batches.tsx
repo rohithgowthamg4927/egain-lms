@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/select';
 import Layout from '@/components/layout/Layout';
 import BatchGrid from '@/components/batches/BatchGrid';
-import { DataTable } from '@/components/ui/data-table';
 import { 
   getBatches, 
   getCourses, 
@@ -37,8 +36,6 @@ import {
   Trash, 
   User as UserIcon, 
   Clock, 
-  CheckCircle2, 
-  XCircle,
   UserPlus
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -85,19 +82,16 @@ const Batches = () => {
   const [batchName, setBatchName] = useState('');
   const [batchCourse, setBatchCourse] = useState('');
   const [batchInstructor, setBatchInstructor] = useState('');
-  const [batchCapacity, setBatchCapacity] = useState('30');
   const [batchStartDate, setBatchStartDate] = useState('');
   const [batchEndDate, setBatchEndDate] = useState('');
-  const [batchMeetingLink, setBatchMeetingLink] = useState('');
+  const { toast } = useToast();
 
   const resetFormFields = () => {
     setBatchName('');
     setBatchCourse('');
     setBatchInstructor('');
-    setBatchCapacity('30');
     setBatchStartDate('');
     setBatchEndDate('');
-    setBatchMeetingLink('');
     setSelectedBatch(null);
   };
 
@@ -191,7 +185,7 @@ const Batches = () => {
     };
     
     fetchData();
-  }, []);
+  }, [toast]);
 
   const filteredBatches = batches.filter((batch) => {
     const matchesSearch = batch.batchName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -221,9 +215,7 @@ const Batches = () => {
         courseId: parseInt(batchCourse),
         instructorId: parseInt(batchInstructor),
         startDate: new Date(batchStartDate).toISOString(),
-        endDate: new Date(batchEndDate).toISOString(),
-        capacity: parseInt(batchCapacity),
-        meetingLink: batchMeetingLink
+        endDate: new Date(batchEndDate).toISOString()
       });
       
       if (response.success && response.data) {
@@ -277,9 +269,7 @@ const Batches = () => {
         courseId: parseInt(batchCourse),
         instructorId: parseInt(batchInstructor),
         startDate: new Date(batchStartDate).toISOString(),
-        endDate: new Date(batchEndDate).toISOString(),
-        capacity: parseInt(batchCapacity),
-        meetingLink: batchMeetingLink
+        endDate: new Date(batchEndDate).toISOString()
       });
       
       if (response.success && response.data) {
@@ -327,8 +317,6 @@ const Batches = () => {
     setBatchInstructor(batch.instructorId.toString());
     setBatchStartDate(new Date(batch.startDate).toISOString().split('T')[0]);
     setBatchEndDate(new Date(batch.endDate).toISOString().split('T')[0]);
-    setBatchCapacity(batch.capacity?.toString() || '30');
-    setBatchMeetingLink(batch.meetingLink || '');
     setIsEditDialogOpen(true);
   };
 
@@ -533,25 +521,6 @@ const Batches = () => {
                     />
                   </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="batchCapacity">Capacity</Label>
-                  <Input
-                    id="batchCapacity"
-                    type="number"
-                    value={batchCapacity}
-                    onChange={(e) => setBatchCapacity(e.target.value)}
-                    min="1"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="batchMeetingLink">Meeting Link (Optional)</Label>
-                  <Input
-                    id="batchMeetingLink"
-                    value={batchMeetingLink}
-                    onChange={(e) => setBatchMeetingLink(e.target.value)}
-                    placeholder="Enter meeting link"
-                  />
-                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
@@ -724,25 +693,6 @@ const Batches = () => {
                     onChange={(e) => setBatchEndDate(e.target.value)}
                   />
                 </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="editBatchCapacity">Capacity</Label>
-                <Input
-                  id="editBatchCapacity"
-                  type="number"
-                  value={batchCapacity}
-                  onChange={(e) => setBatchCapacity(e.target.value)}
-                  min="1"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="editBatchMeetingLink">Meeting Link (Optional)</Label>
-                <Input
-                  id="editBatchMeetingLink"
-                  value={batchMeetingLink}
-                  onChange={(e) => setBatchMeetingLink(e.target.value)}
-                  placeholder="Enter meeting link"
-                />
               </div>
             </div>
             <DialogFooter>

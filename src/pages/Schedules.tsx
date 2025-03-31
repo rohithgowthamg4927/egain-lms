@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import {
 } from '@/components/ui/select';
 import Layout from '@/components/layout/Layout';
 import { DataTable } from '@/components/ui/data-table';
-import { getSchedules, getBatches, createSchedule } from '@/lib/api';
+import { getSchedules, getBatches, createSchedule, deleteSchedule } from '@/lib/api';
 import { Schedule, Batch } from '@/lib/types';
 import { Plus, Search, Calendar, Clock, Video, Edit, Trash, Link as LinkIcon } from 'lucide-react';
 import {
@@ -163,13 +164,11 @@ const Schedules = () => {
     }
   };
 
-  const handleDeleteSchedule = async (schedule: Schedule) => {
+  const handleDeleteSchedule = async (scheduleToDelete: Schedule) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/schedules/${schedule.scheduleId}`, {
-        method: 'DELETE',
-      });
+      const response = await deleteSchedule(scheduleToDelete.scheduleId);
 
-      if (response.ok) {
+      if (response.success) {
         toast({
           title: 'Schedule deleted',
           description: 'The schedule has been deleted successfully',
@@ -178,10 +177,9 @@ const Schedules = () => {
         // Refresh schedules
         fetchData();
       } else {
-        const errorData = await response.json();
         toast({
           title: 'Error',
-          description: errorData.error || 'Failed to delete schedule',
+          description: response.error || 'Failed to delete schedule',
           variant: 'destructive',
         });
       }
@@ -195,14 +193,16 @@ const Schedules = () => {
     }
   };
 
+  // Define the columns for the data table with proper typing
   const scheduleColumns = [
     {
-      accessorKey: 'batch',
+      accessorKey: 'batchId' as keyof Schedule,
       header: 'Batch & Course',
-      cell: (info: { row: { original: Schedule } }) => {
-        const schedule = info.row.original;
-        const batchName = schedule.batch?.batchName || 'Unknown Batch';
-        const courseName = schedule.batch?.course?.courseName || 'Unknown Course';
+      cell: ({ row }: { row: { original: Schedule } }) => {
+        const schedule = row.original;
+        const batch = batches.find(b => b.batchId === schedule.batchId);
+        const batchName = batch?.batchName || 'Unknown Batch';
+        const courseName = batch?.course?.courseName || 'Unknown Course';
         
         return (
           <div>
@@ -213,26 +213,26 @@ const Schedules = () => {
       },
     },
     {
-      accessorKey: 'dayOfWeek',
+      accessorKey: 'dayOfWeek' as keyof Schedule,
       header: 'Day',
-      cell: (info: { row: { original: Schedule } }) => {
-        const schedule = info.row.original;
+      cell: ({ row }: { row: { original: Schedule } }) => {
+        const schedule = row.original;
         return daysOfWeek[schedule.dayOfWeek] || 'Unknown';
       },
     },
     {
-      accessorKey: 'topic',
+      accessorKey: 'topic' as keyof Schedule,
       header: 'Topic',
-      cell: (info: { row: { original: Schedule } }) => {
-        const schedule = info.row.original;
+      cell: ({ row }: { row: { original: Schedule } }) => {
+        const schedule = row.original;
         return schedule.topic || 'No topic';
       },
     },
     {
-      accessorKey: 'startTime',
+      accessorKey: 'startTime' as keyof Schedule,
       header: 'Time',
-      cell: (info: { row: { original: Schedule } }) => {
-        const schedule = info.row.original;
+      cell: ({ row }: { row: { original: Schedule } }) => {
+        const schedule = row.original;
         return (
           <div className="flex items-center">
             <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -244,20 +244,20 @@ const Schedules = () => {
       },
     },
     {
-      accessorKey: 'platform',
+      accessorKey: 'platform' as keyof Schedule,
       header: 'Platform',
-      cell: (info: { row: { original: Schedule } }) => {
-        const schedule = info.row.original;
+      cell: ({ row }: { row: { original: Schedule } }) => {
+        const schedule = row.original;
         return (
           <span className="capitalize">{schedule.platform || 'N/A'}</span>
         );
       },
     },
     {
-      accessorKey: 'meetingLink',
+      accessorKey: 'meetingLink' as keyof Schedule,
       header: 'Meeting Link',
-      cell: (info: { row: { original: Schedule } }) => {
-        const schedule = info.row.original;
+      cell: ({ row }: { row: { original: Schedule } }) => {
+        const schedule = row.original;
         return (
           schedule.meetingLink ? (
             <a 

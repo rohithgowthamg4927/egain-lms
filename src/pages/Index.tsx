@@ -13,6 +13,7 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // If user is authenticated, redirect to dashboard
     if (!isLoading && isAuthenticated) {
       console.log("User is authenticated, redirecting to dashboard");
       navigate('/dashboard', { replace: true });

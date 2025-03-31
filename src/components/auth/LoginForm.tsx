@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +17,8 @@ const LoginForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,10 +29,7 @@ const LoginForm = () => {
       console.log("Attempting login with:", { email, role });
       const success = await login(email, password, role);
       
-      if (success) {
-        console.log("Login successful, redirected to dashboard");
-        // No need to navigate here as the useAuth hook will handle the navigation
-      } else {
+      if (!success) {
         console.log("Login failed");
         setErrorMessage("Invalid credentials or server error");
         toast({

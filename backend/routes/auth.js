@@ -46,6 +46,11 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Basic health check
+router.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Database setup endpoint
 router.post('/setup-database', async (req, res) => {
   try {
@@ -68,11 +73,6 @@ router.post('/setup-database', async (req, res) => {
   } catch (error) {
     handleApiError(res, error);
   }
-});
-
-// Basic health check
-router.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
 });
 
 export default router;

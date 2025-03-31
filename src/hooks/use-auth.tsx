@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem('authToken', response.data.token);
         }
         
-        // Always redirect to dashboard on successful login regardless of role
+        // Redirect to dashboard on successful login
         console.log("Redirecting to dashboard");
         navigate('/dashboard', { replace: true });
         

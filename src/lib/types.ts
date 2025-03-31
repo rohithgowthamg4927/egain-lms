@@ -46,7 +46,6 @@ export interface Course {
   categoryId: number;
   description?: string;
   thumbnailUrl?: string;
-  price?: number; // Price field
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;

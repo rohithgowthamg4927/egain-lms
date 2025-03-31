@@ -1,4 +1,3 @@
-
 import { Course, User, CourseCategory, Batch, Schedule, Resource } from '@/lib/types';
 import { dateToString } from '../utils/date-helpers';
 
@@ -15,8 +14,6 @@ export class EntityAdapter {
       categoryId: apiCourse.categoryId,
       description: apiCourse.description,
       thumbnailUrl: apiCourse.thumbnailUrl,
-      duration: apiCourse.duration,
-      durationHours: apiCourse.durationHours || apiCourse.duration,
       isPublished: apiCourse.isPublished || false,
       createdAt: dateToString(apiCourse.createdAt),
       updatedAt: dateToString(apiCourse.updatedAt),

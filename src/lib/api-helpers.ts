@@ -1,4 +1,3 @@
-
 import { Course, User, CourseCategory, Batch, Schedule, Resource } from '@/lib/types';
 import { dateToString } from './utils/date-helpers';
 
@@ -54,8 +53,6 @@ export function mapApiCourse(course: any): Course {
     categoryId: course.categoryId,
     description: course.description,
     thumbnailUrl: course.thumbnailUrl,
-    duration: course.duration,
-    durationHours: course.durationHours || course.duration,
     isPublished: course.isPublished ?? true,
     createdAt: dateToString(course.createdAt),
     updatedAt: dateToString(course.updatedAt || course.createdAt),

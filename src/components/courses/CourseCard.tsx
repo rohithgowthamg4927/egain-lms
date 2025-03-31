@@ -5,7 +5,7 @@ import { Course, Level } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Users, Star, Bookmark, Clock } from 'lucide-react';
+import { Eye, Users, Star, Bookmark } from 'lucide-react';
 
 interface CourseCardProps {
   course: Course;
@@ -75,12 +75,6 @@ const CourseCard = ({ course }: CourseCardProps) => {
             <Star className="h-4 w-4 mr-1 text-amber-500" />
             <span>{course.averageRating?.toFixed(1) || "N/A"}</span>
           </div>
-          {course.durationHours && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Clock className="h-4 w-4 mr-1" />
-              <span>{course.durationHours} hrs</span>
-            </div>
-          )}
           <div className="flex items-center text-sm text-muted-foreground">
             <Bookmark className="h-4 w-4 mr-1" />
             <span>{course.batches || 0} batches</span>

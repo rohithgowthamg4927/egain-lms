@@ -15,26 +15,18 @@ export const getScheduleById = async (scheduleId: number): Promise<{ success: bo
 
 // Create a new schedule
 export const createSchedule = async (scheduleData: Partial<Schedule>): Promise<{ success: boolean; data?: Schedule; error?: string }> => {
-  // For debugging
   console.log('Creating schedule with data:', scheduleData);
   
-  // Only send the fields that are defined in the database schema
+  // Create a clean payload with all the fields
   const payload = {
     batchId: scheduleData.batchId,
     dayOfWeek: scheduleData.dayOfWeek,
     startTime: scheduleData.startTime,
     endTime: scheduleData.endTime,
     meetingLink: scheduleData.meetingLink || null,
+    topic: scheduleData.topic || null,
+    platform: scheduleData.platform || null,
   };
-
-  // Only add topic and platform if they were provided
-  if (scheduleData.topic) {
-    payload['topic'] = scheduleData.topic;
-  }
-
-  if (scheduleData.platform) {
-    payload['platform'] = scheduleData.platform;
-  }
   
   return apiFetch<Schedule>('/schedules', {
     method: 'POST',

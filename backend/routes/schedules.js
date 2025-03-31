@@ -75,47 +75,21 @@ router.post('/', async (req, res) => {
       platform
     } = req.body;
     
-    // For debugging
     console.log('Creating schedule with data:', { 
       startTime, endTime, dayOfWeek, batchId, meetingLink, topic, platform 
     });
 
-    // Build the schedule data object with only the core fields
-    const scheduleData = {
-      startTime: new Date(`1970-01-01T${startTime}`),
-      endTime: new Date(`1970-01-01T${endTime}`),
-      dayOfWeek: parseInt(dayOfWeek),
-      batchId: parseInt(batchId),
-      meetingLink
-    };
-
-    // Let's check if the database schema supports these fields using a raw query first
-    const result = await prisma.$queryRaw`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'schedules' 
-      AND column_name IN ('topic', 'platform')
-    `;
-
-    console.log('Database columns check result:', result);
-    
-    // If the columns exist in the database, add them to the create object
-    const columnNames = result.map(row => row.column_name);
-    
-    if (columnNames.includes('topic') && topic) {
-      // @ts-ignore - Add topic if the column exists
-      scheduleData.topic = topic;
-    }
-    
-    if (columnNames.includes('platform') && platform) {
-      // @ts-ignore - Add platform if the column exists
-      scheduleData.platform = platform;
-    }
-
-    console.log('Final schedule data being sent to Prisma:', scheduleData);
-    
+    // Create the schedule with all fields
     const schedule = await prisma.schedule.create({
-      data: scheduleData
+      data: {
+        startTime: new Date(`1970-01-01T${startTime}`),
+        endTime: new Date(`1970-01-01T${endTime}`),
+        dayOfWeek: parseInt(dayOfWeek),
+        batchId: parseInt(batchId),
+        meetingLink: meetingLink || null,
+        topic: topic || null,
+        platform: platform || null
+      }
     });
     
     res.status(201).json({ success: true, data: schedule });
@@ -162,24 +136,11 @@ router.put('/:id', async (req, res) => {
       updateData.meetingLink = meetingLink;
     }
     
-    // Let's check if the database schema supports these fields using a raw query first
-    const result = await prisma.$queryRaw`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'schedules' 
-      AND column_name IN ('topic', 'platform')
-    `;
-    
-    const columnNames = result.map(row => row.column_name);
-    
-    // Only include these fields if they exist in the schema and database
-    if (columnNames.includes('topic') && topic !== undefined) {
-      // @ts-ignore - Add topic if the column exists
+    if (topic !== undefined) {
       updateData.topic = topic;
     }
     
-    if (columnNames.includes('platform') && platform !== undefined) {
-      // @ts-ignore - Add platform if the column exists
+    if (platform !== undefined) {
       updateData.platform = platform;
     }
     

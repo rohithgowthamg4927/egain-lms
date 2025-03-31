@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ToastProvider } from '@/components/ui/use-toast';
-import Login from './pages/Login';
+import { Toaster } from '@/components/ui/toaster';
+import Login from '@/components/auth/Login';
 import UserProfile from './pages/UserProfile';
 import Instructors from './pages/Instructors';
 import AddUser from './pages/AddUser';
@@ -9,7 +9,7 @@ import UserDetail from './pages/UserDetail';
 import Resources from './pages/Resources';
 import Schedules from './pages/Schedules';
 import NotFound from './pages/NotFound';
-import ProtectedRoute from './components/auth/ProtectedRoute';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Role, User } from './lib/types';
 import { getCurrentUser } from './lib/api';
 
@@ -65,114 +65,113 @@ const App = () => {
   return (
     <div className="w-full">
       <BrowserRouter>
-        <ToastProvider>
-          <Routes>
-            <Route path="/login" element={<Login onAuthenticated={handleAuthentication} />} />
-            
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute user={user}>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            
-            <Route
-              path="/courses"
-              element={
-                <ProtectedRoute user={user}>
-                  <Courses />
-                </ProtectedRoute>
-              }
-            />
-            
-            <Route
-              path="/batches"
-              element={
-                <ProtectedRoute user={user}>
-                  <Batches />
-                </ProtectedRoute>
-              }
-            />
+        <Toaster />
+        <Routes>
+          <Route path="/login" element={<Login onAuthenticated={handleAuthentication} />} />
+          
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute user={user}>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/courses"
+            element={
+              <ProtectedRoute user={user}>
+                <Courses />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/batches"
+            element={
+              <ProtectedRoute user={user}>
+                <Batches />
+              </ProtectedRoute>
+            }
+          />
 
-            <Route
-              path="/batches/:id"
-              element={
-                <ProtectedRoute user={user}>
-                  <BatchDetail />
-                </ProtectedRoute>
-              }
-            />
-            
-            <Route
-              path="/students"
-              element={
-                <ProtectedRoute user={user}>
-                  <Students />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Other routes */}
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute user={user}>
-                  <UserProfile />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Admin only routes */}
-            <Route
-              path="/instructors"
-              element={
-                <ProtectedRoute user={user} allowedRoles={[Role.admin]}>
-                  <Instructors />
-                </ProtectedRoute>
-              }
-            />
-            
-            <Route
-              path="/add-user"
-              element={
-                <ProtectedRoute user={user} allowedRoles={[Role.admin]}>
-                  <AddUser />
-                </ProtectedRoute>
-              }
-            />
-            
-            <Route
-              path="/users/:id"
-              element={
-                <ProtectedRoute user={user} allowedRoles={[Role.admin]}>
-                  <UserDetail />
-                </ProtectedRoute>
-              }
-            />
-            
-            <Route
-              path="/resources"
-              element={
-                <ProtectedRoute user={user}>
-                  <Resources />
-                </ProtectedRoute>
-              }
-            />
-            
-            <Route
-              path="/schedules"
-              element={
-                <ProtectedRoute user={user}>
-                  <Schedules />
-                </ProtectedRoute>
-              }
-            />
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </ToastProvider>
+          <Route
+            path="/batches/:id"
+            element={
+              <ProtectedRoute user={user}>
+                <BatchDetail />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/students"
+            element={
+              <ProtectedRoute user={user}>
+                <Students />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Other routes */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute user={user}>
+                <UserProfile />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Admin only routes */}
+          <Route
+            path="/instructors"
+            element={
+              <ProtectedRoute user={user} allowedRoles={[Role.admin]}>
+                <Instructors />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/add-user"
+            element={
+              <ProtectedRoute user={user} allowedRoles={[Role.admin]}>
+                <AddUser />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/users/:id"
+            element={
+              <ProtectedRoute user={user} allowedRoles={[Role.admin]}>
+                <UserDetail />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/resources"
+            element={
+              <ProtectedRoute user={user}>
+                <Resources />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/schedules"
+            element={
+              <ProtectedRoute user={user}>
+                <Schedules />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </BrowserRouter>
     </div>
   );

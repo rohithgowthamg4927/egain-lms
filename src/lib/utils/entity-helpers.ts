@@ -27,5 +27,13 @@ export const getInstructorName = (instructor: User | undefined | null, instructo
 
 // Helper function to get student count safely
 export const getStudentCount = (batch: Batch): number => {
-  return batch.studentsCount || batch.students || 0;
+  if (typeof batch.studentsCount === 'number') {
+    return batch.studentsCount;
+  }
+  
+  if (Array.isArray(batch.students)) {
+    return batch.students.length;
+  }
+  
+  return 0;
 };

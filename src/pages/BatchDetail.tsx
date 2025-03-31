@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
@@ -237,13 +238,6 @@ const BatchDetail = () => {
                   {Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))} days
                 </span>
               </div>
-              <div className="flex justify-between items-center border-b pb-2">
-                <span className="text-muted-foreground">Capacity:</span>
-                <div className="flex items-center">
-                  <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>{batch.capacity || 'Unlimited'}</span>
-                </div>
-              </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Created On:</span>
                 <div className="flex items-center">
@@ -266,14 +260,6 @@ const BatchDetail = () => {
                   <span>{students.length}</span>
                 </Badge>
               </div>
-              <div className="flex justify-between items-center border-b pb-2">
-                <span className="text-muted-foreground">Capacity:</span>
-                <span>{batch.capacity || 'Unlimited'}</span>
-              </div>
-              <div className="flex justify-between items-center border-b pb-2">
-                <span className="text-muted-foreground">Available Slots:</span>
-                <span>{batch.capacity ? batch.capacity - students.length : 'Unlimited'}</span>
-              </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Status:</span>
                 <Badge 
@@ -290,19 +276,6 @@ const BatchDetail = () => {
                   }
                 </Badge>
               </div>
-              {batch.meetingLink && (
-                <div className="flex justify-between items-center pt-2 border-t">
-                  <span className="text-muted-foreground">Meeting Link:</span>
-                  <a 
-                    href={batch.meetingLink.startsWith('http') ? batch.meetingLink : `https://${batch.meetingLink}`} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline"
-                  >
-                    Join Meeting
-                  </a>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>

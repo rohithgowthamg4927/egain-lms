@@ -98,8 +98,22 @@ const Dashboard = () => {
   // If we have dashboard metrics, use them, otherwise create dummy data from our other queries
   let coursesPerCategory = [];
   
-  if (getDashboardMetricsQuery.data?.data?.coursesPerCategory) {
-    coursesPerCategory = getDashboardMetricsQuery.data.data.coursesPerCategory;
+  if (getDashboardMetricsQuery.data?.data?.counts) {
+    // Use counts from dashboard metrics or create from courses data
+    // Map to the expected format
+    const categories = getCoursesQuery.data?.data?.reduce((acc, course) => {
+      const categoryName = course.category?.categoryName || 'Uncategorized';
+      if (!acc[categoryName]) {
+        acc[categoryName] = 0;
+      }
+      acc[categoryName]++;
+      return acc;
+    }, {} as Record<string, number>) || {};
+    
+    coursesPerCategory = Object.entries(categories).map(([categoryName, count]) => ({
+      categoryName,
+      count,
+    }));
   } else if (getCoursesQuery.data?.data) {
     // Group courses by category
     const coursesByCategory = getCoursesQuery.data.data.reduce((acc, course) => {
@@ -142,8 +156,8 @@ const Dashboard = () => {
     },
   };
 
-  // Get recent enrollments from metrics or prepare empty array
-  const recentEnrollments = getDashboardMetricsQuery.data?.data?.recentEnrollments || [];
+  // Since recentEnrollments is not in DashboardMetrics type, we'll create an empty array
+  const recentEnrollments: { studentName: string; courseName: string; date: string }[] = [];
 
   return (
     <Layout>

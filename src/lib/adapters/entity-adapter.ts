@@ -1,3 +1,4 @@
+
 import { Course, User, CourseCategory, Batch, Schedule, Resource } from '@/lib/types';
 import { dateToString } from '../utils/date-helpers';
 
@@ -80,7 +81,7 @@ export class EntityAdapter {
       updatedAt: dateToString(apiSchedule.updatedAt),
       topic: apiSchedule.topic,
       platform: apiSchedule.platform,
-      link: apiSchedule.link
+      meetingLink: apiSchedule.meetingLink
     };
   }
 }

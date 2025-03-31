@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,6 @@ import { DataTable } from '@/components/ui/data-table';
 import { getSchedules, getBatches, createSchedule } from '@/lib/api';
 import { Schedule, Batch } from '@/lib/types';
 import { Plus, Search, Calendar, Clock, Video, Edit, Trash, Link as LinkIcon } from 'lucide-react';
-import { format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -199,69 +197,71 @@ const Schedules = () => {
 
   const scheduleColumns = [
     {
-      accessorKey: 'batch' as keyof Schedule,
+      accessorKey: 'batch',
       header: 'Batch & Course',
-      cell: (info: any) => {
-        const row = info.row.original as Schedule;
-        const batch = batches.find(b => b.batchId === row.batchId);
+      cell: (info: { row: { original: Schedule } }) => {
+        const schedule = info.row.original;
+        const batchName = schedule.batch?.batchName || 'Unknown Batch';
+        const courseName = schedule.batch?.course?.courseName || 'Unknown Course';
+        
         return (
           <div>
-            <p className="font-medium">{batch?.batchName || 'Unknown Batch'}</p>
-            <p className="text-sm text-muted-foreground">{batch?.course?.courseName || 'Unknown Course'}</p>
+            <p className="font-medium">{batchName}</p>
+            <p className="text-sm text-muted-foreground">{courseName}</p>
           </div>
         );
       },
     },
     {
-      accessorKey: 'dayOfWeek' as keyof Schedule,
+      accessorKey: 'dayOfWeek',
       header: 'Day',
-      cell: (info: any) => {
-        const row = info.row.original as Schedule;
-        return daysOfWeek[row.dayOfWeek] || 'Unknown';
+      cell: (info: { row: { original: Schedule } }) => {
+        const schedule = info.row.original;
+        return daysOfWeek[schedule.dayOfWeek] || 'Unknown';
       },
     },
     {
-      accessorKey: 'topic' as keyof Schedule,
+      accessorKey: 'topic',
       header: 'Topic',
-      cell: (info: any) => {
-        const row = info.row.original as Schedule;
-        return row.topic || 'No topic';
+      cell: (info: { row: { original: Schedule } }) => {
+        const schedule = info.row.original;
+        return schedule.topic || 'No topic';
       },
     },
     {
-      accessorKey: 'startTime' as keyof Schedule,
+      accessorKey: 'startTime',
       header: 'Time',
-      cell: (info: any) => {
-        const row = info.row.original as Schedule;
+      cell: (info: { row: { original: Schedule } }) => {
+        const schedule = info.row.original;
         return (
           <div className="flex items-center">
             <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-            {new Date(row.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {new Date(schedule.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             {' - '}
-            {new Date(row.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {new Date(schedule.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </div>
         );
       },
     },
     {
-      accessorKey: 'platform' as keyof Schedule,
+      accessorKey: 'platform',
       header: 'Platform',
-      cell: (info: any) => {
-        const row = info.row.original as Schedule;
+      cell: (info: { row: { original: Schedule } }) => {
+        const schedule = info.row.original;
         return (
-          <span className="capitalize">{row.platform || 'N/A'}</span>
+          <span className="capitalize">{schedule.platform || 'N/A'}</span>
         );
       },
     },
     {
-      accessorKey: 'meetingLink' as keyof Schedule,
+      accessorKey: 'meetingLink',
       header: 'Meeting Link',
-      cell: (info: any) => {
-        const row = info.row.original as Schedule;
+      cell: (info: { row: { original: Schedule } }) => {
+        const schedule = info.row.original;
         return (
-          row.meetingLink ? (
+          schedule.meetingLink ? (
             <a 
-              href={row.meetingLink} 
+              href={schedule.meetingLink} 
               target="_blank" 
               rel="noopener noreferrer"
               className="flex items-center text-blue-600 hover:underline"

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
@@ -21,7 +20,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 
 const BatchDetail = () => {
@@ -80,7 +78,6 @@ const BatchDetail = () => {
   }, [id]);
 
   const handleEditBatch = () => {
-    // Navigate to edit batch page or open modal
     if (batch) {
       navigate(`/batches/edit/${batch.batchId}`);
     }
@@ -98,7 +95,6 @@ const BatchDetail = () => {
           description: `${confirmRemoveStudent.fullName} has been removed from the batch.`,
         });
         
-        // Update the students list
         setStudents(prev => prev.filter(s => s.userId !== confirmRemoveStudent.userId));
         setConfirmRemoveStudent(null);
       } else {
@@ -153,7 +149,7 @@ const BatchDetail = () => {
   
   const studentColumns = [
     {
-      accessorKey: 'fullName',
+      accessorKey: 'fullName' as keyof User,
       header: 'Name',
       cell: (student: User) => (
         <div className="flex items-center gap-2">
@@ -163,11 +159,11 @@ const BatchDetail = () => {
       ),
     },
     {
-      accessorKey: 'email',
+      accessorKey: 'email' as keyof User,
       header: 'Email',
     },
     {
-      accessorKey: 'enrollmentDate',
+      accessorKey: 'enrollmentDate' as keyof (User & { enrollmentDate?: string }),
       header: 'Enrolled On',
       cell: (student: User & { enrollmentDate?: string }) => {
         return student.enrollmentDate 
@@ -356,7 +352,6 @@ const BatchDetail = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Confirm Remove Student Dialog */}
         <Dialog open={!!confirmRemoveStudent} onOpenChange={(open) => !open && setConfirmRemoveStudent(null)}>
           <DialogContent>
             <DialogHeader>

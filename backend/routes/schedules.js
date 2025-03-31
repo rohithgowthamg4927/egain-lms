@@ -80,7 +80,7 @@ router.post('/', async (req, res) => {
       startTime, endTime, dayOfWeek, batchId, meetingLink, topic, platform 
     });
 
-    // Create schedule without the platform and topic fields first
+    // Build the schedule data object with only the core fields
     const scheduleData = {
       startTime: new Date(`1970-01-01T${startTime}`),
       endTime: new Date(`1970-01-01T${endTime}`),
@@ -89,16 +89,30 @@ router.post('/', async (req, res) => {
       meetingLink
     };
 
-    // Only add topic and platform if they are provided in the database schema
-    if (topic) {
+    // Let's check if the database schema supports these fields using a raw query first
+    const result = await prisma.$queryRaw`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'schedules' 
+      AND column_name IN ('topic', 'platform')
+    `;
+
+    console.log('Database columns check result:', result);
+    
+    // If the columns exist in the database, add them to the create object
+    const columnNames = result.map(row => row.column_name);
+    
+    if (columnNames.includes('topic') && topic) {
+      // @ts-ignore - Add topic if the column exists
       scheduleData.topic = topic;
     }
     
-    if (platform) {
+    if (columnNames.includes('platform') && platform) {
+      // @ts-ignore - Add platform if the column exists
       scheduleData.platform = platform;
     }
 
-    console.log('Final schedule data:', scheduleData);
+    console.log('Final schedule data being sent to Prisma:', scheduleData);
     
     const schedule = await prisma.schedule.create({
       data: scheduleData
@@ -148,12 +162,24 @@ router.put('/:id', async (req, res) => {
       updateData.meetingLink = meetingLink;
     }
     
-    // Only include these fields if they exist in the schema
-    if (topic !== undefined) {
+    // Let's check if the database schema supports these fields using a raw query first
+    const result = await prisma.$queryRaw`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'schedules' 
+      AND column_name IN ('topic', 'platform')
+    `;
+    
+    const columnNames = result.map(row => row.column_name);
+    
+    // Only include these fields if they exist in the schema and database
+    if (columnNames.includes('topic') && topic !== undefined) {
+      // @ts-ignore - Add topic if the column exists
       updateData.topic = topic;
     }
     
-    if (platform !== undefined) {
+    if (columnNames.includes('platform') && platform !== undefined) {
+      // @ts-ignore - Add platform if the column exists
       updateData.platform = platform;
     }
     

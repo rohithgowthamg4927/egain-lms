@@ -1,7 +1,8 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { getUsers, login as apiLogin, logout as apiLogout } from '@/lib/api';
+import { login as apiLogin, logout as apiLogout } from '@/lib/api';
 import { Role, User } from '@/lib/types';
 
 interface AuthContextType {
@@ -59,25 +60,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("Login successful, user data:", userData);
         setUser(userData);
         
-        localStorage.setItem('currentUser', JSON.stringify(userData));
-        
-        switch (userData.role) {
-          case Role.admin:
-            console.log("Redirecting to admin dashboard");
-            navigate('/dashboard');
-            break;
-          case Role.instructor:
-            console.log("Redirecting to instructor dashboard");
-            navigate('/instructor-dashboard');
-            break;
-          case Role.student:
-            console.log("Redirecting to student dashboard");
-            navigate('/student-dashboard');
-            break;
-          default:
-            console.log("Role not recognized, redirecting to main dashboard");
-            navigate('/dashboard');
-        }
+        // Always redirect to dashboard on successful login regardless of role
+        console.log("Redirecting to dashboard");
+        navigate('/dashboard');
         
         toast({
           title: 'Login Successful',
@@ -110,6 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('authToken');
     setUser(null);
     navigate('/');
     toast({

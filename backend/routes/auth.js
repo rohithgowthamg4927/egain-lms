@@ -20,6 +20,8 @@ router.post('/login', async (req, res) => {
     });
     
     if (user && password === user.password) {
+      // Successful login
+      console.log(`User logged in successfully: ${user.email} with role: ${user.role}`);
       res.status(200).json({
         success: true,
         data: {
@@ -28,12 +30,14 @@ router.post('/login', async (req, res) => {
         }
       });
     } else {
+      console.log(`Login failed for email: ${email} with role: ${role}`);
       res.status(401).json({
         success: false,
         error: 'Invalid credentials'
       });
     }
   } catch (error) {
+    console.error('Login error:', error);
     handleApiError(res, error);
   }
 });

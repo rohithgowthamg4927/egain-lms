@@ -33,9 +33,10 @@ const LoginForm = () => {
       
       if (success) {
         console.log("Login successful, redirecting to dashboard");
+        navigate('/dashboard');
         toast({
           title: "Login successful",
-          description: "Redirecting to dashboard...",
+          description: "Welcome to the dashboard!",
         });
       } else {
         console.log("Login failed");

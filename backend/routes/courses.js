@@ -72,7 +72,8 @@ router.post('/', async (req, res) => {
       description, 
       courseLevel,
       categoryId,
-      isPublished
+      isPublished,
+      thumbnailUrl
     } = req.body;
     
     // Validate that required fields exist
@@ -90,6 +91,7 @@ router.post('/', async (req, res) => {
         courseLevel,
         categoryId: parseInt(categoryId),
         isPublished: isPublished !== undefined ? isPublished : false,
+        thumbnailUrl,
         createdAt: new Date()
       }
     });
@@ -111,7 +113,8 @@ router.put('/:id', async (req, res) => {
       description, 
       courseLevel,
       categoryId,
-      isPublished
+      isPublished,
+      thumbnailUrl
     } = req.body;
     
     const course = await prisma.course.update({
@@ -121,7 +124,8 @@ router.put('/:id', async (req, res) => {
         ...(description !== undefined && { description }),
         ...(courseLevel !== undefined && { courseLevel }),
         ...(categoryId !== undefined && { categoryId: parseInt(categoryId) }),
-        ...(isPublished !== undefined && { isPublished })
+        ...(isPublished !== undefined && { isPublished }),
+        ...(thumbnailUrl !== undefined && { thumbnailUrl })
       }
     });
     

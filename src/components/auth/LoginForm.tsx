@@ -27,9 +27,22 @@ const LoginForm = () => {
     
     try {
       console.log("Attempting login with:", { email, role });
+      
+      // Add some debugging output
+      const authToken = localStorage.getItem('authToken');
+      const storedUser = localStorage.getItem('currentUser');
+      console.log("Before login - Auth token exists:", !!authToken);
+      console.log("Before login - User exists:", !!storedUser);
+      
       const success = await login(email, password, role);
       
-      if (!success) {
+      if (success) {
+        console.log("Login successful, redirecting to dashboard from form");
+        toast({
+          title: "Login successful",
+          description: "Welcome to the LMS system",
+        });
+      } else {
         console.log("Login failed");
         setErrorMessage("Invalid credentials or server error");
         toast({

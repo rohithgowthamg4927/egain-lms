@@ -68,9 +68,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem('authToken', response.data.token);
         }
         
-        // Redirect to dashboard on successful login
+        // Redirect to dashboard on successful login after a brief delay
+        // to ensure state is updated
         console.log("Redirecting to dashboard");
-        navigate('/dashboard', { replace: true });
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 100);
         
         toast({
           title: 'Login Successful',

@@ -20,16 +20,23 @@ export const getCurrentUser = async (): Promise<{ success: boolean; data?: User;
 
 export const login = async (email: string, password: string, role: Role): Promise<{ success: boolean; data?: { user: User; token: string }; error?: string }> => {
   console.log("Calling login API with:", { email, role });
+  
+  // First verify server is running
+  try {
+    const healthCheck = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/health`);
+    if (!healthCheck.ok) {
+      console.error("Server health check failed");
+      return { success: false, error: "Backend server not responding" };
+    }
+  } catch (error) {
+    console.error("Server health check error:", error);
+    return { success: false, error: "Cannot connect to backend server" };
+  }
+  
   const response = await apiFetch<{ user: User; token: string }>('/login', {
     method: 'POST',
     body: JSON.stringify({ email, password, role }),
   });
-  
-  if (response.success && response.data) {
-    // Store the user in localStorage
-    localStorage.setItem('currentUser', JSON.stringify(response.data.user));
-    localStorage.setItem('authToken', response.data.token);
-  }
   
   return response;
 };

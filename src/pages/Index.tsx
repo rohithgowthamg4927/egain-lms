@@ -12,6 +12,29 @@ const Index = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
+  // Add logging to help debug
+  console.log("Index Page - Auth State:", { isAuthenticated, isLoading });
+
+  useEffect(() => {
+    // Check for existing auth on page load
+    const checkExistingAuth = () => {
+      const userJson = localStorage.getItem('currentUser');
+      const token = localStorage.getItem('authToken');
+      
+      console.log("Checking existing auth:", { 
+        userExists: !!userJson, 
+        tokenExists: !!token
+      });
+      
+      if (userJson && token && !isLoading) {
+        console.log("Found existing user in storage, redirecting to dashboard");
+        navigate('/dashboard', { replace: true });
+      }
+    };
+    
+    checkExistingAuth();
+  }, []);
+
   useEffect(() => {
     // If user is authenticated, redirect to dashboard
     if (!isLoading && isAuthenticated) {

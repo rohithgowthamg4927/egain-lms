@@ -17,17 +17,20 @@ const Layout = ({ children, requireAuth = true }: LayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Add logging to help debug
+  console.log("Layout - Auth State:", { isAuthenticated, isLoading, requireAuth, path: location.pathname });
+
   useEffect(() => {
     // Only redirect if authentication is required, the auth check is completed, 
     // the user is not authenticated, and they're not already on the login page
     if (!isLoading && requireAuth && !isAuthenticated && location.pathname !== '/') {
       console.log("Not authenticated, redirecting to login from:", location.pathname);
-      console.log("Auth state:", { isAuthenticated, isLoading, requireAuth });
       navigate('/', { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate, requireAuth, location.pathname]);
 
-  if (isLoading) {
+  // Show loading indicator while checking auth status
+  if (isLoading && requireAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -44,10 +47,7 @@ const Layout = ({ children, requireAuth = true }: LayoutProps) => {
     return <>{children}</>;
   }
 
-  // For authenticated pages with debugging
-  console.log("Rendering authenticated layout, isAuthenticated:", isAuthenticated);
-  
-  // For authenticated pages
+  // For authenticated pages 
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />

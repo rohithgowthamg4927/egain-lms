@@ -1,4 +1,3 @@
-
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -66,16 +65,6 @@ export interface CourseCategory {
   updatedAt: string;
 }
 
-export interface StudentBatch {
-  studentBatchId: number;
-  studentId: number;
-  batchId: number;
-  enrollmentDate?: string;
-  createdAt: string;
-  updatedAt: string;
-  student?: User;
-}
-
 export interface Batch {
   batchId: number;
   id?: number; // Added for API compatibility
@@ -84,15 +73,12 @@ export interface Batch {
   instructorId: number;
   startDate: string;
   endDate: string;
-  capacity?: number;
-  meetingLink?: string;
   createdAt: string;
   updatedAt: string;
   course?: Course;
   instructor?: User;
-  schedules?: Schedule[];
-  students?: StudentBatch[];
   // Additional fields needed by components
+  students?: number;
   studentsCount?: number;
 }
 

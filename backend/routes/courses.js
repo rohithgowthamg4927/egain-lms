@@ -43,7 +43,7 @@ router.get('/:id', async (req, res) => {
         batches: {
           include: {
             instructor: true,
-            schedule: true
+            schedules: true
           }
         },
         resources: true

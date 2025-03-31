@@ -141,7 +141,7 @@ router.post('/', async (req, res) => {
     
     const batch = await prisma.batch.create({
       data: {
-        batchName: batchName,
+        batchName,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         courseId: parseInt(courseId),

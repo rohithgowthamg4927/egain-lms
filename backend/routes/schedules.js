@@ -66,8 +66,6 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { 
-      title,
-      description,
       startTime,
       endTime,
       dayOfWeek,
@@ -79,13 +77,13 @@ router.post('/', async (req, res) => {
     
     const schedule = await prisma.schedule.create({
       data: {
-        topic: topic,
-        platform: platform,
         startTime: new Date(`1970-01-01T${startTime}`),
         endTime: new Date(`1970-01-01T${endTime}`),
         dayOfWeek: parseInt(dayOfWeek),
         batchId: parseInt(batchId),
-        meetingLink
+        meetingLink,
+        platform,
+        topic
       }
     });
     

@@ -23,10 +23,8 @@ export const createCourse = async (courseData: Partial<Course>): Promise<{ succe
       categoryId: courseData.categoryId ? Number(courseData.categoryId) : undefined,
       courseLevel: courseData.courseLevel,
       description: courseData.description,
-      price: courseData.price ? Number(courseData.price) : undefined,
       isPublished: courseData.isPublished !== undefined ? courseData.isPublished : true,
       thumbnailUrl: courseData.thumbnailUrl
-      // Removed duration field as it seems to not exist in the database
     }),
   });
 };

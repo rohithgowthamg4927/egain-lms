@@ -91,13 +91,12 @@ router.post('/', async (req, res) => {
       });
     }
     
-    // Create the course - removed duration since it doesn't exist in the database
+    // Create the course
     const newCourse = await prisma.course.create({
       data: {
         courseName: courseData.courseName,
         description: courseData.description,
         courseLevel: courseData.courseLevel,
-        price: courseData.price ? parseFloat(courseData.price) : null,
         categoryId: categoryId,
         isPublished: courseData.isPublished !== undefined ? courseData.isPublished : true,
         thumbnailUrl: courseData.thumbnailUrl

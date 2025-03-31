@@ -47,7 +47,6 @@ const Courses = () => {
   const [newCourseCategory, setNewCourseCategory] = useState('');
   const [newCourseLevel, setNewCourseLevel] = useState('');
   const [newCourseDescription, setNewCourseDescription] = useState('');
-  const [newCoursePrice, setNewCoursePrice] = useState('');
 
   const fetchCourses = async () => {
     try {
@@ -193,7 +192,6 @@ const Courses = () => {
         categoryId: parseInt(newCourseCategory),
         courseLevel: newCourseLevel as Level,
         description: newCourseDescription,
-        price: newCoursePrice ? parseFloat(newCoursePrice) : undefined,
         isPublished: true
       });
       
@@ -203,7 +201,6 @@ const Courses = () => {
         categoryId: parseInt(newCourseCategory),
         courseLevel: newCourseLevel as Level,
         description: newCourseDescription,
-        price: newCoursePrice ? parseFloat(newCoursePrice) : undefined,
         isPublished: true
       });
       
@@ -218,7 +215,6 @@ const Courses = () => {
         setNewCourseCategory('');
         setNewCourseLevel('');
         setNewCourseDescription('');
-        setNewCoursePrice('');
         
         // Close the dialog
         setIsCreateDialogOpen(false);
@@ -423,16 +419,6 @@ const Courses = () => {
                         <SelectItem value="advanced">Advanced</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="coursePrice">Price (optional)</Label>
-                    <Input
-                      id="coursePrice"
-                      type="number"
-                      value={newCoursePrice}
-                      onChange={(e) => setNewCoursePrice(e.target.value)}
-                      placeholder="Enter course price"
-                    />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="courseDescription">Description</Label>

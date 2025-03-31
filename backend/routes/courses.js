@@ -70,8 +70,6 @@ router.post('/', async (req, res) => {
     const { 
       courseName, 
       description, 
-      price,
-      duration,
       courseLevel,
       categoryId,
       isPublished
@@ -90,8 +88,6 @@ router.post('/', async (req, res) => {
         courseName,
         description,
         courseLevel,
-        price: price ? parseFloat(price) : null,
-        duration: duration ? parseInt(duration) : null,
         categoryId: parseInt(categoryId),
         isPublished: isPublished !== undefined ? isPublished : false,
         createdAt: new Date()
@@ -113,8 +109,6 @@ router.put('/:id', async (req, res) => {
     const { 
       courseName, 
       description, 
-      price,
-      duration,
       courseLevel,
       categoryId,
       isPublished
@@ -125,8 +119,6 @@ router.put('/:id', async (req, res) => {
       data: {
         ...(courseName !== undefined && { courseName }),
         ...(description !== undefined && { description }),
-        ...(price !== undefined && { price: parseFloat(price) }),
-        ...(duration !== undefined && { duration: parseInt(duration) }),
         ...(courseLevel !== undefined && { courseLevel }),
         ...(categoryId !== undefined && { categoryId: parseInt(categoryId) }),
         ...(isPublished !== undefined && { isPublished })

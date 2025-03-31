@@ -24,7 +24,7 @@ interface DataTableProps<T> {
   columns: {
     accessorKey: keyof T;
     header: string;
-    cell?: (row: T) => React.ReactNode;
+    cell?: ({ row }: { row: { original: T } }) => React.ReactNode;
   }[];
   actions?: {
     label: string;
@@ -118,7 +118,7 @@ export function DataTable<T>({
                   {columns.map((column) => (
                     <TableCell key={column.accessorKey as string}>
                       {column.cell
-                        ? column.cell(row)
+                        ? column.cell({ row: { original: row } })
                         : (row[column.accessorKey] as React.ReactNode)}
                     </TableCell>
                   ))}

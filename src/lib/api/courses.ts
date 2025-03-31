@@ -23,8 +23,9 @@ export const createCourse = async (courseData: Partial<Course>): Promise<{ succe
       categoryId: courseData.categoryId ? Number(courseData.categoryId) : undefined,
       courseLevel: courseData.courseLevel,
       description: courseData.description,
-      isPublished: courseData.isPublished !== undefined ? courseData.isPublished : true,
+      price: courseData.price,
       duration: courseData.duration,
+      isPublished: courseData.isPublished !== undefined ? courseData.isPublished : true,
       thumbnailUrl: courseData.thumbnailUrl
     }),
   });

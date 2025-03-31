@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -48,6 +47,8 @@ const Courses = () => {
   const [newCourseCategory, setNewCourseCategory] = useState('');
   const [newCourseLevel, setNewCourseLevel] = useState('');
   const [newCourseDescription, setNewCourseDescription] = useState('');
+  const [newCourseDuration, setNewCourseDuration] = useState('');
+  const [newCoursePrice, setNewCoursePrice] = useState('');
 
   const fetchCourses = async () => {
     try {
@@ -193,6 +194,8 @@ const Courses = () => {
         categoryId: parseInt(newCourseCategory),
         courseLevel: newCourseLevel as Level,
         description: newCourseDescription,
+        duration: newCourseDuration ? parseInt(newCourseDuration) : undefined,
+        price: newCoursePrice ? parseFloat(newCoursePrice) : undefined,
         isPublished: true
       });
       
@@ -202,6 +205,8 @@ const Courses = () => {
         categoryId: parseInt(newCourseCategory),
         courseLevel: newCourseLevel as Level,
         description: newCourseDescription,
+        duration: newCourseDuration ? parseInt(newCourseDuration) : undefined,
+        price: newCoursePrice ? parseFloat(newCoursePrice) : undefined,
         isPublished: true
       });
       
@@ -216,6 +221,8 @@ const Courses = () => {
         setNewCourseCategory('');
         setNewCourseLevel('');
         setNewCourseDescription('');
+        setNewCourseDuration('');
+        setNewCoursePrice('');
         
         // Close the dialog
         setIsCreateDialogOpen(false);
@@ -420,6 +427,26 @@ const Courses = () => {
                         <SelectItem value="advanced">Advanced</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="coursePrice">Price (optional)</Label>
+                    <Input
+                      id="coursePrice"
+                      type="number"
+                      value={newCoursePrice}
+                      onChange={(e) => setNewCoursePrice(e.target.value)}
+                      placeholder="Enter course price"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="courseDuration">Duration in hours (optional)</Label>
+                    <Input
+                      id="courseDuration"
+                      type="number"
+                      value={newCourseDuration}
+                      onChange={(e) => setNewCourseDuration(e.target.value)}
+                      placeholder="Enter course duration in hours"
+                    />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="courseDescription">Description</Label>

@@ -66,29 +66,42 @@ router.get('/:id', async (req, res) => {
 // Create a new course
 router.post('/', async (req, res) => {
   try {
+    console.log("Creating course with data:", req.body);
     const { 
-      title, 
+      courseName, 
       description, 
       price,
       duration,
-      level,
-      categoryId
+      courseLevel,
+      categoryId,
+      isPublished
     } = req.body;
+    
+    // Validate that required fields exist
+    if (!courseName || !categoryId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Required fields missing: courseName and categoryId are required' 
+      });
+    }
     
     const course = await prisma.course.create({
       data: {
-        title,
+        courseName,
         description,
-        price: parseFloat(price),
-        duration: parseInt(duration),
-        level,
+        courseLevel,
+        price: price ? parseFloat(price) : null,
+        duration: duration ? parseInt(duration) : null,
         categoryId: parseInt(categoryId),
+        isPublished: isPublished !== undefined ? isPublished : false,
         createdAt: new Date()
       }
     });
     
+    console.log("Course created successfully:", course);
     res.status(201).json({ success: true, data: course });
   } catch (error) {
+    console.error("Error creating course:", error);
     handleApiError(res, error);
   }
 });
@@ -98,23 +111,25 @@ router.put('/:id', async (req, res) => {
   try {
     const courseId = parseInt(req.params.id);
     const { 
-      title, 
+      courseName, 
       description, 
       price,
       duration,
-      level,
-      categoryId
+      courseLevel,
+      categoryId,
+      isPublished
     } = req.body;
     
     const course = await prisma.course.update({
       where: { courseId },
       data: {
-        ...(title !== undefined && { title }),
+        ...(courseName !== undefined && { courseName }),
         ...(description !== undefined && { description }),
         ...(price !== undefined && { price: parseFloat(price) }),
         ...(duration !== undefined && { duration: parseInt(duration) }),
-        ...(level !== undefined && { level }),
-        ...(categoryId !== undefined && { categoryId: parseInt(categoryId) })
+        ...(courseLevel !== undefined && { courseLevel }),
+        ...(categoryId !== undefined && { categoryId: parseInt(categoryId) }),
+        ...(isPublished !== undefined && { isPublished })
       }
     });
     

@@ -48,6 +48,7 @@ export interface Course {
   description?: string;
   thumbnailUrl?: string;
   duration?: number;
+  price?: number; // Added price field
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;

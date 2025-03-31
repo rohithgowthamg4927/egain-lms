@@ -75,10 +75,10 @@ router.post('/', async (req, res) => {
     const courseData = req.body;
     
     // Validate that the required fields exist
-    if (!courseData.courseName || !courseData.categoryId || !courseData.courseLevel) {
+    if (!courseData.courseName || !courseData.categoryId) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Required fields missing: courseName, categoryId, and courseLevel are required' 
+        error: 'Required fields missing: courseName and categoryId are required' 
       });
     }
     
@@ -94,8 +94,13 @@ router.post('/', async (req, res) => {
     // Create the course
     const newCourse = await prisma.course.create({
       data: {
-        ...courseData,
-        categoryId: categoryId // Ensure categoryId is a number
+        courseName: courseData.courseName,
+        description: courseData.description,
+        courseLevel: courseData.courseLevel,
+        price: courseData.price ? parseFloat(courseData.price) : null,
+        duration: courseData.duration ? parseInt(courseData.duration) : null,
+        categoryId: categoryId,
+        isPublished: courseData.isPublished !== undefined ? courseData.isPublished : true
       },
       include: { category: true }
     });

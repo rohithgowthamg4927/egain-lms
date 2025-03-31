@@ -18,7 +18,7 @@ export const createBatch = async (batchData: Partial<Batch>): Promise<{ success:
   return apiFetch<Batch>('/batches', {
     method: 'POST',
     body: JSON.stringify({
-      name: batchData.batchName,
+      batchName: batchData.batchName,
       startDate: batchData.startDate,
       endDate: batchData.endDate,
       courseId: batchData.courseId,
@@ -32,7 +32,7 @@ export const updateBatch = async (batchId: number, batchData: Partial<Batch>): P
   return apiFetch<Batch>(`/batches/${batchId}`, {
     method: 'PUT',
     body: JSON.stringify({
-      name: batchData.batchName,
+      batchName: batchData.batchName,
       startDate: batchData.startDate,
       endDate: batchData.endDate,
       courseId: batchData.courseId,

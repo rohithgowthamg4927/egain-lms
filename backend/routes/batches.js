@@ -132,7 +132,7 @@ router.get('/:id/available-students', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { 
-      name,
+      batchName,
       startDate,
       endDate,
       courseId,
@@ -141,11 +141,11 @@ router.post('/', async (req, res) => {
     
     const batch = await prisma.batch.create({
       data: {
-        batchName: name,
+        batchName: batchName,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         courseId: parseInt(courseId),
-        instructorId: instructorId ? parseInt(instructorId) : null
+        instructorId: parseInt(instructorId)
       }
     });
     
@@ -160,7 +160,7 @@ router.put('/:id', async (req, res) => {
   try {
     const batchId = parseInt(req.params.id);
     const { 
-      name,
+      batchName,
       startDate,
       endDate,
       courseId,
@@ -170,11 +170,11 @@ router.put('/:id', async (req, res) => {
     const batch = await prisma.batch.update({
       where: { batchId },
       data: {
-        ...(name !== undefined && { batchName: name }),
+        ...(batchName !== undefined && { batchName }),
         ...(startDate !== undefined && { startDate: new Date(startDate) }),
         ...(endDate !== undefined && { endDate: new Date(endDate) }),
         ...(courseId !== undefined && { courseId: parseInt(courseId) }),
-        ...(instructorId !== undefined && { instructorId: instructorId ? parseInt(instructorId) : null })
+        ...(instructorId !== undefined && { instructorId: parseInt(instructorId) })
       }
     });
     

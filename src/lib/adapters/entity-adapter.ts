@@ -66,7 +66,8 @@ export class EntityAdapter {
       course: apiBatch.course ? this.adaptCourse(apiBatch.course) : undefined,
       instructor: apiBatch.instructor ? this.adaptUser(apiBatch.instructor) : undefined,
       students: apiBatch.students || 0,
-      studentsCount: apiBatch.studentsCount || apiBatch.students || 0
+      studentsCount: apiBatch.studentsCount || apiBatch.students || 0,
+      schedules: apiBatch.schedules ? apiBatch.schedules.map((s: any) => this.adaptSchedule(s)) : []
     };
   }
 
@@ -82,6 +83,20 @@ export class EntityAdapter {
       topic: apiSchedule.topic,
       platform: apiSchedule.platform,
       meetingLink: apiSchedule.meetingLink
+    };
+  }
+  
+  static adaptResource(apiResource: any): Resource {
+    return {
+      resourceId: apiResource.id || apiResource.resourceId,
+      id: apiResource.id || apiResource.resourceId,
+      courseId: apiResource.courseId,
+      title: apiResource.title,
+      type: apiResource.type,
+      url: apiResource.url,
+      description: apiResource.description,
+      createdAt: dateToString(apiResource.createdAt),
+      updatedAt: dateToString(apiResource.updatedAt)
     };
   }
 }

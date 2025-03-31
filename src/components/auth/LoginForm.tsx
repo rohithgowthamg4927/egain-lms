@@ -32,12 +32,8 @@ const LoginForm = () => {
       const success = await login(email, password, role);
       
       if (success) {
-        console.log("Login successful, redirecting to dashboard");
-        navigate('/dashboard');
-        toast({
-          title: "Login successful",
-          description: "Welcome to the dashboard!",
-        });
+        console.log("Login successful, redirected to dashboard");
+        // No need to navigate here as the useAuth hook will handle the navigation
       } else {
         console.log("Login failed");
         setErrorMessage("Invalid credentials or server error");

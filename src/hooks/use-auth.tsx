@@ -58,11 +58,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.success && response.data) {
         const userData = response.data.user;
         console.log("Login successful, user data:", userData);
+        
+        // Store user in state and localStorage
         setUser(userData);
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+        
+        // Store the token
+        if (response.data.token) {
+          localStorage.setItem('authToken', response.data.token);
+        }
         
         // Always redirect to dashboard on successful login regardless of role
         console.log("Redirecting to dashboard");
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
         
         toast({
           title: 'Login Successful',
@@ -97,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('authToken');
     setUser(null);
-    navigate('/');
+    navigate('/', { replace: true });
     toast({
       title: 'Logged out',
       description: 'You have been successfully logged out.',

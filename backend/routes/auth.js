@@ -11,6 +11,8 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password, role } = req.body;
     
+    console.log(`Login attempt: ${email} with role: ${role}`);
+    
     const user = await prisma.user.findFirst({
       where: {
         email,
@@ -22,6 +24,8 @@ router.post('/login', async (req, res) => {
     if (user && password === user.password) {
       // Successful login
       console.log(`User logged in successfully: ${user.email} with role: ${user.role}`);
+      
+      // Return the user data and a token
       res.status(200).json({
         success: true,
         data: {

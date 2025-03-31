@@ -31,7 +31,7 @@ const Login: React.FC<LoginProps> = ({ onAuthenticated }) => {
             Sign in to your account
           </h2>
         </div>
-        <LoginForm onSuccess={handleLoginSuccess} />
+        <LoginForm />
       </div>
     </div>
   );

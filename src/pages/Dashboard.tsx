@@ -2,8 +2,6 @@
 import { useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Chart as ChartJS,
@@ -15,7 +13,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import { CalendarDays, GraduationCap, Lightbulb, BookOpenCheck, BookOpen } from 'lucide-react';
+import { CalendarDays, GraduationCap, Lightbulb, BookOpenCheck } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { getUsers, getCourses, getBatches, getDashboardMetrics } from '@/lib/api';
 import { Role } from '@/lib/types';
@@ -33,7 +31,7 @@ ChartJS.register(
 const Dashboard = () => {
   const { hasRole } = useAuth();
 
-  // Update to use the correct enum values for Role
+  // Fetch all data for the dashboard
   const getInstructorsQuery = useQuery({
     queryKey: ['instructors'],
     queryFn: () => getUsers(Role.instructor),
@@ -90,13 +88,35 @@ const Dashboard = () => {
     getDashboardMetricsQuery.error,
   ]);
 
+  // Get the actual counts from the query responses
   const instructorsCount = getInstructorsQuery.data?.data?.length || 0;
   const studentsCount = getStudentsQuery.data?.data?.length || 0;
   const coursesCount = getCoursesQuery.data?.data?.length || 0;
   const batchesCount = getBatchesQuery.data?.data?.length || 0;
-  const activeStudents = getDashboardMetricsQuery.data?.data?.activeStudents || 0;
 
-  const coursesPerCategory = getDashboardMetricsQuery.data?.data?.coursesPerCategory || [];
+  // Prepare data for the chart
+  // If we have dashboard metrics, use them, otherwise create dummy data from our other queries
+  let coursesPerCategory = [];
+  
+  if (getDashboardMetricsQuery.data?.data?.coursesPerCategory) {
+    coursesPerCategory = getDashboardMetricsQuery.data.data.coursesPerCategory;
+  } else if (getCoursesQuery.data?.data) {
+    // Group courses by category
+    const coursesByCategory = getCoursesQuery.data.data.reduce((acc, course) => {
+      const categoryName = course.category?.categoryName || 'Uncategorized';
+      if (!acc[categoryName]) {
+        acc[categoryName] = 0;
+      }
+      acc[categoryName]++;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Convert to array format for chart
+    coursesPerCategory = Object.entries(coursesByCategory).map(([categoryName, count]) => ({
+      categoryName,
+      count,
+    }));
+  }
 
   const chartData = {
     labels: coursesPerCategory.map((item) => item.categoryName),
@@ -121,6 +141,9 @@ const Dashboard = () => {
       },
     },
   };
+
+  // Get recent enrollments from metrics or prepare empty array
+  const recentEnrollments = getDashboardMetricsQuery.data?.data?.recentEnrollments || [];
 
   return (
     <Layout>
@@ -214,10 +237,14 @@ const Dashboard = () => {
               <CardDescription>Number of courses available in each category.</CardDescription>
             </CardHeader>
             <CardContent>
-              {getDashboardMetricsQuery.isLoading ? (
+              {getCoursesQuery.isLoading ? (
                 <Skeleton className="h-[300px]" />
-              ) : (
+              ) : coursesPerCategory.length > 0 ? (
                 <Bar options={chartOptions} data={chartData} />
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No course data available</p>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -228,16 +255,15 @@ const Dashboard = () => {
               <CardDescription>Latest students who have enrolled in courses.</CardDescription>
             </CardHeader>
             <CardContent className="pl-4">
-              {getDashboardMetricsQuery.isLoading ? (
+              {getStudentsQuery.isLoading || getCoursesQuery.isLoading ? (
                 <div className="space-y-4">
                   <Skeleton className="h-4 w-[75%]" />
                   <Skeleton className="h-4 w-[50%]" />
                   <Skeleton className="h-4 w-[60%]" />
                 </div>
-              ) : getDashboardMetricsQuery.data?.data?.recentEnrollments &&
-                getDashboardMetricsQuery.data.data.recentEnrollments.length > 0 ? (
+              ) : recentEnrollments.length > 0 ? (
                 <ul className="list-none space-y-4">
-                  {getDashboardMetricsQuery.data.data.recentEnrollments.map((enrollment, index) => (
+                  {recentEnrollments.map((enrollment, index) => (
                     <li key={index} className="border-l-2 border-primary pl-4">
                       <div className="font-medium">{enrollment.studentName}</div>
                       <div className="text-sm text-muted-foreground">
@@ -249,8 +275,7 @@ const Dashboard = () => {
                 </ul>
               ) : (
                 <div className="text-center py-8">
-                  <BookOpen className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">No recent enrollments found.</p>
+                  <p className="text-muted-foreground">No recent enrollments found.</p>
                 </div>
               )}
             </CardContent>

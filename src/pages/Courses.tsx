@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -8,15 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import CourseGrid from '@/components/courses/CourseGrid';
-import { DataTable } from '@/components/ui/data-table';
-import { getCourses, getCategories, createCourse, createCategory } from '@/lib/api';
+import { getCourses, getCategories, createCourse, createCategory, deleteCourse, getCourseById, updateCourse } from '@/lib/api';
 import { Course, CourseCategory, Level } from '@/lib/types';
-import { Plus, Search, ListFilter, Grid, List, Eye, Edit, Trash } from 'lucide-react';
+import { Plus, Search, ListFilter, Trash, Edit, Eye } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -25,28 +23,49 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 
 const Courses = () => {
-  const navigate = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedLevel, setSelectedLevel] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [courseToView, setCourseToView] = useState<Course | null>(null);
+  const [courseToEdit, setCourseToEdit] = useState<Course | null>(null);
+  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   
   // Form states for creating a new course
   const [newCourseName, setNewCourseName] = useState('');
   const [newCourseCategory, setNewCourseCategory] = useState('');
   const [newCourseLevel, setNewCourseLevel] = useState('');
   const [newCourseDescription, setNewCourseDescription] = useState('');
+
+  // Form states for editing a course
+  const [editCourseName, setEditCourseName] = useState('');
+  const [editCourseCategory, setEditCourseCategory] = useState('');
+  const [editCourseLevel, setEditCourseLevel] = useState<string>('');
+  const [editCourseDescription, setEditCourseDescription] = useState('');
 
   const fetchCourses = async () => {
     try {
@@ -240,88 +259,134 @@ const Courses = () => {
     }
   };
 
-  const courseColumns = [
-    {
-      accessorKey: 'courseName' as keyof Course,
-      header: 'Course Name',
-    },
-    {
-      accessorKey: 'courseLevel' as keyof Course,
-      header: 'Level',
-      cell: (info: any) => {
-        const course = info.row.original;
-        return <span className="capitalize">{course.courseLevel.toLowerCase()}</span>;
-      },
-    },
-    {
-      accessorKey: 'category' as keyof Course,
-      header: 'Category',
-      cell: (info: any) => {
-        const course = info.row.original;
-        return course.category?.categoryName || 'N/A';
-      },
-    },
-    {
-      accessorKey: 'students' as keyof Course,
-      header: 'Students',
-      cell: (info: any) => {
-        const course = info.row.original;
-        return course.students || 0;
-      },
-    },
-    {
-      accessorKey: 'batches' as keyof Course,
-      header: 'Batches',
-      cell: (info: any) => {
-        const course = info.row.original;
-        return course.batches || 0;
-      },
-    },
-    {
-      accessorKey: 'averageRating' as keyof Course,
-      header: 'Rating',
-      cell: (info: any) => {
-        const course = info.row.original;
-        return (
-          <div className="flex items-center">
-            <span className="text-amber-500 mr-1">★</span>
-            {course.averageRating?.toFixed(1) || 'N/A'}
-          </div>
-        );
-      },
-    },
-  ];
-
-  const courseActions = [
-    {
-      label: 'View',
-      onClick: (course: Course) => {
-        navigate(`/courses/${course.courseId}`);
-      },
-      icon: <Eye className="h-4 w-4" />,
-    },
-    {
-      label: 'Edit',
-      onClick: (course: Course) => {
+  const handleViewCourse = async (course: Course) => {
+    setIsLoading(true);
+    try {
+      const response = await getCourseById(course.courseId);
+      if (response.success && response.data) {
+        setCourseToView(response.data);
+        setIsViewDialogOpen(true);
+      } else {
         toast({
-          title: 'Edit Course',
-          description: `Editing: ${course.courseName}`,
-        });
-      },
-      icon: <Edit className="h-4 w-4" />,
-    },
-    {
-      label: 'Delete',
-      onClick: (course: Course) => {
-        toast({
-          title: 'Delete Course',
-          description: `Are you sure you want to delete ${course.courseName}?`,
+          title: 'Error',
+          description: response.error || 'Failed to fetch course details',
           variant: 'destructive',
         });
-      },
-      icon: <Trash className="h-4 w-4" />,
-    },
-  ];
+      }
+    } catch (error) {
+      console.error('Error fetching course details:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch course details',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEditCourse = (course: Course) => {
+    setCourseToEdit(course);
+    setEditCourseName(course.courseName);
+    setEditCourseCategory(course.categoryId.toString());
+    setEditCourseLevel(course.courseLevel);
+    setEditCourseDescription(course.description || '');
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!courseToEdit) return;
+    
+    if (!editCourseName || !editCourseCategory || !editCourseLevel) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const updatedCourse = {
+        ...courseToEdit,
+        courseName: editCourseName,
+        categoryId: parseInt(editCourseCategory),
+        courseLevel: editCourseLevel as Level,
+        description: editCourseDescription,
+      };
+      
+      const response = await updateCourse(courseToEdit.courseId, updatedCourse);
+      
+      if (response.success && response.data) {
+        toast({
+          title: 'Course updated',
+          description: `Course "${editCourseName}" has been updated successfully.`,
+        });
+        
+        setIsEditDialogOpen(false);
+        setCourseToEdit(null);
+        
+        // Refresh the courses list
+        fetchCourses();
+      } else {
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to update course',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error updating course:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update course',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteCourse = async (course: Course) => {
+    setCourseToDelete(course);
+  };
+
+  const confirmDeleteCourse = async () => {
+    if (!courseToDelete) return;
+    
+    setIsSubmitting(true);
+    try {
+      const response = await deleteCourse(courseToDelete.courseId);
+      
+      if (response.success) {
+        toast({
+          title: 'Course deleted',
+          description: `Course "${courseToDelete.courseName}" has been deleted successfully.`,
+        });
+        
+        setCourseToDelete(null);
+        
+        // Refresh the courses list
+        fetchCourses();
+      } else {
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to delete course',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting course:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete course',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Layout>
@@ -490,25 +555,6 @@ const Courses = () => {
                 </SelectContent>
               </Select>
             </div>
-            
-            <div className="flex items-center border rounded-md p-1 bg-muted/30">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                size="icon"
-                onClick={() => setViewMode('grid')}
-                className="h-8 w-8"
-              >
-                <Grid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="icon"
-                onClick={() => setViewMode('list')}
-                className="h-8 w-8"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
 
           <div className="flex items-center justify-between">
@@ -522,18 +568,159 @@ const Courses = () => {
           </div>
         </div>
 
-        {viewMode === 'grid' ? (
-          <CourseGrid courses={filteredCourses} loading={isLoading} />
-        ) : (
-          <div className="bg-card rounded-lg border overflow-hidden">
-            <DataTable
-              data={filteredCourses}
-              columns={courseColumns}
-              actions={courseActions}
-              className="w-full"
-            />
-          </div>
-        )}
+        <CourseGrid 
+          courses={filteredCourses} 
+          loading={isLoading} 
+          onView={handleViewCourse}
+          onEdit={handleEditCourse}
+          onDelete={handleDeleteCourse}
+        />
+
+        {/* View Course Dialog */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Course Details</DialogTitle>
+            </DialogHeader>
+            {courseToView && (
+              <div className="py-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Course Name</h3>
+                    <p className="text-lg">{courseToView.courseName}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Category</h3>
+                    <p className="text-lg">{courseToView.category?.categoryName || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Level</h3>
+                    <p className="text-lg capitalize">{courseToView.courseLevel.toLowerCase()}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Status</h3>
+                    <p className="text-lg">{courseToView.isPublished ? 'Published' : 'Not Published'}</p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">Description</h3>
+                  <p className="text-base mt-1">{courseToView.description || 'No description available.'}</p>
+                </div>
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">Created At</h3>
+                  <p className="text-base">{new Date(courseToView.createdAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+                Close
+              </Button>
+              <Button onClick={() => {
+                setIsViewDialogOpen(false);
+                if (courseToView) {
+                  handleEditCourse(courseToView);
+                }
+              }}>
+                Edit Course
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Course Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[525px]">
+            <DialogHeader>
+              <DialogTitle>Edit Course</DialogTitle>
+              <DialogDescription>
+                Update the details of this course.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="editCourseName">Course Name</Label>
+                <Input
+                  id="editCourseName"
+                  value={editCourseName}
+                  onChange={(e) => setEditCourseName(e.target.value)}
+                  placeholder="Enter course name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="editCourseCategory">Category</Label>
+                <Select value={editCourseCategory} onValueChange={setEditCourseCategory}>
+                  <SelectTrigger id="editCourseCategory">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.categoryId} value={category.categoryId.toString()}>
+                        {category.categoryName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="editCourseLevel">Level</Label>
+                <Select value={editCourseLevel} onValueChange={setEditCourseLevel}>
+                  <SelectTrigger id="editCourseLevel">
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="editCourseDescription">Description</Label>
+                <Input
+                  id="editCourseDescription"
+                  value={editCourseDescription}
+                  onChange={(e) => setEditCourseDescription(e.target.value)}
+                  placeholder="Enter course description"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveEdit} 
+                disabled={isSubmitting || !editCourseName || !editCourseCategory || !editCourseLevel}
+              >
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Course Dialog */}
+        <AlertDialog open={!!courseToDelete} onOpenChange={(open) => !open && setCourseToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to delete this course?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the course 
+                "{courseToDelete?.courseName}" and remove all associated data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDeleteCourse}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Deleting...' : 'Delete Course'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );

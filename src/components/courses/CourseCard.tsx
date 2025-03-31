@@ -1,18 +1,24 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Course, Level } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Users, Star, Bookmark } from 'lucide-react';
+import { Eye, Users, Star, Bookmark, Edit, Trash } from 'lucide-react';
 
 interface CourseCardProps {
   course: Course;
+  onView?: (course: Course) => void;
+  onEdit?: (course: Course) => void;
+  onDelete?: (course: Course) => void;
 }
 
-const CourseCard = ({ course }: CourseCardProps) => {
-  const navigate = useNavigate();
+const CourseCard = ({ 
+  course,
+  onView,
+  onEdit,
+  onDelete 
+}: CourseCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const levelColor = {
@@ -21,8 +27,24 @@ const CourseCard = ({ course }: CourseCardProps) => {
     'advanced': 'bg-purple-100 hover:bg-purple-200 text-purple-800'
   };
 
-  const viewCourse = () => {
-    navigate(`/courses/${course.courseId}`);
+  const handleViewClick = () => {
+    if (onView) {
+      onView(course);
+    }
+  };
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onEdit) {
+      onEdit(course);
+    }
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete(course);
+    }
   };
 
   const getLevelLabel = (level: Level): string => {
@@ -82,15 +104,34 @@ const CourseCard = ({ course }: CourseCardProps) => {
         </div>
       </CardContent>
 
-      <CardFooter className="pt-0">
+      <CardFooter className="pt-0 flex flex-col gap-2">
         <Button
           variant="default"
           className="w-full gap-2 group"
-          onClick={viewCourse}
+          onClick={handleViewClick}
         >
           <Eye className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
           View Course
         </Button>
+        
+        <div className="flex w-full gap-2">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={handleEditClick}
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+          <Button
+            variant="destructive"
+            className="flex-1"
+            onClick={handleDeleteClick}
+          >
+            <Trash className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

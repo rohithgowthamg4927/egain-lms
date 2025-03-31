@@ -1,4 +1,3 @@
-
 import { Course, CourseCategory, User, Batch } from "../types";
 
 // Helper function to get course name safely
@@ -27,5 +26,11 @@ export const getInstructorName = (instructor: User | undefined | null, instructo
 
 // Helper function to get student count safely
 export const getStudentCount = (batch: Batch): number => {
-  return batch.studentsCount || batch.students || 0;
+  // Check if it's an array of students or a count
+  if (Array.isArray(batch.students)) {
+    return batch.students.length;
+  }
+  
+  // Otherwise, use the count property or default to 0
+  return batch.studentsCount || 0;
 };

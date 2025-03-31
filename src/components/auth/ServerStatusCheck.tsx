@@ -4,7 +4,11 @@ import { AlertCircle, CheckCircle, Database, Loader2, Server } from 'lucide-reac
 import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 
-const ServerStatusCheck = () => {
+interface ServerStatusCheckProps {
+  onComplete?: () => void;
+}
+
+const ServerStatusCheck = ({ onComplete }: ServerStatusCheckProps = {}) => {
   const [status, setStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const [dbStatus, setDbStatus] = useState<'unknown' | 'connected' | 'error'>('unknown');
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
@@ -33,6 +37,10 @@ const ServerStatusCheck = () => {
           description: "The backend server is running properly",
           variant: "default",
         });
+        // Call the onComplete callback if it exists
+        if (onComplete) {
+          onComplete();
+        }
       } else {
         console.log('Server returned non-OK response:', response.status);
         setStatus('offline');

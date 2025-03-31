@@ -6,10 +6,14 @@ import { handleApiError } from '../utils/errorHandler.js';
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Get all batches
+// Get all batches with optional filtering by courseId
 router.get('/', async (req, res) => {
   try {
+    const { courseId } = req.query;
+    const whereClause = courseId ? { courseId: parseInt(courseId) } : {};
+    
     const batches = await prisma.batch.findMany({
+      where: whereClause,
       include: {
         course: true,
         instructor: true,
@@ -22,7 +26,13 @@ router.get('/', async (req, res) => {
       }
     });
     
-    res.json({ success: true, data: batches });
+    // Transform data to include studentsCount
+    const transformedBatches = batches.map(batch => ({
+      ...batch,
+      studentsCount: batch.students.length
+    }));
+    
+    res.json({ success: true, data: transformedBatches });
   } catch (error) {
     handleApiError(res, error);
   }
@@ -54,7 +64,65 @@ router.get('/:id', async (req, res) => {
       });
     }
     
-    res.json({ success: true, data: batch });
+    // Add studentsCount to the response
+    const transformedBatch = {
+      ...batch,
+      studentsCount: batch.students.length
+    };
+    
+    res.json({ success: true, data: transformedBatch });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Get enrolled students for a batch
+router.get('/:id/students', async (req, res) => {
+  try {
+    const batchId = parseInt(req.params.id);
+    
+    const enrollments = await prisma.studentBatch.findMany({
+      where: { batchId },
+      include: {
+        student: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    
+    // Transform data to simplify the response
+    const students = enrollments.map(enrollment => ({
+      ...enrollment.student,
+      enrollmentDate: enrollment.createdAt
+    }));
+    
+    res.json({ success: true, data: students });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Get students not enrolled in a batch (for enrollment options)
+router.get('/:id/available-students', async (req, res) => {
+  try {
+    const batchId = parseInt(req.params.id);
+    
+    // Find students not enrolled in this batch
+    const students = await prisma.user.findMany({
+      where: {
+        role: 'student',
+        NOT: {
+          studentBatches: {
+            some: {
+              batchId
+            }
+          }
+        }
+      }
+    });
+    
+    res.json({ success: true, data: students });
   } catch (error) {
     handleApiError(res, error);
   }
@@ -75,12 +143,12 @@ router.post('/', async (req, res) => {
     
     const batch = await prisma.batch.create({
       data: {
-        name,
+        batchName: name,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         courseId: parseInt(courseId),
         instructorId: instructorId ? parseInt(instructorId) : null,
-        capacity: parseInt(capacity),
+        capacity: capacity ? parseInt(capacity) : null,
         meetingLink
       }
     });
@@ -108,12 +176,12 @@ router.put('/:id', async (req, res) => {
     const batch = await prisma.batch.update({
       where: { batchId },
       data: {
-        ...(name !== undefined && { name }),
+        ...(name !== undefined && { batchName: name }),
         ...(startDate !== undefined && { startDate: new Date(startDate) }),
         ...(endDate !== undefined && { endDate: new Date(endDate) }),
         ...(courseId !== undefined && { courseId: parseInt(courseId) }),
         ...(instructorId !== undefined && { instructorId: instructorId ? parseInt(instructorId) : null }),
-        ...(capacity !== undefined && { capacity: parseInt(capacity) }),
+        ...(capacity !== undefined && { capacity: capacity ? parseInt(capacity) : null }),
         ...(meetingLink !== undefined && { meetingLink })
       }
     });
@@ -160,7 +228,8 @@ router.post('/:id/students', async (req, res) => {
     const batch = await prisma.batch.findUnique({
       where: { batchId },
       include: {
-        students: true
+        students: true,
+        course: true
       }
     });
     
@@ -182,7 +251,7 @@ router.post('/:id/students', async (req, res) => {
     }
     
     // Check if batch is at capacity
-    if (batch.students.length >= batch.capacity) {
+    if (batch.capacity && batch.students.length >= batch.capacity) {
       return res.status(400).json({
         success: false,
         error: 'Batch is at full capacity'
@@ -194,7 +263,7 @@ router.post('/:id/students', async (req, res) => {
       data: {
         studentId: parseInt(studentId),
         batchId,
-        enrollmentDate: new Date()
+        createdAt: new Date()
       }
     });
     
@@ -211,12 +280,47 @@ router.post('/:id/students', async (req, res) => {
         data: {
           studentId: parseInt(studentId),
           courseId: batch.courseId,
-          enrollmentDate: new Date()
+          createdAt: new Date()
         }
       });
     }
     
     res.status(201).json({ success: true, data: enrollment });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Remove student from a batch
+router.delete('/:batchId/students/:studentId', async (req, res) => {
+  try {
+    const batchId = parseInt(req.params.batchId);
+    const studentId = parseInt(req.params.studentId);
+    
+    // Check if enrollment exists
+    const enrollment = await prisma.studentBatch.findFirst({
+      where: {
+        batchId,
+        studentId
+      }
+    });
+    
+    if (!enrollment) {
+      return res.status(404).json({
+        success: false,
+        error: 'Student is not enrolled in this batch'
+      });
+    }
+    
+    // Remove enrollment
+    await prisma.studentBatch.deleteMany({
+      where: {
+        batchId,
+        studentId
+      }
+    });
+    
+    res.json({ success: true });
   } catch (error) {
     handleApiError(res, error);
   }

@@ -1,3 +1,4 @@
+
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -25,6 +26,7 @@ export interface User {
   // Additional fields needed by components
   photoUrl?: string;
   bio?: string;
+  enrollmentDate?: string; // Used for displaying when a student enrolled in a batch
 }
 
 export interface ProfilePicture {
@@ -75,11 +77,14 @@ export interface Batch {
   endDate: string;
   createdAt: string;
   updatedAt: string;
+  capacity?: number; // Maximum number of students
+  meetingLink?: string; // Online meeting URL
   course?: Course;
   instructor?: User;
   // Additional fields needed by components
-  students?: number;
-  studentsCount?: number;
+  students?: any[]; // Array of enrolled students
+  studentsCount?: number; // Count of enrolled students
+  schedules?: Schedule[]; // Array of batch schedules
 }
 
 export interface Schedule {
@@ -96,6 +101,16 @@ export interface Schedule {
   topic?: string;
   platform?: string;
   link?: string;
+}
+
+export interface StudentBatch {
+  studentBatchId: number;
+  studentId: number;
+  batchId: number;
+  createdAt: string;
+  updatedAt: string;
+  student?: User;
+  batch?: Batch;
 }
 
 export interface Resource {

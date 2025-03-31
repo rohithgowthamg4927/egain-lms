@@ -1,56 +1,43 @@
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import './App.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from "@/components/ui/toaster";
+import Login from './pages/Login';
+import NotFound from './pages/NotFound';
+import Index from './pages/Index';
 import Dashboard from './pages/Dashboard';
-import Login from './pages/Index';
-import AddUser from './pages/AddUser';
-import Students from './pages/Students';
-import Instructors from './pages/Instructors';
 import Courses from './pages/Courses';
+import Instructors from './pages/Instructors';
+import Students from './pages/Students';
+import UserDetail from './pages/UserDetail';
+import AddUser from './pages/AddUser';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import UserProfile from './pages/UserProfile';
+import Batches from './pages/Batches';
+import BatchDetail from './pages/BatchDetail';
 import Resources from './pages/Resources';
 import Schedules from './pages/Schedules';
-import { AuthProvider } from './hooks/use-auth';
-import { Toaster } from '@/components/ui/toaster';
-import UserDetail from './pages/UserDetail';
-import UserProfile from './pages/UserProfile';
-import NotFound from './pages/NotFound';
-
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
 
 function App() {
   return (
-    <div className="App">
-      <QueryClientProvider client={queryClient}>
-        <Router>
-          <AuthProvider>
-            <Routes>
-              <Route path="/" element={<Login />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/add-user" element={<AddUser />} />
-              <Route path="/students" element={<Students />} />
-              <Route path="/instructors" element={<Instructors />} />
-              <Route path="/courses" element={<Courses />} />
-              <Route path="/resources" element={<Resources />} />
-              <Route path="/schedules" element={<Schedules />} />
-              <Route path="/students/:userId" element={<UserProfile />} />
-              <Route path="/instructors/:userId" element={<UserProfile />} />
-              <Route path="/users/:userId" element={<UserProfile />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
-          </AuthProvider>
-        </Router>
-      </QueryClientProvider>
-    </div>
+    <Router>
+      <Toaster />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/courses" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
+        <Route path="/instructors" element={<ProtectedRoute><Instructors /></ProtectedRoute>} />
+        <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
+        <Route path="/users/:id" element={<ProtectedRoute><UserDetail /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+        <Route path="/add-user" element={<ProtectedRoute><AddUser /></ProtectedRoute>} />
+        <Route path="/batches" element={<ProtectedRoute><Batches /></ProtectedRoute>} />
+        <Route path="/batches/:id" element={<ProtectedRoute><BatchDetail /></ProtectedRoute>} />
+        <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
+        <Route path="/schedules" element={<ProtectedRoute><Schedules /></ProtectedRoute>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Router>
   );
 }
 

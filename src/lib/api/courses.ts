@@ -15,16 +15,32 @@ export const getCourseById = async (courseId: number): Promise<{ success: boolea
 // Course creation API
 export const createCourse = async (courseData: Partial<Course>): Promise<{ success: boolean; data?: Course; error?: string }> => {
   console.log("Creating course with data:", courseData);
+  
   return apiFetch<Course>('/courses', {
     method: 'POST',
     body: JSON.stringify({
       courseName: courseData.courseName,
-      categoryId: courseData.categoryId,
+      categoryId: courseData.categoryId ? Number(courseData.categoryId) : undefined,
       courseLevel: courseData.courseLevel,
       description: courseData.description,
       isPublished: courseData.isPublished !== undefined ? courseData.isPublished : true,
       duration: courseData.duration,
       thumbnailUrl: courseData.thumbnailUrl
     }),
+  });
+};
+
+// Course update API
+export const updateCourse = async (courseId: number, courseData: Partial<Course>): Promise<{ success: boolean; data?: Course; error?: string }> => {
+  return apiFetch<Course>(`/courses/${courseId}`, {
+    method: 'PUT',
+    body: JSON.stringify(courseData),
+  });
+};
+
+// Course deletion API
+export const deleteCourse = async (courseId: number): Promise<{ success: boolean; error?: string }> => {
+  return apiFetch(`/courses/${courseId}`, {
+    method: 'DELETE',
   });
 };

@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 // Get all categories
 router.get('/', async (req, res) => {
   try {
-    const categories = await prisma.category.findMany();
+    const categories = await prisma.courseCategory.findMany();
     res.json({ success: true, data: categories });
   } catch (error) {
     handleApiError(res, error);
@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const categoryId = parseInt(req.params.id);
-    const category = await prisma.category.findUnique({
+    const category = await prisma.courseCategory.findUnique({
       where: { categoryId }
     });
     
@@ -40,14 +40,27 @@ router.get('/:id', async (req, res) => {
 // Create a new category
 router.post('/', async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { categoryName } = req.body;
     
-    const category = await prisma.category.create({
-      data: { name, description }
+    if (!categoryName) {
+      return res.status(400).json({
+        success: false,
+        error: 'Category name is required'
+      });
+    }
+    
+    console.log(`Creating category with name: ${categoryName}`);
+    
+    const category = await prisma.courseCategory.create({
+      data: { 
+        categoryName,
+      }
     });
     
+    console.log('Category created:', category);
     res.status(201).json({ success: true, data: category });
   } catch (error) {
+    console.error('Error creating category:', error);
     handleApiError(res, error);
   }
 });
@@ -56,11 +69,11 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const categoryId = parseInt(req.params.id);
-    const { name, description } = req.body;
+    const { categoryName } = req.body;
     
-    const category = await prisma.category.update({
+    const category = await prisma.courseCategory.update({
       where: { categoryId },
-      data: { name, description }
+      data: { categoryName }
     });
     
     res.json({ success: true, data: category });
@@ -86,7 +99,7 @@ router.delete('/:id', async (req, res) => {
       });
     }
     
-    await prisma.category.delete({
+    await prisma.courseCategory.delete({
       where: { categoryId }
     });
     

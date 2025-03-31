@@ -1,4 +1,3 @@
-
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -47,8 +46,7 @@ export interface Course {
   categoryId: number;
   description?: string;
   thumbnailUrl?: string;
-  duration?: number;
-  price?: number; // Added price field
+  price?: number; // Price field
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;
@@ -57,7 +55,6 @@ export interface Course {
   students?: number;
   batches?: number;
   averageRating?: number;
-  durationHours?: number;
   createdBy?: number;
 }
 

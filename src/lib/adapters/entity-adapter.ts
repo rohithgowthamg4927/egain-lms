@@ -66,7 +66,7 @@ export class EntityAdapter {
       course: apiBatch.course ? this.adaptCourse(apiBatch.course) : undefined,
       instructor: apiBatch.instructor ? this.adaptUser(apiBatch.instructor) : undefined,
       students: apiBatch.students || 0,
-      studentsCount: apiBatch.studentsCount || apiBatch.students || 0,
+      studentsCount: apiBatch.studentsCount || apiBatch.students?.length || 0,
       schedules: apiBatch.schedules ? apiBatch.schedules.map((s: any) => this.adaptSchedule(s)) : []
     };
   }
@@ -76,8 +76,8 @@ export class EntityAdapter {
       scheduleId: apiSchedule.id || apiSchedule.scheduleId,
       batchId: apiSchedule.batchId,
       dayOfWeek: apiSchedule.dayOfWeek,
-      startTime: dateToString(apiSchedule.startTime),
-      endTime: dateToString(apiSchedule.endTime),
+      startTime: apiSchedule.startTime ? dateToString(apiSchedule.startTime) : "",
+      endTime: apiSchedule.endTime ? dateToString(apiSchedule.endTime) : "",
       createdAt: dateToString(apiSchedule.createdAt),
       updatedAt: dateToString(apiSchedule.updatedAt),
       topic: apiSchedule.topic,

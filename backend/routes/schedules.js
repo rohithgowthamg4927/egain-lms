@@ -71,24 +71,42 @@ router.post('/', async (req, res) => {
       dayOfWeek,
       batchId,
       meetingLink,
-      platform,
-      topic
+      topic,
+      platform
     } = req.body;
     
+    // For debugging
+    console.log('Creating schedule with data:', { 
+      startTime, endTime, dayOfWeek, batchId, meetingLink, topic, platform 
+    });
+
+    // Create schedule without the platform and topic fields first
+    const scheduleData = {
+      startTime: new Date(`1970-01-01T${startTime}`),
+      endTime: new Date(`1970-01-01T${endTime}`),
+      dayOfWeek: parseInt(dayOfWeek),
+      batchId: parseInt(batchId),
+      meetingLink
+    };
+
+    // Only add topic and platform if they are provided in the database schema
+    if (topic) {
+      scheduleData.topic = topic;
+    }
+    
+    if (platform) {
+      scheduleData.platform = platform;
+    }
+
+    console.log('Final schedule data:', scheduleData);
+    
     const schedule = await prisma.schedule.create({
-      data: {
-        startTime: new Date(`1970-01-01T${startTime}`),
-        endTime: new Date(`1970-01-01T${endTime}`),
-        dayOfWeek: parseInt(dayOfWeek),
-        batchId: parseInt(batchId),
-        meetingLink,
-        platform,
-        topic
-      }
+      data: scheduleData
     });
     
     res.status(201).json({ success: true, data: schedule });
   } catch (error) {
+    console.error('Error creating schedule:', error);
     handleApiError(res, error);
   }
 });
@@ -107,17 +125,41 @@ router.put('/:id', async (req, res) => {
       meetingLink
     } = req.body;
     
+    // Build update data conditionally
+    const updateData = {};
+    
+    if (startTime !== undefined) {
+      updateData.startTime = new Date(`1970-01-01T${startTime}`);
+    }
+    
+    if (endTime !== undefined) {
+      updateData.endTime = new Date(`1970-01-01T${endTime}`);
+    }
+    
+    if (dayOfWeek !== undefined) {
+      updateData.dayOfWeek = parseInt(dayOfWeek);
+    }
+    
+    if (batchId !== undefined) {
+      updateData.batchId = parseInt(batchId);
+    }
+    
+    if (meetingLink !== undefined) {
+      updateData.meetingLink = meetingLink;
+    }
+    
+    // Only include these fields if they exist in the schema
+    if (topic !== undefined) {
+      updateData.topic = topic;
+    }
+    
+    if (platform !== undefined) {
+      updateData.platform = platform;
+    }
+    
     const schedule = await prisma.schedule.update({
       where: { scheduleId },
-      data: {
-        ...(topic !== undefined && { topic }),
-        ...(platform !== undefined && { platform }),
-        ...(startTime !== undefined && { startTime: new Date(`1970-01-01T${startTime}`) }),
-        ...(endTime !== undefined && { endTime: new Date(`1970-01-01T${endTime}`) }),
-        ...(dayOfWeek !== undefined && { dayOfWeek: parseInt(dayOfWeek) }),
-        ...(batchId !== undefined && { batchId: parseInt(batchId) }),
-        ...(meetingLink !== undefined && { meetingLink })
-      }
+      data: updateData
     });
     
     res.json({ success: true, data: schedule });

@@ -45,7 +45,7 @@ const Index = () => {
                 <Terminal className="h-4 w-4 mr-2" />
                 <AlertDescription className="text-xs font-mono">
                   # Run in a new terminal:<br />
-                  cd backend && npx ts-node api.ts
+                  npx ts-node backend/server.js
                 </AlertDescription>
               </Alert>
             </div>

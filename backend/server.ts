@@ -2,7 +2,7 @@
 import express from 'express';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
-import apiRoutes from './routes';
+import apiRoutes from './routes/index.js';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -56,4 +56,3 @@ app.listen(PORT, () => {
   console.log(`\n💻 Run this in a new terminal to setup the database:`);
   console.log(`npx ts-node backend/setup-database.ts\n`);
 });
-

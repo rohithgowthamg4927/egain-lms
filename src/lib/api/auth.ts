@@ -33,10 +33,20 @@ export const login = async (email: string, password: string, role: Role): Promis
     return { success: false, error: "Cannot connect to backend server" };
   }
   
+  // Log the exact payload being sent
+  const payload = { email, password, role };
+  console.log("Sending login payload:", payload);
+  
   const response = await apiFetch<{ user: User; token: string }>('/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password, role }),
+    body: JSON.stringify(payload),
   });
+  
+  // If login was successful, store the auth data
+  if (response.success && response.data) {
+    localStorage.setItem('currentUser', JSON.stringify(response.data.user));
+    localStorage.setItem('authToken', response.data.token);
+  }
   
   return response;
 };

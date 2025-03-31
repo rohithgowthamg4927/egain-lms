@@ -23,23 +23,28 @@ const Index = () => {
       
       console.log("Checking existing auth:", { 
         userExists: !!userJson, 
-        tokenExists: !!token
+        tokenExists: !!token,
+        userData: userJson ? JSON.parse(userJson) : null
       });
       
-      if (userJson && token && !isLoading) {
+      if (userJson && token) {
         console.log("Found existing user in storage, redirecting to dashboard");
-        navigate('/dashboard', { replace: true });
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 100);
       }
     };
     
     checkExistingAuth();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     // If user is authenticated, redirect to dashboard
     if (!isLoading && isAuthenticated) {
       console.log("User is authenticated, redirecting to dashboard");
-      navigate('/dashboard', { replace: true });
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 100);
     }
   }, [isAuthenticated, isLoading, navigate]);
 

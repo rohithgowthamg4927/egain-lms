@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +18,9 @@ const LoginForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { login, isAuthenticated } = useAuth();
+  const { login } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +28,7 @@ const LoginForm = () => {
     setErrorMessage(null);
     
     try {
-      console.log("Attempting login with:", { email, role });
+      console.log("Attempting login with:", { email, password, role });
       
       // Add some debugging output
       const authToken = localStorage.getItem('authToken');
@@ -42,9 +44,14 @@ const LoginForm = () => {
           title: "Login successful",
           description: "Welcome to the LMS system",
         });
+        
+        // Force navigation to dashboard
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 100);
       } else {
         console.log("Login failed");
-        setErrorMessage("Invalid credentials or server error");
+        setErrorMessage("Invalid credentials. Please check your email, password, and role.");
         toast({
           title: "Login failed",
           description: "Please check your credentials and try again",

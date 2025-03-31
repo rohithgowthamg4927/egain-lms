@@ -46,7 +46,9 @@ router.post('/login', async (req, res) => {
       });
     }
     
-    // Simple password check (in a real app, you'd use bcrypt)
+    console.log(`Comparing passwords: '${password}' vs '${user.password}'`);
+    
+    // Simple password check - remove string trimming and ensure exact match
     if (password === user.password) {
       // Successful login
       console.log(`User logged in successfully: ${user.email} with role: ${user.role}`);
@@ -61,6 +63,7 @@ router.post('/login', async (req, res) => {
       });
     } else {
       console.log(`Password mismatch for user: ${email}`);
+      console.log(`Received password: '${password}', stored password: '${user.password}'`);
       res.status(401).json({
         success: false,
         error: 'Invalid credentials'

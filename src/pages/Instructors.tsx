@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -171,7 +170,7 @@ const Instructors = () => {
   ];
 
   return (
-    <Layout>
+    <Layout noHeader={true}>
       <div className="animate-fade-in">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
           <h1 className="text-3xl font-bold">Instructors</h1>

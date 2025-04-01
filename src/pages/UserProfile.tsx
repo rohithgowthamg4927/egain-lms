@@ -1,7 +1,6 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Layout from '@/components/layout/Layout';
+import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -28,7 +27,6 @@ interface UserProfileData {
   courses: Course[];
 }
 
-// Updated to use string for dates instead of Date objects
 interface BatchWithCourse extends Omit<Batch, 'startDate' | 'endDate'> {
   startDate: string;
   endDate: string;
@@ -117,16 +115,16 @@ const UserProfile = () => {
           instructorId: 1,
           startDate: new Date().toISOString(),
           endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date().toISOString(), // Changed to string
-          updatedAt: new Date().toISOString(), // Changed to string
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           course: course,
           instructor: {
             userId: 1,
             fullName: "Test Instructor",
             email: "instructor@example.com",
             role: Role.instructor,
-            createdAt: new Date().toISOString(), // Changed to string
-            updatedAt: new Date().toISOString(), // Changed to string
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
             mustResetPassword: false
           }
         }));
@@ -172,8 +170,8 @@ const UserProfile = () => {
           instructorId: parseInt(userId),
           startDate: new Date().toISOString(),
           endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date().toISOString(), // Changed to string
-          updatedAt: new Date().toISOString(), // Changed to string
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           course: course,
           instructor: {
             ...userData.user,
@@ -331,7 +329,7 @@ const UserProfile = () => {
 
   if (isLoading) {
     return (
-      <Layout>
+      <Layout noHeader={true}>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="flex flex-col items-center gap-2">
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
@@ -344,7 +342,7 @@ const UserProfile = () => {
 
   if (error || !userData) {
     return (
-      <Layout>
+      <Layout noHeader={true}>
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
           <AlertCircle className="h-16 w-16 text-destructive" />
           <h1 className="text-2xl font-bold">Error Loading Profile</h1>
@@ -412,7 +410,7 @@ const UserProfile = () => {
   ];
 
   return (
-    <Layout>
+    <Layout noHeader={true}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

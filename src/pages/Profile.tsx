@@ -65,7 +65,7 @@ const Profile = () => {
   };
 
   return (
-    <Layout>
+    <Layout noHeader={true}>
       <div className="max-w-4xl mx-auto animate-fade-in">
         <h1 className="text-3xl font-bold mb-6">My Profile</h1>
         

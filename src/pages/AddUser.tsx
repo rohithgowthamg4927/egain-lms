@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Layout from '@/components/layout/Layout';
+import { Layout } from '@/components/layout/Layout';
 import { UserForm } from '@/components/users/UserForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -36,12 +35,10 @@ const AddUser = () => {
     setIsSubmitting(true);
     
     try {
-      // Extract password and prepare user data
       const { password, ...userData } = data;
       
       console.log('Submitting user data:', { ...userData, password: '[REDACTED]' });
       
-      // Include address when creating the user
       const response = await createUser({
         fullName: userData.fullName,
         email: userData.email,
@@ -49,7 +46,7 @@ const AddUser = () => {
         phoneNumber: userData.phoneNumber || null,
         address: userData.address || null,
         mustResetPassword: true,
-        password  // Passing password directly to the API
+        password
       });
       
       if (!response.success) {
@@ -61,7 +58,6 @@ const AddUser = () => {
         description: `${data.fullName} has been added as ${data.role.toLowerCase()}`,
       });
       
-      // Redirect to the appropriate page based on the user role
       switch (data.role) {
         case Role.instructor:
           navigate('/instructors');
@@ -87,7 +83,7 @@ const AddUser = () => {
   const defaultValues = role ? { role } : undefined;
 
   return (
-    <Layout>
+    <Layout noHeader={true}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

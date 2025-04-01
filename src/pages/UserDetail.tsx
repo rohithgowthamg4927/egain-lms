@@ -1,6 +1,6 @@
-
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Layout } from '@/components/layout/Layout';
 
 interface UserDetailProps {
   // Add any props if needed
@@ -19,7 +19,11 @@ const UserDetail: React.FC<UserDetailProps> = () => {
     }
   }, [userId, navigate]);
 
-  return null; // This component just redirects
+  return (
+    <Layout noHeader={true}>
+      {/* Add any UI components here */}
+    </Layout>
+  );
 };
 
 export default UserDetail;

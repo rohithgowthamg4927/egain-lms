@@ -9,9 +9,10 @@ import BreadcrumbNav from './BreadcrumbNav';
 interface LayoutProps {
   children: React.ReactNode;
   requireAuth?: boolean;
+  noHeader?: boolean;
 }
 
-const Layout = ({ children, requireAuth = true }: LayoutProps) => {
+const Layout = ({ children, requireAuth = true, noHeader = false }: LayoutProps) => {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -49,13 +50,18 @@ const Layout = ({ children, requireAuth = true }: LayoutProps) => {
   // For authenticated pages
   return (
     <div className="flex-1 flex flex-col min-h-screen">
-      <Header />
-      <main className="flex-1 p-6 overflow-auto">
-        <div className="max-w-7xl mx-auto animate-fade-in">
-          <BreadcrumbNav />
-          {children}
-        </div>
-      </main>
+      {!noHeader && (
+        <>
+          <Header />
+          <main className="flex-1 p-6 overflow-auto">
+            <div className="max-w-7xl mx-auto animate-fade-in">
+              <BreadcrumbNav />
+              {children}
+            </div>
+          </main>
+        </>
+      )}
+      {noHeader && children}
     </div>
   );
 };

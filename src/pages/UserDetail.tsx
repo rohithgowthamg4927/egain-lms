@@ -22,7 +22,9 @@ const UserDetail: React.FC<UserDetailProps> = () => {
 
   return (
     <Layout noHeader={true}>
-      {/* Add any UI components here */}
+      <div className="p-6">
+        <p>Redirecting to user profile...</p>
+      </div>
     </Layout>
   );
 };

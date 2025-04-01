@@ -5,7 +5,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Loader2, User } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Role } from "@/lib/types";
@@ -75,18 +74,19 @@ const LoginForm = () => {
   };
 
   return (
-    <Card className="w-full max-w-md glass-card">
-      <CardHeader className="space-y-2">
-        <div className="flex justify-center items-center">
-          <div className="text-indigo-600 text-2xl font-bold mb-1">e</div>
-          <div className="text-indigo-600 text-2xl font-bold">gain</div>
+    <div className="w-full max-w-md bg-[#e6e6e6] rounded-lg p-8">
+      <div className="space-y-6">
+        <div className="text-center">
+          <div className="flex justify-center items-center">
+            <div className="text-indigo-600 text-2xl font-bold mb-1">e</div>
+            <div className="text-indigo-600 text-2xl font-bold">gain</div>
+          </div>
+          <h2 className="text-3xl font-bold mt-4">Welcome Back! 👋</h2>
+          <p className="text-[#667085] mt-2">
+            Please sign in to your account and start the adventure
+          </p>
         </div>
-        <CardTitle className="text-3xl font-bold text-center">Welcome Back! 👋</CardTitle>
-        <p className="text-center text-muted-foreground">
-          Please sign in to your account and start the adventure
-        </p>
-      </CardHeader>
-      <CardContent>
+        
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -98,16 +98,14 @@ const LoginForm = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-11 pl-10 bg-muted/40"
+                className="h-11 pl-10 bg-white"
               />
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             </div>
           </div>
           
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-            </div>
+            <Label htmlFor="password">Password</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -116,7 +114,7 @@ const LoginForm = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-11 pr-10 bg-muted/40"
+                className="h-11 pr-10 bg-white"
               />
               <button
                 type="button"
@@ -124,9 +122,9 @@ const LoginForm = () => {
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
-                  <EyeOff className="h-5 w-5 text-muted-foreground" />
+                  <EyeOff className="h-5 w-5 text-gray-400" />
                 ) : (
-                  <Eye className="h-5 w-5 text-muted-foreground" />
+                  <Eye className="h-5 w-5 text-gray-400" />
                 )}
               </button>
             </div>
@@ -178,12 +176,12 @@ const LoginForm = () => {
           
           <div className="text-center text-sm text-gray-500 mt-4">
             <p>
-              Make sure your backend server is running at: {import.meta.env.VITE_API_URL || 'http://localhost:3001'}
+              Make sure your backend server is running at: http://localhost:3001
             </p>
           </div>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

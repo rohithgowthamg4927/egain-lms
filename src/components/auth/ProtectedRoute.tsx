@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import Layout from '@/components/layout/Layout';
+import Sidebar from '@/components/layout/Sidebar';
 import { Loader2 } from 'lucide-react';
 
 const ProtectedRoute = () => {
@@ -35,11 +36,14 @@ const ProtectedRoute = () => {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // If authenticated, render the outlet inside Layout
+  // If authenticated, render the outlet inside Layout with Sidebar
   return (
-    <Layout>
-      <Outlet />
-    </Layout>
+    <div className="min-h-screen bg-background flex">
+      <Sidebar />
+      <Layout>
+        <Outlet />
+      </Layout>
+    </div>
   );
 };
 

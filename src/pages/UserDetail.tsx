@@ -1,6 +1,7 @@
+
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Layout } from '@/components/layout/Layout';
+import Layout from '@/components/layout/Layout';
 
 interface UserDetailProps {
   // Add any props if needed

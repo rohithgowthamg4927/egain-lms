@@ -1,6 +1,7 @@
+
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Layout } from '@/components/layout/Layout';
+import Layout from '@/components/layout/Layout';
 import { UserForm } from '@/components/users/UserForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';

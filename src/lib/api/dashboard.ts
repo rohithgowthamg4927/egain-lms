@@ -5,7 +5,8 @@ import { apiFetch } from './core';
 // Dashboard metrics
 export const getDashboardMetrics = async (): Promise<{ success: boolean; data?: DashboardMetrics; error?: string }> => {
   try {
-    return await apiFetch<DashboardMetrics>('/dashboard-metrics');
+    const response = await apiFetch<DashboardMetrics>('/dashboard-metrics');
+    return response;
   } catch (error) {
     console.error("Error fetching dashboard metrics:", error);
     return { 

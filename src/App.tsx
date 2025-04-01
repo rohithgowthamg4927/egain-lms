@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider } from '@/components/ui/theme-provider';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import ServerStatusCheck from './components/auth/ServerStatusCheck';
@@ -24,6 +24,17 @@ import UserProfile from './pages/UserProfile';
 
 import './App.css';
 
+// Create a new QueryClient
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000
+    }
+  }
+});
+
 function App() {
   useEffect(() => {
     // Check for dark mode preference
@@ -34,7 +45,7 @@ function App() {
   }, []);
 
   return (
-    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+    <QueryClientProvider client={queryClient}>
       <ServerStatusCheck>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -61,7 +72,7 @@ function App() {
         </Routes>
         <Toaster />
       </ServerStatusCheck>
-    </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 

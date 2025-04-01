@@ -1,80 +1,107 @@
 
-import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect, ReactNode } from 'react';
+import { toast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
+import { Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface ServerStatusCheckProps {
-  children?: React.ReactNode;
+  children?: ReactNode;
   onComplete?: () => void;
 }
 
-const ServerStatusCheck: React.FC<ServerStatusCheckProps> = ({ children, onComplete }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isOnline, setIsOnline] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const ServerStatusCheck = ({ children, onComplete }: ServerStatusCheckProps) => {
+  const [isChecking, setIsChecking] = useState(true);
+  const [isServerUp, setIsServerUp] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
+
+  const checkServerStatus = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        setIsServerUp(true);
+        setIsChecking(false);
+        if (onComplete) onComplete();
+      } else {
+        throw new Error('Server is not healthy');
+      }
+    } catch (error) {
+      console.error('Server check failed:', error);
+      
+      if (retryCount < maxRetries) {
+        setRetryCount(prev => prev + 1);
+        setTimeout(checkServerStatus, 2000); // Retry after 2 seconds
+      } else {
+        setIsChecking(false);
+        toast({
+          title: 'Server Connection Failed',
+          description: 'Could not connect to the server. Please try again later.',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+  const handleRetry = () => {
+    setIsChecking(true);
+    setRetryCount(0);
+    checkServerStatus();
+  };
 
   useEffect(() => {
-    const checkServerStatus = async () => {
-      try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-        const endpoint = `${apiUrl}/health`;
-        
-        console.log('Checking server status at:', endpoint);
-        
-        const response = await fetch(endpoint);
-        const data = await response.json();
-        
-        console.log('Server is online, response:', data);
-        
-        setIsOnline(true);
-        setIsLoading(false);
-        
-        if (onComplete) {
-          onComplete();
-        }
-      } catch (err) {
-        console.error('Server is offline or unavailable:', err);
-        setError('Server is offline or unavailable. Please try again later.');
-        setIsOnline(false);
-        setIsLoading(false);
-      }
-    };
-
     checkServerStatus();
-  }, [onComplete]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  if (isLoading) {
+  if (isChecking) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <h2 className="mt-4 text-xl font-semibold">Connecting to Server</h2>
-        <p className="text-sm text-muted-foreground">Please wait while we check the server status...</p>
-      </div>
-    );
-  }
-
-  if (!isOnline) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="rounded-full bg-destructive/10 p-4">
-          <svg className="h-12 w-12 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+      <div className="flex min-h-[200px] flex-col items-center justify-center gap-4 p-8 text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex flex-col gap-1">
+          <h3 className="text-lg font-medium">Connecting to server...</h3>
+          <p className="text-sm text-muted-foreground">
+            Attempt {retryCount + 1} of {maxRetries + 1}
+          </p>
         </div>
-        <h2 className="mt-4 text-xl font-semibold">Server Unavailable</h2>
-        <p className="mt-2 text-center text-muted-foreground max-w-md">
-          {error || 'The server is currently offline. Please try again later or contact support.'}
-        </p>
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          Retry Connection
-        </button>
+        {children || <div className="mt-4">Please wait while we establish connection...</div>}
       </div>
     );
   }
 
-  return <>{children}</>;
+  if (!isServerUp) {
+    return (
+      <div className="flex min-h-[300px] flex-col items-center justify-center gap-6 p-8 text-center">
+        <div className="rounded-full bg-destructive/10 p-3">
+          <AlertTriangle className="h-8 w-8 text-destructive" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <h3 className="text-lg font-medium">Server Unavailable</h3>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            We couldn't connect to the backend server. This might be because it's not running or there's a network issue.
+          </p>
+        </div>
+        <Button onClick={handleRetry}>Try Again</Button>
+      </div>
+    );
+  }
+
+  // If server is up, render the app
+  return (
+    <>
+      {children || (
+        <div className="flex flex-col items-center justify-center min-h-[200px]">
+          <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
+          <h3 className="text-lg font-medium">Server is connected!</h3>
+        </div>
+      )}
+    </>
+  );
 };
 
 export default ServerStatusCheck;

@@ -1,4 +1,3 @@
-
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -141,9 +140,54 @@ export interface DashboardMetrics {
     categories: number;
     resources: number;
   };
-  recentBatches: Batch[];
-  popularCourses: Course[];
-  upcomingSchedules: Schedule[];
+  recentBatches: {
+    batchId: number;
+    batchName: string;
+    startDate: string;
+    endDate: string;
+    course: Course;
+    instructor: User;
+    students: { userId: number; fullName: string }[];
+  }[];
+  popularCourses: {
+    courseId: number;
+    courseName: string;
+    course: {
+      categoryId?: number;
+      courseName: string;
+      category?: {
+        categoryId: number;
+        categoryName: string;
+      };
+    };
+    category?: {
+      categoryId: number;
+      categoryName: string;
+    };
+    _count: {
+      students: number;
+    };
+  }[];
+  upcomingSchedules: {
+    scheduleId: number;
+    startTime: string;
+    endTime: string;
+    topic: string;
+    platform: string;
+    meetingLink?: string;
+    batch: {
+      batchId: number;
+      batchName: string;
+      course: {
+        courseId: number;
+        courseName: string;
+      };
+      instructor: {
+        userId: number;
+        fullName: string;
+      };
+    };
+  }[];
 }
 
 export interface UserFormData {

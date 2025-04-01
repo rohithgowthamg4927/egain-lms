@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import LoginForm from '@/components/auth/LoginForm';
 import ServerStatusCheck from '@/components/auth/ServerStatusCheck';
+import { Loader2 } from 'lucide-react';
 
 const Login = () => {
   const { isAuthenticated } = useAuth();
@@ -18,7 +19,10 @@ const Login = () => {
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40">
       {isCheckingServer ? (
         <ServerStatusCheck onComplete={() => setIsCheckingServer(false)}>
-          <div>Checking server status...</div>
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Checking server status...</p>
+          </div>
         </ServerStatusCheck>
       ) : (
         <div className="w-full max-w-md space-y-8 rounded-lg border bg-card p-8 shadow-sm">

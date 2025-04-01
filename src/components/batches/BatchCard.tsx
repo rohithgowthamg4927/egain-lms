@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Calendar, Clock, Users, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,10 +10,19 @@ import { Batch } from '@/lib/types';
 
 interface BatchCardProps {
   batch: Batch;
+  onView?: (batch: Batch) => void;
+  onEdit?: (batch: Batch) => void;
+  onDelete?: (batch: Batch) => void;
+  onManageStudents?: (batch: Batch) => void;
 }
 
-const BatchCard = ({ batch }: BatchCardProps) => {
-  const navigate = useNavigate();
+const BatchCard = ({ 
+  batch, 
+  onView, 
+  onEdit, 
+  onDelete, 
+  onManageStudents 
+}: BatchCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   
   const startDate = new Date(batch.startDate);
@@ -34,7 +42,9 @@ const BatchCard = ({ batch }: BatchCardProps) => {
   const { label, variant } = batchStatus();
 
   const handleViewBatch = () => {
-    navigate(`/batches/${batch.batchId}`);
+    if (onView) {
+      onView(batch);
+    }
   };
   
   return (

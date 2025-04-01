@@ -11,6 +11,7 @@ import { Plus, Search, UserPlus, UserCog, UserCheck, Eye, Edit, Trash } from 'lu
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useNavigate } from 'react-router-dom';
 import { getInitials } from '@/lib/utils';
+import { formatDate } from '@/lib/utils/date-helpers';
 
 const Students = () => {
   const navigate = useNavigate();
@@ -136,12 +137,7 @@ const Students = () => {
       accessorKey: 'createdAt' as keyof User,
       header: 'Joined',
       cell: ({ row }: { row: { original: User } }) => {
-        const date = new Date(row.original.createdAt);
-        return new Intl.DateTimeFormat('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-        }).format(date);
+        return formatDate(row.original.createdAt);
       },
     },
     {

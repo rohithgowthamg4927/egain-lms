@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -27,6 +26,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { formatTime, formatTimeRange } from '@/lib/utils/date-helpers';
 
 // Days of the week for display
 const daysOfWeek = [
@@ -233,29 +233,10 @@ const Schedules = () => {
       header: 'Time',
       cell: ({ row }: { row: { original: Schedule } }) => {
         const schedule = row.original;
-        
-        // Handle date formatting safely
-        const formatTimeString = (timeStr: string | undefined | null) => {
-          if (!timeStr) return 'N/A';
-          try {
-            const date = new Date(timeStr);
-            // Check if date is valid before formatting
-            if (isNaN(date.getTime())) {
-              return 'Invalid time';
-            }
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          } catch (error) {
-            console.error("Error formatting time:", timeStr, error);
-            return 'Invalid time';
-          }
-        };
-        
         return (
           <div className="flex items-center">
             <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-            {formatTimeString(schedule.startTime)}
-            {' - '}
-            {formatTimeString(schedule.endTime)}
+            {formatTimeRange(schedule.startTime, schedule.endTime)}
           </div>
         );
       },

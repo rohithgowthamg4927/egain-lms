@@ -53,7 +53,7 @@ function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               
-              <Route path="/" element={<ProtectedRoute />}>
+              <Route path="/" element={<ProtectedRoute children={[]} />}>
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="profile" element={<Profile />} />

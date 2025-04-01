@@ -2,7 +2,11 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-const UserDetail = () => {
+interface UserDetailProps {
+  // Add any props if needed
+}
+
+const UserDetail: React.FC<UserDetailProps> = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
 

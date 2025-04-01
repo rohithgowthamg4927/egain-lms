@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -135,14 +136,14 @@ const Instructors = () => {
       accessorKey: 'courses' as keyof User,
       header: 'Courses',
       cell: () => {
-        return Math.floor(Math.random() * 5) + 1;
+        return "N/A"; // Remove mock data
       },
     },
     {
       accessorKey: 'students' as keyof User,
       header: 'Students',
       cell: () => {
-        return Math.floor(Math.random() * 30) + 10;
+        return "N/A"; // Remove mock data
       },
     },
   ];
@@ -201,7 +202,7 @@ const Instructors = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">{instructors.length * 2}</span>
+                <span className="text-3xl font-bold">N/A</span>
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <BookOpen className="h-5 w-5 text-primary" />
                 </div>
@@ -215,7 +216,7 @@ const Instructors = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">{instructors.length * 15}</span>
+                <span className="text-3xl font-bold">N/A</span>
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <Users className="h-5 w-5 text-primary" />
                 </div>

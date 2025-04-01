@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -21,14 +20,26 @@ import { formatDate, formatTime } from '@/lib/utils/date-helpers';
 import { generateRandomPassword } from '@/lib/utils/password-utils';
 import { useQuery } from '@tanstack/react-query';
 import { DataTable } from '@/components/ui/data-table';
+import React from 'react';
 
 interface UserProfileData {
   user: User;
   courses: Course[];
 }
 
-interface BatchWithCourse extends Batch {
+interface BatchWithCourse extends Omit<Batch, 'startDate' | 'endDate'> {
+  startDate: string | Date;
+  endDate: string | Date;
   course: Course;
+  instructor?: {
+    userId: number;
+    fullName: string;
+    email: string;
+    role: Role;
+    createdAt: Date;
+    updatedAt: Date;
+    mustResetPassword: boolean;
+  };
 }
 
 interface ScheduleWithDetails extends Schedule {
@@ -48,11 +59,10 @@ const UserProfile = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
-  const [editedUser, setEditedUser] = useState<Partial<User>>({});
+  const [editedUser, setEditedUser] = useState<Partial<User> & { password?: string }>({});
   const [batches, setBatches] = useState<BatchWithCourse[]>([]);
   const [schedules, setSchedules] = useState<ScheduleWithDetails[]>([]);
 
-  // Fetch user data
   const { data: userData, isLoading, error, refetch } = useQuery({
     queryKey: ['user', userId],
     queryFn: async () => {
@@ -69,17 +79,13 @@ const UserProfile = () => {
         throw new Error(response.error || 'Failed to fetch user data');
       }
 
-      // Check if the response data has the correct shape
       if (response.data && typeof response.data === 'object') {
-        // If response already contains user and courses properties
         if ('user' in response.data && 'courses' in response.data) {
           setEditedUser(response.data.user);
           return response.data as UserProfileData;
         } 
-        // If response is just a User object
         else {
           setEditedUser(response.data as User);
-          // Create a UserProfileData object with the User and empty courses array
           return {
             user: response.data as User,
             courses: []
@@ -94,25 +100,21 @@ const UserProfile = () => {
     refetchOnMount: true,
   });
 
-  // Fetch student batches and schedules if this is a student
   useEffect(() => {
     const fetchStudentData = async () => {
       if (!userId || !userData || userData.user.role !== Role.student) return;
       
       try {
-        // Fetch batches data for this student
         const parsedUserId = parseInt(userId);
         console.log(`Fetching batch data for student ID: ${parsedUserId}`);
         
-        // This would be the API call to get student batches
-        // For now, we'll just use the courses data and mock the batch info
         const studentBatches: BatchWithCourse[] = userData.courses.map(course => ({
           batchId: Math.floor(Math.random() * 1000),
           batchName: `Batch for ${course.courseName}`,
           courseId: course.courseId,
-          instructorId: 1, // This would be fetched from the real data
-          startDate: new Date(),
-          endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days from now
+          instructorId: 1,
+          startDate: new Date().toISOString(),
+          endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
           createdAt: new Date(),
           updatedAt: new Date(),
           course: course,
@@ -129,13 +131,11 @@ const UserProfile = () => {
         
         setBatches(studentBatches);
         
-        // Fetch schedules for this student's batches
         const batchIds = studentBatches.map(batch => batch.batchId);
         if (batchIds.length > 0) {
           for (const batchId of batchIds) {
             const schedulesResponse = await getSchedules(batchId);
             if (schedulesResponse.success && schedulesResponse.data) {
-              // Add batch and course info to schedules
               const schedulesWithDetails = schedulesResponse.data.map(schedule => ({
                 ...schedule,
                 batch: studentBatches.find(b => b.batchId === schedule.batchId) || {
@@ -143,7 +143,7 @@ const UserProfile = () => {
                   course: { courseName: "Unknown Course" },
                   instructor: { fullName: "Unknown Instructor" }
                 }
-              }));
+              })) as ScheduleWithDetails[];
               
               setSchedules(prev => [...prev, ...schedulesWithDetails]);
             }
@@ -159,19 +159,17 @@ const UserProfile = () => {
       }
     };
     
-    // Fetch instructor's courses and schedules if this is an instructor
     const fetchInstructorData = async () => {
       if (!userId || !userData || userData.user.role !== Role.instructor) return;
       
       try {
-        // For instructors, we'll use the courses data directly
         const instructorBatches: BatchWithCourse[] = userData.courses.map(course => ({
           batchId: Math.floor(Math.random() * 1000),
           batchName: `Batch for ${course.courseName}`,
           courseId: course.courseId,
           instructorId: parseInt(userId),
-          startDate: new Date(),
-          endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days from now
+          startDate: new Date().toISOString(),
+          endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
           createdAt: new Date(),
           updatedAt: new Date(),
           course: course,
@@ -180,13 +178,11 @@ const UserProfile = () => {
         
         setBatches(instructorBatches);
         
-        // Fetch schedules for this instructor's batches
         const batchIds = instructorBatches.map(batch => batch.batchId);
         if (batchIds.length > 0) {
           for (const batchId of batchIds) {
             const schedulesResponse = await getSchedules(batchId);
             if (schedulesResponse.success && schedulesResponse.data) {
-              // Add batch and course info to schedules
               const schedulesWithDetails = schedulesResponse.data.map(schedule => ({
                 ...schedule,
                 batch: instructorBatches.find(b => b.batchId === schedule.batchId) || {
@@ -194,7 +190,7 @@ const UserProfile = () => {
                   course: { courseName: "Unknown Course" },
                   instructor: { fullName: "Unknown Instructor" }
                 }
-              }));
+              })) as ScheduleWithDetails[];
               
               setSchedules(prev => [...prev, ...schedulesWithDetails]);
             }
@@ -229,10 +225,9 @@ const UserProfile = () => {
         throw new Error('Invalid user ID');
       }
       
-      // Show a confirmation dialog
       const confirmed = window.confirm('Are you sure you want to delete this user?');
       if (!confirmed) {
-        return; // If the user cancels, do nothing
+        return;
       }
       
       console.log(`Attempting to delete user with ID: ${parsedUserId}`);
@@ -249,7 +244,6 @@ const UserProfile = () => {
         description: 'User has been successfully deleted.',
       });
       
-      // Redirect based on the user's role
       if (userData.user.role === Role.instructor) {
         navigate('/instructors');
       } else if (userData.user.role === Role.student) {
@@ -292,7 +286,7 @@ const UserProfile = () => {
       });
       
       setIsEditing(false);
-      refetch(); // Refresh the user data
+      refetch();
     } catch (err) {
       console.error('Error updating user:', err);
       toast({
@@ -357,25 +351,24 @@ const UserProfile = () => {
   const { user, courses } = userData;
   const userType = user.role.charAt(0).toUpperCase() + user.role.slice(1);
 
-  // Schedule columns
   const scheduleColumns = [
     {
-      accessorKey: 'batch.course.courseName',
+      accessorKey: 'batch.course.courseName' as keyof ScheduleWithDetails,
       header: 'Course',
       cell: ({ row }: { row: { original: ScheduleWithDetails } }) => row.original.batch.course.courseName,
     },
     {
-      accessorKey: 'batch.batchName',
+      accessorKey: 'batch.batchName' as keyof ScheduleWithDetails,
       header: 'Batch',
       cell: ({ row }: { row: { original: ScheduleWithDetails } }) => row.original.batch.batchName,
     },
     {
-      accessorKey: 'batch.instructor.fullName',
+      accessorKey: 'batch.instructor.fullName' as keyof ScheduleWithDetails,
       header: 'Instructor',
       cell: ({ row }: { row: { original: ScheduleWithDetails } }) => row.original.batch.instructor.fullName,
     },
     {
-      accessorKey: 'dayOfWeek',
+      accessorKey: 'dayOfWeek' as keyof ScheduleWithDetails,
       header: 'Day/Date',
       cell: ({ row }: { row: { original: ScheduleWithDetails } }) => {
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -383,14 +376,14 @@ const UserProfile = () => {
       },
     },
     {
-      accessorKey: 'timeRange',
+      accessorKey: 'timeRange' as keyof ScheduleWithDetails,
       header: 'Time',
       cell: ({ row }: { row: { original: ScheduleWithDetails } }) => {
         return `${formatTime(row.original.startTime)} - ${formatTime(row.original.endTime)}`;
       },
     },
     {
-      accessorKey: 'meetingLink',
+      accessorKey: 'meetingLink' as keyof ScheduleWithDetails,
       header: 'Meeting Link',
       cell: ({ row }: { row: { original: ScheduleWithDetails } }) => (
         row.original.meetingLink ? (
@@ -653,7 +646,7 @@ const UserProfile = () => {
                                           </div>
                                           <div>
                                             <p className="text-sm font-medium">Instructor</p>
-                                            <p className="text-sm text-muted-foreground">{batch.instructor.fullName}</p>
+                                            <p className="text-sm text-muted-foreground">{batch.instructor?.fullName}</p>
                                           </div>
                                           <div>
                                             <p className="text-sm font-medium">Start Date</p>

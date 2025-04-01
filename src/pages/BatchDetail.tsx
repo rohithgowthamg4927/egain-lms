@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
@@ -152,10 +151,10 @@ const BatchDetail = () => {
     {
       accessorKey: 'fullName' as keyof User,
       header: 'Name',
-      cell: (student: User) => (
+      cell: ({ row }: { row: { original: User } }) => (
         <div className="flex items-center gap-2">
           <UserIcon className="h-4 w-4 text-muted-foreground" />
-          <span>{student.fullName}</span>
+          <span>{row.original.fullName}</span>
         </div>
       ),
     },
@@ -166,9 +165,9 @@ const BatchDetail = () => {
     {
       accessorKey: 'enrollmentDate' as keyof (User & { enrollmentDate?: string }),
       header: 'Enrolled On',
-      cell: (student: User & { enrollmentDate?: string }) => {
-        return student.enrollmentDate 
-          ? format(new Date(student.enrollmentDate), 'MMM d, yyyy') 
+      cell: ({ row }: { row: { original: User & { enrollmentDate?: string } } }) => {
+        return row.original.enrollmentDate 
+          ? format(new Date(row.original.enrollmentDate), 'MMM d, yyyy') 
           : 'N/A';
       },
     },

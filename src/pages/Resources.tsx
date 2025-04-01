@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -149,18 +148,18 @@ const Resources = () => {
     {
       accessorKey: 'title' as keyof Resource,
       header: 'Resource Title',
-      cell: (row: Resource) => (
+      cell: ({ row }: { row: { original: Resource } }) => (
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded bg-primary/10 flex items-center justify-center">
-            {row.type === 'document' ? (
+            {row.original.type === 'document' ? (
               <File className="h-5 w-5 text-primary" />
             ) : (
               <Book className="h-5 w-5 text-primary" />
             )}
           </div>
           <div>
-            <p className="font-medium">{row.title}</p>
-            <p className="text-sm text-muted-foreground line-clamp-1">{row.description}</p>
+            <p className="font-medium">{row.original.title}</p>
+            <p className="text-sm text-muted-foreground line-clamp-1">{row.original.description}</p>
           </div>
         </div>
       ),
@@ -168,24 +167,24 @@ const Resources = () => {
     {
       accessorKey: 'type' as keyof Resource,
       header: 'Type',
-      cell: (row: Resource) => (
-        <span className="capitalize">{row.type}</span>
+      cell: ({ row }: { row: { original: Resource } }) => (
+        <span className="capitalize">{row.original.type}</span>
       ),
     },
     {
       accessorKey: 'courseId' as keyof Resource,
       header: 'Course',
-      cell: (row: Resource) => {
-        const course = courses.find(c => c.courseId === row.courseId);
+      cell: ({ row }: { row: { original: Resource } }) => {
+        const course = courses.find(c => c.courseId === row.original.courseId);
         return course ? course.courseName : 'Unknown Course';
       },
     },
     {
       accessorKey: 'url' as keyof Resource,
       header: 'Resource Link',
-      cell: (row: Resource) => (
+      cell: ({ row }: { row: { original: Resource } }) => (
         <a 
-          href={row.url} 
+          href={row.original.url} 
           target="_blank" 
           rel="noopener noreferrer"
           className="flex items-center text-blue-600 hover:underline"

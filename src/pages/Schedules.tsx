@@ -233,12 +233,29 @@ const Schedules = () => {
       header: 'Time',
       cell: ({ row }: { row: { original: Schedule } }) => {
         const schedule = row.original;
+        
+        // Handle date formatting safely
+        const formatTimeString = (timeStr: string | undefined | null) => {
+          if (!timeStr) return 'N/A';
+          try {
+            const date = new Date(timeStr);
+            // Check if date is valid before formatting
+            if (isNaN(date.getTime())) {
+              return 'Invalid time';
+            }
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          } catch (error) {
+            console.error("Error formatting time:", timeStr, error);
+            return 'Invalid time';
+          }
+        };
+        
         return (
           <div className="flex items-center">
             <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-            {new Date(schedule.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {formatTimeString(schedule.startTime)}
             {' - '}
-            {new Date(schedule.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {formatTimeString(schedule.endTime)}
           </div>
         );
       },

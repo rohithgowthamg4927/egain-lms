@@ -100,15 +100,15 @@ const Instructors = () => {
     {
       accessorKey: 'fullName' as keyof User,
       header: 'Name',
-      cell: (instructor: User) => (
+      cell: ({ row }: { row: { original: User } }) => (
         <div className="flex items-center gap-3">
           <Avatar>
-            <AvatarImage src={instructor.profilePicture?.fileUrl} alt={instructor.fullName} />
-            <AvatarFallback>{getInitials(instructor.fullName)}</AvatarFallback>
+            <AvatarImage src={row.original.profilePicture?.fileUrl} alt={row.original.fullName} />
+            <AvatarFallback>{getInitials(row.original.fullName)}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-medium">{instructor.fullName}</p>
-            <p className="text-sm text-muted-foreground">{instructor.email}</p>
+            <p className="font-medium">{row.original.fullName}</p>
+            <p className="text-sm text-muted-foreground">{row.original.email}</p>
           </div>
         </div>
       ),
@@ -116,18 +116,18 @@ const Instructors = () => {
     {
       accessorKey: 'email' as keyof User,
       header: 'Email',
-      cell: (instructor: User) => instructor.email,
+      cell: ({ row }: { row: { original: User } }) => row.original.email,
     },
     {
       accessorKey: 'phoneNumber' as keyof User,
       header: 'Phone',
-      cell: (instructor: User) => instructor.phoneNumber || 'N/A',
+      cell: ({ row }: { row: { original: User } }) => row.original.phoneNumber || 'N/A',
     },
     {
       accessorKey: 'createdAt' as keyof User,
       header: 'Joined',
-      cell: (instructor: User) => {
-        const date = new Date(instructor.createdAt);
+      cell: ({ row }: { row: { original: User } }) => {
+        const date = new Date(row.original.createdAt);
         return new Intl.DateTimeFormat('en-US', {
           year: 'numeric',
           month: 'short',

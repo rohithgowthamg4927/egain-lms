@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -27,17 +28,18 @@ interface UserProfileData {
   courses: Course[];
 }
 
+// Updated to use string for dates instead of Date objects
 interface BatchWithCourse extends Omit<Batch, 'startDate' | 'endDate'> {
-  startDate: string | Date;
-  endDate: string | Date;
+  startDate: string;
+  endDate: string;
   course: Course;
   instructor?: {
     userId: number;
     fullName: string;
     email: string;
     role: Role;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt: string;
+    updatedAt: string;
     mustResetPassword: boolean;
   };
 }
@@ -115,16 +117,16 @@ const UserProfile = () => {
           instructorId: 1,
           startDate: new Date().toISOString(),
           endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: new Date().toISOString(), // Changed to string
+          updatedAt: new Date().toISOString(), // Changed to string
           course: course,
           instructor: {
             userId: 1,
             fullName: "Test Instructor",
             email: "instructor@example.com",
             role: Role.instructor,
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            createdAt: new Date().toISOString(), // Changed to string
+            updatedAt: new Date().toISOString(), // Changed to string
             mustResetPassword: false
           }
         }));
@@ -170,10 +172,18 @@ const UserProfile = () => {
           instructorId: parseInt(userId),
           startDate: new Date().toISOString(),
           endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: new Date().toISOString(), // Changed to string
+          updatedAt: new Date().toISOString(), // Changed to string
           course: course,
-          instructor: userData.user
+          instructor: {
+            ...userData.user,
+            createdAt: typeof userData.user.createdAt === 'string' 
+              ? userData.user.createdAt 
+              : new Date(userData.user.createdAt).toISOString(),
+            updatedAt: typeof userData.user.updatedAt === 'string' 
+              ? userData.user.updatedAt 
+              : new Date(userData.user.updatedAt).toISOString()
+          }
         }));
         
         setBatches(instructorBatches);

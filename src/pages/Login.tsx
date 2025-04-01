@@ -17,7 +17,9 @@ const Login = () => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40">
       {isCheckingServer ? (
-        <ServerStatusCheck onComplete={() => setIsCheckingServer(false)} />
+        <ServerStatusCheck onComplete={() => setIsCheckingServer(false)}>
+          <div>Checking server status...</div>
+        </ServerStatusCheck>
       ) : (
         <div className="w-full max-w-md space-y-8 rounded-lg border bg-card p-8 shadow-sm">
           <div className="text-center">

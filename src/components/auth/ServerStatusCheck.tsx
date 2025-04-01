@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
 interface ServerStatusCheckProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   onComplete?: () => void;
 }
 

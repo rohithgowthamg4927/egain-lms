@@ -75,7 +75,9 @@ const Index = () => {
           </div>
           
           <div className="mt-4 text-center">
-            <ServerStatusCheck />
+            <ServerStatusCheck>
+              Server Status Check
+            </ServerStatusCheck>
           </div>
         </div>
       </div>

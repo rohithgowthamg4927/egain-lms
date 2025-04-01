@@ -35,8 +35,8 @@ const BreadcrumbNav = () => {
     return items;
   }, [location.pathname]);
   
-  // Don't render breadcrumbs on home page
-  if (location.pathname === '/') {
+  // Don't render breadcrumbs on home page or login page
+  if (location.pathname === '/' || location.pathname === '/login') {
     return null;
   }
   
@@ -45,7 +45,7 @@ const BreadcrumbNav = () => {
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link to="/">
+            <Link to="/dashboard">
               <Home className="h-4 w-4 mr-1" />
               Home
             </Link>

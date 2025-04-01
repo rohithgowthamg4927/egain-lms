@@ -46,7 +46,7 @@ const Layout = ({ children, requireAuth = true }: LayoutProps) => {
     return <>{children}</>;
   }
 
-  // For authenticated pages 
+  // For authenticated pages
   return (
     <div className="flex-1 flex flex-col min-h-screen">
       <Header />

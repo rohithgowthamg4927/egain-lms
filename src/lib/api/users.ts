@@ -1,3 +1,4 @@
+
 import { User, Role } from '@/lib/types';
 import { apiFetch } from './core';
 
@@ -35,6 +36,7 @@ interface UserData {
   email: string;
   phoneNumber?: string | null;
   bio?: string | null;
+  address?: string | null; // Added address field
   role?: Role;
 }
 
@@ -46,6 +48,7 @@ export const createUser = async (data: Partial<UserData>): Promise<{ success: bo
       email: data.email || '',
       phoneNumber: data.phoneNumber || null,
       bio: data.bio || null,
+      address: data.address || null, // Added address field
       role: data.role || Role.student
     };
     
@@ -71,6 +74,7 @@ export const updateUser = async (userId: number, data: Partial<UserData>): Promi
       email: data.email || '',
       phoneNumber: data.phoneNumber || null,
       bio: data.bio || null,
+      address: data.address || null, // Added address field
       role: data.role || Role.student
     };
     

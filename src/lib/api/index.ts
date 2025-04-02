@@ -12,4 +12,4 @@ export * from './student-courses';
 export * from './dashboard';
 
 // Re-export getUser from users.ts for backward compatibility
-export { getUser } from './users';
+export { getUser, updateUser } from './users';

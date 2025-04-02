@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -63,11 +64,12 @@ const BatchDetail = () => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Define studentActions with the correct type
   const studentActions = [
     {
       label: 'Remove',
-      onClick: (student: User) => handleRemoveStudent(student),
-      icon: Trash,
+      onClick: (row: User) => handleRemoveStudent(row),
+      icon: <Trash className="h-4 w-4" /> // Convert to ReactNode by wrapping in JSX
     }
   ];
 

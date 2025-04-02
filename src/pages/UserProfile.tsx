@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import Layout from '@/components/layout/Layout';
-import { getUsers } from '@/lib/api';
+import { getUsers, updateUser } from '@/lib/api';
 import { getSchedules } from '@/lib/api/schedules';
 import { User, Role, Schedule } from '@/lib/types';
 import { Button } from '@/components/ui/button';

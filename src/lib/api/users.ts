@@ -1,63 +1,105 @@
-
-import { User, Role, Course } from '@/lib/types';
+import { User, Role } from '@/lib/types';
 import { apiFetch } from './core';
 
-// User Management API
-export const createUser = async (userData: Partial<User> & { password?: string }): Promise<{ success: boolean; data?: User; error?: string }> => {
-  // Include all fields that exist in the Prisma schema
-  const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = userData;
-  
-  const sanitizedData = {
-    fullName,
-    email,
-    role,
-    password,
-    phoneNumber: phoneNumber || null,
-    address: address || null,
-    mustResetPassword: mustResetPassword || true
-  };
-  
-  return apiFetch<User>('/users', {
-    method: 'POST',
-    body: JSON.stringify(sanitizedData),
-  });
+// Get all users or filter by role
+export const getUsers = async (role?: Role, userId?: number): Promise<{ success: boolean; data?: User[]; error?: string }> => {
+  try {
+    const endpoint = userId ? `/users/${userId}` : role ? `/users?role=${role}` : '/users';
+    const response = await apiFetch<User[]>(endpoint);
+    return response;
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch users'
+    };
+  }
 };
 
-export const updateUser = async (userId: number, userData: Partial<User> & { password?: string }): Promise<{ success: boolean; data?: User; error?: string }> => {
-  // Include all fields that exist in the Prisma schema
-  const { fullName, email, role, password, phoneNumber, address, mustResetPassword } = userData;
-  
-  const sanitizedData = {
-    ...(fullName !== undefined && { fullName }),
-    ...(email !== undefined && { email }),
-    ...(role !== undefined && { role }),
-    ...(password !== undefined && { password }),
-    ...(phoneNumber !== undefined && { phoneNumber }),
-    ...(address !== undefined && { address }),
-    ...(mustResetPassword !== undefined && { mustResetPassword })
-  };
-  
-  return apiFetch<User>(`/users/${userId}`, {
-    method: 'PUT',
-    body: JSON.stringify(sanitizedData),
-  });
+// Get a single user by ID - alias for compatibility
+export const getUser = async (userId: number): Promise<{ success: boolean; data?: User; error?: string }> => {
+  try {
+    const response = await apiFetch<User>(`/users/${userId}`);
+    return response;
+  } catch (error) {
+    console.error(`Error fetching user ${userId}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch user'
+    };
+  }
 };
 
-// Get a specific user by ID with their courses
-export const getUserById = async (userId: number): Promise<{ success: boolean; data?: any; error?: string }> => {
-  console.log(`Calling getUserById API with userId: ${userId}`);
-  // Make sure we're using the right endpoint that matches the backend
-  return apiFetch<any>(`/users/${userId}`);
+interface UserData {
+  fullName: string;
+  email: string;
+  phoneNumber?: string | null;
+  bio?: string | null;
+  role?: Role;
+}
+
+// Create a new user
+export const createUser = async (data: Partial<UserData>): Promise<{ success: boolean; data?: User; error?: string }> => {
+  try {
+    const userData: UserData = {
+      fullName: data.fullName || '',
+      email: data.email || '',
+      phoneNumber: data.phoneNumber || null,
+      bio: data.bio || null,
+      role: data.role || Role.student
+    };
+    
+    const response = await apiFetch<User>('/users', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    });
+    return response;
+  } catch (error) {
+    console.error('Error creating user:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create user'
+    };
+  }
 };
 
-// Users API
-export const getUsers = async (role?: Role): Promise<{ success: boolean; data?: User[]; error?: string }> => {
-  const endpoint = role ? `/users?role=${role}` : '/users';
-  return apiFetch<User[]>(endpoint);
+// Update a user
+export const updateUser = async (userId: number, data: Partial<UserData>): Promise<{ success: boolean; data?: User; error?: string }> => {
+  try {
+    const userData: UserData = {
+      fullName: data.fullName || '',
+      email: data.email || '',
+      phoneNumber: data.phoneNumber || null,
+      bio: data.bio || null,
+      role: data.role || Role.student
+    };
+    
+    const response = await apiFetch<User>(`/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData)
+    });
+    return response;
+  } catch (error) {
+    console.error(`Error updating user ${userId}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update user'
+    };
+  }
 };
 
-export const deleteUser = async (id: number): Promise<{ success: boolean; error?: string }> => {
-  return apiFetch(`/users/${id}`, {
-    method: 'DELETE',
-  });
+// Delete a user
+export const deleteUser = async (userId: number): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const response = await apiFetch(`/users/${userId}`, {
+      method: 'DELETE'
+    });
+    return response;
+  } catch (error) {
+    console.error(`Error deleting user ${userId}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete user'
+    };
+  }
 };

@@ -2,24 +2,16 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import Layout from '@/components/layout/Layout';
-import { getUser, updateUser } from '@/lib/api';
+import { getUsers } from '@/lib/api';
 import { getSchedules } from '@/lib/api/schedules';
 import { User, Role, Schedule } from '@/lib/types';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { 
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-  Separator,
-  Badge,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -29,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger
-} from '@/components/ui/button';
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -68,17 +60,17 @@ const UserProfile = () => {
       }
       
       try {
-        const response = await getUser(parseInt(userId));
+        const response = await getUsers(undefined, parseInt(userId));
         
-        if (response.success && response.data) {
-          setUser(response.data);
-          setFullName(response.data.fullName);
-          setEmail(response.data.email);
-          setPhoneNumber(response.data.phoneNumber || '');
-          setBio(response.data.bio || '');
+        if (response.success && response.data && response.data.length > 0) {
+          const userData = response.data[0];
+          setUser(userData);
+          setFullName(userData.fullName);
+          setEmail(userData.email);
+          setPhoneNumber(userData.phoneNumber || '');
+          setBio(userData.bio || '');
           
-          // Mock instructor batch data
-          if (response.data.role === Role.instructor) {
+          if (userData.role === Role.instructor) {
             setInstructorBatch({ batchId: 1, batchName: 'Sample Batch' });
           }
         } else {
@@ -107,10 +99,9 @@ const UserProfile = () => {
 
   useEffect(() => {
     const fetchUserSchedules = async () => {
-      if (!user || user.role !== Role.instructor) return;
+      if (!user || user.role !== Role.instructor || !instructorBatch) return;
       
       try {
-        // Update this line to pass an object with batchId property
         const schedulesResponse = await getSchedules({ batchId: instructorBatch.batchId });
         
         if (schedulesResponse.success && schedulesResponse.data) {
@@ -127,7 +118,6 @@ const UserProfile = () => {
   }, [instructorBatch, user]);
 
   useEffect(() => {
-    // Mock batch selection
     if (user?.role === Role.student) {
       setSelectedBatch({ batchId: 2, batchName: 'Another Batch' });
     }
@@ -138,7 +128,6 @@ const UserProfile = () => {
       if (!selectedBatch) return;
       
       try {
-        // Update this line to pass an object with batchId property
         const response = await getSchedules({ batchId: selectedBatch.batchId });
         
         if (response.success && response.data) {

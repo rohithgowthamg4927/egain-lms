@@ -14,3 +14,6 @@ export const unenrollStudentFromCourse = async (studentId: number, courseId: num
     method: 'DELETE',
   });
 };
+
+// Add this alias for backward compatibility
+export const enrollStudentToBatch = enrollStudentToCourse;

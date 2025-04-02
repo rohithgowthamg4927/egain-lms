@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -63,6 +62,44 @@ const BatchDetail = () => {
   const [students, setStudents] = useState<User[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const studentActions = [
+    {
+      label: 'Remove',
+      onClick: (student: User) => handleRemoveStudent(student),
+      icon: Trash,
+    }
+  ];
+
+  const handleRemoveStudent = async (student: User) => {
+    if (!batchId) return;
+    
+    try {
+      const response = await unenrollStudentFromBatch(student.userId, parseInt(batchId));
+      
+      if (response.success) {
+        toast({
+          title: 'Student removed',
+          description: `${student.fullName} has been removed from this batch.`,
+        });
+        
+        setStudents(students.filter(s => s.userId !== student.userId));
+      } else {
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to remove student',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error removing student:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove student',
+        variant: 'destructive',
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchBatchData = async () => {
@@ -153,48 +190,6 @@ const BatchDetail = () => {
         row.original.enrollmentDate ? format(new Date(row.original.enrollmentDate), 'MMM d, yyyy') : 'N/A',
     },
   ];
-
-  // Define the studentActions variable that was missing
-  const studentActions = {
-    label: 'Actions',
-    items: [
-      {
-        label: 'Remove',
-        onClick: handleRemoveStudent,
-        icon: Trash,
-      },
-    ],
-  };
-
-  const handleRemoveStudent = async (student: User) => {
-    if (!batchId) return;
-    
-    try {
-      const response = await unenrollStudentFromBatch(student.userId, parseInt(batchId));
-      
-      if (response.success) {
-        toast({
-          title: 'Student removed',
-          description: `${student.fullName} has been removed from this batch.`,
-        });
-        
-        setStudents(students.filter(s => s.userId !== student.userId));
-      } else {
-        toast({
-          title: 'Error',
-          description: response.error || 'Failed to remove student',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Error removing student:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to remove student',
-        variant: 'destructive',
-      });
-    }
-  };
 
   const handleEditBatch = () => {
     navigate(`/batches?action=edit&batchId=${batchId}`);

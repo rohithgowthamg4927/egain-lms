@@ -36,11 +36,16 @@ export const getCategory = async (categoryId: number): Promise<{ success: boolea
 };
 
 // Create a new category
-export const createCategory = async (data: CategoryData): Promise<{ success: boolean; data?: Category; error?: string }> => {
+export const createCategory = async (data: Partial<CategoryData>): Promise<{ success: boolean; data?: Category; error?: string }> => {
   try {
+    const categoryData: CategoryData = {
+      categoryName: data.categoryName || '',
+      description: data.description || null
+    };
+    
     const response = await apiFetch<Category>('/categories', {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify(categoryData)
     });
     return response;
   } catch (error) {
@@ -53,11 +58,16 @@ export const createCategory = async (data: CategoryData): Promise<{ success: boo
 };
 
 // Update a category
-export const updateCategory = async (categoryId: number, data: CategoryData): Promise<{ success: boolean; data?: Category; error?: string }> => {
+export const updateCategory = async (categoryId: number, data: Partial<CategoryData>): Promise<{ success: boolean; data?: Category; error?: string }> => {
   try {
+    const categoryData: CategoryData = {
+      categoryName: data.categoryName || '',
+      description: data.description || null
+    };
+    
     const response = await apiFetch<Category>(`/categories/${categoryId}`, {
       method: 'PUT',
-      body: JSON.stringify(data)
+      body: JSON.stringify(categoryData)
     });
     return response;
   } catch (error) {

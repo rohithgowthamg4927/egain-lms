@@ -1,43 +1,35 @@
 
-import { Batch } from '@/lib/types';
+import { Batch, User } from '@/lib/types';
 import { apiFetch } from './core';
 
-// Get all batches with optional filtering by courseId
-export const getBatches = async (courseId?: number): Promise<{ success: boolean; data?: Batch[]; error?: string }> => {
-  const endpoint = courseId ? `/batches?courseId=${courseId}` : '/batches';
-  return apiFetch<Batch[]>(endpoint);
+// Get all batches
+export const getBatches = async (): Promise<{ success: boolean; data?: Batch[]; error?: string }> => {
+  return apiFetch<Batch[]>('/batches');
 };
 
-// Get a specific batch by ID
-export const getBatchById = async (batchId: number): Promise<{ success: boolean; data?: Batch; error?: string }> => {
+// Get a single batch by ID
+export const getBatch = async (batchId: number): Promise<{ success: boolean; data?: Batch; error?: string }> => {
   return apiFetch<Batch>(`/batches/${batchId}`);
+};
+
+// Get all students enrolled in a batch
+export const getBatchStudents = async (batchId: number): Promise<{ success: boolean; data?: User[]; error?: string }> => {
+  return apiFetch<User[]>(`/batches/${batchId}/students`);
 };
 
 // Create a new batch
 export const createBatch = async (batchData: Partial<Batch>): Promise<{ success: boolean; data?: Batch; error?: string }> => {
   return apiFetch<Batch>('/batches', {
     method: 'POST',
-    body: JSON.stringify({
-      batchName: batchData.batchName,
-      startDate: batchData.startDate,
-      endDate: batchData.endDate,
-      courseId: batchData.courseId,
-      instructorId: batchData.instructorId
-    }),
+    body: JSON.stringify(batchData),
   });
 };
 
-// Update an existing batch
+// Update a batch
 export const updateBatch = async (batchId: number, batchData: Partial<Batch>): Promise<{ success: boolean; data?: Batch; error?: string }> => {
   return apiFetch<Batch>(`/batches/${batchId}`, {
     method: 'PUT',
-    body: JSON.stringify({
-      batchName: batchData.batchName,
-      startDate: batchData.startDate,
-      endDate: batchData.endDate,
-      courseId: batchData.courseId,
-      instructorId: batchData.instructorId
-    }),
+    body: JSON.stringify(batchData),
   });
 };
 
@@ -48,26 +40,17 @@ export const deleteBatch = async (batchId: number): Promise<{ success: boolean; 
   });
 };
 
-// Student Batch Management
-export const enrollStudentToBatch = async (studentId: number, batchId: number): Promise<{ success: boolean; error?: string }> => {
-  return apiFetch('/batches/' + batchId + '/students', {
+// Enroll student in a batch
+export const enrollStudentInBatch = async (studentId: number, batchId: number): Promise<{ success: boolean; error?: string }> => {
+  return apiFetch('/student-batches', {
     method: 'POST',
-    body: JSON.stringify({ studentId }),
+    body: JSON.stringify({ studentId, batchId }),
   });
 };
 
+// Unenroll student from a batch
 export const unenrollStudentFromBatch = async (studentId: number, batchId: number): Promise<{ success: boolean; error?: string }> => {
-  return apiFetch(`/batches/${batchId}/students/${studentId}`, {
+  return apiFetch(`/student-batches/${studentId}/${batchId}`, {
     method: 'DELETE',
   });
-};
-
-// Get students for a specific batch
-export const getBatchStudents = async (batchId: number): Promise<{ success: boolean; data?: any[]; error?: string }> => {
-  return apiFetch(`/batches/${batchId}/students`);
-};
-
-// Get students NOT in a specific batch (for enrollment)
-export const getStudentsNotInBatch = async (batchId: number): Promise<{ success: boolean; data?: any[]; error?: string }> => {
-  return apiFetch(`/batches/${batchId}/available-students`);
 };

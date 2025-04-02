@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/use-auth';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Role } from '@/lib/types';
 import {
   BookOpen,
@@ -31,7 +31,7 @@ interface SidebarProps {
 export default function Sidebar({ className }: SidebarProps) {
   const { pathname } = useLocation();
   const { logout, hasRole } = useAuth();
-  const { isMobile } = useMobile();
+  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 

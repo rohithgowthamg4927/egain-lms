@@ -1,3 +1,4 @@
+
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -50,7 +51,7 @@ export interface Course {
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;
-  category?: CourseCategory;
+  category?: Category;
   // Additional fields needed by components
   students?: number;
   batches?: number;
@@ -58,12 +59,14 @@ export interface Course {
   createdBy?: number;
 }
 
-export interface CourseCategory {
+export interface Category {
   categoryId: number;
   id?: number; // Added for API compatibility
   categoryName: string;
+  description?: string;
   createdAt: string;
   updatedAt: string;
+  courses?: Course[];
 }
 
 export interface Batch {
@@ -187,6 +190,10 @@ export interface DashboardMetrics {
         fullName: string;
       };
     };
+  }[];
+  categoryDistribution: {
+    name: string;
+    value: number;
   }[];
 }
 

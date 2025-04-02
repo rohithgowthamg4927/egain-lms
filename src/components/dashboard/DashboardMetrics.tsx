@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +15,7 @@ interface DashboardMetricsProps {
 const COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f97316', '#10b981', '#14b8a6'];
 
 const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) => {
-  // Prepare data for the Category chart
+  // Use optional chaining for categoryDistribution
   const categoryChartData = data?.categoryDistribution || [];
 
   // Prepare data for the Popular Courses chart

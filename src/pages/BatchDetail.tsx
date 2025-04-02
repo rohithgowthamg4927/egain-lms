@@ -1,9 +1,9 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import Layout from '@/components/layout/Layout';
-import { getBatch, getBatchStudents, getSchedules, unenrollStudentFromBatch } from '@/lib/api';
+import { getBatch, getBatchStudents, unenrollStudentFromBatch } from '@/lib/api';
+import { getSchedules } from '@/lib/api/schedules';
 import { Batch, Schedule, User } from '@/lib/types';
 import { 
   Button,
@@ -30,7 +30,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger
-} from '@/components/ui';
+} from '@/components/ui/button';
+import { DataTable } from '@/components/ui/data-table';
 import { 
   Calendar, 
   ChevronLeft, 
@@ -44,7 +45,6 @@ import {
   BookOpen,
   Trash
 } from 'lucide-react';
-import { DataTable } from '@/components/ui/data-table';
 import { format } from 'date-fns';
 import { getInitials } from '@/lib/utils';
 
@@ -114,7 +114,7 @@ const BatchDetail = () => {
 
   const studentColumns = [
     {
-      accessorKey: 'fullName',
+      accessorKey: 'fullName' as keyof User,
       header: 'Name',
       cell: ({ row }: { row: { original: User } }) => (
         <div className="flex items-center gap-3">
@@ -130,17 +130,17 @@ const BatchDetail = () => {
       ),
     },
     {
-      accessorKey: 'email',
+      accessorKey: 'email' as keyof User,
       header: 'Email',
       cell: ({ row }: { row: { original: User } }) => row.original.email,
     },
     {
-      accessorKey: 'phoneNumber',
+      accessorKey: 'phoneNumber' as keyof User,
       header: 'Phone',
       cell: ({ row }: { row: { original: User } }) => row.original.phoneNumber || 'N/A',
     },
     {
-      accessorKey: 'enrollmentDate',
+      accessorKey: 'enrollmentDate' as keyof User,
       header: 'Enrolled On',
       cell: ({ row }: { row: { original: User & { enrollmentDate?: string } } }) => 
         row.original.enrollmentDate ? format(new Date(row.original.enrollmentDate), 'MMM d, yyyy') : 'N/A',
@@ -159,7 +159,6 @@ const BatchDetail = () => {
           description: `${student.fullName} has been removed from this batch.`,
         });
         
-        // Update local state
         setStudents(students.filter(s => s.userId !== student.userId));
       } else {
         toast({
@@ -177,26 +176,6 @@ const BatchDetail = () => {
       });
     }
   };
-
-  const studentActions = [
-    {
-      label: 'View Profile',
-      onClick: (student: User) => {
-        navigate(`/students/${student.userId}`);
-      },
-      icon: <UserIcon className="h-4 w-4" />,
-    },
-    {
-      label: 'Remove from Batch',
-      onClick: (student: User) => {
-        // Show confirmation dialog
-        if (window.confirm(`Are you sure you want to remove ${student.fullName} from this batch?`)) {
-          handleRemoveStudent(student);
-        }
-      },
-      icon: <Trash className="h-4 w-4" />,
-    },
-  ];
 
   const handleEditBatch = () => {
     navigate(`/batches?action=edit&batchId=${batchId}`);
@@ -512,8 +491,6 @@ const BatchDetail = () => {
                             <AlertDialogAction
                               className="bg-red-600 hover:bg-red-700"
                               onClick={() => {
-                                // Handle batch deletion
-                                // Redirect to batches list after deletion
                                 navigate('/batches');
                               }}
                             >

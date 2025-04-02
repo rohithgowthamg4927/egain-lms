@@ -1,10 +1,8 @@
-
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Layout from '@/components/layout/Layout';
 import { DataTable } from '@/components/ui/data-table';
 import { Resource, Course } from '@/lib/types';
 import { Plus, Search, File, Link, Book } from 'lucide-react';
@@ -222,171 +220,174 @@ const Resources = () => {
   ];
 
   return (
-    <Layout noHeader={true}>
-      <div className="animate-fade-in">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
           <h1 className="text-3xl font-bold">Learning Resources</h1>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Resource
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px]">
-              <DialogHeader>
-                <DialogTitle>Add New Learning Resource</DialogTitle>
-                <DialogDescription>
-                  Share materials, links, and documents with your students.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="resourceTitle">Resource Title</Label>
-                  <Input
-                    id="resourceTitle"
-                    value={newResourceTitle}
-                    onChange={(e) => setNewResourceTitle(e.target.value)}
-                    placeholder="Enter resource title"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="resourceType">Resource Type</Label>
-                  <Select value={newResourceType} onValueChange={setNewResourceType}>
-                    <SelectTrigger id="resourceType">
-                      <SelectValue placeholder="Select resource type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="document">Document</SelectItem>
-                      <SelectItem value="video">Video</SelectItem>
-                      <SelectItem value="code">Code</SelectItem>
-                      <SelectItem value="link">Link</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="resourceCourse">Course</Label>
-                  <Select value={newResourceCourseId} onValueChange={setNewResourceCourseId}>
-                    <SelectTrigger id="resourceCourse">
-                      <SelectValue placeholder="Select course" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {courses.map((course) => (
-                        <SelectItem key={course.courseId} value={course.courseId.toString()}>
-                          {course.courseName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="resourceUrl">Resource URL</Label>
-                  <Input
-                    id="resourceUrl"
-                    value={newResourceUrl}
-                    onChange={(e) => setNewResourceUrl(e.target.value)}
-                    placeholder="Enter resource URL"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="resourceDescription">Description (Optional)</Label>
-                  <Textarea
-                    id="resourceDescription"
-                    value={newResourceDescription}
-                    onChange={(e) => setNewResourceDescription(e.target.value)}
-                    placeholder="Enter resource description"
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddResource}>Add Resource</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <p className="text-muted-foreground">
+            Share materials, links, and documents with your students.
+          </p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card className="neo-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Resources</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">{resources.length}</span>
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <File className="h-5 w-5 text-primary" />
-                </div>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Resource
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[525px]">
+            <DialogHeader>
+              <DialogTitle>Add New Learning Resource</DialogTitle>
+              <DialogDescription>
+                Share materials, links, and documents with your students.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="resourceTitle">Resource Title</Label>
+                <Input
+                  id="resourceTitle"
+                  value={newResourceTitle}
+                  onChange={(e) => setNewResourceTitle(e.target.value)}
+                  placeholder="Enter resource title"
+                />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="neo-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Document Resources</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">
-                  {resources.filter(r => r.type === 'document').length}
-                </span>
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <File className="h-5 w-5 text-primary" />
-                </div>
+              <div className="grid gap-2">
+                <Label htmlFor="resourceType">Resource Type</Label>
+                <Select value={newResourceType} onValueChange={setNewResourceType}>
+                  <SelectTrigger id="resourceType">
+                    <SelectValue placeholder="Select resource type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="document">Document</SelectItem>
+                    <SelectItem value="video">Video</SelectItem>
+                    <SelectItem value="code">Code</SelectItem>
+                    <SelectItem value="link">Link</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="neo-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Code Resources</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">
-                  {resources.filter(r => r.type === 'code').length}
-                </span>
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Book className="h-5 w-5 text-primary" />
-                </div>
+              <div className="grid gap-2">
+                <Label htmlFor="resourceCourse">Course</Label>
+                <Select value={newResourceCourseId} onValueChange={setNewResourceCourseId}>
+                  <SelectTrigger id="resourceCourse">
+                    <SelectValue placeholder="Select course" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses.map((course) => (
+                      <SelectItem key={course.courseId} value={course.courseId.toString()}>
+                        {course.courseName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="bg-card rounded-lg border p-4 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search resources..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="bg-card rounded-lg border overflow-hidden">
-          {isLoading ? (
-            <div className="p-8 text-center">
-              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p>Loading resources...</p>
+              <div className="grid gap-2">
+                <Label htmlFor="resourceUrl">Resource URL</Label>
+                <Input
+                  id="resourceUrl"
+                  value={newResourceUrl}
+                  onChange={(e) => setNewResourceUrl(e.target.value)}
+                  placeholder="Enter resource URL"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="resourceDescription">Description (Optional)</Label>
+                <Textarea
+                  id="resourceDescription"
+                  value={newResourceDescription}
+                  onChange={(e) => setNewResourceDescription(e.target.value)}
+                  placeholder="Enter resource description"
+                  rows={3}
+                />
+              </div>
             </div>
-          ) : (
-            <DataTable
-              data={filteredResources}
-              columns={resourceColumns}
-              actions={resourceActions}
-              className="w-full"
-              searchKey="title"
-            />
-          )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddResource}>Add Resource</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card className="neo-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Resources</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">{resources.length}</span>
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <File className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="neo-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Document Resources</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">
+                {resources.filter(r => r.type === 'document').length}
+              </span>
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <File className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="neo-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Code Resources</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">
+                {resources.filter(r => r.type === 'code').length}
+              </span>
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Book className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="bg-card rounded-lg border p-4 mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search resources..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
       </div>
-    </Layout>
+
+      <div className="bg-card rounded-lg border overflow-hidden">
+        {isLoading ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p>Loading resources...</p>
+          </div>
+        ) : (
+          <DataTable
+            data={filteredResources}
+            columns={resourceColumns}
+            actions={resourceActions}
+            className="w-full"
+            searchKey="title"
+          />
+        )}
+      </div>
+    </div>
   );
 };
 

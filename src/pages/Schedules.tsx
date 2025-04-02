@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import Layout from '@/components/layout/Layout';
 import { DataTable } from '@/components/ui/data-table';
 import { getSchedules, getBatches, createSchedule, deleteSchedule } from '@/lib/api';
 import { Schedule, Batch } from '@/lib/types';
@@ -298,221 +296,224 @@ const Schedules = () => {
   ];
 
   return (
-    <Layout noHeader={true}>
-      <div className="animate-fade-in">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-          <h1 className="text-3xl font-bold">Class Schedules</h1>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Schedule
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Schedules</h1>
+          <p className="text-muted-foreground">
+            Manage your class schedules and meeting links.
+          </p>
+        </div>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Schedule
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[525px]">
+            <DialogHeader>
+              <DialogTitle>Create New Schedule</DialogTitle>
+              <DialogDescription>
+                Enter the details for the new class schedule.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="batchId">Batch</Label>
+                <Select value={newScheduleBatchId} onValueChange={setNewScheduleBatchId}>
+                  <SelectTrigger id="batchId">
+                    <SelectValue placeholder="Select batch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {batches.map((batch) => (
+                      <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
+                        {batch.batchName} - {batch.course?.courseName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="topic">Topic</Label>
+                <Input
+                  id="topic"
+                  value={newScheduleTopic}
+                  onChange={(e) => setNewScheduleTopic(e.target.value)}
+                  placeholder="Enter class topic"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="dayOfWeek">Day of Week</Label>
+                <Select value={newScheduleDayOfWeek} onValueChange={setNewScheduleDayOfWeek}>
+                  <SelectTrigger id="dayOfWeek">
+                    <SelectValue placeholder="Select day of week" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {daysOfWeek.map((day, index) => (
+                      <SelectItem key={index} value={index.toString()}>
+                        {day}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="startTime">Start Time</Label>
+                  <Input
+                    id="startTime"
+                    type="time"
+                    value={newScheduleStartTime}
+                    onChange={(e) => setNewScheduleStartTime(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="endTime">End Time</Label>
+                  <Input
+                    id="endTime"
+                    type="time"
+                    value={newScheduleEndTime}
+                    onChange={(e) => setNewScheduleEndTime(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="platform">Platform</Label>
+                <Select value={newSchedulePlatform} onValueChange={setNewSchedulePlatform}>
+                  <SelectTrigger id="platform">
+                    <SelectValue placeholder="Select platform" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="zoom">Zoom</SelectItem>
+                    <SelectItem value="google-meet">Google Meet</SelectItem>
+                    <SelectItem value="microsoft-teams">Microsoft Teams</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="meetingLink">Meeting Link</Label>
+                <Input
+                  id="meetingLink"
+                  value={newScheduleMeetingLink}
+                  onChange={(e) => setNewScheduleMeetingLink(e.target.value)}
+                  placeholder="Enter meeting link"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                Cancel
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px]">
-              <DialogHeader>
-                <DialogTitle>Create New Schedule</DialogTitle>
-                <DialogDescription>
-                  Enter the details for the new class schedule.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="batchId">Batch</Label>
-                  <Select value={newScheduleBatchId} onValueChange={setNewScheduleBatchId}>
-                    <SelectTrigger id="batchId">
-                      <SelectValue placeholder="Select batch" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {batches.map((batch) => (
-                        <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
-                          {batch.batchName} - {batch.course?.courseName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="topic">Topic</Label>
-                  <Input
-                    id="topic"
-                    value={newScheduleTopic}
-                    onChange={(e) => setNewScheduleTopic(e.target.value)}
-                    placeholder="Enter class topic"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="dayOfWeek">Day of Week</Label>
-                  <Select value={newScheduleDayOfWeek} onValueChange={setNewScheduleDayOfWeek}>
-                    <SelectTrigger id="dayOfWeek">
-                      <SelectValue placeholder="Select day of week" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {daysOfWeek.map((day, index) => (
-                        <SelectItem key={index} value={index.toString()}>
-                          {day}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="startTime">Start Time</Label>
-                    <Input
-                      id="startTime"
-                      type="time"
-                      value={newScheduleStartTime}
-                      onChange={(e) => setNewScheduleStartTime(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="endTime">End Time</Label>
-                    <Input
-                      id="endTime"
-                      type="time"
-                      value={newScheduleEndTime}
-                      onChange={(e) => setNewScheduleEndTime(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="platform">Platform</Label>
-                  <Select value={newSchedulePlatform} onValueChange={setNewSchedulePlatform}>
-                    <SelectTrigger id="platform">
-                      <SelectValue placeholder="Select platform" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="zoom">Zoom</SelectItem>
-                      <SelectItem value="google-meet">Google Meet</SelectItem>
-                      <SelectItem value="microsoft-teams">Microsoft Teams</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="meetingLink">Meeting Link</Label>
-                  <Input
-                    id="meetingLink"
-                    value={newScheduleMeetingLink}
-                    onChange={(e) => setNewScheduleMeetingLink(e.target.value)}
-                    placeholder="Enter meeting link"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleCreateSchedule}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Creating...' : 'Create Schedule'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card className="neo-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Schedules</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">{schedules.length}</span>
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="neo-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">This Week's Classes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">
-                  {schedules.filter(s => s.dayOfWeek >= 0 && s.dayOfWeek <= 6).length}
-                </span>
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="neo-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Online Sessions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">
-                  {schedules.filter(s => s.platform === 'zoom' || s.platform === 'google-meet' || s.platform === 'microsoft-teams').length}
-                </span>
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Video className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="bg-card rounded-lg border p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search schedules by topic..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div>
-              <Select
-                value={selectedBatch}
-                onValueChange={setSelectedBatch}
+              <Button 
+                onClick={handleCreateSchedule}
+                disabled={isSubmitting}
               >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Batches" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Batches</SelectItem>
-                  {batches.map((batch) => (
-                    <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
-                      {batch.batchName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {isSubmitting ? 'Creating...' : 'Create Schedule'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card className="neo-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Schedules</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">{schedules.length}</span>
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-primary" />
+              </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="neo-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">This Week's Classes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">
+                {schedules.filter(s => s.dayOfWeek >= 0 && s.dayOfWeek <= 6).length}
+              </span>
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Clock className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="neo-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Online Sessions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">
+                {schedules.filter(s => s.platform === 'zoom' || s.platform === 'google-meet' || s.platform === 'microsoft-teams').length}
+              </span>
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Video className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="bg-card rounded-lg border p-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search schedules by topic..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div>
+            <Select
+              value={selectedBatch}
+              onValueChange={setSelectedBatch}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Batches" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Batches</SelectItem>
+                {batches.map((batch) => (
+                  <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
+                    {batch.batchName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
-
-        <div className="bg-card rounded-lg border overflow-hidden">
-          {isLoading ? (
-            <div className="p-8 text-center">
-              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p>Loading schedules...</p>
-            </div>
-          ) : (
-            <DataTable
-              data={filteredSchedules}
-              columns={scheduleColumns}
-              actions={scheduleActions}
-              className="w-full"
-              searchKey="topic"
-            />
-          )}
-        </div>
       </div>
-    </Layout>
+
+      <div className="bg-card rounded-lg border overflow-hidden">
+        {isLoading ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p>Loading schedules...</p>
+          </div>
+        ) : (
+          <DataTable
+            data={filteredSchedules}
+            columns={scheduleColumns}
+            actions={scheduleActions}
+            className="w-full"
+            searchKey="topic"
+          />
+        )}
+      </div>
+    </div>
   );
 };
 

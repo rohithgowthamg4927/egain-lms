@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import Layout from '@/components/layout/Layout';
 import BatchGrid from '@/components/batches/BatchGrid';
 import { 
   getBatches, 
@@ -442,170 +441,128 @@ const Batches = () => {
   };
 
   return (
-    <Layout noHeader={true}>
-      <div className="animate-fade-in">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-          <h1 className="text-3xl font-bold">Batches</h1>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Batch
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px]">
-              <DialogHeader>
-                <DialogTitle>Create New Batch</DialogTitle>
-                <DialogDescription>
-                  Enter the details for the new batch.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="batchName">Batch Name</Label>
-                  <Input
-                    id="batchName"
-                    value={batchName}
-                    onChange={(e) => setBatchName(e.target.value)}
-                    placeholder="Enter batch name"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="batchCourse">Course</Label>
-                  <Select value={batchCourse} onValueChange={setBatchCourse}>
-                    <SelectTrigger id="batchCourse">
-                      <SelectValue placeholder="Select course" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {courses.map((course) => (
-                        <SelectItem key={course.courseId} value={course.courseId.toString()}>
-                          {course.courseName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="batchInstructor">Instructor</Label>
-                  <Select value={batchInstructor} onValueChange={setBatchInstructor}>
-                    <SelectTrigger id="batchInstructor">
-                      <SelectValue placeholder="Select instructor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {instructors.map((instructor) => (
-                        <SelectItem key={instructor.userId} value={instructor.userId.toString()}>
-                          {instructor.fullName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="batchStartDate">Start Date</Label>
-                    <Input
-                      id="batchStartDate"
-                      type="date"
-                      value={batchStartDate}
-                      onChange={(e) => setBatchStartDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="batchEndDate">End Date</Label>
-                    <Input
-                      id="batchEndDate"
-                      type="date"
-                      value={batchEndDate}
-                      onChange={(e) => setBatchEndDate(e.target.value)}
-                    />
-                  </div>
-                </div>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h1 className="text-3xl font-bold">Batches</h1>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Batch
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card className="shadow-md border-blue-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Batches</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">{batches.length}</span>
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-blue-600" />
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleCreateBatch} 
-                  disabled={isSubmitting || !batchName || !batchCourse || !batchInstructor || !batchStartDate || !batchEndDate}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {isSubmitting ? 'Creating...' : 'Create Batch'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md border-blue-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Active Students</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">
+                {batches.reduce((total, batch) => total + (batch.studentsCount || 0), 0)}
+              </span>
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <UserIcon className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md border-blue-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Upcoming Batches</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">
+                {batches.filter(batch => new Date(batch.startDate) > new Date()).length}
+              </span>
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <Clock className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="bg-white rounded-lg border shadow-sm p-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+            <Input
+              placeholder="Search batches..."
+              className="pl-10 border-gray-200"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div>
+            <Select
+              value={selectedCourse}
+              onValueChange={setSelectedCourse}
+            >
+              <SelectTrigger className="w-[180px] border-gray-200">
+                <SelectValue placeholder="All Courses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Courses</SelectItem>
+                {courses.map((course) => (
+                  <SelectItem key={course.courseId} value={course.courseId.toString()}>
+                    {course.courseName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card className="shadow-md border-blue-100">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Batches</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">{batches.length}</span>
-                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <BatchGrid
+        batches={filteredBatches}
+        loading={isLoading}
+        onView={handleViewBatch}
+        onEdit={handleEditBatchClick}
+        onDelete={handleDeleteBatch}
+        onManageStudents={handleManageStudents}
+      />
 
-          <Card className="shadow-md border-blue-100">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Active Students</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">
-                  {batches.reduce((total, batch) => total + (batch.studentsCount || 0), 0)}
-                </span>
-                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
-                  <UserIcon className="h-5 w-5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-md border-blue-100">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming Batches</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">
-                  {batches.filter(batch => new Date(batch.startDate) > new Date()).length}
-                </span>
-                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="bg-white rounded-lg border shadow-sm p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Edit Batch</DialogTitle>
+            <DialogDescription>
+              Update the details for this batch.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="editBatchName">Batch Name</Label>
               <Input
-                placeholder="Search batches..."
-                className="pl-10 border-gray-200"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                id="editBatchName"
+                value={batchName}
+                onChange={(e) => setBatchName(e.target.value)}
               />
             </div>
-            <div>
-              <Select
-                value={selectedCourse}
-                onValueChange={setSelectedCourse}
-              >
-                <SelectTrigger className="w-[180px] border-gray-200">
-                  <SelectValue placeholder="All Courses" />
+            <div className="grid gap-2">
+              <Label htmlFor="editBatchCourse">Course</Label>
+              <Select value={batchCourse} onValueChange={setBatchCourse}>
+                <SelectTrigger id="editBatchCourse">
+                  <SelectValue placeholder="Select course" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Courses</SelectItem>
                   {courses.map((course) => (
                     <SelectItem key={course.courseId} value={course.courseId.toString()}>
                       {course.courseName}
@@ -614,170 +571,125 @@ const Batches = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="editBatchInstructor">Instructor</Label>
+              <Select value={batchInstructor} onValueChange={setBatchInstructor}>
+                <SelectTrigger id="editBatchInstructor">
+                  <SelectValue placeholder="Select instructor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {instructors.map((instructor) => (
+                    <SelectItem key={instructor.userId} value={instructor.userId.toString()}>
+                      {instructor.fullName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="editBatchStartDate">Start Date</Label>
+                <Input
+                  id="editBatchStartDate"
+                  type="date"
+                  value={batchStartDate}
+                  onChange={(e) => setBatchStartDate(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="editBatchEndDate">End Date</Label>
+                <Input
+                  id="editBatchEndDate"
+                  type="date"
+                  value={batchEndDate}
+                  onChange={(e) => setBatchEndDate(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
-        </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleEditBatch} 
+              disabled={isSubmitting}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        <BatchGrid
-          batches={filteredBatches}
-          loading={isLoading}
-          onView={handleViewBatch}
-          onEdit={handleEditBatchClick}
-          onDelete={handleDeleteBatch}
-          onManageStudents={handleManageStudents}
-        />
-
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[525px]">
-            <DialogHeader>
-              <DialogTitle>Edit Batch</DialogTitle>
-              <DialogDescription>
-                Update the details for this batch.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="editBatchName">Batch Name</Label>
-                <Input
-                  id="editBatchName"
-                  value={batchName}
-                  onChange={(e) => setBatchName(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="editBatchCourse">Course</Label>
-                <Select value={batchCourse} onValueChange={setBatchCourse}>
-                  <SelectTrigger id="editBatchCourse">
-                    <SelectValue placeholder="Select course" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {courses.map((course) => (
-                      <SelectItem key={course.courseId} value={course.courseId.toString()}>
-                        {course.courseName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="editBatchInstructor">Instructor</Label>
-                <Select value={batchInstructor} onValueChange={setBatchInstructor}>
-                  <SelectTrigger id="editBatchInstructor">
-                    <SelectValue placeholder="Select instructor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {instructors.map((instructor) => (
-                      <SelectItem key={instructor.userId} value={instructor.userId.toString()}>
-                        {instructor.fullName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="editBatchStartDate">Start Date</Label>
-                  <Input
-                    id="editBatchStartDate"
-                    type="date"
-                    value={batchStartDate}
-                    onChange={(e) => setBatchStartDate(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="editBatchEndDate">End Date</Label>
-                  <Input
-                    id="editBatchEndDate"
-                    type="date"
-                    value={batchEndDate}
-                    onChange={(e) => setBatchEndDate(e.target.value)}
-                  />
-                </div>
-              </div>
+      <Drawer open={isStudentsDrawerOpen} onOpenChange={setIsStudentsDrawerOpen}>
+        <DrawerContent>
+          <DrawerHeader className="text-left">
+            <DrawerTitle>Manage Students</DrawerTitle>
+            <DrawerDescription>
+              {selectedBatch ? `Enroll students to the batch: ${selectedBatch.batchName}` : 'Loading...'}
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="px-4">
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+              <Input
+                placeholder="Search students..."
+                className="pl-10 border-gray-200"
+              />
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleEditBatch} 
-                disabled={isSubmitting}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        <Drawer open={isStudentsDrawerOpen} onOpenChange={setIsStudentsDrawerOpen}>
-          <DrawerContent>
-            <DrawerHeader className="text-left">
-              <DrawerTitle>Manage Students</DrawerTitle>
-              <DrawerDescription>
-                {selectedBatch ? `Enroll students to the batch: ${selectedBatch.batchName}` : 'Loading...'}
-              </DrawerDescription>
-            </DrawerHeader>
-            <div className="px-4">
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                <Input
-                  placeholder="Search students..."
-                  className="pl-10 border-gray-200"
-                />
-              </div>
-              <ScrollArea className="h-[300px] rounded-md border p-4">
-                {availableStudents.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No available students to enroll
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {availableStudents.map((student) => (
-                      <div key={student.userId} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`student-${student.userId}`} 
-                          checked={selectedStudents.includes(student.userId)}
-                          onCheckedChange={() => toggleStudentSelection(student.userId)}
-                        />
-                        <Label 
-                          htmlFor={`student-${student.userId}`}
-                          className="flex flex-1 items-center justify-between cursor-pointer p-2 hover:bg-gray-100 rounded"
-                        >
-                          <div className="flex items-center gap-3">
-                            <UserIcon className="h-4 w-4 text-gray-500" />
-                            <span>{student.fullName}</span>
-                          </div>
-                          <span className="text-sm text-gray-500">{student.email}</span>
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </div>
-            <DrawerFooter className="pt-2">
-              <Button 
-                onClick={handleEnrollStudents}
-                disabled={selectedStudents.length === 0 || isSubmitting}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isSubmitting ? (
-                  'Enrolling Students...'
-                ) : (
-                  <>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Enroll Selected Students ({selectedStudents.length})
-                  </>
-                )}
-              </Button>
-              <DrawerClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DrawerClose>
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
-      </div>
-    </Layout>
+            <ScrollArea className="h-[300px] rounded-md border p-4">
+              {availableStudents.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No available students to enroll
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {availableStudents.map((student) => (
+                    <div key={student.userId} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`student-${student.userId}`} 
+                        checked={selectedStudents.includes(student.userId)}
+                        onCheckedChange={() => toggleStudentSelection(student.userId)}
+                      />
+                      <Label 
+                        htmlFor={`student-${student.userId}`}
+                        className="flex flex-1 items-center justify-between cursor-pointer p-2 hover:bg-gray-100 rounded"
+                      >
+                        <div className="flex items-center gap-3">
+                          <UserIcon className="h-4 w-4 text-gray-500" />
+                          <span>{student.fullName}</span>
+                        </div>
+                        <span className="text-sm text-gray-500">{student.email}</span>
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+          <DrawerFooter className="pt-2">
+            <Button 
+              onClick={handleEnrollStudents}
+              disabled={selectedStudents.length === 0 || isSubmitting}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isSubmitting ? (
+                'Enrolling Students...'
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Enroll Selected Students ({selectedStudents.length})
+                </>
+              )}
+            </Button>
+            <DrawerClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    </div>
   );
 };
 

@@ -1,7 +1,5 @@
-
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Layout from '@/components/layout/Layout';
 import { UserForm } from '@/components/users/UserForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -84,39 +82,37 @@ const AddUser = () => {
   const defaultValues = role ? { role } : undefined;
 
   return (
-    <Layout noHeader={true}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">{userId ? 'Edit User' : 'Add New User'}</h1>
-            <p className="text-muted-foreground mt-1">
-              {userId ? 'Edit user information' : 'Create a new admin, instructor, or student account'}
-            </p>
-          </div>
-          <UserPlus className="h-8 w-8 text-primary" />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">{userId ? 'Edit User' : 'Add New User'}</h1>
+          <p className="text-muted-foreground mt-1">
+            {userId ? 'Edit user information' : 'Create a new admin, instructor, or student account'}
+          </p>
         </div>
-        
-        <Separator />
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>{userId ? 'User Information' : 'New User Information'}</CardTitle>
-            <CardDescription>
-              {userId 
-                ? 'Update the user\'s details below.' 
-                : 'Enter the details for the new user. They will receive a generated password.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <UserForm 
-              onSubmit={handleSubmit} 
-              isSubmitting={isSubmitting} 
-              defaultValues={defaultValues}
-            />
-          </CardContent>
-        </Card>
+        <UserPlus className="h-8 w-8 text-primary" />
       </div>
-    </Layout>
+      
+      <Separator />
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>{userId ? 'User Information' : 'New User Information'}</CardTitle>
+          <CardDescription>
+            {userId 
+              ? 'Update the user\'s details below.' 
+              : 'Enter the details for the new user. They will receive a generated password.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <UserForm 
+            onSubmit={handleSubmit} 
+            isSubmitting={isSubmitting} 
+            defaultValues={defaultValues}
+          />
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

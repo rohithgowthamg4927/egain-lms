@@ -1,10 +1,8 @@
-
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Layout from '@/components/layout/Layout';
 import { DataTable } from '@/components/ui/data-table';
 import { getUsers, deleteUser } from '@/lib/api';
 import { Role, User } from '@/lib/types';
@@ -171,90 +169,88 @@ const Students = () => {
   ];
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <h1 className="text-3xl font-bold">Students</h1>
-          <Button onClick={handleAddStudent}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Student
-          </Button>
-        </div>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h1 className="text-3xl font-bold">Students</h1>
+        <Button onClick={handleAddStudent}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Student
+        </Button>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="neo-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">{students.length}</span>
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <GraduationCap className="h-5 w-5 text-primary" />
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="neo-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">{students.length}</span>
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <GraduationCap className="h-5 w-5 text-primary" />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="neo-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Active Courses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">N/A</span>
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <BookOpen className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="neo-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Top Performers</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">N/A</span>
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Award className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="bg-card rounded-lg border p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search students..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="bg-card rounded-lg border overflow-hidden">
-          {isLoading ? (
-            <div className="p-8 text-center">
-              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p>Loading students...</p>
             </div>
-          ) : (
-            <DataTable
-              data={filteredStudents}
-              columns={studentColumns}
-              actions={studentActions}
-              className="w-full"
-              searchKey="fullName"
-            />
-          )}
+          </CardContent>
+        </Card>
+
+        <Card className="neo-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Active Courses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">N/A</span>
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <BookOpen className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="neo-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Top Performers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">N/A</span>
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Award className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="bg-card rounded-lg border p-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search students..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
       </div>
-    </Layout>
+
+      <div className="bg-card rounded-lg border overflow-hidden">
+        {isLoading ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p>Loading students...</p>
+          </div>
+        ) : (
+          <DataTable
+            data={filteredStudents}
+            columns={studentColumns}
+            actions={studentActions}
+            className="w-full"
+            searchKey="fullName"
+          />
+        )}
+      </div>
+    </div>
   );
 };
 

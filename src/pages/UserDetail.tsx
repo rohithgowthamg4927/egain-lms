@@ -1,7 +1,5 @@
-
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Layout from '@/components/layout/Layout';
 
 interface UserDetailProps {
   // Add any props if needed
@@ -21,11 +19,9 @@ const UserDetail: React.FC<UserDetailProps> = () => {
   }, [userId, navigate]);
 
   return (
-    <Layout noHeader={true}>
-      <div className="p-6">
-        <p>Redirecting to user profile...</p>
-      </div>
-    </Layout>
+    <div className="p-6">
+      <p>Redirecting to user profile...</p>
+    </div>
   );
 };
 

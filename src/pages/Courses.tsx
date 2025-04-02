@@ -9,7 +9,6 @@ import { getCourses, getCategories, createCategory } from '@/lib/api';
 import { Course, Category, Level } from '@/lib/types';
 import { Search, BookOpen, Users, Layers, Plus } from 'lucide-react';
 import CourseGrid from '@/components/courses/CourseGrid';
-import Layout from '@/components/layout/Layout';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 
@@ -143,141 +142,139 @@ const Courses = () => {
   };
 
   return (
-    <Layout noHeader={true}>
-      <div className="animate-fade-in">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-          <h1 className="text-3xl font-bold">Courses</h1>
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Course
-          </Button>
-        </div>
+    <div className="animate-fade-in">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+        <h1 className="text-3xl font-bold">Courses</h1>
+        <Button className="bg-blue-600 hover:bg-blue-700">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Course
+        </Button>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card className="shadow-md border-blue-100">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">{courses.length}</span>
-                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
-                  <BookOpen className="h-5 w-5 text-blue-600" />
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card className="shadow-md border-blue-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">{courses.length}</span>
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <BookOpen className="h-5 w-5 text-blue-600" />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-md border-blue-100">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">
-                  {courses.reduce((total, course) => total + (course.students || 0), 0)}
-                </span>
-                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-md border-blue-100">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Categories</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">{categories.length}</span>
-                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
-                  <Layers className="h-5 w-5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="bg-white rounded-lg border shadow-sm p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="Search courses..."
-                className="pl-10 border-gray-200"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
             </div>
-            <div className="flex items-center gap-2">
-              <Select
-                value={selectedCategory}
-                onValueChange={setSelectedCategory}
-              >
-                <SelectTrigger className="w-[180px] border-gray-200">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.categoryId} value={category.categoryId.toString()}>
-                      {category.categoryName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    Add Category
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Create category</DialogTitle>
-                    <DialogDescription>
-                      Add a new category to group your courses.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="name">Category name</Label>
-                      <Input
-                        id="name"
-                        placeholder="Category name"
-                        value={newCategoryName}
-                        onChange={(e) => setNewCategoryName(e.target.value)}
-                      />
-                    </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md border-blue-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">
+                {courses.reduce((total, course) => total + (course.students || 0), 0)}
+              </span>
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <Users className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md border-blue-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Categories</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">{categories.length}</span>
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <Layers className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="bg-white rounded-lg border shadow-sm p-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+            <Input
+              placeholder="Search courses..."
+              className="pl-10 border-gray-200"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
+              <SelectTrigger className="w-[180px] border-gray-200">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.categoryId} value={category.categoryId.toString()}>
+                    {category.categoryName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  Add Category
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Create category</DialogTitle>
+                  <DialogDescription>
+                    Add a new category to group your courses.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Category name</Label>
+                    <Input
+                      id="name"
+                      placeholder="Category name"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                    />
                   </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsCreateCategoryDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleCreateCategory} 
-                      disabled={isSubmitting}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      {isSubmitting ? 'Creating...' : 'Create'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsCreateCategoryDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleCreateCategory} 
+                    disabled={isSubmitting}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {isSubmitting ? 'Creating...' : 'Create'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
-
-        <CourseGrid
-          courses={filteredCourses}
-          loading={isLoading}
-          onView={handleViewCourse}
-          onEdit={handleEditCourse}
-          onDelete={handleDeleteCourse}
-        />
       </div>
-    </Layout>
+
+      <CourseGrid
+        courses={filteredCourses}
+        loading={isLoading}
+        onView={handleViewCourse}
+        onEdit={handleEditCourse}
+        onDelete={handleDeleteCourse}
+      />
+    </div>
   );
 };
 

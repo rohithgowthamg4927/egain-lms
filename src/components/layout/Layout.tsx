@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
@@ -55,7 +54,7 @@ const Layout = ({ children, requireAuth = true, noHeader = false }: LayoutProps)
       <div className="flex-1 flex flex-col overflow-hidden">
         {!noHeader && <Header />}
         <main className="flex-1 overflow-auto">
-          <div className="max-w-7xl mx-auto px-4 py-6 md:px-6">
+          <div className="w-full px-6 py-6">
             <BreadcrumbNav />
             {children}
           </div>

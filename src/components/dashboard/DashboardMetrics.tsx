@@ -44,7 +44,7 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="w-full space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="hover-scale shadow-md border-blue-100">
           <CardHeader className="pb-2">
@@ -105,7 +105,7 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="shadow-md">
+        <Card className="shadow-md w-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChartIcon className="h-5 w-5" />
@@ -117,7 +117,7 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
             {isLoading ? (
               <Skeleton className="h-[300px] w-full" />
             ) : coursesByCategoryData.length > 0 ? (
-              <div className="h-[300px]">
+              <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={coursesByCategoryData}
@@ -158,7 +158,7 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
           </CardContent>
         </Card>
 
-        <Card className="shadow-md">
+        <Card className="shadow-md w-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
@@ -213,7 +213,7 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="shadow-md">
+        <Card className="shadow-md w-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <PieChartIcon className="h-5 w-5" />

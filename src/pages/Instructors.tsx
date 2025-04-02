@@ -1,11 +1,9 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Layout from '@/components/layout/Layout';
 import { DataTable } from '@/components/ui/data-table';
 import { getUsers, deleteUser } from '@/lib/api';
 import { Role, User } from '@/lib/types';
@@ -171,90 +169,88 @@ const Instructors = () => {
   ];
 
   return (
-    <Layout noHeader={true}>
-      <div className="animate-fade-in">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-          <h1 className="text-3xl font-bold">Instructors</h1>
-          <Button onClick={handleAddInstructor} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Instructor
-          </Button>
-        </div>
+    <div className="animate-fade-in">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+        <h1 className="text-3xl font-bold">Instructors</h1>
+        <Button onClick={handleAddInstructor} className="bg-blue-600 hover:bg-blue-700">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Instructor
+        </Button>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card className="shadow-md border-blue-100">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Instructors</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">{instructors.length}</span>
-                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
-                  <Award className="h-5 w-5 text-blue-600" />
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card className="shadow-md border-blue-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Instructors</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">{instructors.length}</span>
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <Award className="h-5 w-5 text-blue-600" />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-md border-blue-100">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">N/A</span>
-                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
-                  <BookOpen className="h-5 w-5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-md border-blue-100">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">N/A</span>
-                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="bg-white rounded-lg border shadow-sm p-4 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-            <Input
-              placeholder="Search instructors..."
-              className="pl-10 border-gray-200"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-          {isLoading ? (
-            <div className="p-8 text-center">
-              <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p>Loading instructors...</p>
             </div>
-          ) : (
-            <DataTable
-              data={filteredInstructors}
-              columns={instructorColumns}
-              actions={instructorActions}
-              className="w-full"
-              searchKey="fullName"
-            />
-          )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md border-blue-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">N/A</span>
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <BookOpen className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md border-blue-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">N/A</span>
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <Users className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="bg-white rounded-lg border shadow-sm p-4 mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+          <Input
+            placeholder="Search instructors..."
+            className="pl-10 border-gray-200"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
       </div>
-    </Layout>
+
+      <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+        {isLoading ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p>Loading instructors...</p>
+          </div>
+        ) : (
+          <DataTable
+            data={filteredInstructors}
+            columns={instructorColumns}
+            actions={instructorActions}
+            className="w-full"
+            searchKey="fullName"
+          />
+        )}
+      </div>
+    </div>
   );
 };
 

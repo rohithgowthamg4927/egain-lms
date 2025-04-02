@@ -5,7 +5,7 @@ import { apiFetch } from './core';
 // Dashboard metrics
 export const getDashboardMetrics = async (): Promise<{ success: boolean; data?: DashboardMetrics; error?: string }> => {
   try {
-    const response = await apiFetch<DashboardMetrics>('/dashboard-metrics');
+    const response = await apiFetch<DashboardMetrics>('/dashboard');
     
     // Log the response for debugging
     console.log("Dashboard metrics response:", response);

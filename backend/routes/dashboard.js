@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
   try {
     console.log("Fetching dashboard metrics");
     
-    // Get counts for various entities - Fixed to ensure we're safely accessing properties
+    // Get counts for various entities - Using direct count queries
     const studentsCount = await prisma.user.count({
       where: { role: 'student' }
     });
@@ -33,7 +33,7 @@ router.get('/', async (req, res) => {
             userId: true,
             fullName: true,
             email: true,
-            photoUrl: true
+            // Removed photoUrl as it doesn't exist in the User model
           }
         },
         _count: {
@@ -50,7 +50,7 @@ router.get('/', async (req, res) => {
       endDate: batch.endDate,
       course: batch.course,
       instructor: batch.instructor,
-      studentsCount: batch._count?.students || 0
+      studentsCount: batch._count.students
     }));
     
     // Get categories with course counts
@@ -73,11 +73,11 @@ router.get('/', async (req, res) => {
     const coursesByCategory = categories.map(category => ({
       categoryId: category.categoryId,
       categoryName: category.categoryName,
-      coursesCount: category._count?.courses || 0,
+      coursesCount: category._count.courses,
       courses: category.courses.map(course => ({
         courseId: course.courseId,
         courseName: course.courseName,
-        studentsCount: course._count?.students || 0
+        studentsCount: course._count.students
       }))
     }));
     
@@ -108,7 +108,7 @@ router.get('/', async (req, res) => {
         category: course.category
       },
       _count: {
-        students: course._count?.students || 0
+        students: course._count.students
       }
     }));
     
@@ -118,7 +118,7 @@ router.get('/', async (req, res) => {
       take: 5,
       where: {
         startTime: {
-          gte: now.toISOString()
+          gte: now
         }
       },
       orderBy: {
@@ -154,11 +154,11 @@ router.get('/', async (req, res) => {
     // Get category distribution (students per category)
     const categoryDistribution = await Promise.all(
       categories.map(async (category) => {
-        // Count total students across all courses in this category
+        // Sum up students across all courses in this category
         let totalStudents = 0;
         
         for (const course of category.courses) {
-          totalStudents += course._count?.students || 0;
+          totalStudents += course._count.students;
         }
         
         return {

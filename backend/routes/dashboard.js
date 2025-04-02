@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
             email: true,
           }
         },
-        studentBatches: true // Use the correct relation name
+        studentBatches: true
       }
     });
     
@@ -55,7 +55,7 @@ router.get('/', async (req, res) => {
       include: {
         courses: {
           include: {
-            studentCourses: true // Use the correct relation name
+            studentCourses: true
           }
         }
       }
@@ -78,7 +78,7 @@ router.get('/', async (req, res) => {
       take: 5,
       include: {
         category: true,
-        studentCourses: true // Use the correct relation name
+        studentCourses: true
       },
       orderBy: {
         studentCourses: {
@@ -106,7 +106,7 @@ router.get('/', async (req, res) => {
       take: 5,
       where: {
         startTime: {
-          gte: now // Using direct Date object
+          gte: now
         }
       },
       orderBy: {
@@ -133,8 +133,8 @@ router.get('/', async (req, res) => {
       scheduleId: schedule.scheduleId,
       startTime: schedule.startTime,
       endTime: schedule.endTime,
-      topic: schedule.topic || 'Class Session', // Default topic if none provided
-      platform: schedule.platform || 'Online',  // Default platform if none provided
+      topic: schedule.topic || 'Class Session',
+      platform: schedule.platform || 'Online',
       meetingLink: schedule.meetingLink,
       batch: schedule.batch
     }));

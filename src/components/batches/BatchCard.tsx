@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar, Clock, Users, ChevronRight, Edit, Trash, UserPlus } from 'lucide-react';
+import { Calendar, Clock, Users, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -46,56 +46,34 @@ const BatchCard = ({
       onView(batch);
     }
   };
-
-  const handleEditBatch = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onEdit) {
-      onEdit(batch);
-    }
-  };
-
-  const handleDeleteBatch = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onDelete) {
-      onDelete(batch);
-    }
-  };
-
-  const handleManageStudents = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onManageStudents) {
-      onManageStudents(batch);
-    }
-  };
   
   return (
     <Card 
-      className={`hover:shadow-md transition-all duration-200 cursor-pointer ${isHovered ? 'border-primary/50' : ''}`}
+      className={`hover:shadow-md transition-all duration-200 ${isHovered ? 'border-primary/50' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={handleViewBatch}
     >
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg font-bold line-clamp-1">{batch.batchName}</CardTitle>
-            <CardDescription className="text-sm font-medium line-clamp-1">{courseName}</CardDescription>
+            <CardTitle className="text-xl font-bold">{batch.batchName}</CardTitle>
+            <CardDescription className="text-sm">{courseName}</CardDescription>
           </div>
           <Badge variant={variant}>{label}</Badge>
         </div>
       </CardHeader>
       
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 gap-2 text-sm">
+        <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center text-muted-foreground">
-            <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
-            <span className="truncate">
+            <Calendar className="h-4 w-4 mr-2" />
+            <span>
               {format(startDate, 'MMM d, yyyy')} - {format(endDate, 'MMM d, yyyy')}
             </span>
           </div>
           
           <div className="flex items-center text-muted-foreground">
-            <Clock className="h-4 w-4 mr-2 flex-shrink-0" />
+            <Clock className="h-4 w-4 mr-2" />
             <span>
               {Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))} days
             </span>
@@ -107,7 +85,7 @@ const BatchCard = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger className="flex items-center text-muted-foreground hover:text-foreground transition-colors">
-                  <Users className="h-4 w-4 mr-1 flex-shrink-0" />
+                  <Users className="h-4 w-4 mr-1" />
                   <span>{studentsCount} students</span>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -117,40 +95,20 @@ const BatchCard = ({
             </TooltipProvider>
           </div>
           
-          <div className="text-muted-foreground truncate max-w-[150px]">
-            <span className="font-medium text-foreground">{instructor}</span>
+          <div className="text-muted-foreground">
+            Instructor: <span className="font-medium text-foreground">{instructor}</span>
           </div>
         </div>
       </CardContent>
       
-      <CardFooter className="grid grid-cols-1 gap-2 pt-2">
-        <div className="flex justify-between gap-2">
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={handleEditBatch}
-            className="flex-1"
-          >
-            <Edit className="h-4 w-4 mr-1" />
-            Edit
-          </Button>
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={handleManageStudents}
-            className="flex-1"
-          >
-            <UserPlus className="h-4 w-4 mr-1" />
-            Students
-          </Button>
-        </div>
+      <CardFooter className="flex justify-between pt-2">
         <Button 
           variant="default"
           size="sm"
-          className="w-full bg-blue-600 hover:bg-blue-700"
+          className="w-full"
           onClick={handleViewBatch}
         >
-          View Details
+          View Batch
           <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </CardFooter>

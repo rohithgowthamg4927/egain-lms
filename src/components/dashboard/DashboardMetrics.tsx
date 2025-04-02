@@ -1,8 +1,7 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, BookOpen, Calendar, Award, TrendingUp, Bell, AlertCircle, PieChart as PieChartIcon, Tag, BarChart2 } from 'lucide-react';
+import { Users, BookOpen, Calendar, Award, TrendingUp, Bell, AlertCircle, PieChart as PieChartIcon, Tag } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { DashboardMetrics as DashboardMetricsType } from "@/lib/types";
 import { format } from "date-fns";
@@ -23,12 +22,6 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
   const popularCoursesData = data?.popularCourses?.map((course) => ({
     name: course.course.courseName,
     students: course._count.students,
-  })) || [];
-
-  // Prepare data for Courses by Category
-  const coursesByCategoryData = data?.coursesByCategory?.map((category) => ({
-    name: category.name,
-    courses: category.courseCount,
   })) || [];
 
   // Format upcoming schedule items
@@ -177,46 +170,45 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
         <Card className="shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart2 className="h-5 w-5" />
-              <span>Courses by Category</span>
+              <PieChartIcon className="h-5 w-5" />
+              <span>Students by Category</span>
             </CardTitle>
-            <CardDescription>Distribution of courses across different categories</CardDescription>
+            <CardDescription>Distribution of students across different course categories</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-[300px] w-full" />
-            ) : coursesByCategoryData.length > 0 ? (
+            ) : categoryChartData.length > 0 ? (
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={coursesByCategoryData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
-                    layout="vertical"
-                  >
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                    <XAxis type="number" tick={{ fontSize: 12 }} />
-                    <YAxis 
-                      type="category"
-                      dataKey="name" 
-                      tick={{ fontSize: 12 }}
-                      width={100}
-                    />
-                    <Tooltip 
-                      contentStyle={{ borderRadius: '8px', border: '1px solid #ddd', backgroundColor: 'white' }} 
-                      formatter={(value) => [`${value} courses`, 'Count']}
-                    />
-                    <Bar 
-                      dataKey="courses" 
-                      fill="#8b5cf6" 
-                      radius={[0, 4, 4, 0]}
+                  <PieChart>
+                    <Pie
+                      data={categoryChartData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={90}
+                      innerRadius={30}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                       animationDuration={1000}
+                    >
+                      {categoryChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value) => [`${value} students`, 'Enrollment']}
+                      contentStyle={{ borderRadius: '8px', border: '1px solid #ddd', backgroundColor: 'white' }}
                     />
-                  </BarChart>
+                    <Legend />
+                  </PieChart>
                 </ResponsiveContainer>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
-                <Tag className="h-12 w-12 mb-2 opacity-20" />
+                <Award className="h-12 w-12 mb-2 opacity-20" />
                 <p>No category data available</p>
               </div>
             )}

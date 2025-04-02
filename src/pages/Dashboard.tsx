@@ -16,6 +16,7 @@ const Dashboard = () => {
   const dashboardMetricsQuery = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: getDashboardMetrics,
+    retry: 1
   });
 
   useEffect(() => {

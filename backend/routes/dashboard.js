@@ -9,7 +9,9 @@ const prisma = new PrismaClient();
 // Get dashboard metrics
 router.get('/', async (req, res) => {
   try {
-    // Get counts for various entities with null checks
+    console.log("Fetching dashboard metrics");
+    
+    // Get counts for various entities
     const studentsCount = await prisma.user.count({
       where: { role: 'student' }
     });
@@ -19,12 +21,6 @@ router.get('/', async (req, res) => {
     });
     
     const coursesCount = await prisma.course.count();
-    
-    const batchesCount = await prisma.batch.count();
-    
-    const categoriesCount = await prisma.category.count();
-    
-    const resourcesCount = await prisma.resource.count();
     
     // Get recent batches
     const recentBatches = await prisma.batch.findMany({
@@ -59,14 +55,42 @@ router.get('/', async (req, res) => {
       studentsCount: batch.students ? batch.students.length : 0
     }));
     
+    // Get categories with course counts
+    const categories = await prisma.courseCategory.findMany({
+      include: {
+        courses: {
+          include: {
+            _count: {
+              select: {
+                students: true
+              }
+            },
+            students: true
+          }
+        }
+      }
+    });
+    
+    // Process categories for chart data
+    const coursesByCategory = categories.map(category => ({
+      categoryId: category.categoryId,
+      categoryName: category.categoryName,
+      coursesCount: category.courses.length,
+      courses: category.courses.map(course => ({
+        courseId: course.courseId,
+        courseName: course.courseName,
+        studentsCount: course._count?.students || 0
+      }))
+    }));
+    
     // Get popular courses (by enrollment count)
-    const coursesWithStudents = await prisma.course.findMany({
+    const coursesWithEnrollments = await prisma.course.findMany({
       take: 5,
       include: {
         category: true,
-        students: {
+        _count: {
           select: {
-            studentId: true
+            students: true
           }
         }
       },
@@ -77,8 +101,8 @@ router.get('/', async (req, res) => {
       }
     });
     
-    // Transform courses to include student count
-    const popularCourses = coursesWithStudents.map(course => ({
+    // Transform courses for the response
+    const popularCourses = coursesWithEnrollments.map(course => ({
       course: {
         courseId: course.courseId,
         courseName: course.courseName,
@@ -86,7 +110,7 @@ router.get('/', async (req, res) => {
         category: course.category
       },
       _count: {
-        students: course.students ? course.students.length : 0
+        students: course._count?.students || 0
       }
     }));
     
@@ -96,7 +120,7 @@ router.get('/', async (req, res) => {
       take: 5,
       where: {
         startTime: {
-          gte: now.toISOString().split('T')[0] // Today or future dates
+          gte: now.toISOString()
         }
       },
       orderBy: {
@@ -118,45 +142,38 @@ router.get('/', async (req, res) => {
       }
     });
     
-    // Get course distribution by category
-    const categories = await prisma.category.findMany({
-      include: {
-        courses: {
-          include: {
-            students: true
-          }
+    // Get category distribution (students per category)
+    const categoryDistribution = await Promise.all(
+      categories.map(async (category) => {
+        // Count total students across all courses in this category
+        let totalStudents = 0;
+        
+        for (const course of category.courses) {
+          totalStudents += course._count?.students || 0;
         }
-      }
-    });
-    
-    const categoryDistribution = categories.map(category => {
-      // Count total students across all courses in this category
-      const totalStudents = category.courses.reduce((sum, course) => {
-        return sum + (course.students ? course.students.length : 0);
-      }, 0);
-      
-      return {
-        name: category.categoryName,
-        value: totalStudents
-      };
-    });
+        
+        return {
+          name: category.categoryName,
+          value: totalStudents
+        };
+      })
+    );
     
     // Prepare and return metrics
     const metrics = {
       counts: {
         students: studentsCount,
         instructors: instructorsCount,
-        courses: coursesCount,
-        batches: batchesCount,
-        categories: categoriesCount,
-        resources: resourcesCount
+        courses: coursesCount
       },
+      coursesByCategory,
       recentBatches: formattedBatches,
       popularCourses,
       upcomingSchedules,
       categoryDistribution
     };
     
+    console.log("Dashboard metrics prepared:", JSON.stringify(metrics, null, 2));
     res.json({ success: true, data: metrics });
   } catch (error) {
     console.error('Dashboard metrics error:', error);

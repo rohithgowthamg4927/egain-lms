@@ -1,4 +1,3 @@
-
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -67,6 +66,7 @@ export interface Category {
   createdAt: string;
   updatedAt: string;
   courses?: Course[];
+  coursesCount?: number; // Added for UI display
 }
 
 // Adding CourseCategory as an alias to Category to maintain backwards compatibility
@@ -142,10 +142,17 @@ export interface DashboardMetrics {
     students: number;
     instructors: number;
     courses: number;
-    batches: number;
-    categories: number;
-    resources: number;
   };
+  coursesByCategory: {
+    categoryId: number;
+    categoryName: string;
+    coursesCount: number;
+    courses: {
+      courseId: number;
+      courseName: string;
+      studentsCount: number;
+    }[];
+  }[];
   recentBatches: {
     batchId: number;
     batchName: string;
@@ -154,21 +161,16 @@ export interface DashboardMetrics {
     course: Course;
     instructor: User;
     students: { userId: number; fullName: string }[];
+    studentsCount: number;
   }[];
   popularCourses: {
-    courseId: number;
-    courseName: string;
     course: {
-      categoryId?: number;
+      courseId: number;
       courseName: string;
       category?: {
         categoryId: number;
         categoryName: string;
       };
-    };
-    category?: {
-      categoryId: number;
-      categoryName: string;
     };
     _count: {
       students: number;

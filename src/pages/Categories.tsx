@@ -20,17 +20,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { getCategories, createCategory, updateCategory, deleteCategory } from '@/lib/api';
-import { Category } from '@/lib/types';
-import { Edit, Plus, Search, Tag, Trash } from 'lucide-react';
+import { getCategories, getCourses, createCategory, updateCategory, deleteCategory } from '@/lib/api';
+import { Category, Course } from '@/lib/types';
+import { Edit, Plus, Search, Tag, Trash, Book } from 'lucide-react';
 
 const Categories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -50,30 +57,44 @@ const Categories = () => {
     return `hsl(${hue}, 70%, 85%)`;
   };
 
-  // Assign colors to categories
-  const categoriesWithColors = categories.map(category => ({
-    ...category,
-    color: generatePastelColor()
-  }));
-
-  const fetchCategories = async () => {
+  const fetchData = async () => {
     setIsLoading(true);
     try {
-      const response = await getCategories();
-      if (response.success && response.data) {
-        setCategories(response.data);
+      // Fetch categories
+      const categoriesResponse = await getCategories();
+      
+      // Fetch courses
+      const coursesResponse = await getCourses();
+      
+      if (categoriesResponse.success && categoriesResponse.data && 
+          coursesResponse.success && coursesResponse.data) {
+        
+        const courseData = coursesResponse.data;
+        setCourses(courseData);
+        
+        // Process categories with course counts
+        const categoriesWithCourses = categoriesResponse.data.map(category => {
+          const categoryCourses = courseData.filter(course => course.categoryId === category.categoryId);
+          return {
+            ...category,
+            courses: categoryCourses,
+            coursesCount: categoryCourses.length
+          };
+        });
+        
+        setCategories(categoriesWithCourses);
       } else {
         toast({
           title: 'Error',
-          description: response.error || 'Failed to fetch categories',
+          description: categoriesResponse.error || coursesResponse.error || 'Failed to fetch data',
           variant: 'destructive',
         });
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error('Error fetching data:', error);
       toast({
         title: 'Error',
-        description: 'An unexpected error occurred while fetching categories',
+        description: 'An unexpected error occurred while fetching data',
         variant: 'destructive',
       });
     } finally {
@@ -82,7 +103,7 @@ const Categories = () => {
   };
 
   useEffect(() => {
-    fetchCategories();
+    fetchData();
   }, []);
 
   const resetFormFields = () => {
@@ -121,7 +142,7 @@ const Categories = () => {
         setIsAddDialogOpen(false);
         
         // Refresh categories
-        fetchCategories();
+        fetchData();
       } else {
         toast({
           title: 'Error',
@@ -171,7 +192,7 @@ const Categories = () => {
         setIsEditDialogOpen(false);
         
         // Refresh categories
-        fetchCategories();
+        fetchData();
       } else {
         toast({
           title: 'Error',
@@ -199,6 +220,18 @@ const Categories = () => {
   };
 
   const handleDeleteCategory = async (category: Category) => {
+    // Check if category has courses
+    const categoryCourses = courses.filter(course => course.categoryId === category.categoryId);
+    
+    if (categoryCourses.length > 0) {
+      toast({
+        title: 'Cannot delete category',
+        description: `This category has ${categoryCourses.length} course(s). Remove or reassign these courses first.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     // Confirm deletion
     const confirmed = window.confirm(`Are you sure you want to delete "${category.categoryName}"? This action cannot be undone.`);
     
@@ -216,7 +249,7 @@ const Categories = () => {
         });
         
         // Refresh categories
-        fetchCategories();
+        fetchData();
       } else {
         toast({
           title: 'Error',
@@ -233,6 +266,12 @@ const Categories = () => {
       });
     }
   };
+
+  // Add colors to categories
+  const categoriesWithColors = categories.map(category => ({
+    ...category,
+    color: generatePastelColor()
+  }));
 
   const filteredCategories = categoriesWithColors.filter((category) =>
     category.categoryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -340,7 +379,7 @@ const Categories = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCategories.map((category) => (
-              <Card key={category.categoryId} className="shadow-md overflow-hidden">
+              <Card key={category.categoryId} className="shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                 <div style={{ backgroundColor: category.color }} className="h-2" />
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -357,7 +396,30 @@ const Categories = () => {
                   <div className="text-sm text-gray-600">
                     <div className="flex justify-between items-center mb-2">
                       <span>Courses:</span>
-                      <span className="font-medium">{category.courses?.length || 0}</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="font-medium flex items-center gap-1 cursor-help">
+                              <Book className="h-4 w-4" />
+                              {category.coursesCount || 0}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" align="center">
+                            <div className="max-w-xs">
+                              <h5 className="font-medium mb-1">Courses in this category:</h5>
+                              {category.courses && category.courses.length > 0 ? (
+                                <ul className="list-disc pl-4 space-y-0.5">
+                                  {category.courses.map(course => (
+                                    <li key={course.courseId}>{course.courseName}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-xs">No courses in this category</p>
+                              )}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                     {category.courses && category.courses.length > 0 && (
                       <ul className="space-y-1 mt-2">

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -171,9 +170,9 @@ const Students = () => {
   ];
 
   return (
-    <Layout noHeader={true}>
-      <div className="animate-fade-in">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+    <Layout>
+      <div className="flex-1 space-y-6 p-6 md:p-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <h1 className="text-3xl font-bold">Students</h1>
           <Button onClick={handleAddStudent}>
             <Plus className="h-4 w-4 mr-2" />
@@ -181,7 +180,7 @@ const Students = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="neo-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">Total Students</CardTitle>
@@ -225,7 +224,7 @@ const Students = () => {
           </Card>
         </div>
 
-        <div className="bg-card rounded-lg border p-4 mb-6">
+        <div className="bg-card rounded-lg border p-4">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input

@@ -69,6 +69,9 @@ export interface Category {
   courses?: Course[];
 }
 
+// Adding CourseCategory as an alias to Category to maintain backwards compatibility
+export type CourseCategory = Category;
+
 export interface Batch {
   batchId: number;
   id?: number; // Added for API compatibility

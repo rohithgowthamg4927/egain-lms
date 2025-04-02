@@ -4,7 +4,7 @@ import { apiFetch } from './core';
 
 interface CategoryData {
   categoryName: string;
-  description: string | null;
+  description?: string | null;
 }
 
 // Get all categories

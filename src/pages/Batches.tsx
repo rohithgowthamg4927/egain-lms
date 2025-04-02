@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -21,10 +20,9 @@ import {
   createBatch, 
   deleteBatch,
   updateBatch,
-  enrollStudentToBatch,
+  enrollStudentInBatch,
   unenrollStudentFromBatch,
-  getBatchStudents,
-  getStudentsNotInBatch
+  getBatchStudents
 } from '@/lib/api';
 import { Batch, Course, User, Role } from '@/lib/types';
 import { 
@@ -62,6 +60,28 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 
+const getStudentsNotInBatch = async (batchId: number) => {
+  try {
+    const allStudentsResponse = await getUsers(Role.student);
+    const batchStudentsResponse = await getBatchStudents(batchId);
+    
+    if (allStudentsResponse.success && batchStudentsResponse.success) {
+      const allStudents = allStudentsResponse.data || [];
+      const batchStudents = batchStudentsResponse.data || [];
+      
+      const availableStudents = allStudents.filter(student => 
+        !batchStudents.some(batchStudent => batchStudent.userId === student.userId)
+      );
+      
+      return { success: true, data: availableStudents };
+    }
+    return { success: false, error: 'Failed to fetch students data' };
+  } catch (error) {
+    console.error('Error fetching students not in batch:', error);
+    return { success: false, error: 'An error occurred while fetching available students' };
+  }
+};
+
 const Batches = () => {
   const navigate = useNavigate();
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -79,7 +99,6 @@ const Batches = () => {
   const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Form states for batch
   const [batchName, setBatchName] = useState('');
   const [batchCourse, setBatchCourse] = useState('');
   const [batchInstructor, setBatchInstructor] = useState('');
@@ -126,7 +145,6 @@ const Batches = () => {
       setIsLoading(true);
       
       try {
-        // Fetch batches, courses, instructors, and students
         const [batchesResponse, coursesResponse, instructorsResponse, studentsResponse] = await Promise.all([
           getBatches(),
           getCourses(),
@@ -210,7 +228,6 @@ const Batches = () => {
 
     setIsSubmitting(true);
     try {
-      // Create the batch in the database
       const response = await createBatch({
         batchName: batchName,
         courseId: parseInt(batchCourse),
@@ -225,13 +242,10 @@ const Batches = () => {
           description: `Batch "${batchName}" has been created successfully.`,
         });
         
-        // Reset form fields
         resetFormFields();
         
-        // Close the dialog
         setIsCreateDialogOpen(false);
         
-        // Refresh the batches list
         fetchBatches();
       } else {
         toast({
@@ -264,7 +278,6 @@ const Batches = () => {
 
     setIsSubmitting(true);
     try {
-      // Update the batch in the database
       const response = await updateBatch(selectedBatch.batchId, {
         batchName: batchName,
         courseId: parseInt(batchCourse),
@@ -279,13 +292,10 @@ const Batches = () => {
           description: `Batch "${batchName}" has been updated successfully.`,
         });
         
-        // Reset form fields
         resetFormFields();
         
-        // Close the dialog
         setIsEditDialogOpen(false);
         
-        // Refresh the batches list
         fetchBatches();
       } else {
         toast({
@@ -307,7 +317,6 @@ const Batches = () => {
   };
 
   const handleViewBatch = (batch: Batch) => {
-    // Navigate to batch details page
     navigate(`/batches/${batch.batchId}`);
   };
 
@@ -331,7 +340,6 @@ const Batches = () => {
           description: `Batch "${batch.batchName}" has been deleted successfully.`,
         });
         
-        // Refresh the batches list
         fetchBatches();
       } else {
         toast({
@@ -356,7 +364,6 @@ const Batches = () => {
     setIsStudentsDrawerOpen(true);
 
     try {
-      // Fetch students not in this batch for enrollment options
       const response = await getStudentsNotInBatch(batch.batchId);
       if (response.success && response.data) {
         setAvailableStudents(response.data);
@@ -366,13 +373,6 @@ const Batches = () => {
           description: response.error || 'Failed to fetch available students',
           variant: 'destructive',
         });
-      }
-
-      // Fetch current batch students
-      const batchStudentsResponse = await getBatchStudents(batch.batchId);
-      if (batchStudentsResponse.success && batchStudentsResponse.data) {
-        // Handle the current enrolled students
-        console.log("Current enrolled students:", batchStudentsResponse.data);
       }
     } catch (error) {
       console.error('Error fetching student data:', error);
@@ -396,9 +396,8 @@ const Batches = () => {
 
     setIsSubmitting(true);
     try {
-      // Enroll each selected student
       const enrollmentPromises = selectedStudents.map(studentId => 
-        enrollStudentToBatch(studentId, selectedBatch.batchId)
+        enrollStudentInBatch(studentId, selectedBatch.batchId)
       );
       
       const results = await Promise.all(enrollmentPromises);
@@ -411,7 +410,6 @@ const Batches = () => {
           description: `Successfully enrolled ${successCount} student${successCount !== 1 ? 's' : ''} to the batch.${failCount > 0 ? ` ${failCount} enrollment${failCount !== 1 ? 's' : ''} failed.` : ''}`,
         });
         
-        // Close the drawer and refresh batches
         setIsStudentsDrawerOpen(false);
         fetchBatches();
       } else {
@@ -628,7 +626,6 @@ const Batches = () => {
           onManageStudents={handleManageStudents}
         />
 
-        {/* Edit Batch Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[525px]">
             <DialogHeader>
@@ -712,7 +709,6 @@ const Batches = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Manage Students Drawer */}
         <Drawer open={isStudentsDrawerOpen} onOpenChange={setIsStudentsDrawerOpen}>
           <DrawerContent>
             <DrawerHeader className="text-left">

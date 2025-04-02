@@ -1,5 +1,5 @@
 
-import { Course, User, CourseCategory, Batch, Schedule, Resource } from '@/lib/types';
+import { Course, User, Category, Batch, Schedule, Resource } from '@/lib/types';
 import { dateToString } from './utils/date-helpers';
 
 /**
@@ -82,11 +82,12 @@ export function mapApiUser(user: any): User {
   };
 }
 
-export function mapApiCategory(category: any): CourseCategory {
+export function mapApiCategory(category: any): Category {
   return {
     categoryId: category.id || category.categoryId,
     id: category.id || category.categoryId,
     categoryName: category.categoryName,
+    description: category.description,
     createdAt: dateToString(category.createdAt || new Date()),
     updatedAt: dateToString(category.updatedAt || category.createdAt || new Date())
   };

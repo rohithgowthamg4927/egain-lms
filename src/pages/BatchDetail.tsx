@@ -1,26 +1,33 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import Layout from '@/components/layout/Layout';
-import { getBatch, getBatchStudents, unenrollStudentFromBatch } from '@/lib/api';
+import { getBatch, getBatchStudents, unenrollStudentFromBatch } from '@/lib/api/batches';
 import { getSchedules } from '@/lib/api/schedules';
 import { Batch, Schedule, User } from '@/lib/types';
-import { 
-  Button,
+import { Button } from '@/components/ui/button';
+import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
+  CardDescription
+} from '@/components/ui/card';
+import {
   Tabs,
   TabsContent,
   TabsList,
-  TabsTrigger,
+  TabsTrigger
+} from '@/components/ui/tabs';
+import {
   Avatar,
   AvatarFallback,
-  AvatarImage,
-  Separator,
-  Badge,
+  AvatarImage
+} from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -30,7 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger
-} from '@/components/ui/button';
+} from '@/components/ui/alert-dialog';
 import { DataTable } from '@/components/ui/data-table';
 import { 
   Calendar, 
@@ -146,6 +153,18 @@ const BatchDetail = () => {
         row.original.enrollmentDate ? format(new Date(row.original.enrollmentDate), 'MMM d, yyyy') : 'N/A',
     },
   ];
+
+  // Define the studentActions variable that was missing
+  const studentActions = {
+    label: 'Actions',
+    items: [
+      {
+        label: 'Remove',
+        onClick: handleRemoveStudent,
+        icon: Trash,
+      },
+    ],
+  };
 
   const handleRemoveStudent = async (student: User) => {
     if (!batchId) return;

@@ -1,5 +1,5 @@
 
-import { Course, User, CourseCategory, Batch, Schedule, Resource } from '@/lib/types';
+import { Course, User, Category, Batch, Schedule, Resource } from '@/lib/types';
 import { dateToString } from '../utils/date-helpers';
 
 /**
@@ -42,7 +42,7 @@ export class EntityAdapter {
     };
   }
 
-  static adaptCategory(apiCategory: any): CourseCategory {
+  static adaptCategory(apiCategory: any): Category {
     return {
       categoryId: apiCategory.id || apiCategory.categoryId,
       id: apiCategory.id || apiCategory.categoryId,

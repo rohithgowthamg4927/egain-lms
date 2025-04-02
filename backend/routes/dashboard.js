@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
   try {
     console.log("Fetching dashboard metrics");
     
-    // Get counts for various entities
+    // Get counts for various entities - Fixed to ensure we're safely accessing properties
     const studentsCount = await prisma.user.count({
       where: { role: 'student' }
     });
@@ -36,36 +36,34 @@ router.get('/', async (req, res) => {
             photoUrl: true
           }
         },
-        students: {
-          include: {
-            student: {
-              select: {
-                userId: true,
-                fullName: true
-              }
-            }
-          }
+        _count: {
+          select: { students: true }
         }
       }
     });
     
     // Transform the batches to include student count
     const formattedBatches = recentBatches.map(batch => ({
-      ...batch,
-      studentsCount: batch.students ? batch.students.length : 0
+      batchId: batch.batchId,
+      batchName: batch.batchName,
+      startDate: batch.startDate,
+      endDate: batch.endDate,
+      course: batch.course,
+      instructor: batch.instructor,
+      studentsCount: batch._count?.students || 0
     }));
     
     // Get categories with course counts
     const categories = await prisma.courseCategory.findMany({
       include: {
+        _count: {
+          select: { courses: true }
+        },
         courses: {
           include: {
             _count: {
-              select: {
-                students: true
-              }
-            },
-            students: true
+              select: { students: true }
+            }
           }
         }
       }
@@ -75,7 +73,7 @@ router.get('/', async (req, res) => {
     const coursesByCategory = categories.map(category => ({
       categoryId: category.categoryId,
       categoryName: category.categoryName,
-      coursesCount: category.courses.length,
+      coursesCount: category._count?.courses || 0,
       courses: category.courses.map(course => ({
         courseId: course.courseId,
         courseName: course.courseName,
@@ -142,6 +140,17 @@ router.get('/', async (req, res) => {
       }
     });
     
+    // Format upcoming schedules
+    const formattedSchedules = upcomingSchedules.map(schedule => ({
+      scheduleId: schedule.scheduleId,
+      startTime: schedule.startTime,
+      endTime: schedule.endTime,
+      topic: schedule.topic || 'Class Session', // Default topic if none provided
+      platform: schedule.platform || 'Online',  // Default platform if none provided
+      meetingLink: schedule.meetingLink,
+      batch: schedule.batch
+    }));
+    
     // Get category distribution (students per category)
     const categoryDistribution = await Promise.all(
       categories.map(async (category) => {
@@ -169,11 +178,11 @@ router.get('/', async (req, res) => {
       coursesByCategory,
       recentBatches: formattedBatches,
       popularCourses,
-      upcomingSchedules,
+      upcomingSchedules: formattedSchedules,
       categoryDistribution
     };
     
-    console.log("Dashboard metrics prepared:", JSON.stringify(metrics, null, 2));
+    console.log("Dashboard metrics prepared successfully");
     res.json({ success: true, data: metrics });
   } catch (error) {
     console.error('Dashboard metrics error:', error);

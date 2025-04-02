@@ -12,11 +12,12 @@ const Dashboard = () => {
   const { hasRole } = useAuth();
   const { toast } = useToast();
 
-  // Fetch dashboard metrics
+  // Fetch dashboard metrics with retry logic
   const dashboardMetricsQuery = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: getDashboardMetrics,
-    retry: 1
+    retry: 1,
+    refetchOnWindowFocus: false
   });
 
   useEffect(() => {

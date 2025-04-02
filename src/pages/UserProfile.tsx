@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getUsers, updateUser } from '@/lib/api';
-import { getSchedules } from '@/lib/api/schedules';
+import { getAllSchedules } from '@/lib/api/schedules';
 import { User, Role, Schedule } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -101,7 +101,7 @@ const UserProfile = () => {
       if (!user || user.role !== Role.instructor || !instructorBatch) return;
       
       try {
-        const schedulesResponse = await getSchedules({ batchId: instructorBatch.batchId });
+        const schedulesResponse = await getAllSchedules({ batchId: instructorBatch.batchId });
         
         if (schedulesResponse.success && schedulesResponse.data) {
           setSchedules(schedulesResponse.data);
@@ -127,7 +127,7 @@ const UserProfile = () => {
       if (!selectedBatch) return;
       
       try {
-        const response = await getSchedules({ batchId: selectedBatch.batchId });
+        const response = await getAllSchedules({ batchId: selectedBatch.batchId });
         
         if (response.success && response.data) {
           setBatchSchedules(response.data);

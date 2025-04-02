@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getBatch, getBatchStudents, unenrollStudentFromBatch } from '@/lib/api/batches';
-import { getSchedules } from '@/lib/api/schedules';
+import { getAllSchedules } from '@/lib/api/schedules';
 import { Batch, Schedule, User } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -62,12 +62,11 @@ const BatchDetail = () => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Define studentActions with the correct type
   const studentActions = [
     {
       label: 'Remove',
       onClick: (row: User) => handleRemoveStudent(row),
-      icon: <Trash className="h-4 w-4" /> // Convert to ReactNode by wrapping in JSX
+      icon: <Trash className="h-4 w-4" />
     }
   ];
 
@@ -119,7 +118,7 @@ const BatchDetail = () => {
         const [batchResponse, studentsResponse, schedulesResponse] = await Promise.all([
           getBatch(parseInt(batchId)),
           getBatchStudents(parseInt(batchId)),
-          getSchedules({ batchId: parseInt(batchId) })
+          getAllSchedules({ batchId: parseInt(batchId) })
         ]);
         
         if (batchResponse.success && batchResponse.data) {

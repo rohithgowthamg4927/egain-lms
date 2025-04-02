@@ -60,6 +60,9 @@ const Schedules = () => {
   const [selectedBatchId, setSelectedBatchId] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   
+  // State to store batch mapping for display purposes
+  const [batchMapping, setBatchMapping] = useState<Record<number, Batch>>({});
+  
   // New schedule form state
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -84,6 +87,13 @@ const Schedules = () => {
       const batchesResponse = await getBatches();
       if (batchesResponse.success && batchesResponse.data) {
         setBatches(batchesResponse.data);
+        
+        // Create a mapping of batchId to batch for easy lookup
+        const mapping: Record<number, Batch> = {};
+        batchesResponse.data.forEach(batch => {
+          mapping[batch.batchId] = batch;
+        });
+        setBatchMapping(mapping);
       }
       
       // Fetch schedules - filter by batch if needed
@@ -116,11 +126,14 @@ const Schedules = () => {
   }, [selectedBatchId, toast]);
   
   const filteredSchedules = schedules.filter((schedule) => {
-    const batchName = schedule.batch?.batchName || '';
+    const batchInfo = batchMapping[schedule.batchId];
+    const batchName = batchInfo?.batchName || '';
+    const courseName = batchInfo?.course?.courseName || '';
     const topic = schedule.topic || '';
     
     return (
       (batchName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
        topic.toLowerCase().includes(searchTerm.toLowerCase())) &&
       (selectedBatchId === 'all' || String(schedule.batchId) === selectedBatchId)
     );
@@ -309,6 +322,14 @@ const Schedules = () => {
       return timeString;
     }
   };
+
+  const getBatchName = (batchId: number) => {
+    return batchMapping[batchId]?.batchName || 'Unknown Batch';
+  };
+
+  const getCourseName = (batchId: number) => {
+    return batchMapping[batchId]?.course?.courseName || 'Unknown Course';
+  };
   
   return (
     <div className="space-y-6">
@@ -417,10 +438,10 @@ const Schedules = () => {
                 <TableRow key={schedule.scheduleId}>
                   <TableCell>
                     <div className="font-medium">
-                      {schedule.batch?.batchName || 'Unknown Batch'}
+                      {getBatchName(schedule.batchId)}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {schedule.batch?.course?.courseName || 'Unknown Course'}
+                      {getCourseName(schedule.batchId)}
                     </div>
                   </TableCell>
                   <TableCell>{getDayName(schedule.dayOfWeek)}</TableCell>

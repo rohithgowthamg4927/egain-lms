@@ -40,3 +40,6 @@ export const deleteSchedule = async (scheduleId: number): Promise<{ success: boo
 export const getBatchSchedules = async (batchId: number): Promise<{ success: boolean; data?: Schedule[]; error?: string }> => {
   return getAllSchedules({ batchId });
 };
+
+// Add the missing getSchedules function (as an alias of getAllSchedules for backward compatibility)
+export const getSchedules = getAllSchedules;

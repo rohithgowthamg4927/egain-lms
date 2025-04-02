@@ -38,6 +38,8 @@ interface UserData {
   bio?: string | null;
   address?: string | null; // Added address field
   role?: Role;
+  mustResetPassword?: boolean; // Added mustResetPassword field
+  password?: string; // Added password field for creation
 }
 
 // Create a new user
@@ -48,8 +50,10 @@ export const createUser = async (data: Partial<UserData>): Promise<{ success: bo
       email: data.email || '',
       phoneNumber: data.phoneNumber || null,
       bio: data.bio || null,
-      address: data.address || null, // Added address field
-      role: data.role || Role.student
+      address: data.address || null,
+      role: data.role || Role.student,
+      mustResetPassword: data.mustResetPassword,
+      password: data.password
     };
     
     const response = await apiFetch<User>('/users', {

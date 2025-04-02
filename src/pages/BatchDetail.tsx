@@ -1,47 +1,81 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import Layout from '@/components/layout/Layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getBatch, getBatchStudents, getSchedules, unenrollStudentFromBatch } from '@/lib/api';
+import { Batch, Schedule, User } from '@/lib/types';
+import { 
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Separator,
+  Badge,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from '@/components/ui';
+import { 
+  Calendar, 
+  ChevronLeft, 
+  Clock, 
+  Edit, 
+  FileText, 
+  CalendarDays, 
+  Settings,
+  Users,
+  User as UserIcon,
+  BookOpen,
+  Trash
+} from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
-import { getBatchById, getBatchStudents, unenrollStudentFromBatch } from '@/lib/api';
-import { Batch, User } from '@/lib/types';
-import { ArrowLeft, Calendar, Clock, Edit, Trash, User as UserIcon, Users } from 'lucide-react';
 import { format } from 'date-fns';
-import { getCourseName, getInstructorName } from '@/lib/utils/entity-helpers';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { getInitials } from '@/lib/utils';
 
 const BatchDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { batchId } = useParams<{ batchId: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [batch, setBatch] = useState<Batch | null>(null);
   const [students, setStudents] = useState<User[]>([]);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [confirmRemoveStudent, setConfirmRemoveStudent] = useState<User | null>(null);
 
   useEffect(() => {
     const fetchBatchData = async () => {
-      if (!id) return;
-      
       setIsLoading(true);
+      
+      if (!batchId) {
+        toast({
+          title: 'Error',
+          description: 'Batch ID is missing',
+          variant: 'destructive',
+        });
+        navigate('/batches');
+        return;
+      }
+      
       try {
-        const batchId = parseInt(id);
-        
-        const [batchResponse, studentsResponse] = await Promise.all([
-          getBatchById(batchId),
-          getBatchStudents(batchId)
+        const [batchResponse, studentsResponse, schedulesResponse] = await Promise.all([
+          getBatch(parseInt(batchId)),
+          getBatchStudents(parseInt(batchId)),
+          getSchedules({ batchId: parseInt(batchId) })
         ]);
         
         if (batchResponse.success && batchResponse.data) {
@@ -52,22 +86,22 @@ const BatchDetail = () => {
             description: batchResponse.error || 'Failed to fetch batch details',
             variant: 'destructive',
           });
+          navigate('/batches');
+          return;
         }
         
         if (studentsResponse.success && studentsResponse.data) {
           setStudents(studentsResponse.data);
-        } else {
-          toast({
-            title: 'Error',
-            description: studentsResponse.error || 'Failed to fetch enrolled students',
-            variant: 'destructive',
-          });
+        }
+        
+        if (schedulesResponse.success && schedulesResponse.data) {
+          setSchedules(schedulesResponse.data);
         }
       } catch (error) {
-        console.error('Error fetching batch details:', error);
+        console.error('Error fetching batch data:', error);
         toast({
           title: 'Error',
-          description: 'Failed to fetch batch details',
+          description: 'An unexpected error occurred',
           variant: 'destructive',
         });
       } finally {
@@ -76,32 +110,61 @@ const BatchDetail = () => {
     };
     
     fetchBatchData();
-  }, [id]);
+  }, [batchId, navigate, toast]);
 
-  const handleEditBatch = () => {
-    if (batch) {
-      navigate(`/batches/edit/${batch.batchId}`);
-    }
-  };
+  const studentColumns = [
+    {
+      accessorKey: 'fullName',
+      header: 'Name',
+      cell: ({ row }: { row: { original: User } }) => (
+        <div className="flex items-center gap-3">
+          <Avatar>
+            <AvatarImage src={row.original.profilePicture?.fileUrl} />
+            <AvatarFallback>{getInitials(row.original.fullName)}</AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-medium">{row.original.fullName}</p>
+            <p className="text-sm text-gray-500">{row.original.email}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'email',
+      header: 'Email',
+      cell: ({ row }: { row: { original: User } }) => row.original.email,
+    },
+    {
+      accessorKey: 'phoneNumber',
+      header: 'Phone',
+      cell: ({ row }: { row: { original: User } }) => row.original.phoneNumber || 'N/A',
+    },
+    {
+      accessorKey: 'enrollmentDate',
+      header: 'Enrolled On',
+      cell: ({ row }: { row: { original: User & { enrollmentDate?: string } } }) => 
+        row.original.enrollmentDate ? format(new Date(row.original.enrollmentDate), 'MMM d, yyyy') : 'N/A',
+    },
+  ];
 
-  const handleRemoveStudent = async () => {
-    if (!batch || !confirmRemoveStudent) return;
+  const handleRemoveStudent = async (student: User) => {
+    if (!batchId) return;
     
     try {
-      const response = await unenrollStudentFromBatch(confirmRemoveStudent.userId, batch.batchId);
+      const response = await unenrollStudentFromBatch(student.userId, parseInt(batchId));
       
       if (response.success) {
         toast({
           title: 'Student removed',
-          description: `${confirmRemoveStudent.fullName} has been removed from the batch.`,
+          description: `${student.fullName} has been removed from this batch.`,
         });
         
-        setStudents(prev => prev.filter(s => s.userId !== confirmRemoveStudent.userId));
-        setConfirmRemoveStudent(null);
+        // Update local state
+        setStudents(students.filter(s => s.userId !== student.userId));
       } else {
         toast({
           title: 'Error',
-          description: response.error || 'Failed to remove student from the batch',
+          description: response.error || 'Failed to remove student',
           variant: 'destructive',
         });
       }
@@ -109,22 +172,45 @@ const BatchDetail = () => {
       console.error('Error removing student:', error);
       toast({
         title: 'Error',
-        description: 'Failed to remove student from the batch',
+        description: 'Failed to remove student',
         variant: 'destructive',
       });
     }
   };
 
+  const studentActions = [
+    {
+      label: 'View Profile',
+      onClick: (student: User) => {
+        navigate(`/students/${student.userId}`);
+      },
+      icon: <UserIcon className="h-4 w-4" />,
+    },
+    {
+      label: 'Remove from Batch',
+      onClick: (student: User) => {
+        // Show confirmation dialog
+        if (window.confirm(`Are you sure you want to remove ${student.fullName} from this batch?`)) {
+          handleRemoveStudent(student);
+        }
+      },
+      icon: <Trash className="h-4 w-4" />,
+    },
+  ];
+
+  const handleEditBatch = () => {
+    navigate(`/batches?action=edit&batchId=${batchId}`);
+  };
+
+  const handleGoBack = () => {
+    navigate('/batches');
+  };
+
   if (isLoading) {
     return (
-      <Layout>
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-muted rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="h-40 bg-muted rounded"></div>
-            <div className="h-40 bg-muted rounded"></div>
-          </div>
-          <div className="h-60 bg-muted rounded"></div>
+      <Layout noHeader={true}>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
         </div>
       </Layout>
     );
@@ -132,12 +218,12 @@ const BatchDetail = () => {
 
   if (!batch) {
     return (
-      <Layout>
+      <Layout noHeader={true}>
         <div className="text-center py-12">
-          <h2 className="text-2xl font-bold">Batch not found</h2>
-          <p className="text-muted-foreground mt-2">The batch you're looking for doesn't exist or has been removed.</p>
-          <Button onClick={() => navigate('/batches')} className="mt-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
+          <h2 className="text-xl font-semibold">Batch not found</h2>
+          <p className="text-gray-500 mt-2">The batch you're looking for doesn't exist or has been removed.</p>
+          <Button onClick={handleGoBack} variant="outline" className="mt-4">
+            <ChevronLeft className="h-4 w-4 mr-2" />
             Back to Batches
           </Button>
         </div>
@@ -145,205 +231,304 @@ const BatchDetail = () => {
     );
   }
 
-  const startDate = new Date(batch.startDate);
-  const endDate = new Date(batch.endDate);
-  
-  const studentColumns = [
-    {
-      accessorKey: 'fullName' as keyof User,
-      header: 'Name',
-      cell: ({ row }: { row: { original: User } }) => (
-        <div className="flex items-center gap-2">
-          <UserIcon className="h-4 w-4 text-muted-foreground" />
-          <span>{row.original.fullName}</span>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'email' as keyof User,
-      header: 'Email',
-    },
-    {
-      accessorKey: 'enrollmentDate' as keyof (User & { enrollmentDate?: string }),
-      header: 'Enrolled On',
-      cell: ({ row }: { row: { original: User & { enrollmentDate?: string } } }) => {
-        return row.original.enrollmentDate 
-          ? format(new Date(row.original.enrollmentDate), 'MMM d, yyyy') 
-          : 'N/A';
-      },
-    },
-  ];
-
-  const studentActions = [
-    {
-      label: 'Remove from Batch',
-      onClick: (student: User) => {
-        setConfirmRemoveStudent(student);
-      },
-      icon: <Trash className="h-4 w-4" />,
-    }
-  ];
-
   return (
     <Layout noHeader={true}>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <Button 
-              variant="ghost" 
-              className="flex items-center mb-2 -ml-4" 
-              onClick={() => navigate('/batches')}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Batches
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleGoBack}>
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back
             </Button>
-            <h2 className="text-3xl font-bold">{batch.batchName}</h2>
-            <p className="text-muted-foreground">
-              {getCourseName(batch.course, batch.courseId)}
-            </p>
+            <h1 className="text-3xl font-bold">{batch.batchName}</h1>
+            {new Date(batch.startDate) > new Date() ? (
+              <Badge className="ml-2 bg-blue-500">Upcoming</Badge>
+            ) : new Date(batch.endDate) < new Date() ? (
+              <Badge className="ml-2 bg-gray-500">Completed</Badge>
+            ) : (
+              <Badge className="ml-2 bg-green-500">Active</Badge>
+            )}
           </div>
-          <Button onClick={handleEditBatch}>
-            <Edit className="mr-2 h-4 w-4" />
+          <Button onClick={handleEditBatch} className="bg-blue-600 hover:bg-blue-700">
+            <Edit className="h-4 w-4 mr-2" />
             Edit Batch
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="shadow-md border-blue-100 md:col-span-2">
             <CardHeader>
-              <CardTitle>Batch Details</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                <span>Course Details</span>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex justify-between items-center border-b pb-2">
-                <span className="text-muted-foreground">Instructor:</span>
-                <span className="font-medium">{getInstructorName(batch.instructor, batch.instructorId)}</span>
+              <div>
+                <h3 className="font-medium text-lg">{batch.course?.courseName || 'N/A'}</h3>
+                <p className="text-gray-500 mt-1">{batch.course?.description || 'No description available'}</p>
               </div>
-              <div className="flex justify-between items-center border-b pb-2">
-                <span className="text-muted-foreground">Start Date:</span>
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>{format(startDate, 'MMMM d, yyyy')}</span>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-blue-600/10 p-2 rounded-md">
+                      <CalendarDays className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Duration</p>
+                      <p className="font-medium">
+                        {format(new Date(batch.startDate), 'MMM d, yyyy')} - {format(new Date(batch.endDate), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex justify-between items-center border-b pb-2">
-                <span className="text-muted-foreground">End Date:</span>
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>{format(endDate, 'MMMM d, yyyy')}</span>
-                </div>
-              </div>
-              <div className="flex justify-between items-center border-b pb-2">
-                <span className="text-muted-foreground">Duration:</span>
-                <span>
-                  {Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))} days
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Created On:</span>
-                <div className="flex items-center">
-                  <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span>{format(new Date(batch.createdAt), 'MMMM d, yyyy')}</span>
+
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-blue-600/10 p-2 rounded-md">
+                      <Users className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Enrolled Students</p>
+                      <p className="font-medium">{students.length} students</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-md border-blue-100">
             <CardHeader>
-              <CardTitle>Enrollment Status</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <UserIcon className="h-5 w-5" />
+                <span>Instructor</span>
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center border-b pb-2">
-                <span className="text-muted-foreground">Enrolled Students:</span>
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <Users className="h-3 w-3" />
-                  <span>{students.length}</span>
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Status:</span>
-                <Badge 
-                  variant={
-                    new Date() < startDate ? "outline" : 
-                    new Date() > endDate ? "secondary" : 
-                    "default"
-                  }
-                >
-                  {
-                    new Date() < startDate ? "Upcoming" : 
-                    new Date() > endDate ? "Completed" : 
-                    "In Progress"
-                  }
-                </Badge>
-              </div>
+            <CardContent>
+              {batch.instructor ? (
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={batch.instructor.profilePicture?.fileUrl} />
+                    <AvatarFallback>{getInitials(batch.instructor.fullName)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-medium">{batch.instructor.fullName}</h3>
+                    <p className="text-sm text-gray-500">{batch.instructor.email}</p>
+                    <p className="text-sm text-gray-500 mt-1">{batch.instructor.phoneNumber || 'No phone number'}</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-500">No instructor assigned</p>
+              )}
             </CardContent>
           </Card>
         </div>
 
         <Tabs defaultValue="students" className="w-full">
-          <TabsList>
-            <TabsTrigger value="students">Enrolled Students</TabsTrigger>
-            <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          <TabsList className="mb-4">
+            <TabsTrigger value="students" className="gap-2">
+              <Users className="h-4 w-4" />
+              Students
+            </TabsTrigger>
+            <TabsTrigger value="schedules" className="gap-2">
+              <Calendar className="h-4 w-4" />
+              Schedules
+            </TabsTrigger>
+            <TabsTrigger value="resources" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Resources
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2">
+              <Settings className="h-4 w-4" />
+              Settings
+            </TabsTrigger>
           </TabsList>
-          <TabsContent value="students" className="pt-4">
-            <Card>
+          
+          <TabsContent value="students" className="space-y-4">
+            <Card className="shadow-md">
               <CardHeader>
-                <CardTitle>Enrolled Students</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Enrolled Students</CardTitle>
+                  <Button 
+                    onClick={() => navigate(`/batches?action=manageStudents&batchId=${batchId}`)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Manage Students
+                  </Button>
+                </div>
                 <CardDescription>
-                  {students.length === 0 
-                    ? "No students enrolled in this batch yet."
-                    : `${students.length} student${students.length !== 1 ? 's' : ''} enrolled in this batch.`
-                  }
+                  {students.length} student{students.length !== 1 ? 's' : ''} enrolled in this batch
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[400px]">
+                {students.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Users className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                    <h3 className="text-lg font-medium">No students enrolled</h3>
+                    <p className="text-gray-500 mt-1">Enroll students to get started</p>
+                  </div>
+                ) : (
                   <DataTable
                     data={students}
                     columns={studentColumns}
                     actions={studentActions}
-                    pagination={students.length > 10}
+                    searchKey="fullName"
                   />
-                </ScrollArea>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
-          <TabsContent value="schedule" className="pt-4">
-            <Card>
+          
+          <TabsContent value="schedules" className="space-y-4">
+            <Card className="shadow-md">
               <CardHeader>
-                <CardTitle>Schedule</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Class Schedules</CardTitle>
+                  <Button 
+                    onClick={() => navigate(`/schedules?batchId=${batchId}`)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Manage Schedules
+                  </Button>
+                </div>
                 <CardDescription>
-                  Schedule for this batch will be shown here.
+                  {schedules.length} class schedule{schedules.length !== 1 ? 's' : ''} for this batch
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  Schedule management will be implemented in the next phase.
+                {schedules.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                    <h3 className="text-lg font-medium">No schedules found</h3>
+                    <p className="text-gray-500 mt-1">Add class schedules to get started</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {schedules.map((schedule) => (
+                      <div 
+                        key={schedule.scheduleId} 
+                        className="flex items-center gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="bg-blue-600/10 p-3 rounded-lg">
+                          <Calendar className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-medium">{schedule.topic}</h3>
+                          <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                            <span className="flex items-center gap-1">
+                              <CalendarDays className="h-3 w-3" />
+                              {format(new Date(schedule.startTime), 'EEEE, MMMM d, yyyy')}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="resources" className="space-y-4">
+            <Card className="shadow-md">
+              <CardHeader>
+                <CardTitle>Course Resources</CardTitle>
+                <CardDescription>
+                  Learning materials for this batch
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                  <h3 className="text-lg font-medium">No resources available</h3>
+                  <p className="text-gray-500 mt-1">
+                    Course resources will be added soon
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="settings" className="space-y-4">
+            <Card className="shadow-md">
+              <CardHeader>
+                <CardTitle>Batch Settings</CardTitle>
+                <CardDescription>
+                  Manage batch settings and operations
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Batch Operations</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Edit className="h-5 w-5 text-gray-500" />
+                        <div>
+                          <p className="font-medium">Edit Batch Details</p>
+                          <p className="text-sm text-gray-500">Update batch name, course, instructor, or dates</p>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        onClick={handleEditBatch}
+                      >
+                        Edit
+                      </Button>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Trash className="h-5 w-5 text-red-500" />
+                        <div>
+                          <p className="font-medium">Delete Batch</p>
+                          <p className="text-sm text-gray-500">Permanently delete this batch and all related data</p>
+                        </div>
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive">Delete</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete the batch
+                              and all of its associated data including student enrollments and schedules.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-red-600 hover:bg-red-700"
+                              onClick={() => {
+                                // Handle batch deletion
+                                // Redirect to batches list after deletion
+                                navigate('/batches');
+                              }}
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-
-        <Dialog open={!!confirmRemoveStudent} onOpenChange={(open) => !open && setConfirmRemoveStudent(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Remove Student from Batch</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to remove {confirmRemoveStudent?.fullName} from this batch?
-                This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setConfirmRemoveStudent(null)}>
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={handleRemoveStudent}>
-                Remove Student
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </Layout>
   );

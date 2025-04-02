@@ -2,7 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, BookOpen, Calendar, Award, TrendingUp, Bell, AlertCircle } from "lucide-react";
+import { Users, BookOpen, Calendar, Award, TrendingUp, Bell, AlertCircle, PieChart as PieChartIcon, Tag } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { DashboardMetrics as DashboardMetricsType } from "@/lib/types";
 import { format } from "date-fns";
@@ -17,25 +17,7 @@ const COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f97316'
 
 const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) => {
   // Prepare data for the Category chart
-  const categoryData = data?.popularCourses?.map((course) => ({
-    name: course.course.category?.categoryName || 'Uncategorized',
-    count: course._count.students,
-  })) || [];
-
-  // Group by category
-  const categoriesMap = categoryData.reduce((acc, item) => {
-    if (!acc[item.name]) {
-      acc[item.name] = 0;
-    }
-    acc[item.name] += item.count;
-    return acc;
-  }, {} as Record<string, number>);
-
-  // Convert to array for the chart
-  const categoryChartData = Object.entries(categoriesMap).map(([name, value]) => ({
-    name,
-    value,
-  }));
+  const categoryChartData = data?.categoryDistribution || [];
 
   // Prepare data for the Popular Courses chart
   const popularCoursesData = data?.popularCourses?.map((course) => ({
@@ -59,7 +41,7 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="hover-scale">
+        <Card className="hover-scale shadow-md border-blue-100">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Students</CardTitle>
             <CardDescription>Total enrolled students</CardDescription>
@@ -71,14 +53,14 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
               ) : (
                 <span className="text-3xl font-bold">{data?.counts?.students || 0}</span>
               )}
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Users className="h-5 w-5 text-primary" />
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <Users className="h-5 w-5 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="hover-scale">
+        <Card className="hover-scale shadow-md border-blue-100">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Instructors</CardTitle>
             <CardDescription>Active instructors</CardDescription>
@@ -90,14 +72,14 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
               ) : (
                 <span className="text-3xl font-bold">{data?.counts?.instructors || 0}</span>
               )}
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Award className="h-5 w-5 text-primary" />
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <Award className="h-5 w-5 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="hover-scale">
+        <Card className="hover-scale shadow-md border-blue-100">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Courses</CardTitle>
             <CardDescription>Available courses</CardDescription>
@@ -109,27 +91,27 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
               ) : (
                 <span className="text-3xl font-bold">{data?.counts?.courses || 0}</span>
               )}
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-primary" />
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <BookOpen className="h-5 w-5 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="hover-scale">
+        <Card className="hover-scale shadow-md border-blue-100">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Batches</CardTitle>
-            <CardDescription>Active learning groups</CardDescription>
+            <CardTitle className="text-sm font-medium">Categories</CardTitle>
+            <CardDescription>Course categories</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               {isLoading ? (
                 <Skeleton className="h-8 w-24" />
               ) : (
-                <span className="text-3xl font-bold">{data?.counts?.batches || 0}</span>
+                <span className="text-3xl font-bold">{data?.counts?.categories || 0}</span>
               )}
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-primary" />
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <Tag className="h-5 w-5 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -137,7 +119,7 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
@@ -165,12 +147,12 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
                     />
                     <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip 
-                      contentStyle={{ borderRadius: '8px', border: '1px solid #ddd' }} 
+                      contentStyle={{ borderRadius: '8px', border: '1px solid #ddd', backgroundColor: 'white' }} 
                       formatter={(value) => [`${value} students`, 'Enrollment']}
                     />
                     <Bar 
                       dataKey="students" 
-                      fill="#8b5cf6" 
+                      fill="#3b82f6" 
                       radius={[4, 4, 0, 0]}
                       animationDuration={1000}
                     />
@@ -186,10 +168,10 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+              <PieChartIcon className="h-5 w-5" />
               <span>Students by Category</span>
             </CardTitle>
             <CardDescription>Distribution of students across different course categories</CardDescription>
@@ -219,7 +201,7 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
                     </Pie>
                     <Tooltip 
                       formatter={(value) => [`${value} students`, 'Enrollment']}
-                      contentStyle={{ borderRadius: '8px', border: '1px solid #ddd' }}
+                      contentStyle={{ borderRadius: '8px', border: '1px solid #ddd', backgroundColor: 'white' }}
                     />
                     <Legend />
                   </PieChart>
@@ -235,7 +217,7 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
         </Card>
       </div>
 
-      <Card>
+      <Card className="shadow-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
@@ -254,8 +236,8 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
             <div className="space-y-4">
               {upcomingSchedules.map((schedule) => (
                 <div key={schedule.scheduleId} className="flex items-center gap-4 p-3 rounded-lg border hover:bg-accent transition-colors">
-                  <div className="bg-primary/10 p-3 rounded-lg">
-                    <Calendar className="h-5 w-5 text-primary" />
+                  <div className="bg-blue-600/10 p-3 rounded-lg">
+                    <Calendar className="h-5 w-5 text-blue-600" />
                   </div>
                   <div className="flex-1">
                     <p className="font-medium">{schedule.topic}</p>
@@ -265,8 +247,8 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
                     </div>
                   </div>
                   <div className="text-sm">
-                    <p className="font-medium">{schedule.batch.course.courseName}</p>
-                    <p className="text-muted-foreground">{schedule.batch.batchName}</p>
+                    <p className="font-medium">{schedule.batch?.course?.courseName || 'N/A'}</p>
+                    <p className="text-muted-foreground">{schedule.batch?.batchName || 'N/A'}</p>
                   </div>
                 </div>
               ))}

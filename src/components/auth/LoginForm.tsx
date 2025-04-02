@@ -74,22 +74,22 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="w-full max-w-md bg-[#e6e6e6] rounded-lg p-8">
+    <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
       <div className="space-y-6">
         <div className="text-center">
           <div className="flex justify-center items-center">
             <div className="text-indigo-600 text-2xl font-bold mb-1">e</div>
             <div className="text-indigo-600 text-2xl font-bold">gain</div>
           </div>
-          <h2 className="text-3xl font-bold mt-4">Welcome Back! 👋</h2>
-          <p className="text-[#667085] mt-2">
+          <h2 className="text-3xl font-bold mt-4 text-gray-800">Welcome Back! 👋</h2>
+          <p className="text-gray-600 mt-2">
             Please sign in to your account and start the adventure
           </p>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-gray-700">Email</Label>
             <div className="relative">
               <Input
                 id="email"
@@ -98,14 +98,14 @@ const LoginForm = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-11 pl-10 bg-white"
+                className="h-11 pl-10 bg-white border-gray-300 text-gray-900"
               />
               <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             </div>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-gray-700">Password</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -114,7 +114,7 @@ const LoginForm = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-11 pr-10 bg-white"
+                className="h-11 pr-10 bg-white border-gray-300 text-gray-900"
               />
               <button
                 type="button"
@@ -131,7 +131,7 @@ const LoginForm = () => {
           </div>
           
           <div className="space-y-2">
-            <Label>Select Role</Label>
+            <Label className="text-gray-700">Select Role</Label>
             <RadioGroup
               defaultValue="admin"
               value={role}
@@ -140,15 +140,15 @@ const LoginForm = () => {
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="admin" id="admin" />
-                <Label htmlFor="admin" className="cursor-pointer">Admin</Label>
+                <Label htmlFor="admin" className="cursor-pointer text-gray-700">Admin</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="instructor" id="instructor" />
-                <Label htmlFor="instructor" className="cursor-pointer">Instructor</Label>
+                <Label htmlFor="instructor" className="cursor-pointer text-gray-700">Instructor</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="student" id="student" />
-                <Label htmlFor="student" className="cursor-pointer">Student</Label>
+                <Label htmlFor="student" className="cursor-pointer text-gray-700">Student</Label>
               </div>
             </RadioGroup>
           </div>
@@ -161,7 +161,7 @@ const LoginForm = () => {
           
           <Button
             type="submit"
-            className="w-full h-11 bg-blue-500 hover:bg-blue-600"
+            className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white"
             disabled={isSubmitting}
           >
             {isSubmitting ? (

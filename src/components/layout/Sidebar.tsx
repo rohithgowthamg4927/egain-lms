@@ -1,190 +1,297 @@
 
-import { useEffect, useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/use-auth';
+import { useMobile } from '@/hooks/use-mobile';
 import { Role } from '@/lib/types';
-import { BookOpen, Calendar, LayoutDashboard, Lightbulb, Users, Settings, Menu, X, Compass, ChevronRight, GraduationCap, SlidersHorizontal, Clock } from 'lucide-react';
+import {
+  BookOpen,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Settings,
+  Users,
+  Award,
+  GraduationCap,
+  Tag
+} from 'lucide-react';
 
-interface NavItem {
-  title: string;
-  href: string;
-  icon: React.ReactNode;
-  submenu?: NavItem[];
-  roles?: Role[];
+interface SidebarProps {
+  className?: string;
 }
 
-const Sidebar = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { hasRole } = useAuth();
+export default function Sidebar({ className }: SidebarProps) {
+  const { pathname } = useLocation();
+  const { logout, hasRole } = useAuth();
+  const { isMobile } = useMobile();
+  const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  // Close the sidebar when navigating on mobile
   useEffect(() => {
-    setIsMobileOpen(false);
-  }, [location.pathname]);
+    if (isMobile) {
+      setIsOpen(false);
+    }
+  }, [pathname, isMobile]);
 
-  const navItems: NavItem[] = [
-    {
-      title: 'Dashboard',
-      href: '/dashboard',
-      icon: <LayoutDashboard className="h-5 w-5" />,
-      roles: [Role.admin, Role.instructor],
-    },
-    {
-      title: 'Courses',
-      href: '/courses',
-      icon: <BookOpen className="h-5 w-5" />,
-      roles: [Role.admin, Role.instructor, Role.student],
-    },
-    {
-      title: 'Batches',
-      href: '/batches',
-      icon: <Calendar className="h-5 w-5" />,
-      roles: [Role.admin, Role.instructor],
-    },
-    {
-      title: 'Schedules',
-      href: '/schedules',
-      icon: <Clock className="h-5 w-5" />,
-      roles: [Role.admin, Role.instructor, Role.student],
-    },
-    {
-      title: 'Students',
-      href: '/students',
-      icon: <GraduationCap className="h-5 w-5" />,
-      roles: [Role.admin, Role.instructor],
-    },
-    {
-      title: 'Instructors',
-      href: '/instructors',
-      icon: <Lightbulb className="h-5 w-5" />,
-      roles: [Role.admin],
-    },
-    {
-      title: 'Resources',
-      href: '/resources',
-      icon: <Compass className="h-5 w-5" />,
-      roles: [Role.admin, Role.instructor, Role.student],
-    },
-    {
-      title: 'Settings',
-      href: '/settings',
-      icon: <Settings className="h-5 w-5" />,
-      roles: [Role.admin],
-    },
-  ];
+  // Auto-expand the sidebar when going from mobile to desktop
+  useEffect(() => {
+    if (!isMobile) {
+      setIsOpen(false);
+      setIsCollapsed(false);
+    }
+  }, [isMobile]);
 
-  const filteredNavItems = navItems.filter((item) => {
-    if (!item.roles) return true;
-    return hasRole(item.roles);
-  });
+  const NavItems = () => (
+    <div className="group flex flex-col gap-1 py-2">
+      {hasRole([Role.admin, Role.instructor, Role.student]) && (
+        <Link to="/dashboard">
+          <Button
+            variant="ghost"
+            size={isCollapsed ? "icon" : "default"}
+            className={cn(
+              "w-full justify-start",
+              pathname === "/dashboard" && "bg-accent text-accent-foreground",
+              isCollapsed && "flex h-10 w-10 p-0 justify-center"
+            )}
+          >
+            <LayoutDashboard className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
+            {!isCollapsed && <span>Dashboard</span>}
+          </Button>
+        </Link>
+      )}
 
-  const handleNavigation = (href: string) => {
-    navigate(href);
-  };
+      {hasRole([Role.admin, Role.instructor]) && (
+        <Link to="/courses">
+          <Button
+            variant="ghost"
+            size={isCollapsed ? "icon" : "default"}
+            className={cn(
+              "w-full justify-start",
+              pathname === "/courses" && "bg-accent text-accent-foreground",
+              isCollapsed && "flex h-10 w-10 p-0 justify-center"
+            )}
+          >
+            <BookOpen className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
+            {!isCollapsed && <span>Courses</span>}
+          </Button>
+        </Link>
+      )}
+      
+      {hasRole([Role.admin]) && (
+        <Link to="/categories">
+          <Button
+            variant="ghost"
+            size={isCollapsed ? "icon" : "default"}
+            className={cn(
+              "w-full justify-start",
+              pathname === "/categories" && "bg-accent text-accent-foreground",
+              isCollapsed && "flex h-10 w-10 p-0 justify-center"
+            )}
+          >
+            <Tag className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
+            {!isCollapsed && <span>Categories</span>}
+          </Button>
+        </Link>
+      )}
 
+      {hasRole([Role.admin, Role.instructor]) && (
+        <Link to="/batches">
+          <Button
+            variant="ghost"
+            size={isCollapsed ? "icon" : "default"}
+            className={cn(
+              "w-full justify-start",
+              (pathname === "/batches" || pathname.startsWith("/batches/")) && "bg-accent text-accent-foreground",
+              isCollapsed && "flex h-10 w-10 p-0 justify-center"
+            )}
+          >
+            <GraduationCap className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
+            {!isCollapsed && <span>Batches</span>}
+          </Button>
+        </Link>
+      )}
+
+      {hasRole([Role.admin, Role.instructor]) && (
+        <Link to="/schedules">
+          <Button
+            variant="ghost"
+            size={isCollapsed ? "icon" : "default"}
+            className={cn(
+              "w-full justify-start",
+              pathname === "/schedules" && "bg-accent text-accent-foreground",
+              isCollapsed && "flex h-10 w-10 p-0 justify-center"
+            )}
+          >
+            <Calendar className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
+            {!isCollapsed && <span>Schedules</span>}
+          </Button>
+        </Link>
+      )}
+
+      {hasRole([Role.admin]) && (
+        <Link to="/students">
+          <Button
+            variant="ghost"
+            size={isCollapsed ? "icon" : "default"}
+            className={cn(
+              "w-full justify-start",
+              pathname === "/students" && "bg-accent text-accent-foreground",
+              isCollapsed && "flex h-10 w-10 p-0 justify-center"
+            )}
+          >
+            <Users className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
+            {!isCollapsed && <span>Students</span>}
+          </Button>
+        </Link>
+      )}
+
+      {hasRole([Role.admin]) && (
+        <Link to="/instructors">
+          <Button
+            variant="ghost"
+            size={isCollapsed ? "icon" : "default"}
+            className={cn(
+              "w-full justify-start",
+              pathname === "/instructors" && "bg-accent text-accent-foreground",
+              isCollapsed && "flex h-10 w-10 p-0 justify-center"
+            )}
+          >
+            <Award className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
+            {!isCollapsed && <span>Instructors</span>}
+          </Button>
+        </Link>
+      )}
+
+      {hasRole([Role.admin, Role.instructor]) && (
+        <Link to="/resources">
+          <Button
+            variant="ghost"
+            size={isCollapsed ? "icon" : "default"}
+            className={cn(
+              "w-full justify-start",
+              pathname === "/resources" && "bg-accent text-accent-foreground",
+              isCollapsed && "flex h-10 w-10 p-0 justify-center"
+            )}
+          >
+            <FileText className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
+            {!isCollapsed && <span>Resources</span>}
+          </Button>
+        </Link>
+      )}
+
+      {hasRole([Role.admin]) && (
+        <Link to="/settings">
+          <Button
+            variant="ghost"
+            size={isCollapsed ? "icon" : "default"}
+            className={cn(
+              "w-full justify-start",
+              pathname === "/settings" && "bg-accent text-accent-foreground",
+              isCollapsed && "flex h-10 w-10 p-0 justify-center"
+            )}
+          >
+            <Settings className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
+            {!isCollapsed && <span>Settings</span>}
+          </Button>
+        </Link>
+      )}
+
+      <Button
+        variant="ghost"
+        size={isCollapsed ? "icon" : "default"}
+        onClick={() => logout()}
+        className={cn(
+          "w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-100/50",
+          isCollapsed && "flex h-10 w-10 p-0 justify-center"
+        )}
+      >
+        <LogOut className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
+        {!isCollapsed && <span>Logout</span>}
+      </Button>
+    </div>
+  );
+
+  // Mobile view with sheet
+  if (isMobile) {
+    return (
+      <>
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="absolute left-4 top-4 z-50 md:hidden">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle Menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-64">
+            <div className="flex h-16 items-center border-b px-4">
+              <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
+                <div className="flex items-center">
+                  <div className="text-blue-600 text-2xl font-bold">e</div>
+                  <div className="text-blue-600 text-2xl font-bold">gain</div>
+                </div>
+              </Link>
+            </div>
+            <ScrollArea className="h-[calc(100vh-4rem)] pb-10">
+              <div className="px-2">
+                <NavItems />
+              </div>
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
+
+  // Desktop view
   return (
-    <>
+    <div
+      className={cn(
+        "flex flex-col border-r bg-sidebar shadow-sm transition-all duration-300",
+        isCollapsed ? "w-[70px]" : "w-64",
+        className
+      )}
+    >
+      <div className="flex h-16 items-center border-b px-4 transition-all">
+        {!isCollapsed ? (
+          <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
+            <div className="flex items-center">
+              <div className="text-blue-600 text-2xl font-bold">e</div>
+              <div className="text-blue-600 text-2xl font-bold">gain</div>
+            </div>
+          </Link>
+        ) : (
+          <Link to="/dashboard" className="flex justify-center w-full">
+            <div className="text-blue-600 text-2xl font-bold">e</div>
+          </Link>
+        )}
+      </div>
+      <ScrollArea className="flex-1">
+        <div className={cn("flex flex-col gap-2 p-2 transition-all")}>
+          <NavItems />
+        </div>
+      </ScrollArea>
       <Button
         variant="ghost"
         size="icon"
-        className="fixed left-4 top-4 z-40 lg:hidden"
-        onClick={() => setIsMobileOpen(!isMobileOpen)}
+        className="absolute -right-3 top-20 h-6 w-6 rounded-full border shadow-sm bg-background"
+        onClick={() => setIsCollapsed(!isCollapsed)}
       >
-        {isMobileOpen ? (
-          <X className="h-6 w-6" />
+        {isCollapsed ? (
+          <ChevronRight className="h-3 w-3" />
         ) : (
-          <Menu className="h-6 w-6" />
+          <ChevronLeft className="h-3 w-3" />
         )}
+        <span className="sr-only">Toggle Sidebar</span>
       </Button>
-
-      {isMobileOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-background/80 backdrop-blur-sm lg:hidden"
-          onClick={() => setIsMobileOpen(false)}
-        />
-      )}
-
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-30 w-64 transform border-r bg-sidebar transition-all duration-300 ease-in-out lg:static lg:translate-x-0",
-          isCollapsed ? "lg:w-20" : "lg:w-64",
-          isMobileOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <div className={cn(
-          "flex h-16 items-center border-b px-6",
-          isCollapsed && "justify-center px-0"
-        )}>
-          <div className="flex items-center">
-            <div className="rounded-md bg-primary p-1.5">
-              <BookOpen className="h-6 w-6 text-primary-foreground" />
-            </div>
-            {!isCollapsed && (
-              <span className="ml-2 text-xl font-semibold tracking-tight">
-                EduLMS
-              </span>
-            )}
-          </div>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-2 top-3.5 hidden lg:flex"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-          >
-            <ChevronRight className={cn(
-              "h-5 w-5 transition-transform",
-              isCollapsed ? "rotate-180" : ""
-            )} />
-          </Button>
-        </div>
-
-        <nav className="space-y-1 px-3 py-4">
-          {filteredNavItems.map((item) => (
-            <Button
-              key={item.href}
-              variant="ghost"
-              className={cn(
-                "flex w-full items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors justify-start",
-                location.pathname === item.href
-                  ? "bg-primary/10 text-primary"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                isCollapsed && "justify-center px-0"
-              )}
-              onClick={() => handleNavigation(item.href)}
-            >
-              <div className={cn("flex items-center", isCollapsed && "flex-col")}>
-                {item.icon}
-                {!isCollapsed && <span className="ml-3">{item.title}</span>}
-                {isCollapsed && <span className="mt-1 text-[10px]">{item.title}</span>}
-              </div>
-            </Button>
-          ))}
-        </nav>
-
-        <div className={cn(
-          "absolute bottom-0 left-0 right-0 border-t p-4",
-          isCollapsed && "flex justify-center p-2"
-        )}>
-          <Button 
-            variant="ghost" 
-            className={cn(
-              "w-full justify-start",
-              isCollapsed && "justify-center"
-            )} 
-            onClick={() => navigate('/profile')}
-          >
-            <SlidersHorizontal className="h-5 w-5" />
-            {!isCollapsed && <span className="ml-2">Preferences</span>}
-          </Button>
-        </div>
-      </aside>
-    </>
+    </div>
   );
-};
-
-export default Sidebar;
+}

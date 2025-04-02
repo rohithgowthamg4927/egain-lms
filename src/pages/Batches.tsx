@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,7 +39,6 @@ import {
   Clock, 
   UserPlus
 } from 'lucide-react';
-import { format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -63,6 +63,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 
 const Batches = () => {
+  const navigate = useNavigate();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [instructors, setInstructors] = useState<User[]>([]);
@@ -307,7 +308,7 @@ const Batches = () => {
 
   const handleViewBatch = (batch: Batch) => {
     // Navigate to batch details page
-    window.location.href = `/batches/${batch.batchId}`;
+    navigate(`/batches/${batch.batchId}`);
   };
 
   const handleEditBatchClick = (batch: Batch) => {
@@ -443,13 +444,13 @@ const Batches = () => {
   };
 
   return (
-    <Layout>
+    <Layout noHeader={true}>
       <div className="animate-fade-in">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
           <h1 className="text-3xl font-bold">Batches</h1>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Batch
               </Button>
@@ -529,6 +530,7 @@ const Batches = () => {
                 <Button 
                   onClick={handleCreateBatch} 
                   disabled={isSubmitting || !batchName || !batchCourse || !batchInstructor || !batchStartDate || !batchEndDate}
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
                   {isSubmitting ? 'Creating...' : 'Create Batch'}
                 </Button>
@@ -538,21 +540,21 @@ const Batches = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card className="neo-card">
+          <Card className="shadow-md border-blue-100">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">Total Batches</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
                 <span className="text-3xl font-bold">{batches.length}</span>
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-primary" />
+                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                  <Calendar className="h-5 w-5 text-blue-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="neo-card">
+          <Card className="shadow-md border-blue-100">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">Active Students</CardTitle>
             </CardHeader>
@@ -561,14 +563,14 @@ const Batches = () => {
                 <span className="text-3xl font-bold">
                   {batches.reduce((total, batch) => total + (batch.studentsCount || 0), 0)}
                 </span>
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <UserIcon className="h-5 w-5 text-primary" />
+                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                  <UserIcon className="h-5 w-5 text-blue-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="neo-card">
+          <Card className="shadow-md border-blue-100">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">Upcoming Batches</CardTitle>
             </CardHeader>
@@ -577,21 +579,21 @@ const Batches = () => {
                 <span className="text-3xl font-bold">
                   {batches.filter(batch => new Date(batch.startDate) > new Date()).length}
                 </span>
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-primary" />
+                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-blue-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="bg-card rounded-lg border p-4 mb-6">
+        <div className="bg-white rounded-lg border shadow-sm p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
               <Input
                 placeholder="Search batches..."
-                className="pl-10"
+                className="pl-10 border-gray-200"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -601,7 +603,7 @@ const Batches = () => {
                 value={selectedCourse}
                 onValueChange={setSelectedCourse}
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] border-gray-200">
                   <SelectValue placeholder="All Courses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -702,6 +704,7 @@ const Batches = () => {
               <Button 
                 onClick={handleEditBatch} 
                 disabled={isSubmitting}
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 {isSubmitting ? 'Saving...' : 'Save Changes'}
               </Button>
@@ -720,15 +723,15 @@ const Batches = () => {
             </DrawerHeader>
             <div className="px-4">
               <div className="relative mb-4">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                 <Input
                   placeholder="Search students..."
-                  className="pl-10"
+                  className="pl-10 border-gray-200"
                 />
               </div>
               <ScrollArea className="h-[300px] rounded-md border p-4">
                 {availableStudents.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-8 text-gray-500">
                     No available students to enroll
                   </div>
                 ) : (
@@ -742,13 +745,13 @@ const Batches = () => {
                         />
                         <Label 
                           htmlFor={`student-${student.userId}`}
-                          className="flex flex-1 items-center justify-between cursor-pointer p-2 hover:bg-muted rounded"
+                          className="flex flex-1 items-center justify-between cursor-pointer p-2 hover:bg-gray-100 rounded"
                         >
                           <div className="flex items-center gap-3">
-                            <UserIcon className="h-4 w-4 text-muted-foreground" />
+                            <UserIcon className="h-4 w-4 text-gray-500" />
                             <span>{student.fullName}</span>
                           </div>
-                          <span className="text-sm text-muted-foreground">{student.email}</span>
+                          <span className="text-sm text-gray-500">{student.email}</span>
                         </Label>
                       </div>
                     ))}
@@ -760,6 +763,7 @@ const Batches = () => {
               <Button 
                 onClick={handleEnrollStudents}
                 disabled={selectedStudents.length === 0 || isSubmitting}
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 {isSubmitting ? (
                   'Enrolling Students...'

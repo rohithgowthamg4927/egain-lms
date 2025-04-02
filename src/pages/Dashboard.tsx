@@ -6,9 +6,11 @@ import DashboardMetrics from '@/components/dashboard/DashboardMetrics';
 import { getDashboardMetrics } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
 import { Role } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
   const { hasRole } = useAuth();
+  const { toast } = useToast();
 
   // Fetch dashboard metrics
   const dashboardMetricsQuery = useQuery({
@@ -19,8 +21,13 @@ const Dashboard = () => {
   useEffect(() => {
     if (dashboardMetricsQuery.isError) {
       console.error('Error fetching dashboard metrics:', dashboardMetricsQuery.error);
+      toast({
+        title: 'Error loading dashboard data',
+        description: 'Could not load dashboard metrics. Please try again later.',
+        variant: 'destructive'
+      });
     }
-  }, [dashboardMetricsQuery.isError, dashboardMetricsQuery.error]);
+  }, [dashboardMetricsQuery.isError, dashboardMetricsQuery.error, toast]);
 
   return (
     <Layout noHeader={true}>

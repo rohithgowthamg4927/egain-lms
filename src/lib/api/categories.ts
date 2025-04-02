@@ -1,34 +1,86 @@
 
-import { CourseCategory } from '@/lib/types';
+import { Category } from '@/lib/types';
 import { apiFetch } from './core';
 
-// Course Categories API
-export const getCategories = async (): Promise<{ success: boolean; data?: CourseCategory[]; error?: string }> => {
-  return apiFetch<CourseCategory[]>('/categories');
+interface CategoryData {
+  categoryName: string;
+  description: string | null;
+}
+
+// Get all categories
+export const getCategories = async (): Promise<{ success: boolean; data?: Category[]; error?: string }> => {
+  try {
+    const response = await apiFetch<Category[]>('/categories');
+    return response;
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch categories'
+    };
+  }
 };
 
-export const getCategoryById = async (categoryId: number): Promise<{ success: boolean; data?: CourseCategory; error?: string }> => {
-  return apiFetch<CourseCategory>(`/categories/${categoryId}`);
+// Get a category by ID
+export const getCategory = async (categoryId: number): Promise<{ success: boolean; data?: Category; error?: string }> => {
+  try {
+    const response = await apiFetch<Category>(`/categories/${categoryId}`);
+    return response;
+  } catch (error) {
+    console.error(`Error fetching category ${categoryId}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch category'
+    };
+  }
 };
 
-export const createCategory = async (categoryData: { categoryName: string }): Promise<{ success: boolean; data?: CourseCategory; error?: string }> => {
-  console.log("Creating category with data:", categoryData);
-  
-  return apiFetch<CourseCategory>('/categories', {
-    method: 'POST',
-    body: JSON.stringify(categoryData),
-  });
+// Create a new category
+export const createCategory = async (data: CategoryData): Promise<{ success: boolean; data?: Category; error?: string }> => {
+  try {
+    const response = await apiFetch<Category>('/categories', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    return response;
+  } catch (error) {
+    console.error('Error creating category:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create category'
+    };
+  }
 };
 
-export const updateCategory = async (categoryId: number, categoryData: { categoryName: string }): Promise<{ success: boolean; data?: CourseCategory; error?: string }> => {
-  return apiFetch<CourseCategory>(`/categories/${categoryId}`, {
-    method: 'PUT',
-    body: JSON.stringify(categoryData),
-  });
+// Update a category
+export const updateCategory = async (categoryId: number, data: CategoryData): Promise<{ success: boolean; data?: Category; error?: string }> => {
+  try {
+    const response = await apiFetch<Category>(`/categories/${categoryId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+    return response;
+  } catch (error) {
+    console.error(`Error updating category ${categoryId}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update category'
+    };
+  }
 };
 
+// Delete a category
 export const deleteCategory = async (categoryId: number): Promise<{ success: boolean; error?: string }> => {
-  return apiFetch(`/categories/${categoryId}`, {
-    method: 'DELETE',
-  });
+  try {
+    const response = await apiFetch(`/categories/${categoryId}`, {
+      method: 'DELETE'
+    });
+    return response;
+  } catch (error) {
+    console.error(`Error deleting category ${categoryId}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete category'
+    };
+  }
 };

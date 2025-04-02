@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 // Get all resources
 router.get('/', async (req, res) => {
   try {
-    const resources = await prisma.resource.findMany({
+    const resources = await prisma.Resource.findMany({
       include: {
         course: true
       }
@@ -26,7 +26,7 @@ router.get('/course/:courseId', async (req, res) => {
   try {
     const courseId = parseInt(req.params.courseId);
     
-    const resources = await prisma.resource.findMany({
+    const resources = await prisma.Resource.findMany({
       where: { courseId },
       orderBy: { createdAt: 'desc' }
     });
@@ -42,7 +42,7 @@ router.get('/:id', async (req, res) => {
   try {
     const resourceId = parseInt(req.params.id);
     
-    const resource = await prisma.resource.findUnique({
+    const resource = await prisma.Resource.findUnique({
       where: { resourceId },
       include: {
         course: true
@@ -73,7 +73,7 @@ router.post('/', async (req, res) => {
       courseId
     } = req.body;
     
-    const resource = await prisma.resource.create({
+    const resource = await prisma.Resource.create({
       data: {
         title,
         description,
@@ -102,7 +102,7 @@ router.put('/:id', async (req, res) => {
       courseId
     } = req.body;
     
-    const resource = await prisma.resource.update({
+    const resource = await prisma.Resource.update({
       where: { resourceId },
       data: {
         ...(title !== undefined && { title }),
@@ -124,7 +124,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const resourceId = parseInt(req.params.id);
     
-    await prisma.resource.delete({
+    await prisma.Resource.delete({
       where: { resourceId }
     });
     

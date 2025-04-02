@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 // Get all courses
 router.get('/', async (req, res) => {
   try {
-    const courses = await prisma.course.findMany({
+    const courses = await prisma.Course.findMany({
       include: {
         category: true,
         reviews: {
@@ -31,7 +31,7 @@ router.get('/:id', async (req, res) => {
   try {
     const courseId = parseInt(req.params.id);
     
-    const course = await prisma.course.findUnique({
+    const course = await prisma.Course.findUnique({
       where: { courseId },
       include: {
         category: true,
@@ -84,7 +84,7 @@ router.post('/', async (req, res) => {
       });
     }
     
-    const course = await prisma.course.create({
+    const course = await prisma.Course.create({
       data: {
         courseName,
         description,
@@ -117,7 +117,7 @@ router.put('/:id', async (req, res) => {
       thumbnailUrl
     } = req.body;
     
-    const course = await prisma.course.update({
+    const course = await prisma.Course.update({
       where: { courseId },
       data: {
         ...(courseName !== undefined && { courseName }),
@@ -141,7 +141,7 @@ router.delete('/:id', async (req, res) => {
     const courseId = parseInt(req.params.id);
     
     // Check if there are batches for this course
-    const batchesCount = await prisma.batch.count({
+    const batchesCount = await prisma.Batch.count({
       where: { courseId }
     });
     
@@ -153,7 +153,7 @@ router.delete('/:id', async (req, res) => {
     }
     
     // Delete student enrollments
-    await prisma.studentCourse.deleteMany({
+    await prisma.StudentCourse.deleteMany({
       where: { courseId }
     });
     
@@ -163,12 +163,12 @@ router.delete('/:id', async (req, res) => {
     });
     
     // Delete course resources
-    await prisma.resource.deleteMany({
+    await prisma.Resource.deleteMany({
       where: { courseId }
     });
     
     // Finally delete the course
-    await prisma.course.delete({
+    await prisma.Course.delete({
       where: { courseId }
     });
     
@@ -185,7 +185,7 @@ router.post('/:id/reviews', async (req, res) => {
     const { userId, rating, comment } = req.body;
     
     // Check if course exists
-    const course = await prisma.course.findUnique({
+    const course = await prisma.Course.findUnique({
       where: { courseId }
     });
     

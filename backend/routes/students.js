@@ -13,7 +13,7 @@ batchRoutes.get('/:studentId', async (req, res) => {
   try {
     const studentId = parseInt(req.params.studentId);
     
-    const studentBatches = await prisma.studentBatch.findMany({
+    const studentBatches = await prisma.StudentBatch.findMany({
       where: { studentId },
       include: {
         batch: {
@@ -39,7 +39,7 @@ courseRoutes.get('/:studentId', async (req, res) => {
   try {
     const studentId = parseInt(req.params.studentId);
     
-    const studentCourses = await prisma.studentCourse.findMany({
+    const studentCourses = await prisma.StudentCourse.findMany({
       where: { studentId },
       include: {
         course: {
@@ -63,7 +63,7 @@ courseRoutes.post('/', async (req, res) => {
     const { studentId, courseId } = req.body;
     
     // Check if student is already enrolled
-    const existingEnrollment = await prisma.studentCourse.findFirst({
+    const existingEnrollment = await prisma.StudentCourse.findFirst({
       where: {
         studentId: parseInt(studentId),
         courseId: parseInt(courseId)
@@ -78,7 +78,7 @@ courseRoutes.post('/', async (req, res) => {
     }
     
     // Create enrollment
-    const enrollment = await prisma.studentCourse.create({
+    const enrollment = await prisma.StudentCourse.create({
       data: {
         studentId: parseInt(studentId),
         courseId: parseInt(courseId),

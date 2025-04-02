@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
     const { courseId } = req.query;
     const whereClause = courseId ? { courseId: parseInt(courseId) } : {};
     
-    const batches = await prisma.batch.findMany({
+    const batches = await prisma.Batch.findMany({
       where: whereClause,
       include: {
         course: true,
@@ -43,7 +43,7 @@ router.get('/:id', async (req, res) => {
   try {
     const batchId = parseInt(req.params.id);
     
-    const batch = await prisma.batch.findUnique({
+    const batch = await prisma.Batch.findUnique({
       where: { batchId },
       include: {
         course: true,
@@ -81,7 +81,7 @@ router.get('/:id/students', async (req, res) => {
   try {
     const batchId = parseInt(req.params.id);
     
-    const enrollments = await prisma.studentBatch.findMany({
+    const enrollments = await prisma.StudentBatch.findMany({
       where: { batchId },
       include: {
         student: true
@@ -109,7 +109,7 @@ router.get('/:id/available-students', async (req, res) => {
     const batchId = parseInt(req.params.id);
     
     // Find students not enrolled in this batch
-    const students = await prisma.user.findMany({
+    const students = await prisma.User.findMany({
       where: {
         role: 'student',
         NOT: {
@@ -139,7 +139,7 @@ router.post('/', async (req, res) => {
       instructorId
     } = req.body;
     
-    const batch = await prisma.batch.create({
+    const batch = await prisma.Batch.create({
       data: {
         batchName,
         startDate: new Date(startDate),
@@ -167,7 +167,7 @@ router.put('/:id', async (req, res) => {
       instructorId
     } = req.body;
     
-    const batch = await prisma.batch.update({
+    const batch = await prisma.Batch.update({
       where: { batchId },
       data: {
         ...(batchName !== undefined && { batchName }),
@@ -190,17 +190,17 @@ router.delete('/:id', async (req, res) => {
     const batchId = parseInt(req.params.id);
     
     // Delete student enrollments
-    await prisma.studentBatch.deleteMany({
+    await prisma.StudentBatch.deleteMany({
       where: { batchId }
     });
     
     // Delete batch schedules
-    await prisma.schedule.deleteMany({
+    await prisma.Schedule.deleteMany({
       where: { batchId }
     });
     
     // Delete the batch
-    await prisma.batch.delete({
+    await prisma.Batch.delete({
       where: { batchId }
     });
     
@@ -217,7 +217,7 @@ router.post('/:id/students', async (req, res) => {
     const { studentId } = req.body;
     
     // Check if batch exists
-    const batch = await prisma.batch.findUnique({
+    const batch = await prisma.Batch.findUnique({
       where: { batchId },
       include: {
         students: true,
@@ -243,7 +243,7 @@ router.post('/:id/students', async (req, res) => {
     }
     
     // Enroll student
-    const enrollment = await prisma.studentBatch.create({
+    const enrollment = await prisma.StudentBatch.create({
       data: {
         studentId: parseInt(studentId),
         batchId,
@@ -252,7 +252,7 @@ router.post('/:id/students', async (req, res) => {
     });
     
     // Also enroll student in the course if not already enrolled
-    const studentCourse = await prisma.studentCourse.findFirst({
+    const studentCourse = await prisma.StudentCourse.findFirst({
       where: {
         studentId: parseInt(studentId),
         courseId: batch.courseId
@@ -260,7 +260,7 @@ router.post('/:id/students', async (req, res) => {
     });
     
     if (!studentCourse) {
-      await prisma.studentCourse.create({
+      await prisma.StudentCourse.create({
         data: {
           studentId: parseInt(studentId),
           courseId: batch.courseId,
@@ -282,7 +282,7 @@ router.delete('/:batchId/students/:studentId', async (req, res) => {
     const studentId = parseInt(req.params.studentId);
     
     // Check if enrollment exists
-    const enrollment = await prisma.studentBatch.findFirst({
+    const enrollment = await prisma.StudentBatch.findFirst({
       where: {
         batchId,
         studentId
@@ -297,7 +297,7 @@ router.delete('/:batchId/students/:studentId', async (req, res) => {
     }
     
     // Remove enrollment
-    await prisma.studentBatch.deleteMany({
+    await prisma.StudentBatch.deleteMany({
       where: {
         batchId,
         studentId

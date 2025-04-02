@@ -25,10 +25,10 @@ router.post('/login', async (req, res) => {
     }
     
     // Debugging: Log all users to check if user exists
-    const allUsers = await prisma.user.findMany();
+    const allUsers = await prisma.User.findMany();
     console.log(`Found ${allUsers.length} users in database`);
     
-    const user = await prisma.user.findFirst({
+    const user = await prisma.User.findFirst({
       where: {
         email: email,
         role: role
@@ -80,12 +80,12 @@ router.post('/login', async (req, res) => {
 router.post('/setup-database', async (req, res) => {
   try {
     // Check if the admin user exists
-    const adminExists = await prisma.user.findFirst({ where: { role: 'admin' } });
+    const adminExists = await prisma.User.findFirst({ where: { role: 'admin' } });
     
     if (!adminExists) {
       // Create the admin user if it doesn't exist
       console.log("Creating admin user");
-      await prisma.user.create({ 
+      await prisma.User.create({ 
         data: { 
           fullName: 'Admin User',
           email: 'admin@lms.com',
@@ -115,11 +115,11 @@ router.get('/health', (req, res) => {
 (async () => {
   try {
     console.log("Checking for admin user...");
-    const adminExists = await prisma.user.findFirst({ where: { role: 'admin' } });
+    const adminExists = await prisma.User.findFirst({ where: { role: 'admin' } });
     
     if (!adminExists) {
       console.log("Creating default admin user...");
-      await prisma.user.create({ 
+      await prisma.User.create({ 
         data: { 
           fullName: 'Admin User',
           email: 'admin@lms.com',

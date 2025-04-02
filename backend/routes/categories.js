@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 // Get all categories
 router.get('/', async (req, res) => {
   try {
-    const categories = await prisma.courseCategory.findMany();
+    const categories = await prisma.CourseCategory.findMany();
     res.json({ success: true, data: categories });
   } catch (error) {
     handleApiError(res, error);
@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const categoryId = parseInt(req.params.id);
-    const category = await prisma.courseCategory.findUnique({
+    const category = await prisma.CourseCategory.findUnique({
       where: { categoryId }
     });
     
@@ -51,7 +51,7 @@ router.post('/', async (req, res) => {
     
     console.log(`Creating category with name: ${categoryName}`);
     
-    const category = await prisma.courseCategory.create({
+    const category = await prisma.CourseCategory.create({
       data: { 
         categoryName,
       }
@@ -71,7 +71,7 @@ router.put('/:id', async (req, res) => {
     const categoryId = parseInt(req.params.id);
     const { categoryName } = req.body;
     
-    const category = await prisma.courseCategory.update({
+    const category = await prisma.CourseCategory.update({
       where: { categoryId },
       data: { categoryName }
     });
@@ -88,7 +88,7 @@ router.delete('/:id', async (req, res) => {
     const categoryId = parseInt(req.params.id);
     
     // Check if there are courses in this category
-    const coursesCount = await prisma.course.count({
+    const coursesCount = await prisma.Course.count({
       where: { categoryId }
     });
     
@@ -99,7 +99,7 @@ router.delete('/:id', async (req, res) => {
       });
     }
     
-    await prisma.courseCategory.delete({
+    await prisma.CourseCategory.delete({
       where: { categoryId }
     });
     

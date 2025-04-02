@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
     
     const whereClause = batchId ? { batchId: parseInt(batchId) } : {};
     
-    const schedules = await prisma.schedule.findMany({
+    const schedules = await prisma.Schedule.findMany({
       where: whereClause,
       include: {
         batch: {
@@ -37,7 +37,7 @@ router.get('/:id', async (req, res) => {
   try {
     const scheduleId = parseInt(req.params.id);
     
-    const schedule = await prisma.schedule.findUnique({
+    const schedule = await prisma.Schedule.findUnique({
       where: { scheduleId },
       include: {
         batch: {

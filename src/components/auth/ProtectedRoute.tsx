@@ -1,13 +1,17 @@
 
-import { useEffect } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { ReactNode, useEffect } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 import { Loader2 } from 'lucide-react';
 
-const ProtectedRoute = () => {
+interface ProtectedRouteProps {
+  children: ReactNode;
+}
+
+const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
@@ -46,7 +50,7 @@ const ProtectedRoute = () => {
         <main className="flex-1 p-6 overflow-auto">
           <div className="max-w-7xl mx-auto animate-fade-in">
             <BreadcrumbNav />
-            <Outlet />
+            {children}
           </div>
         </main>
       </div>

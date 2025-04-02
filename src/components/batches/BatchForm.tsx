@@ -32,14 +32,11 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
   const form = useForm({
     defaultValues: {
       batchName: batch?.batchName || '',
-      description: batch?.description || '',
       courseId: batch?.courseId ? String(batch.courseId) : '',
       instructorId: batch?.instructorId ? String(batch.instructorId) : '',
-      capacity: batch?.capacity ? String(batch.capacity) : '',
       startDate: batch?.startDate || '',
       endDate: batch?.endDate || '',
-      meetingLink: batch?.meetingLink || '',
-      schedule: batch?.schedule || '',
+      meetingLink: batch?.schedules?.[0]?.meetingLink || '',
     },
   });
 
@@ -74,7 +71,6 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
       ...data,
       courseId: parseInt(data.courseId, 10),
       instructorId: parseInt(data.instructorId, 10),
-      capacity: parseInt(data.capacity, 10),
     };
     onSubmit(formattedData);
   };
@@ -143,25 +139,11 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
                   <SelectContent>
                     {instructors.map((instructor: User) => (
                       <SelectItem key={instructor.id} value={String(instructor.id)}>
-                        {instructor.name}
+                        {instructor.fullName}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="capacity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Capacity</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="Enter capacity" {...field} />
-                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -258,39 +240,7 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
               </FormItem>
             )}
           />
-
-          <FormField
-            control={form.control}
-            name="schedule"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Schedule (e.g., Mon, Wed, Fri 10AM-12PM)</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter schedule information" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <textarea
-                  className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  placeholder="Enter batch description"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <div className="flex justify-end gap-4">
           <Button type="submit" disabled={isSubmitting}>

@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
             email: true,
           }
         },
-        studentBatches: true
+        students: true
       }
     });
     
@@ -47,7 +47,7 @@ router.get('/', async (req, res) => {
       endDate: batch.endDate,
       course: batch.course,
       instructor: batch.instructor,
-      studentsCount: batch.studentBatches?.length ?? 0
+      studentsCount: batch.students?.length || 0
     }));
     
     // Get categories with course counts
@@ -65,11 +65,11 @@ router.get('/', async (req, res) => {
     const coursesByCategory = categories.map(category => ({
       categoryId: category.categoryId,
       categoryName: category.categoryName,
-      coursesCount: category.courses?.length ?? 0,
+      coursesCount: category.courses?.length || 0,
       courses: category.courses.map(course => ({
         courseId: course.courseId,
         courseName: course.courseName,
-        studentsCount: course.studentCourses?.length ?? 0
+        studentsCount: course.studentCourses?.length || 0
       }))
     }));
     
@@ -96,7 +96,7 @@ router.get('/', async (req, res) => {
         category: course.category
       },
       _count: {
-        students: course.studentCourses?.length ?? 0
+        students: course.studentCourses?.length || 0
       }
     }));
     
@@ -143,7 +143,7 @@ router.get('/', async (req, res) => {
     const categoryDistribution = categories.map(category => {
       // Sum up students across all courses in this category
       const totalStudents = category.courses.reduce((sum, course) => {
-        return sum + (course.studentCourses?.length ?? 0);
+        return sum + (course.studentCourses?.length || 0);
       }, 0);
       
       return {

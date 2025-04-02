@@ -17,19 +17,19 @@ const Profile = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     fullName: user?.fullName || '',
     email: user?.email || '',
     bio: user?.bio || '',
     phoneNumber: '',
   });
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-  
+
   const handleSave = () => {
     toast({
       title: 'Profile Updated',
@@ -37,7 +37,7 @@ const Profile = () => {
     });
     setIsEditing(false);
   };
-  
+
   const handlePasswordChange = (e: React.FormEvent) => {
     e.preventDefault();
     toast({
@@ -45,7 +45,7 @@ const Profile = () => {
       description: 'Your password has been updated successfully.',
     });
   };
-  
+
   const handleNotificationChange = (e: React.FormEvent) => {
     e.preventDefault();
     toast({
@@ -53,7 +53,7 @@ const Profile = () => {
       description: 'Your notification preferences have been saved.',
     });
   };
-  
+
   const getInitials = (name: string = '') => {
     return name
       .split(' ')
@@ -67,14 +67,14 @@ const Profile = () => {
     <Layout noHeader={true}>
       <div className="max-w-4xl mx-auto animate-fade-in">
         <h1 className="text-3xl font-bold mb-6">My Profile</h1>
-        
+
         <Tabs defaultValue="profile" className="w-full">
           <TabsList className="grid grid-cols-3 mb-6">
             <TabsTrigger value="profile">Profile Information</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="profile">
             <Card className="neo-card">
               <CardHeader>
@@ -95,7 +95,7 @@ const Profile = () => {
                       Change Photo
                     </Button>
                   </div>
-                  
+
                   <div className="flex-1 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -119,7 +119,7 @@ const Profile = () => {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="phoneNumber">Phone Number</Label>
@@ -141,7 +141,7 @@ const Profile = () => {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="bio">Bio / About</Label>
                       <Textarea
@@ -171,7 +171,7 @@ const Profile = () => {
               </CardFooter>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="security">
             <Card className="neo-card">
               <CardHeader>
@@ -204,7 +204,7 @@ const Profile = () => {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="newPassword">New Password</Label>
                     <div className="relative">
@@ -227,7 +227,7 @@ const Profile = () => {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirm New Password</Label>
                     <div className="relative">
@@ -250,7 +250,7 @@ const Profile = () => {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center p-4 bg-primary/5 rounded-lg">
                     <Shield className="h-5 w-5 text-primary mr-3" />
                     <div>
@@ -264,7 +264,7 @@ const Profile = () => {
                       </ul>
                     </div>
                   </div>
-                  
+
                   <Button type="submit" className="w-full">
                     <Lock className="h-4 w-4 mr-2" />
                     Update Password
@@ -273,7 +273,7 @@ const Profile = () => {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="notifications">
             <Card className="neo-card">
               <CardHeader>
@@ -297,7 +297,7 @@ const Profile = () => {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <h3 className="font-medium">Push Notifications</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -311,7 +311,7 @@ const Profile = () => {
                       ))}
                     </div>
                   </div>
-                  
+
                   <Button type="submit" className="w-full">
                     <Bell className="h-4 w-4 mr-2" />
                     Save Notification Preferences

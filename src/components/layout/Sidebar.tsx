@@ -17,7 +17,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  Settings,
   Users,
   Award,
   GraduationCap,
@@ -184,23 +183,6 @@ export default function Sidebar({ className }: SidebarProps) {
           >
             <FileText className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
             {!isCollapsed && <span>Resources</span>}
-          </Button>
-        </Link>
-      )}
-
-      {hasRole([Role.admin]) && (
-        <Link to="/settings">
-          <Button
-            variant="ghost"
-            size={isCollapsed ? "icon" : "default"}
-            className={cn(
-              "w-full justify-start",
-              pathname === "/settings" && "bg-accent text-accent-foreground",
-              isCollapsed && "flex h-10 w-10 p-0 justify-center"
-            )}
-          >
-            <Settings className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
-            {!isCollapsed && <span>Settings</span>}
           </Button>
         </Link>
       )}

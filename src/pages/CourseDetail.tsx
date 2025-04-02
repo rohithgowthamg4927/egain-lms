@@ -183,7 +183,11 @@ const CourseDetail = () => {
                     <Book className="h-5 w-5 text-green-500" />
                     <div>
                       <p className="text-sm text-gray-500">Batches</p>
-                      <p className="font-medium">{course.batches?.length || 0}</p>
+                      <p className="font-medium">
+                        {Array.isArray(course.batches) 
+                          ? course.batches.length 
+                          : (typeof course.batches === 'number' ? course.batches : 0)}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -199,7 +203,7 @@ const CourseDetail = () => {
                 
                 <div className="pt-2">
                   <h3 className="text-lg font-semibold mb-4">Batches</h3>
-                  {course.batches && course.batches.length > 0 ? (
+                  {Array.isArray(course.batches) && course.batches.length > 0 ? (
                     <div className="space-y-3">
                       {course.batches.map((batch) => (
                         <Card key={batch.batchId} className="relative overflow-hidden">

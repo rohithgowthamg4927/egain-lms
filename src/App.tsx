@@ -1,71 +1,73 @@
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+} from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { Routes, Route, Navigate } from 'react-router-dom';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import Index from '@/pages/Index';
-import Login from '@/pages/Login';
-import Dashboard from '@/pages/Dashboard';
-import Batches from '@/pages/Batches';
-import BatchDetail from '@/pages/BatchDetail';
-import Courses from '@/pages/Courses';
-import CourseDetail from '@/pages/CourseDetail';
-import AddCourse from '@/pages/AddCourse';
-import EditCourse from '@/pages/EditCourse';
-import Instructors from '@/pages/Instructors';
-import Students from '@/pages/Students';
-import Resources from '@/pages/Resources';
-import Schedules from '@/pages/Schedules';
-import NotFound from '@/pages/NotFound';
-import Profile from '@/pages/Profile';
-import UserProfile from '@/pages/UserProfile';
-import AddUser from '@/pages/AddUser';
-import UserDetail from '@/pages/UserDetail';
-import Categories from '@/pages/Categories';
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Courses from "./pages/Courses";
+import CourseDetail from "./pages/CourseDetail";
+import Categories from "./pages/Categories";
+import Settings from "./pages/Settings";
+import Students from "./pages/Students";
+import Instructors from "./pages/Instructors";
+import Resources from "./pages/Resources";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { AuthProvider } from "./hooks/use-auth";
+import AddCourse from "./pages/AddCourse";
+import EditCourse from "./pages/EditCourse";
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false
-    }
-  }
-});
+// Import batch-related routes
+import AddBatch from './pages/AddBatch';
+import EditBatch from './pages/EditBatch';
+import ManageStudents from './pages/ManageStudents';
+import Batches from "./pages/Batches";
+import BatchDetail from "./pages/BatchDetail";
 
 function App() {
+  const queryClient = new QueryClient();
+
   return (
     <QueryClientProvider client={queryClient}>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/login" element={<Login />} />
-        
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/batches" element={<Batches />} />
-          <Route path="/batches/:batchId" element={<BatchDetail />} />
-          <Route path="/courses" element={<Courses />} />
-          <Route path="/courses/:courseId" element={<CourseDetail />} />
-          <Route path="/courses/add" element={<AddCourse />} />
-          <Route path="/courses/edit/:courseId" element={<EditCourse />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/instructors" element={<Instructors />} />
-          <Route path="/students" element={<Students />} />
-          <Route path="/resources" element={<Resources />} />
-          <Route path="/schedules" element={<Schedules />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/users/:userId" element={<UserProfile />} />
-          <Route path="/instructors/:userId" element={<UserProfile />} />
-          <Route path="/students/:userId" element={<UserProfile />} />
-          <Route path="/add-user" element={<AddUser />} />
-        </Route>
-        
-        {/* Legacy routes with redirects */}
-        <Route path="/user-detail/:userId" element={<UserDetail />} />
-        
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <Toaster />
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+
+            {/* Course routes */}
+            <Route path="/courses" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
+            <Route path="/courses/add" element={<ProtectedRoute><AddCourse /></ProtectedRoute>} />
+            <Route path="/courses/:courseId" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
+            <Route path="/courses/:courseId/edit" element={<ProtectedRoute><EditCourse /></ProtectedRoute>} />
+            
+            {/* Batch routes */}
+            <Route path="/batches" element={<ProtectedRoute><Batches /></ProtectedRoute>} />
+            <Route path="/batches/add" element={<ProtectedRoute><AddBatch /></ProtectedRoute>} />
+            <Route path="/batches/:batchId" element={<ProtectedRoute><BatchDetail /></ProtectedRoute>} />
+            <Route path="/batches/:batchId/edit" element={<ProtectedRoute><EditBatch /></ProtectedRoute>} />
+            <Route path="/batches/manage-students" element={<ProtectedRoute><ManageStudents /></ProtectedRoute>} />
+
+            {/* Categories routes */}
+            <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
+
+            {/* Settings routes */}
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+            {/* Students routes */}
+            <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
+
+            {/* Instructors routes */}
+            <Route path="/instructors" element={<ProtectedRoute><Instructors /></ProtectedRoute>} />
+
+            {/* Resources routes */}
+            <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }

@@ -1,102 +1,96 @@
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useToast } from '@/hooks/use-toast';
-import { Course, Level } from '@/lib/types';
+import { useQuery } from '@tanstack/react-query';
 import { getCategories } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
+  FormMessage
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Level } from '@/lib/types';
 
-const formSchema = z.object({
+// Course form schema
+const courseFormSchema = z.object({
   courseName: z.string().min(3, { message: 'Course name must be at least 3 characters' }),
-  description: z.string().min(10, { message: 'Description must be at least 10 characters' }),
-  categoryId: z.string().min(1, { message: 'Please select a category' }),
+  description: z.string().optional(),
   courseLevel: z.enum(['beginner', 'intermediate', 'advanced']),
-  isPublished: z.boolean().default(true),
-  thumbnailUrl: z.string().optional(),
+  categoryId: z.string().min(1, { message: 'Please select a category' }),
+  isPublished: z.boolean().default(false),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type CourseFormValues = z.infer<typeof courseFormSchema>;
 
 interface CourseFormProps {
-  course?: Course;
-  onSubmit: (data: FormValues) => Promise<void>;
+  course?: any;
+  onSubmit: (data: any) => void;
   isSubmitting: boolean;
 }
 
 const CourseForm = ({ course, onSubmit, isSubmitting }: CourseFormProps) => {
-  const [categories, setCategories] = useState<{ categoryId: number; categoryName: string }[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
-  const { toast } = useToast();
+  // Fetch categories
+  const { data: categoriesResponse, isLoading: isLoadingCategories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: getCategories
+  });
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const categories = categoriesResponse?.data || [];
+
+  // Setup form with default values
+  const form = useForm<CourseFormValues>({
+    resolver: zodResolver(courseFormSchema),
     defaultValues: {
       courseName: course?.courseName || '',
       description: course?.description || '',
-      categoryId: course?.categoryId ? String(course.categoryId) : '',
       courseLevel: course?.courseLevel || 'beginner',
-      isPublished: course?.isPublished !== undefined ? course.isPublished : true,
-      thumbnailUrl: course?.thumbnailUrl || '',
-    },
+      categoryId: course?.categoryId ? course.categoryId.toString() : '',
+      isPublished: course?.isPublished || false,
+    }
   });
 
+  // Update form when course data is loaded
   useEffect(() => {
-    const fetchCategories = async () => {
-      setIsLoadingCategories(true);
-      try {
-        const response = await getCategories();
-        if (response.success && response.data) {
-          setCategories(response.data);
-        } else {
-          toast({
-            title: 'Error',
-            description: response.error || 'Failed to fetch categories',
-            variant: 'destructive',
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to fetch categories',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoadingCategories(false);
-      }
-    };
-
-    fetchCategories();
-  }, [toast]);
-
-  const handleSubmit = async (data: FormValues) => {
-    try {
-      await onSubmit(data);
-    } catch (error) {
-      console.error('Error submitting form:', error);
+    if (course) {
+      form.reset({
+        courseName: course.courseName,
+        description: course.description || '',
+        courseLevel: course.courseLevel,
+        categoryId: course.categoryId.toString(),
+        isPublished: course.isPublished,
+      });
     }
+  }, [course, form]);
+
+  const handleFormSubmit = (values: CourseFormValues) => {
+    onSubmit({
+      ...values,
+      categoryId: parseInt(values.categoryId),
+    });
   };
+
+  if (isLoadingCategories) {
+    return <div>Loading categories...</div>;
+  }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="courseName"
@@ -111,24 +105,6 @@ const CourseForm = ({ course, onSubmit, isSubmitting }: CourseFormProps) => {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Enter course description" 
-                  className="min-h-[120px]"
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
@@ -136,10 +112,10 @@ const CourseForm = ({ course, onSubmit, isSubmitting }: CourseFormProps) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Category</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
+                <Select 
+                  onValueChange={field.onChange} 
                   defaultValue={field.value}
-                  disabled={isLoadingCategories}
+                  value={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -148,10 +124,7 @@ const CourseForm = ({ course, onSubmit, isSubmitting }: CourseFormProps) => {
                   </FormControl>
                   <SelectContent>
                     {categories.map((category) => (
-                      <SelectItem
-                        key={category.categoryId}
-                        value={category.categoryId.toString()}
-                      >
+                      <SelectItem key={category.categoryId} value={category.categoryId.toString()}>
                         {category.categoryName}
                       </SelectItem>
                     ))}
@@ -168,19 +141,20 @@ const CourseForm = ({ course, onSubmit, isSubmitting }: CourseFormProps) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Level</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
+                <Select 
+                  onValueChange={field.onChange} 
                   defaultValue={field.value}
+                  value={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a level" />
+                      <SelectValue placeholder="Select level" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="beginner">Beginner</SelectItem>
-                    <SelectItem value="intermediate">Intermediate</SelectItem>
-                    <SelectItem value="advanced">Advanced</SelectItem>
+                    <SelectItem value={Level.beginner}>Beginner</SelectItem>
+                    <SelectItem value={Level.intermediate}>Intermediate</SelectItem>
+                    <SelectItem value={Level.advanced}>Advanced</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -191,16 +165,17 @@ const CourseForm = ({ course, onSubmit, isSubmitting }: CourseFormProps) => {
 
         <FormField
           control={form.control}
-          name="thumbnailUrl"
+          name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Thumbnail URL (Optional)</FormLabel>
+              <FormLabel>Description</FormLabel>
               <FormControl>
-                <Input placeholder="Enter thumbnail URL" {...field} />
+                <Textarea 
+                  placeholder="Enter course description" 
+                  className="min-h-32"
+                  {...field} 
+                />
               </FormControl>
-              <FormDescription>
-                Provide a URL to an image for the course thumbnail
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -210,33 +185,32 @@ const CourseForm = ({ course, onSubmit, isSubmitting }: CourseFormProps) => {
           control={form.control}
           name="isPublished"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">Published</FormLabel>
-                <FormDescription>
-                  Make this course visible to students
-                </FormDescription>
-              </div>
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
               <FormControl>
-                <Switch
+                <Checkbox
                   checked={field.value}
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>Published</FormLabel>
+                <p className="text-sm text-muted-foreground">
+                  Make this course visible to students
+                </p>
+              </div>
             </FormItem>
           )}
         />
 
-        <div className="flex justify-end space-x-4">
-          <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700">
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {course ? 'Updating...' : 'Creating...'}
-              </>
-            ) : (
-              <>{course ? 'Update Course' : 'Create Course'}</>
-            )}
+        <div className="flex justify-end">
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isSubmitting 
+              ? (course ? 'Updating...' : 'Creating...') 
+              : (course ? 'Update Course' : 'Create Course')}
           </Button>
         </div>
       </form>

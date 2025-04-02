@@ -1,5 +1,6 @@
+
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,12 +17,7 @@ import {
   getBatches, 
   getCourses, 
   getUsers, 
-  createBatch, 
   deleteBatch,
-  updateBatch,
-  enrollStudentInBatch,
-  unenrollStudentFromBatch,
-  getBatchStudents
 } from '@/lib/api';
 import { Batch, Course, User, Role } from '@/lib/types';
 import { 
@@ -29,90 +25,49 @@ import {
   Search, 
   Calendar, 
   Users, 
-  Eye, 
-  Edit, 
-  Trash, 
-  User as UserIcon, 
   Clock, 
-  UserPlus
+  UserIcon
 } from 'lucide-react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
-
-const getStudentsNotInBatch = async (batchId: number) => {
-  try {
-    const allStudentsResponse = await getUsers(Role.student);
-    const batchStudentsResponse = await getBatchStudents(batchId);
-    
-    if (allStudentsResponse.success && batchStudentsResponse.success) {
-      const allStudents = allStudentsResponse.data || [];
-      const batchStudents = batchStudentsResponse.data || [];
-      
-      const availableStudents = allStudents.filter(student => 
-        !batchStudents.some(batchStudent => batchStudent.userId === student.userId)
-      );
-      
-      return { success: true, data: availableStudents };
-    }
-    return { success: false, error: 'Failed to fetch students data' };
-  } catch (error) {
-    console.error('Error fetching students not in batch:', error);
-    return { success: false, error: 'An error occurred while fetching available students' };
-  }
-};
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const Batches = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
+  
   const [batches, setBatches] = useState<Batch[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [instructors, setInstructors] = useState<User[]>([]);
-  const [students, setStudents] = useState<User[]>([]);
-  const [availableStudents, setAvailableStudents] = useState<User[]>([]);
-  const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<string>('all');
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isStudentsDrawerOpen, setIsStudentsDrawerOpen] = useState(false);
-  const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const [batchName, setBatchName] = useState('');
-  const [batchCourse, setBatchCourse] = useState('');
-  const [batchInstructor, setBatchInstructor] = useState('');
-  const [batchStartDate, setBatchStartDate] = useState('');
-  const [batchEndDate, setBatchEndDate] = useState('');
-  const { toast } = useToast();
+  const [batchToDelete, setBatchToDelete] = useState<Batch | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const resetFormFields = () => {
-    setBatchName('');
-    setBatchCourse('');
-    setBatchInstructor('');
-    setBatchStartDate('');
-    setBatchEndDate('');
-    setSelectedBatch(null);
-  };
+  // Check for URL params for actions
+  useEffect(() => {
+    const action = searchParams.get('action');
+    const batchId = searchParams.get('batchId');
+    
+    if (action && batchId) {
+      switch (action) {
+        case 'edit':
+          navigate(`/batches/${batchId}/edit`);
+          break;
+        case 'manageStudents':
+          navigate(`/batches/manage-students?batchId=${batchId}`);
+          break;
+      }
+    }
+  }, [searchParams, navigate]);
 
   const fetchBatches = async () => {
     try {
@@ -144,11 +99,9 @@ const Batches = () => {
       setIsLoading(true);
       
       try {
-        const [batchesResponse, coursesResponse, instructorsResponse, studentsResponse] = await Promise.all([
+        const [batchesResponse, coursesResponse] = await Promise.all([
           getBatches(),
           getCourses(),
-          getUsers(Role.instructor),
-          getUsers(Role.student)
         ]);
         
         if (batchesResponse.success && batchesResponse.data) {
@@ -167,26 +120,6 @@ const Batches = () => {
           toast({
             title: 'Error',
             description: coursesResponse.error || 'Failed to fetch courses',
-            variant: 'destructive',
-          });
-        }
-
-        if (instructorsResponse.success && instructorsResponse.data) {
-          setInstructors(instructorsResponse.data);
-        } else {
-          toast({
-            title: 'Error',
-            description: instructorsResponse.error || 'Failed to fetch instructors',
-            variant: 'destructive',
-          });
-        }
-
-        if (studentsResponse.success && studentsResponse.data) {
-          setStudents(studentsResponse.data);
-        } else {
-          toast({
-            title: 'Error',
-            description: studentsResponse.error || 'Failed to fetch students',
             variant: 'destructive',
           });
         }
@@ -215,130 +148,32 @@ const Batches = () => {
     return matchesSearch && matchesCourse;
   });
 
-  const handleCreateBatch = async () => {
-    if (!batchName || !batchCourse || !batchInstructor || !batchStartDate || !batchEndDate) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please fill in all required fields',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const response = await createBatch({
-        batchName: batchName,
-        courseId: parseInt(batchCourse),
-        instructorId: parseInt(batchInstructor),
-        startDate: new Date(batchStartDate).toISOString(),
-        endDate: new Date(batchEndDate).toISOString()
-      });
-      
-      if (response.success && response.data) {
-        toast({
-          title: 'Batch created',
-          description: `Batch "${batchName}" has been created successfully.`,
-        });
-        
-        resetFormFields();
-        
-        setIsCreateDialogOpen(false);
-        
-        fetchBatches();
-      } else {
-        toast({
-          title: 'Error',
-          description: response.error || 'Failed to create batch',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Error creating batch:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to create batch',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleEditBatch = async () => {
-    if (!selectedBatch || !batchName || !batchCourse || !batchInstructor || !batchStartDate || !batchEndDate) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please fill in all required fields',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const response = await updateBatch(selectedBatch.batchId, {
-        batchName: batchName,
-        courseId: parseInt(batchCourse),
-        instructorId: parseInt(batchInstructor),
-        startDate: new Date(batchStartDate).toISOString(),
-        endDate: new Date(batchEndDate).toISOString()
-      });
-      
-      if (response.success && response.data) {
-        toast({
-          title: 'Batch updated',
-          description: `Batch "${batchName}" has been updated successfully.`,
-        });
-        
-        resetFormFields();
-        
-        setIsEditDialogOpen(false);
-        
-        fetchBatches();
-      } else {
-        toast({
-          title: 'Error',
-          description: response.error || 'Failed to update batch',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Error updating batch:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update batch',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleViewBatch = (batch: Batch) => {
     navigate(`/batches/${batch.batchId}`);
   };
 
-  const handleEditBatchClick = (batch: Batch) => {
-    setSelectedBatch(batch);
-    setBatchName(batch.batchName);
-    setBatchCourse(batch.courseId.toString());
-    setBatchInstructor(batch.instructorId.toString());
-    setBatchStartDate(new Date(batch.startDate).toISOString().split('T')[0]);
-    setBatchEndDate(new Date(batch.endDate).toISOString().split('T')[0]);
-    setIsEditDialogOpen(true);
+  const handleEditBatch = (batch: Batch) => {
+    navigate(`/batches/${batch.batchId}/edit`);
   };
 
-  const handleDeleteBatch = async (batch: Batch) => {
+  const handleDeleteConfirmation = (batch: Batch) => {
+    setBatchToDelete(batch);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteBatch = async () => {
+    if (!batchToDelete) return;
+    
     try {
-      const response = await deleteBatch(batch.batchId);
+      const response = await deleteBatch(batchToDelete.batchId);
       
       if (response.success) {
         toast({
           title: 'Batch deleted',
-          description: `Batch "${batch.batchName}" has been deleted successfully.`,
+          description: `Batch "${batchToDelete.batchName}" has been deleted successfully.`,
         });
         
+        // Refresh the batches list
         fetchBatches();
       } else {
         toast({
@@ -354,97 +189,21 @@ const Batches = () => {
         description: 'Failed to delete batch',
         variant: 'destructive',
       });
-    }
-  };
-
-  const handleManageStudents = async (batch: Batch) => {
-    setSelectedBatch(batch);
-    setSelectedStudents([]);
-    setIsStudentsDrawerOpen(true);
-
-    try {
-      const response = await getStudentsNotInBatch(batch.batchId);
-      if (response.success && response.data) {
-        setAvailableStudents(response.data);
-      } else {
-        toast({
-          title: 'Error',
-          description: response.error || 'Failed to fetch available students',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching student data:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch student data',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleEnrollStudents = async () => {
-    if (!selectedBatch || selectedStudents.length === 0) {
-      toast({
-        title: 'No students selected',
-        description: 'Please select at least one student to enroll',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const enrollmentPromises = selectedStudents.map(studentId => 
-        enrollStudentInBatch(studentId, selectedBatch.batchId)
-      );
-      
-      const results = await Promise.all(enrollmentPromises);
-      const successCount = results.filter(r => r.success).length;
-      const failCount = results.length - successCount;
-      
-      if (successCount > 0) {
-        toast({
-          title: 'Students enrolled',
-          description: `Successfully enrolled ${successCount} student${successCount !== 1 ? 's' : ''} to the batch.${failCount > 0 ? ` ${failCount} enrollment${failCount !== 1 ? 's' : ''} failed.` : ''}`,
-        });
-        
-        setIsStudentsDrawerOpen(false);
-        fetchBatches();
-      } else {
-        toast({
-          title: 'Enrollment failed',
-          description: 'Failed to enroll any students to the batch',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Error enrolling students:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to enroll students',
-        variant: 'destructive',
-      });
     } finally {
-      setIsSubmitting(false);
+      setShowDeleteDialog(false);
+      setBatchToDelete(null);
     }
   };
 
-  const toggleStudentSelection = (studentId: number) => {
-    setSelectedStudents(prev => {
-      if (prev.includes(studentId)) {
-        return prev.filter(id => id !== studentId);
-      } else {
-        return [...prev, studentId];
-      }
-    });
+  const handleManageStudents = (batch: Batch) => {
+    navigate(`/batches/manage-students?batchId=${batch.batchId}`);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h1 className="text-3xl font-bold">Batches</h1>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
+        <Button onClick={() => navigate('/batches/add')}>
           <Plus className="h-4 w-4 mr-2" />
           Add Batch
         </Button>
@@ -472,7 +231,17 @@ const Batches = () => {
           <CardContent>
             <div className="flex items-center justify-between">
               <span className="text-3xl font-bold">
-                {batches.reduce((total, batch) => total + (batch.studentsCount || 0), 0)}
+                {batches.reduce((total, batch) => {
+                  // Check if students is an array before using length
+                  if (Array.isArray(batch.students)) {
+                    return total + batch.students.length;
+                  }
+                  // If it's a count property (studentsCount)
+                  else if (typeof batch.studentsCount === 'number') {
+                    return total + batch.studentsCount;
+                  }
+                  return total;
+                }, 0)}
               </span>
               <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
                 <UserIcon className="h-5 w-5 text-blue-600" />
@@ -534,161 +303,31 @@ const Batches = () => {
         batches={filteredBatches}
         loading={isLoading}
         onView={handleViewBatch}
-        onEdit={handleEditBatchClick}
-        onDelete={handleDeleteBatch}
+        onEdit={handleEditBatch}
+        onDelete={handleDeleteConfirmation}
         onManageStudents={handleManageStudents}
       />
 
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[525px]">
-          <DialogHeader>
-            <DialogTitle>Edit Batch</DialogTitle>
-            <DialogDescription>
-              Update the details for this batch.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="editBatchName">Batch Name</Label>
-              <Input
-                id="editBatchName"
-                value={batchName}
-                onChange={(e) => setBatchName(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="editBatchCourse">Course</Label>
-              <Select value={batchCourse} onValueChange={setBatchCourse}>
-                <SelectTrigger id="editBatchCourse">
-                  <SelectValue placeholder="Select course" />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.map((course) => (
-                    <SelectItem key={course.courseId} value={course.courseId.toString()}>
-                      {course.courseName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="editBatchInstructor">Instructor</Label>
-              <Select value={batchInstructor} onValueChange={setBatchInstructor}>
-                <SelectTrigger id="editBatchInstructor">
-                  <SelectValue placeholder="Select instructor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {instructors.map((instructor) => (
-                    <SelectItem key={instructor.userId} value={instructor.userId.toString()}>
-                      {instructor.fullName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="editBatchStartDate">Start Date</Label>
-                <Input
-                  id="editBatchStartDate"
-                  type="date"
-                  value={batchStartDate}
-                  onChange={(e) => setBatchStartDate(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="editBatchEndDate">End Date</Label>
-                <Input
-                  id="editBatchEndDate"
-                  type="date"
-                  value={batchEndDate}
-                  onChange={(e) => setBatchEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleEditBatch} 
-              disabled={isSubmitting}
-              className="bg-blue-600 hover:bg-blue-700"
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Batch</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this batch? This action cannot be undone.
+              All enrolled students will be unenrolled from this batch.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteBatch}
+              className="bg-red-600 hover:bg-red-700"
             >
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Drawer open={isStudentsDrawerOpen} onOpenChange={setIsStudentsDrawerOpen}>
-        <DrawerContent>
-          <DrawerHeader className="text-left">
-            <DrawerTitle>Manage Students</DrawerTitle>
-            <DrawerDescription>
-              {selectedBatch ? `Enroll students to the batch: ${selectedBatch.batchName}` : 'Loading...'}
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="px-4">
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="Search students..."
-                className="pl-10 border-gray-200"
-              />
-            </div>
-            <ScrollArea className="h-[300px] rounded-md border p-4">
-              {availableStudents.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  No available students to enroll
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {availableStudents.map((student) => (
-                    <div key={student.userId} className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`student-${student.userId}`} 
-                        checked={selectedStudents.includes(student.userId)}
-                        onCheckedChange={() => toggleStudentSelection(student.userId)}
-                      />
-                      <Label 
-                        htmlFor={`student-${student.userId}`}
-                        className="flex flex-1 items-center justify-between cursor-pointer p-2 hover:bg-gray-100 rounded"
-                      >
-                        <div className="flex items-center gap-3">
-                          <UserIcon className="h-4 w-4 text-gray-500" />
-                          <span>{student.fullName}</span>
-                        </div>
-                        <span className="text-sm text-gray-500">{student.email}</span>
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-          </div>
-          <DrawerFooter className="pt-2">
-            <Button 
-              onClick={handleEnrollStudents}
-              disabled={selectedStudents.length === 0 || isSubmitting}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isSubmitting ? (
-                'Enrolling Students...'
-              ) : (
-                <>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Enroll Selected Students ({selectedStudents.length})
-                </>
-              )}
-            </Button>
-            <DrawerClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DrawerClose>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

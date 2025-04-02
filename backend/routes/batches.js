@@ -136,17 +136,43 @@ router.post('/', async (req, res) => {
       startDate,
       endDate,
       courseId,
-      instructorId
+      instructorId,
+      updateInstructorCourse
     } = req.body;
     
-    const batch = await prisma.Batch.create({
-      data: {
-        batchName,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        courseId: parseInt(courseId),
-        instructorId: parseInt(instructorId)
+    // Create batch transaction to also update instructor course if needed
+    const batch = await prisma.$transaction(async (prisma) => {
+      // Create the batch
+      const newBatch = await prisma.Batch.create({
+        data: {
+          batchName,
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+          courseId: parseInt(courseId),
+          instructorId: parseInt(instructorId)
+        }
+      });
+      
+      // If updateInstructorCourse flag is true, also create instructor-course relationship if it doesn't exist
+      if (updateInstructorCourse) {
+        const existingRelation = await prisma.InstructorCourse.findFirst({
+          where: {
+            instructorId: parseInt(instructorId),
+            courseId: parseInt(courseId)
+          }
+        });
+        
+        if (!existingRelation) {
+          await prisma.InstructorCourse.create({
+            data: {
+              instructorId: parseInt(instructorId),
+              courseId: parseInt(courseId)
+            }
+          });
+        }
       }
+      
+      return newBatch;
     });
     
     res.status(201).json({ success: true, data: batch });
@@ -164,18 +190,46 @@ router.put('/:id', async (req, res) => {
       startDate,
       endDate,
       courseId,
-      instructorId
+      instructorId,
+      updateInstructorCourse
     } = req.body;
     
-    const batch = await prisma.Batch.update({
-      where: { batchId },
-      data: {
-        ...(batchName !== undefined && { batchName }),
-        ...(startDate !== undefined && { startDate: new Date(startDate) }),
-        ...(endDate !== undefined && { endDate: new Date(endDate) }),
-        ...(courseId !== undefined && { courseId: parseInt(courseId) }),
-        ...(instructorId !== undefined && { instructorId: parseInt(instructorId) })
+    // Update batch transaction to also update instructor course if needed
+    const batch = await prisma.$transaction(async (prisma) => {
+      // Update the batch
+      const updatedBatch = await prisma.Batch.update({
+        where: { batchId },
+        data: {
+          ...(batchName !== undefined && { batchName }),
+          ...(startDate !== undefined && { startDate: new Date(startDate) }),
+          ...(endDate !== undefined && { endDate: new Date(endDate) }),
+          ...(courseId !== undefined && { courseId: parseInt(courseId) }),
+          ...(instructorId !== undefined && { instructorId: parseInt(instructorId) })
+        }
+      });
+      
+      // If updateInstructorCourse flag is true and course/instructor are provided
+      if (updateInstructorCourse && courseId !== undefined && instructorId !== undefined) {
+        // Check if the instructor-course relationship already exists
+        const existingRelation = await prisma.InstructorCourse.findFirst({
+          where: {
+            instructorId: parseInt(instructorId),
+            courseId: parseInt(courseId)
+          }
+        });
+        
+        // If not, create it
+        if (!existingRelation) {
+          await prisma.InstructorCourse.create({
+            data: {
+              instructorId: parseInt(instructorId),
+              courseId: parseInt(courseId)
+            }
+          });
+        }
       }
+      
+      return updatedBatch;
     });
     
     res.json({ success: true, data: batch });
@@ -189,19 +243,22 @@ router.delete('/:id', async (req, res) => {
   try {
     const batchId = parseInt(req.params.id);
     
-    // Delete student enrollments
-    await prisma.StudentBatch.deleteMany({
-      where: { batchId }
-    });
-    
-    // Delete batch schedules
-    await prisma.Schedule.deleteMany({
-      where: { batchId }
-    });
-    
-    // Delete the batch
-    await prisma.Batch.delete({
-      where: { batchId }
+    // Delete batch in a transaction
+    await prisma.$transaction(async (prisma) => {
+      // Delete student enrollments
+      await prisma.StudentBatch.deleteMany({
+        where: { batchId }
+      });
+      
+      // Delete batch schedules
+      await prisma.Schedule.deleteMany({
+        where: { batchId }
+      });
+      
+      // Delete the batch
+      await prisma.Batch.delete({
+        where: { batchId }
+      });
     });
     
     res.json({ success: true });
@@ -242,34 +299,37 @@ router.post('/:id/students', async (req, res) => {
       });
     }
     
-    // Enroll student
-    const enrollment = await prisma.StudentBatch.create({
-      data: {
-        studentId: parseInt(studentId),
-        batchId,
-        createdAt: new Date()
-      }
-    });
-    
-    // Also enroll student in the course if not already enrolled
-    const studentCourse = await prisma.StudentCourse.findFirst({
-      where: {
-        studentId: parseInt(studentId),
-        courseId: batch.courseId
-      }
-    });
-    
-    if (!studentCourse) {
-      await prisma.StudentCourse.create({
+    // Enroll student in batch and course in a transaction
+    const result = await prisma.$transaction(async (prisma) => {
+      // Enroll in batch
+      const enrollment = await prisma.StudentBatch.create({
         data: {
           studentId: parseInt(studentId),
-          courseId: batch.courseId,
-          createdAt: new Date()
+          batchId
         }
       });
-    }
+      
+      // Also enroll student in the course if not already enrolled
+      const studentCourse = await prisma.StudentCourse.findFirst({
+        where: {
+          studentId: parseInt(studentId),
+          courseId: batch.courseId
+        }
+      });
+      
+      if (!studentCourse) {
+        await prisma.StudentCourse.create({
+          data: {
+            studentId: parseInt(studentId),
+            courseId: batch.courseId
+          }
+        });
+      }
+      
+      return enrollment;
+    });
     
-    res.status(201).json({ success: true, data: enrollment });
+    res.status(201).json({ success: true, data: result });
   } catch (error) {
     handleApiError(res, error);
   }

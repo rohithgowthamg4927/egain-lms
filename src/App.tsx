@@ -1,6 +1,5 @@
 
 import {
-  BrowserRouter,
   Routes,
   Route,
 } from "react-router-dom";
@@ -32,43 +31,41 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
-            {/* Course routes */}
-            <Route path="/courses" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
-            <Route path="/courses/add" element={<ProtectedRoute><AddCourse /></ProtectedRoute>} />
-            <Route path="/courses/:courseId" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
-            <Route path="/courses/:courseId/edit" element={<ProtectedRoute><EditCourse /></ProtectedRoute>} />
-            
-            {/* Batch routes */}
-            <Route path="/batches" element={<ProtectedRoute><Batches /></ProtectedRoute>} />
-            <Route path="/batches/add" element={<ProtectedRoute><AddBatch /></ProtectedRoute>} />
-            <Route path="/batches/:batchId" element={<ProtectedRoute><BatchDetail /></ProtectedRoute>} />
-            <Route path="/batches/:batchId/edit" element={<ProtectedRoute><EditBatch /></ProtectedRoute>} />
-            <Route path="/batches/manage-students" element={<ProtectedRoute><ManageStudents /></ProtectedRoute>} />
+          {/* Course routes */}
+          <Route path="/courses" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
+          <Route path="/courses/add" element={<ProtectedRoute><AddCourse /></ProtectedRoute>} />
+          <Route path="/courses/:courseId" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
+          <Route path="/courses/:courseId/edit" element={<ProtectedRoute><EditCourse /></ProtectedRoute>} />
+          
+          {/* Batch routes */}
+          <Route path="/batches" element={<ProtectedRoute><Batches /></ProtectedRoute>} />
+          <Route path="/batches/add" element={<ProtectedRoute><AddBatch /></ProtectedRoute>} />
+          <Route path="/batches/:batchId" element={<ProtectedRoute><BatchDetail /></ProtectedRoute>} />
+          <Route path="/batches/:batchId/edit" element={<ProtectedRoute><EditBatch /></ProtectedRoute>} />
+          <Route path="/batches/manage-students" element={<ProtectedRoute><ManageStudents /></ProtectedRoute>} />
 
-            {/* Categories routes */}
-            <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
+          {/* Categories routes */}
+          <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
 
-            {/* Settings routes */}
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          {/* Settings routes */}
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
-            {/* Students routes */}
-            <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
+          {/* Students routes */}
+          <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
 
-            {/* Instructors routes */}
-            <Route path="/instructors" element={<ProtectedRoute><Instructors /></ProtectedRoute>} />
+          {/* Instructors routes */}
+          <Route path="/instructors" element={<ProtectedRoute><Instructors /></ProtectedRoute>} />
 
-            {/* Resources routes */}
-            <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
+          {/* Resources routes */}
+          <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
+        </Routes>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

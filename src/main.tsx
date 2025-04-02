@@ -6,15 +6,8 @@ import App from './App.tsx'
 import { AuthProvider } from './hooks/use-auth.tsx'
 import './index.css'
 
-// Create a client
-const queryClient = new QueryClient()
-
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </QueryClientProvider>
+    <App />
   </BrowserRouter>
 );

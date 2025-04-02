@@ -35,9 +35,7 @@ router.get('/', async (req, res) => {
             email: true,
           }
         },
-        _count: {
-          select: { studentBatches: true }
-        }
+        studentBatches: true // Use the correct relation name
       }
     });
     
@@ -49,20 +47,15 @@ router.get('/', async (req, res) => {
       endDate: batch.endDate,
       course: batch.course,
       instructor: batch.instructor,
-      studentsCount: batch._count?.studentBatches ?? 0
+      studentsCount: batch.studentBatches?.length ?? 0
     }));
     
     // Get categories with course counts
     const categories = await prisma.courseCategory.findMany({
       include: {
-        _count: {
-          select: { courses: true }
-        },
         courses: {
           include: {
-            _count: {
-              select: { studentCourses: true }
-            }
+            studentCourses: true // Use the correct relation name
           }
         }
       }
@@ -72,24 +65,20 @@ router.get('/', async (req, res) => {
     const coursesByCategory = categories.map(category => ({
       categoryId: category.categoryId,
       categoryName: category.categoryName,
-      coursesCount: category._count?.courses ?? 0,
+      coursesCount: category.courses?.length ?? 0,
       courses: category.courses.map(course => ({
         courseId: course.courseId,
         courseName: course.courseName,
-        studentsCount: course._count?.studentCourses ?? 0
+        studentsCount: course.studentCourses?.length ?? 0
       }))
     }));
     
     // Get popular courses (by enrollment count)
-    const coursesWithEnrollments = await prisma.course.findMany({
+    const popularCourses = await prisma.course.findMany({
       take: 5,
       include: {
         category: true,
-        _count: {
-          select: {
-            studentCourses: true
-          }
-        }
+        studentCourses: true // Use the correct relation name
       },
       orderBy: {
         studentCourses: {
@@ -99,7 +88,7 @@ router.get('/', async (req, res) => {
     });
     
     // Transform courses for the response
-    const popularCourses = coursesWithEnrollments.map(course => ({
+    const formattedPopularCourses = popularCourses.map(course => ({
       course: {
         courseId: course.courseId,
         courseName: course.courseName,
@@ -107,7 +96,7 @@ router.get('/', async (req, res) => {
         category: course.category
       },
       _count: {
-        students: course._count?.studentCourses ?? 0
+        students: course.studentCourses?.length ?? 0
       }
     }));
     
@@ -117,7 +106,7 @@ router.get('/', async (req, res) => {
       take: 5,
       where: {
         startTime: {
-          gte: now  // Using direct Date object instead of ISO string
+          gte: now // Using direct Date object
         }
       },
       orderBy: {
@@ -151,21 +140,17 @@ router.get('/', async (req, res) => {
     }));
     
     // Get category distribution (students per category)
-    const categoryDistribution = await Promise.all(
-      categories.map(async (category) => {
-        // Sum up students across all courses in this category
-        let totalStudents = 0;
-        
-        for (const course of category.courses) {
-          totalStudents += course._count?.studentCourses ?? 0;
-        }
-        
-        return {
-          name: category.categoryName,
-          value: totalStudents
-        };
-      })
-    );
+    const categoryDistribution = categories.map(category => {
+      // Sum up students across all courses in this category
+      const totalStudents = category.courses.reduce((sum, course) => {
+        return sum + (course.studentCourses?.length ?? 0);
+      }, 0);
+      
+      return {
+        name: category.categoryName,
+        value: totalStudents
+      };
+    });
     
     // Prepare and return metrics
     const metrics = {
@@ -176,7 +161,7 @@ router.get('/', async (req, res) => {
       },
       coursesByCategory,
       recentBatches: formattedBatches,
-      popularCourses,
+      popularCourses: formattedPopularCourses,
       upcomingSchedules: formattedSchedules,
       categoryDistribution
     };

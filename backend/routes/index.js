@@ -24,6 +24,6 @@ router.use('/resources', resourceRoutes);
 router.use('/schedules', scheduleRoutes);
 router.use('/student-batches', studentRoutes.batchRoutes);
 router.use('/student-courses', studentRoutes.courseRoutes);
-router.use('/dashboard-metrics', dashboardRoutes);
+router.use('/dashboard', dashboardRoutes); // Now correctly mounted as '/dashboard'
 
 export default router;

@@ -36,10 +36,10 @@ interface UserData {
   email: string;
   phoneNumber?: string | null;
   bio?: string | null;
-  address?: string | null; // Added address field
+  address?: string | null;
   role?: Role;
-  mustResetPassword?: boolean; // Added mustResetPassword field
-  password?: string; // Added password field for creation
+  mustResetPassword?: boolean;
+  password?: string;
 }
 
 // Create a new user
@@ -78,7 +78,7 @@ export const updateUser = async (userId: number, data: Partial<UserData>): Promi
       email: data.email || '',
       phoneNumber: data.phoneNumber || null,
       bio: data.bio || null,
-      address: data.address || null, // Added address field
+      address: data.address || null,
       role: data.role || Role.student
     };
     

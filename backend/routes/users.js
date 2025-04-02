@@ -1,3 +1,4 @@
+
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
@@ -123,8 +124,7 @@ router.put('/:id', async (req, res) => {
       role,
       phoneNumber,
       address,
-      mustResetPassword,
-      active
+      mustResetPassword
     } = req.body;
     
     // Check if user exists
@@ -161,7 +161,6 @@ router.put('/:id', async (req, res) => {
       ...(phoneNumber !== undefined && { phoneNumber }),
       ...(address !== undefined && { address }),
       ...(mustResetPassword !== undefined && { mustResetPassword }),
-      ...(active !== undefined && { active }),
       updatedAt: new Date()
     };
     

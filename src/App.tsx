@@ -7,6 +7,9 @@ import Dashboard from '@/pages/Dashboard';
 import Batches from '@/pages/Batches';
 import BatchDetail from '@/pages/BatchDetail';
 import Courses from '@/pages/Courses';
+import CourseDetail from '@/pages/CourseDetail';
+import AddCourse from '@/pages/AddCourse';
+import EditCourse from '@/pages/EditCourse';
 import Instructors from '@/pages/Instructors';
 import Students from '@/pages/Students';
 import Resources from '@/pages/Resources';
@@ -42,6 +45,9 @@ function App() {
           <Route path="/batches" element={<Batches />} />
           <Route path="/batches/:batchId" element={<BatchDetail />} />
           <Route path="/courses" element={<Courses />} />
+          <Route path="/courses/:courseId" element={<CourseDetail />} />
+          <Route path="/courses/add" element={<AddCourse />} />
+          <Route path="/courses/edit/:courseId" element={<EditCourse />} />
           <Route path="/categories" element={<Categories />} />
           <Route path="/instructors" element={<Instructors />} />
           <Route path="/students" element={<Students />} />

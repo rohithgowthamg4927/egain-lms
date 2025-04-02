@@ -36,7 +36,6 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
       instructorId: batch?.instructorId ? String(batch.instructorId) : '',
       startDate: batch?.startDate || '',
       endDate: batch?.endDate || '',
-      meetingLink: batch?.schedules?.[0]?.meetingLink || '',
     },
   });
 
@@ -222,20 +221,6 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
                     />
                   </PopoverContent>
                 </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="meetingLink"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Meeting Link</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter meeting link" {...field} />
-                </FormControl>
                 <FormMessage />
               </FormItem>
             )}

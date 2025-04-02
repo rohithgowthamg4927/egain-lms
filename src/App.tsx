@@ -25,6 +25,7 @@ import EditBatch from './pages/EditBatch';
 import ManageStudents from './pages/ManageStudents';
 import Batches from "./pages/Batches";
 import BatchDetail from "./pages/BatchDetail";
+import Schedules from "./pages/Schedules";
 
 function App() {
   const queryClient = new QueryClient();
@@ -49,6 +50,9 @@ function App() {
           <Route path="/batches/:batchId" element={<ProtectedRoute><BatchDetail /></ProtectedRoute>} />
           <Route path="/batches/:batchId/edit" element={<ProtectedRoute><EditBatch /></ProtectedRoute>} />
           <Route path="/batches/manage-students" element={<ProtectedRoute><ManageStudents /></ProtectedRoute>} />
+          
+          {/* Schedule routes */}
+          <Route path="/schedules" element={<ProtectedRoute><Schedules /></ProtectedRoute>} />
 
           {/* Categories routes */}
           <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />

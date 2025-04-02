@@ -136,14 +136,13 @@ router.post('/', async (req, res) => {
       startDate,
       endDate,
       courseId,
-      instructorId,
-      updateInstructorCourse
+      instructorId
     } = req.body;
     
-    // Create batch transaction to also update instructor course if needed
+    // Create batch transaction to also update instructor course
     const batch = await prisma.$transaction(async (prisma) => {
       // Create the batch
-      const newBatch = await prisma.Batch.create({
+      const newBatch = await prisma.batch.create({
         data: {
           batchName,
           startDate: new Date(startDate),
@@ -153,23 +152,21 @@ router.post('/', async (req, res) => {
         }
       });
       
-      // If updateInstructorCourse flag is true, also create instructor-course relationship if it doesn't exist
-      if (updateInstructorCourse) {
-        const existingRelation = await prisma.InstructorCourse.findFirst({
-          where: {
+      // Create instructor-course relationship if it doesn't exist
+      const existingRelation = await prisma.instructorCourse.findFirst({
+        where: {
+          instructorId: parseInt(instructorId),
+          courseId: parseInt(courseId)
+        }
+      });
+      
+      if (!existingRelation) {
+        await prisma.instructorCourse.create({
+          data: {
             instructorId: parseInt(instructorId),
             courseId: parseInt(courseId)
           }
         });
-        
-        if (!existingRelation) {
-          await prisma.InstructorCourse.create({
-            data: {
-              instructorId: parseInt(instructorId),
-              courseId: parseInt(courseId)
-            }
-          });
-        }
       }
       
       return newBatch;
@@ -177,6 +174,7 @@ router.post('/', async (req, res) => {
     
     res.status(201).json({ success: true, data: batch });
   } catch (error) {
+    console.error('Error creating batch:', error);
     handleApiError(res, error);
   }
 });
@@ -190,14 +188,22 @@ router.put('/:id', async (req, res) => {
       startDate,
       endDate,
       courseId,
-      instructorId,
-      updateInstructorCourse
+      instructorId
     } = req.body;
     
-    // Update batch transaction to also update instructor course if needed
+    // Update batch transaction to also update instructor course
     const batch = await prisma.$transaction(async (prisma) => {
+      // First, get the current batch to check if instructor is changing
+      const currentBatch = await prisma.batch.findUnique({
+        where: { batchId }
+      });
+      
+      if (!currentBatch) {
+        throw new Error('Batch not found');
+      }
+      
       // Update the batch
-      const updatedBatch = await prisma.Batch.update({
+      const updatedBatch = await prisma.batch.update({
         where: { batchId },
         data: {
           ...(batchName !== undefined && { batchName }),
@@ -208,22 +214,28 @@ router.put('/:id', async (req, res) => {
         }
       });
       
-      // If updateInstructorCourse flag is true and course/instructor are provided
-      if (updateInstructorCourse && courseId !== undefined && instructorId !== undefined) {
+      // If instructor or course changed, update the instructor-course relationship
+      if (
+        (instructorId && parseInt(instructorId) !== currentBatch.instructorId) || 
+        (courseId && parseInt(courseId) !== currentBatch.courseId)
+      ) {
+        const actualCourseId = parseInt(courseId || currentBatch.courseId);
+        const actualInstructorId = parseInt(instructorId || currentBatch.instructorId);
+        
         // Check if the instructor-course relationship already exists
-        const existingRelation = await prisma.InstructorCourse.findFirst({
+        const existingRelation = await prisma.instructorCourse.findFirst({
           where: {
-            instructorId: parseInt(instructorId),
-            courseId: parseInt(courseId)
+            instructorId: actualInstructorId,
+            courseId: actualCourseId
           }
         });
         
         // If not, create it
         if (!existingRelation) {
-          await prisma.InstructorCourse.create({
+          await prisma.instructorCourse.create({
             data: {
-              instructorId: parseInt(instructorId),
-              courseId: parseInt(courseId)
+              instructorId: actualInstructorId,
+              courseId: actualCourseId
             }
           });
         }
@@ -234,6 +246,7 @@ router.put('/:id', async (req, res) => {
     
     res.json({ success: true, data: batch });
   } catch (error) {
+    console.error('Error updating batch:', error);
     handleApiError(res, error);
   }
 });
@@ -246,23 +259,24 @@ router.delete('/:id', async (req, res) => {
     // Delete batch in a transaction
     await prisma.$transaction(async (prisma) => {
       // Delete student enrollments
-      await prisma.StudentBatch.deleteMany({
+      await prisma.studentBatch.deleteMany({
         where: { batchId }
       });
       
       // Delete batch schedules
-      await prisma.Schedule.deleteMany({
+      await prisma.schedule.deleteMany({
         where: { batchId }
       });
       
       // Delete the batch
-      await prisma.Batch.delete({
+      await prisma.batch.delete({
         where: { batchId }
       });
     });
     
     res.json({ success: true });
   } catch (error) {
+    console.error('Error deleting batch:', error);
     handleApiError(res, error);
   }
 });
@@ -274,7 +288,7 @@ router.post('/:id/students', async (req, res) => {
     const { studentId } = req.body;
     
     // Check if batch exists
-    const batch = await prisma.Batch.findUnique({
+    const batch = await prisma.batch.findUnique({
       where: { batchId },
       include: {
         students: true,
@@ -302,7 +316,7 @@ router.post('/:id/students', async (req, res) => {
     // Enroll student in batch and course in a transaction
     const result = await prisma.$transaction(async (prisma) => {
       // Enroll in batch
-      const enrollment = await prisma.StudentBatch.create({
+      const enrollment = await prisma.studentBatch.create({
         data: {
           studentId: parseInt(studentId),
           batchId
@@ -310,7 +324,7 @@ router.post('/:id/students', async (req, res) => {
       });
       
       // Also enroll student in the course if not already enrolled
-      const studentCourse = await prisma.StudentCourse.findFirst({
+      const studentCourse = await prisma.studentCourse.findFirst({
         where: {
           studentId: parseInt(studentId),
           courseId: batch.courseId
@@ -318,7 +332,7 @@ router.post('/:id/students', async (req, res) => {
       });
       
       if (!studentCourse) {
-        await prisma.StudentCourse.create({
+        await prisma.studentCourse.create({
           data: {
             studentId: parseInt(studentId),
             courseId: batch.courseId
@@ -331,6 +345,7 @@ router.post('/:id/students', async (req, res) => {
     
     res.status(201).json({ success: true, data: result });
   } catch (error) {
+    console.error('Error enrolling student:', error);
     handleApiError(res, error);
   }
 });
@@ -342,7 +357,7 @@ router.delete('/:batchId/students/:studentId', async (req, res) => {
     const studentId = parseInt(req.params.studentId);
     
     // Check if enrollment exists
-    const enrollment = await prisma.StudentBatch.findFirst({
+    const enrollment = await prisma.studentBatch.findFirst({
       where: {
         batchId,
         studentId
@@ -357,7 +372,7 @@ router.delete('/:batchId/students/:studentId', async (req, res) => {
     }
     
     // Remove enrollment
-    await prisma.StudentBatch.deleteMany({
+    await prisma.studentBatch.deleteMany({
       where: {
         batchId,
         studentId
@@ -366,6 +381,7 @@ router.delete('/:batchId/students/:studentId', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
+    console.error('Error removing student from batch:', error);
     handleApiError(res, error);
   }
 });

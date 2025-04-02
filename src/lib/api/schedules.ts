@@ -2,19 +2,14 @@
 import { Schedule } from '@/lib/types';
 import { apiFetch } from './core';
 
-// Get schedules with optional filters
-export const getSchedules = async (filters?: { batchId?: number }): Promise<{ success: boolean; data?: Schedule[]; error?: string }> => {
-  let url = '/schedules';
-  
-  if (filters?.batchId) {
-    url += `?batchId=${filters.batchId}`;
-  }
-  
-  return apiFetch<Schedule[]>(url);
+// Get all schedules with optional filtering
+export const getAllSchedules = async (params?: { batchId?: string | number }): Promise<{ success: boolean; data?: Schedule[]; error?: string }> => {
+  const queryParams = params?.batchId ? `?batchId=${params.batchId}` : '';
+  return apiFetch<Schedule[]>(`/schedules${queryParams}`);
 };
 
-// Get a schedule by ID
-export const getScheduleById = async (scheduleId: number): Promise<{ success: boolean; data?: Schedule; error?: string }> => {
+// Get a single schedule by ID
+export const getSchedule = async (scheduleId: number): Promise<{ success: boolean; data?: Schedule; error?: string }> => {
   return apiFetch<Schedule>(`/schedules/${scheduleId}`);
 };
 
@@ -39,4 +34,9 @@ export const deleteSchedule = async (scheduleId: number): Promise<{ success: boo
   return apiFetch(`/schedules/${scheduleId}`, {
     method: 'DELETE',
   });
+};
+
+// Get schedules for a specific batch
+export const getBatchSchedules = async (batchId: number): Promise<{ success: boolean; data?: Schedule[]; error?: string }> => {
+  return getAllSchedules({ batchId });
 };

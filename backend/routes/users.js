@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
@@ -86,7 +85,7 @@ router.post('/', async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Create user
+    // Create user - removed 'active' field since it doesn't exist in schema
     const user = await prisma.user.create({
       data: {
         fullName,
@@ -96,7 +95,6 @@ router.post('/', async (req, res) => {
         phoneNumber,
         address,
         mustResetPassword: Boolean(mustResetPassword),
-        active: true,
         createdAt: new Date(),
         updatedAt: new Date()
       }

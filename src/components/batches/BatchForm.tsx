@@ -31,7 +31,7 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
 
   const form = useForm({
     defaultValues: {
-      name: batch?.name || '',
+      batchName: batch?.batchName || '',
       description: batch?.description || '',
       courseId: batch?.courseId ? String(batch.courseId) : '',
       instructorId: batch?.instructorId ? String(batch.instructorId) : '',
@@ -50,7 +50,7 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
 
   const { data: instructorsData } = useQuery({
     queryKey: ['instructors'],
-    queryFn: () => getUsers({ role: Role.instructor }),
+    queryFn: () => getUsers(Role.instructor),
   });
 
   const courses = coursesData?.data || [];
@@ -85,7 +85,7 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <FormField
             control={form.control}
-            name="name"
+            name="batchName"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Batch Name</FormLabel>
@@ -115,7 +115,7 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
                   <SelectContent>
                     {courses.map((course) => (
                       <SelectItem key={course.id} value={String(course.id)}>
-                        {course.title}
+                        {course.courseName}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -143,7 +143,7 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
                   <SelectContent>
                     {instructors.map((instructor: User) => (
                       <SelectItem key={instructor.id} value={String(instructor.id)}>
-                        {instructor.firstName} {instructor.lastName}
+                        {instructor.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

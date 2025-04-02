@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
     
     const whereClause = role ? { role } : {};
     
-    const users = await prisma.user.findMany({
+    const users = await prisma.User.findMany({
       where: whereClause,
       include: {
         profilePicture: true
@@ -35,7 +35,7 @@ router.get('/:id', async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
     
-    const user = await prisma.user.findUnique({
+    const user = await prisma.User.findUnique({
       where: { userId },
       include: {
         profilePicture: true
@@ -72,7 +72,7 @@ router.post('/', async (req, res) => {
     } = req.body;
     
     // Check if email already exists
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.User.findUnique({
       where: { email }
     });
     
@@ -83,15 +83,13 @@ router.post('/', async (req, res) => {
       });
     }
     
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
     
     // Create user - removed 'active' field since it doesn't exist in schema
-    const user = await prisma.user.create({
+    const user = await prisma.User.create({
       data: {
         fullName,
         email,
-        password: hashedPassword,
+        password,
         role,
         phoneNumber,
         address,
@@ -128,7 +126,7 @@ router.put('/:id', async (req, res) => {
     } = req.body;
     
     // Check if user exists
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.User.findUnique({
       where: { userId }
     });
     
@@ -141,7 +139,7 @@ router.put('/:id', async (req, res) => {
     
     // If email is being changed, check if new email is already in use
     if (email && email !== existingUser.email) {
-      const userWithSameEmail = await prisma.user.findUnique({
+      const userWithSameEmail = await prisma.User.findUnique({
         where: { email }
       });
       
@@ -164,13 +162,9 @@ router.put('/:id', async (req, res) => {
       updatedAt: new Date()
     };
     
-    // Hash password if provided
-    if (password) {
-      updateData.password = await bcrypt.hash(password, 10);
-    }
     
     // Update user
-    const updatedUser = await prisma.user.update({
+    const updatedUser = await prisma.User.update({
       where: { userId },
       data: updateData
     });
@@ -193,7 +187,7 @@ router.delete('/:id', async (req, res) => {
     const userId = parseInt(req.params.id);
     
     // Check if user exists
-    const user = await prisma.user.findUnique({
+    const user = await prisma.User.findUnique({
       where: { userId }
     });
     
@@ -206,13 +200,13 @@ router.delete('/:id', async (req, res) => {
     
     // Check if user is an instructor with assigned batches
     if (user.role === 'instructor') {
-      const associatedBatches = await prisma.batch.findMany({
+      const associatedBatches = await prisma.Batch.findMany({
         where: { instructorId: userId }
       });
       
       if (associatedBatches.length > 0) {
         // Update the instructorId to null for all batches this instructor is assigned to
-        await prisma.batch.updateMany({
+        await prisma.Batch.updateMany({
           where: { instructorId: userId },
           data: { instructorId: null }
         });
@@ -221,11 +215,11 @@ router.delete('/:id', async (req, res) => {
     
     // Remove student enrollments if user is a student
     if (user.role === 'student') {
-      await prisma.studentBatch.deleteMany({
+      await prisma.StudentBatch.deleteMany({
         where: { studentId: userId }
       });
       
-      await prisma.studentCourse.deleteMany({
+      await prisma.StudentCourse.deleteMany({
         where: { studentId: userId }
       });
     }
@@ -238,7 +232,7 @@ router.delete('/:id', async (req, res) => {
     }
     
     // Delete user
-    await prisma.user.delete({
+    await prisma.User.delete({
       where: { userId }
     });
     

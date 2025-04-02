@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -171,7 +172,7 @@ const Students = () => {
 
   return (
     <Layout>
-      <div className="flex-1 space-y-6 p-6 md:p-8">
+      <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <h1 className="text-3xl font-bold">Students</h1>
           <Button onClick={handleAddStudent}>

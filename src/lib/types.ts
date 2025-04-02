@@ -160,13 +160,13 @@ export interface DashboardMetrics {
     endDate: string;
     course: Course;
     instructor: User;
-    students: { userId: number; fullName: string }[];
     studentsCount: number;
   }[];
   popularCourses: {
     course: {
       courseId: number;
       courseName: string;
+      description?: string;
       category?: {
         categoryId: number;
         categoryName: string;

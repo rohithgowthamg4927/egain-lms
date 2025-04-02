@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,24 +15,22 @@ interface DashboardMetricsProps {
 const COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f97316', '#10b981', '#14b8a6'];
 
 const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) => {
-  console.log("Dashboard metrics data:", data);
+  console.log("Dashboard metrics raw data:", data);
+  console.log("Dashboard category distribution:", data?.categoryDistribution);
+  console.log("Dashboard courses by category:", data?.coursesByCategory);
   
-  // Use optional chaining for category distribution
-  const categoryChartData = data?.categoryDistribution || [];
+  const categoryChartData = data?.categoryDistribution?.filter(cat => cat.value > 0) || [];
   
-  // Prepare data for the Courses by Category chart
   const coursesByCategoryData = data?.coursesByCategory?.map((category) => ({
     name: category.categoryName,
-    courses: category.coursesCount,
+    courses: category.coursesCount || 0,
   })) || [];
 
-  // Prepare data for the Popular Courses chart
   const popularCoursesData = data?.popularCourses?.map((course) => ({
     name: course.course.courseName,
-    students: course._count.students,
+    students: course._count?.students || 0,
   })) || [];
 
-  // Format upcoming schedule items
   const upcomingSchedules = data?.upcomingSchedules || [];
 
   if (isError) {

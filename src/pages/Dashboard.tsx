@@ -16,7 +16,7 @@ const Dashboard = () => {
   const dashboardMetricsQuery = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: getDashboardMetrics,
-    retry: 3, // Increased retries to handle potential network issues
+    retry: 5, // Increased retries to handle potential network issues
     refetchOnWindowFocus: false
   });
 
@@ -30,6 +30,13 @@ const Dashboard = () => {
       });
     }
   }, [dashboardMetricsQuery.isError, dashboardMetricsQuery.error, toast]);
+
+  // Log the received data for debugging
+  useEffect(() => {
+    if (dashboardMetricsQuery.data) {
+      console.log("Received API data:", JSON.stringify(dashboardMetricsQuery.data, null, 2));
+    }
+  }, [dashboardMetricsQuery.data]);
 
   return (
     <Layout noHeader={true}>

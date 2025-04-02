@@ -1,6 +1,6 @@
 
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
 
 const router = express.Router();
@@ -11,13 +11,13 @@ router.get('/', async (req, res) => {
   try {
     console.log("Fetching dashboard metrics");
     
-    // Get counts for various entities - Using direct count queries
+    // Get counts for various entities - Using enum values from Prisma
     const studentsCount = await prisma.user.count({
-      where: { role: 'student' }
+      where: { role: Role.student }
     });
     
     const instructorsCount = await prisma.user.count({
-      where: { role: 'instructor' }
+      where: { role: Role.instructor }
     });
     
     const coursesCount = await prisma.course.count();
@@ -33,11 +33,10 @@ router.get('/', async (req, res) => {
             userId: true,
             fullName: true,
             email: true,
-            // Removed photoUrl as it doesn't exist in the User model
           }
         },
         _count: {
-          select: { students: true }
+          select: { studentBatches: true }
         }
       }
     });
@@ -50,7 +49,7 @@ router.get('/', async (req, res) => {
       endDate: batch.endDate,
       course: batch.course,
       instructor: batch.instructor,
-      studentsCount: batch._count.students
+      studentsCount: batch._count?.studentBatches ?? 0
     }));
     
     // Get categories with course counts
@@ -62,7 +61,7 @@ router.get('/', async (req, res) => {
         courses: {
           include: {
             _count: {
-              select: { students: true }
+              select: { studentCourses: true }
             }
           }
         }
@@ -73,11 +72,11 @@ router.get('/', async (req, res) => {
     const coursesByCategory = categories.map(category => ({
       categoryId: category.categoryId,
       categoryName: category.categoryName,
-      coursesCount: category._count.courses,
+      coursesCount: category._count?.courses ?? 0,
       courses: category.courses.map(course => ({
         courseId: course.courseId,
         courseName: course.courseName,
-        studentsCount: course._count.students
+        studentsCount: course._count?.studentCourses ?? 0
       }))
     }));
     
@@ -88,12 +87,12 @@ router.get('/', async (req, res) => {
         category: true,
         _count: {
           select: {
-            students: true
+            studentCourses: true
           }
         }
       },
       orderBy: {
-        students: {
+        studentCourses: {
           _count: 'desc'
         }
       }
@@ -108,7 +107,7 @@ router.get('/', async (req, res) => {
         category: course.category
       },
       _count: {
-        students: course._count.students
+        students: course._count?.studentCourses ?? 0
       }
     }));
     
@@ -118,7 +117,7 @@ router.get('/', async (req, res) => {
       take: 5,
       where: {
         startTime: {
-          gte: now
+          gte: now  // Using direct Date object instead of ISO string
         }
       },
       orderBy: {
@@ -158,7 +157,7 @@ router.get('/', async (req, res) => {
         let totalStudents = 0;
         
         for (const course of category.courses) {
-          totalStudents += course._count.students;
+          totalStudents += course._count?.studentCourses ?? 0;
         }
         
         return {
@@ -183,6 +182,9 @@ router.get('/', async (req, res) => {
     };
     
     console.log("Dashboard metrics prepared successfully");
+    // Log the final metrics for debugging
+    console.log("Final metrics being sent:", JSON.stringify(metrics, null, 2));
+    
     res.json({ success: true, data: metrics });
   } catch (error) {
     console.error('Dashboard metrics error:', error);

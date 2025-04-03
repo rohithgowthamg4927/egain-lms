@@ -58,8 +58,15 @@ router.get('/:id', async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
     
+    if (isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid user ID format'
+      });
+    }
+    
     const user = await prisma.User.findUnique({
-      where: { userId },
+      where: { userId: userId },  // Make sure userId is explicitly provided
       include: {
         profilePicture: true
       }

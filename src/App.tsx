@@ -1,4 +1,3 @@
-
 import {
   Routes,
   Route,
@@ -18,6 +17,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { AuthProvider } from "./hooks/use-auth";
 import AddCourse from "./pages/AddCourse";
 import EditCourse from "./pages/EditCourse";
+import UserProfile from "./pages/UserProfile";
 
 // Import batch-related routes
 import AddBatch from './pages/AddBatch';
@@ -62,9 +62,11 @@ function App() {
 
           {/* Students routes */}
           <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
+          <Route path="/students/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
 
           {/* Instructors routes */}
           <Route path="/instructors" element={<ProtectedRoute><Instructors /></ProtectedRoute>} />
+          <Route path="/instructors/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
 
           {/* Resources routes */}
           <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />

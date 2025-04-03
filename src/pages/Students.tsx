@@ -43,7 +43,7 @@ const Students = () => {
       console.log('Response:', response);
       
       if (response.success && response.data) {
-        setStudents(response.data);
+        setStudents(Array.isArray(response.data) ? response.data : [response.data]);
       } else {
         console.error('API error:', response.error);
         toast({

@@ -38,7 +38,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Batch, User, Schedule } from '@/lib/types';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
-import { formatDate } from '@/lib/utils';
+import { formatDate, getInitials } from '@/lib/utils';
 import { Edit, Trash2, Calendar, Users, AlertTriangle, RefreshCw } from 'lucide-react';
 
 const BatchDetail = () => {
@@ -220,7 +220,7 @@ const BatchDetail = () => {
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Batch Details</CardTitle>
-            <CardDescription>Comprehensive information about this batch</CardDescription>
+            <CardDescription>Information about this batch</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -230,7 +230,7 @@ const BatchDetail = () => {
               </div>
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Instructor</h3>
-                <p className="text-lg font-medium">{`${batch.instructor?.firstName || ''} ${batch.instructor?.lastName || ''}`}</p>
+                <p className="text-lg font-medium">{`${batch.instructor?.fullName || ''}`}</p>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Start Date</h3>
@@ -325,16 +325,16 @@ const BatchDetail = () => {
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Avatar>
-                                <AvatarImage src={student.profilePicture || ''} alt={student.firstName} />
-                                <AvatarFallback>{`${student.firstName?.charAt(0) || ''}${student.lastName?.charAt(0) || ''}`}</AvatarFallback>
+                                <AvatarImage src={student.profilePicture?.fileUrl} alt={student.fullName} />
+                                <AvatarFallback>{getInitials(student.fullName)}</AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="font-medium">{`${student.firstName || ''} ${student.lastName || ''}`}</p>
+                                <p className="font-medium">{`${student.fullName  || ''}`}</p>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>{student.email}</TableCell>
-                          <TableCell>{student.phone || 'N/A'}</TableCell>
+                          <TableCell>{student.phoneNumber || 'N/A'}</TableCell>
                           <TableCell>
                             <Button asChild size="sm" variant="ghost">
                               <Link to={`/students/${student.userId}`}>View Profile</Link>

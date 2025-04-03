@@ -39,7 +39,7 @@ import { Badge } from '@/components/ui/badge';
 import { Batch, User, Schedule } from '@/lib/types';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 import { formatDate, getInitials } from '@/lib/utils';
-import { Edit, Trash2, Calendar, Users, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Edit, Trash2, Calendar, Users, AlertTriangle, RefreshCw, UserMinus } from 'lucide-react';
 
 const BatchDetail = () => {
   const { batchId } = useParams();
@@ -51,6 +51,8 @@ const BatchDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isRemovingStudent, setIsRemovingStudent] = useState(false);
+  const [removingStudentId, setRemovingStudentId] = useState<number | null>(null);
 
   const fetchBatchDetails = async () => {
     if (!batchId) return;
@@ -133,6 +135,42 @@ const BatchDetail = () => {
       });
     } finally {
       setIsDeleting(false);
+    }
+  };
+  
+  const handleRemoveStudent = async (studentId: number) => {
+    if (!batchId) return;
+    
+    try {
+      setIsRemovingStudent(true);
+      setRemovingStudentId(studentId);
+      
+      const response = await unenrollStudentFromBatch(studentId, Number(batchId));
+      
+      if (response.success) {
+        toast({
+          title: 'Success',
+          description: 'Student removed from batch successfully',
+        });
+        // Refresh the students list
+        setStudents(prevStudents => prevStudents.filter(student => student.userId !== studentId));
+      } else {
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to remove student from batch',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      console.error('Error removing student from batch:', err);
+      toast({
+        title: 'Error',
+        description: 'An error occurred while removing student from batch',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRemovingStudent(false);
+      setRemovingStudentId(null);
     }
   };
 
@@ -339,9 +377,54 @@ const BatchDetail = () => {
                           <TableCell>{student.email}</TableCell>
                           <TableCell>{student.phoneNumber || 'N/A'}</TableCell>
                           <TableCell>
-                            <Button asChild size="sm" variant="ghost">
-                              <Link to={`/students/${student.userId}`}>View Profile</Link>
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button asChild size="sm" variant="ghost">
+                                <Link to={`/students/${student.userId}`}>View Profile</Link>
+                              </Button>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    variant="destructive" 
+                                    className="flex items-center gap-1"
+                                    disabled={isRemovingStudent && removingStudentId === student.userId}
+                                  >
+                                    {isRemovingStudent && removingStudentId === student.userId ? (
+                                      <RefreshCw className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      <UserMinus className="h-3 w-3" />
+                                    )}
+                                    Remove
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Remove Student</DialogTitle>
+                                    <DialogDescription>
+                                      Are you sure you want to remove {student.fullName} from this batch? They will lose access to this batch's resources.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <DialogFooter>
+                                    <Button type="button" variant="outline" onClick={() => {}}>
+                                      Cancel
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      onClick={() => handleRemoveStudent(student.userId)}
+                                      disabled={isRemovingStudent}
+                                    >
+                                      {isRemovingStudent && removingStudentId === student.userId ? (
+                                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <UserMinus className="h-4 w-4 mr-2" />
+                                      )}
+                                      Remove Student
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}

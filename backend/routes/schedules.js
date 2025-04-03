@@ -120,10 +120,6 @@ router.put('/:id', async (req, res) => {
       updateData.endTime = new Date(`1970-01-01T${endTime}`);
     }
     
-    // if (dayOfWeek !== undefined) {
-    //   updateData.dayOfWeek = parseInt(dayOfWeek);
-    // }
-    
     if (batchId !== undefined) {
       updateData.batchId = parseInt(batchId);
     }

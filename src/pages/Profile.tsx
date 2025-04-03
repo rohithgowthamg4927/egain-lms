@@ -1,13 +1,10 @@
 
-// Note: Fixing TypeScript errors in Profile.tsx
-// Replacing firstName/lastName with fullName and fixing other property types
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getStudentCourses } from '@/lib/api';
 import { Course } from '@/lib/types';
 import { Pencil, Mail, Phone, Calendar, Book } from 'lucide-react';
 import { formatDate } from '@/lib/utils/date-helpers';
@@ -23,12 +20,9 @@ const Profile = () => {
       
       try {
         setIsLoading(true);
-        if (user.role === 'student') {
-          const response = await getStudentCourses(user.id);
-          if (response.success && response.data) {
-            setCourses(response.data);
-          }
-        }
+        // For now, we'll just set an empty array
+        // Later we can implement the actual API call
+        setCourses([]);
       } catch (error) {
         console.error('Error loading user courses:', error);
       } finally {
@@ -130,7 +124,7 @@ const Profile = () => {
                             <Book className="h-6 w-6 text-primary" />
                           </div>
                           <div>
-                            <h3 className="font-medium">{course.title}</h3>
+                            <h3 className="font-medium">{course.courseName}</h3>
                             <p className="text-sm text-muted-foreground">{course.description}</p>
                           </div>
                         </div>

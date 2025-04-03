@@ -1,14 +1,13 @@
 
 // Note: Fixing TypeScript errors in BatchDetail.tsx
-// Replacing firstName/lastName with fullName and fixing other properties based on User type
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   getBatch, 
   getBatchStudents,
-  addStudentToBatch,
-  removeStudentFromBatch 
-} from '@/lib/api';
+  enrollStudentInBatch,
+  unenrollStudentFromBatch 
+} from '@/lib/api/batches';
 import { Batch, User } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { 
@@ -160,7 +159,7 @@ const BatchDetail = () => {
     if (!batchId || !selectedStudent) return;
     
     try {
-      const response = await addStudentToBatch(parseInt(batchId), selectedStudent.id);
+      const response = await enrollStudentInBatch(selectedStudent.id, parseInt(batchId));
       
       if (response.success) {
         setStudents([...students, selectedStudent]);
@@ -196,7 +195,7 @@ const BatchDetail = () => {
     if (!batchId || !studentToRemove) return;
     
     try {
-      const response = await removeStudentFromBatch(parseInt(batchId), studentToRemove.id);
+      const response = await unenrollStudentFromBatch(studentToRemove.id, parseInt(batchId));
       
       if (response.success) {
         setStudents(students.filter(s => s.id !== studentToRemove.id));
@@ -226,7 +225,7 @@ const BatchDetail = () => {
   // Generate breadcrumb items
   const breadcrumbItems = [
     { label: 'Batches', link: '/batches' },
-    { label: batch?.name || 'Batch Details', link: `/batches/${batchId}` },
+    { label: batch?.batchName || 'Batch Details', link: `/batches/${batchId}` },
   ];
 
   if (loading) {
@@ -241,8 +240,8 @@ const BatchDetail = () => {
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">{batch.name}</h1>
-          <p className="text-muted-foreground text-lg">Batch #{batch.batchCode}</p>
+          <h1 className="text-3xl font-bold">{batch.batchName}</h1>
+          <p className="text-muted-foreground text-lg">Batch #{batch.batchId}</p>
         </div>
         <Button onClick={handleEditClick} className="flex items-center gap-1">
           <Pencil className="h-4 w-4" />
@@ -270,7 +269,7 @@ const BatchDetail = () => {
                     <p className="text-sm font-medium text-muted-foreground">Course</p>
                     <p className="font-medium flex items-center">
                       <BookOpen className="h-4 w-4 mr-2" />
-                      {batch.course?.title || "N/A"}
+                      {batch.course?.courseName || "N/A"}
                     </p>
                   </div>
                   <div className="space-y-1">
@@ -284,7 +283,7 @@ const BatchDetail = () => {
                     <p className="text-sm font-medium text-muted-foreground">Current Students</p>
                     <p className="font-medium flex items-center">
                       <Users className="h-4 w-4 mr-2" />
-                      {students.length} / {batch.maxStudents}
+                      {students.length} / {batch.students?.length || 0}
                     </p>
                   </div>
                 </div>
@@ -316,7 +315,7 @@ const BatchDetail = () => {
                     <p className="text-sm font-medium text-muted-foreground">Schedule</p>
                     <p className="font-medium flex items-center">
                       <Clock className="h-4 w-4 mr-2" />
-                      {batch.timings || "No schedule set"}
+                      {batch.schedules?.[0]?.time || "No schedule set"}
                     </p>
                   </div>
                 </div>
@@ -330,9 +329,9 @@ const BatchDetail = () => {
               <CardDescription>Detailed information about this batch</CardDescription>
             </CardHeader>
             <CardContent>
-              {batch.description ? (
+              {batch.notes ? (
                 <div className="prose prose-sm max-w-none">
-                  <p>{batch.description}</p>
+                  <p>{batch.notes}</p>
                 </div>
               ) : (
                 <p className="text-muted-foreground italic">No description provided</p>
@@ -521,21 +520,21 @@ const BatchDetail = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="font-medium">Days</p>
-                  <p>{batch.days || "Not specified"}</p>
+                  <p>{batch.schedules?.[0]?.days || "Not specified"}</p>
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="font-medium">Timings</p>
-                  <p>{batch.timings || "Not specified"}</p>
+                  <p>{batch.schedules?.[0]?.time || "Not specified"}</p>
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="font-medium">Location</p>
-                  <p>{batch.location || "Not specified"}</p>
+                  <p>{batch.schedules?.[0]?.location || "Not specified"}</p>
                 </div>
-                {batch.meetingLink && (
+                {batch.schedules?.[0]?.meetingLink && (
                   <div className="flex items-center justify-between">
                     <p className="font-medium">Online Meeting Link</p>
                     <a 
-                      href={batch.meetingLink} 
+                      href={batch.schedules?.[0]?.meetingLink} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline"

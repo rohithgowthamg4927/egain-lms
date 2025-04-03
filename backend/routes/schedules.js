@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
     
     const whereClause = batchId ? { batchId: parseInt(batchId) } : {};
     
-    const schedules = await prisma.Schedule.findMany({
+    const schedules = await prisma.schedule.findMany({
       where: whereClause,
       include: {
         batch: {
@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
           }
         }
       },
-      orderBy: { dayOfWeek: 'asc' }
+      orderBy: { startTime: 'asc' }
     });
     
     res.json({ success: true, data: schedules });
@@ -37,7 +37,7 @@ router.get('/:id', async (req, res) => {
   try {
     const scheduleId = parseInt(req.params.id);
     
-    const schedule = await prisma.Schedule.findUnique({
+    const schedule = await prisma.schedule.findUnique({
       where: { scheduleId },
       include: {
         batch: {
@@ -68,7 +68,6 @@ router.post('/', async (req, res) => {
     const { 
       startTime,
       endTime,
-      dayOfWeek,
       batchId,
       meetingLink,
       topic,
@@ -76,7 +75,7 @@ router.post('/', async (req, res) => {
     } = req.body;
     
     console.log('Creating schedule with data:', { 
-      startTime, endTime, dayOfWeek, batchId, meetingLink, topic, platform 
+      startTime, endTime, batchId, meetingLink, topic, platform 
     });
 
     // Create the schedule with all fields
@@ -84,7 +83,6 @@ router.post('/', async (req, res) => {
       data: {
         startTime: new Date(`1970-01-01T${startTime}`),
         endTime: new Date(`1970-01-01T${endTime}`),
-        dayOfWeek: parseInt(dayOfWeek),
         batchId: parseInt(batchId),
         meetingLink: meetingLink || null,
         topic: topic || null,
@@ -108,7 +106,6 @@ router.put('/:id', async (req, res) => {
       platform,
       startTime,
       endTime,
-      dayOfWeek,
       batchId,
       meetingLink
     } = req.body;
@@ -122,10 +119,6 @@ router.put('/:id', async (req, res) => {
     
     if (endTime !== undefined) {
       updateData.endTime = new Date(`1970-01-01T${endTime}`);
-    }
-    
-    if (dayOfWeek !== undefined) {
-      updateData.dayOfWeek = parseInt(dayOfWeek);
     }
     
     if (batchId !== undefined) {

@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,16 +9,22 @@ datasource db {
 }
 
 model User {
-  userId            Int       @id @default(autoincrement()) @map("user_id")
-  fullName          String    @map("full_name") @db.VarChar(255)
-  email             String    @unique @db.VarChar(255)
-  phoneNumber       String?   @map("phone_number") @db.VarChar(20)
+  userId            Int               @id @default(autoincrement()) @map("user_id")
+  fullName          String            @map("full_name") @db.VarChar(255)
+  email             String            @unique @db.VarChar(255)
+  phoneNumber       String?           @map("phone_number") @db.VarChar(20)
   role              Role
-  password          String    @db.VarChar(255)
-  mustResetPassword Boolean?  @default(true) @map("must_reset_password")
-  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  password          String            @db.VarChar(255)
+  mustResetPassword Boolean?          @default(true) @map("must_reset_password")
+  createdAt         DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?         @default(now()) @map("updated_at") @db.Timestamptz(6)
   address           String?
+  profilePicture    ProfilePicture?
+  batches           Batch[]           @relation("BatchInstructor")
+  studentBatches    StudentBatch[]    @relation("StudentInBatch")
+  studentCourses    StudentCourse[]   @relation("StudentInCourse")
+  instructorCourses InstructorCourse[] @relation("InstructorForCourse")
+  courseReviews     CourseReview[]    @relation("UserReviews")
 
   @@map("users")
 }
@@ -31,6 +38,7 @@ model ProfilePicture {
   fileSize  Int       @map("file_size")
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  user      User?     @relation(fields: [userId], references: [userId])
 
   @@map("profile_pictures")
 }
@@ -40,33 +48,44 @@ model CourseCategory {
   categoryName String    @map("category_name") @db.VarChar(255)
   createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  courses      Course[]  @relation("CourseCategory")
 
   @@map("course_categories")
 }
 
 model Course {
-  courseId     Int       @id @default(autoincrement()) @map("course_id")
-  courseName   String    @map("course_name") @db.VarChar(255)
-  courseLevel  Level     @map("course_level")
-  categoryId   Int?      @map("category_id")
-  description  String?
-  thumbnailUrl String?   @map("thumbnail_url") @db.VarChar(255)
-  isPublished  Boolean?  @default(false) @map("is_published")
-  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  courseId          Int                 @id @default(autoincrement()) @map("course_id")
+  courseName        String              @map("course_name") @db.VarChar(255)
+  courseLevel       Level               @map("course_level")
+  categoryId        Int?                @map("category_id")
+  description       String?
+  thumbnailUrl      String?             @map("thumbnail_url") @db.VarChar(255)
+  isPublished       Boolean?            @default(false) @map("is_published")
+  createdAt         DateTime?           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?           @default(now()) @map("updated_at") @db.Timestamptz(6)
+  category          CourseCategory?     @relation("CourseCategory", fields: [categoryId], references: [categoryId])
+  batches           Batch[]             @relation("CourseBatch")
+  resources         Resource[]          @relation("CourseResources")
+  studentCourses    StudentCourse[]     @relation("CourseEnrollments")
+  instructorCourses InstructorCourse[]  @relation("CourseInstructors")
+  reviews           CourseReview[]      @relation("CourseReviews")
 
   @@map("courses")
 }
 
 model Batch {
-  batchId      Int       @id @default(autoincrement()) @map("batch_id")
-  batchName    String    @map("batch_name") @db.VarChar(255)
-  courseId     Int?      @map("course_id")
-  instructorId Int?      @map("instructor_id")
-  startDate    DateTime  @map("start_date") @db.Timestamptz(6)
-  endDate      DateTime  @map("end_date") @db.Timestamptz(6)
-  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  batchId       Int             @id @default(autoincrement()) @map("batch_id")
+  batchName     String          @map("batch_name") @db.VarChar(255)
+  courseId      Int?            @map("course_id")
+  instructorId  Int?            @map("instructor_id")
+  startDate     DateTime        @map("start_date") @db.Timestamptz(6)
+  endDate       DateTime        @map("end_date") @db.Timestamptz(6)
+  createdAt     DateTime?       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime?       @default(now()) @map("updated_at") @db.Timestamptz(6)
+  course        Course?         @relation("CourseBatch", fields: [courseId], references: [courseId])
+  instructor    User?           @relation("BatchInstructor", fields: [instructorId], references: [userId])
+  students      StudentBatch[]  @relation("BatchStudents")
+  schedules     Schedule[]      @relation("BatchSchedules")
 
   @@map("batches")
 }
@@ -77,6 +96,8 @@ model StudentCourse {
   courseId        Int?      @map("course_id")
   createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  student         User?     @relation("StudentInCourse", fields: [studentId], references: [userId])
+  course          Course?   @relation("CourseEnrollments", fields: [courseId], references: [courseId])
 
   @@unique([studentId, courseId])
   @@map("student_courses")
@@ -88,6 +109,8 @@ model StudentBatch {
   batchId        Int?      @map("batch_id")
   createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  student        User?     @relation("StudentInBatch", fields: [studentId], references: [userId])
+  batch          Batch?    @relation("BatchStudents", fields: [batchId], references: [batchId])
 
   @@unique([studentId, batchId])
   @@map("student_batches")
@@ -99,6 +122,8 @@ model InstructorCourse {
   courseId           Int?      @map("course_id")
   createdAt          DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt          DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  instructor         User?     @relation("InstructorForCourse", fields: [instructorId], references: [userId])
+  course             Course?   @relation("CourseInstructors", fields: [courseId], references: [courseId])
 
   @@unique([instructorId, courseId])
   @@map("instructor_courses")
@@ -114,7 +139,7 @@ model Schedule {
   meetingLink String?   @map("meeting_link")
   topic       String?   @map("topic")
   platform    String?   @map("platform")
-  dayOfWeek   Int       @default(1) @map("day_of_week")
+  batch       Batch?    @relation("BatchSchedules", fields: [batchId], references: [batchId])
 
   @@map("schedules")
 }
@@ -127,6 +152,7 @@ model Resource {
   url        String    @db.VarChar(255)
   createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt  DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  course     Course?   @relation("CourseResources", fields: [courseId], references: [courseId])
 
   @@map("resources")
 }
@@ -139,6 +165,8 @@ model CourseReview {
   review    String?
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  course    Course?   @relation("CourseReviews", fields: [courseId], references: [courseId])
+  user      User?     @relation("UserReviews", fields: [userId], references: [userId])
 
   @@unique([courseId, userId])
   @@map("course_reviews")

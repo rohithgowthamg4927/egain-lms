@@ -23,7 +23,6 @@ router.get('/', async (req, res) => {
           }
         }
       },
-      orderBy: { dayOfWeek: 'asc' }
     });
     
     res.json({ success: true, data: schedules });
@@ -68,7 +67,6 @@ router.post('/', async (req, res) => {
     const { 
       startTime,
       endTime,
-      dayOfWeek,
       batchId,
       meetingLink,
       topic,
@@ -76,15 +74,14 @@ router.post('/', async (req, res) => {
     } = req.body;
     
     console.log('Creating schedule with data:', { 
-      startTime, endTime, dayOfWeek, batchId, meetingLink, topic, platform 
+      startTime, endTime, batchId, meetingLink, topic, platform 
     });
 
     // Create the schedule with all fields
-    const schedule = await prisma.schedule.create({
+    const schedule = await prisma.Schedule.create({
       data: {
         startTime: new Date(`1970-01-01T${startTime}`),
         endTime: new Date(`1970-01-01T${endTime}`),
-        dayOfWeek: parseInt(dayOfWeek),
         batchId: parseInt(batchId),
         meetingLink: meetingLink || null,
         topic: topic || null,
@@ -108,7 +105,6 @@ router.put('/:id', async (req, res) => {
       platform,
       startTime,
       endTime,
-      dayOfWeek,
       batchId,
       meetingLink
     } = req.body;
@@ -124,9 +120,9 @@ router.put('/:id', async (req, res) => {
       updateData.endTime = new Date(`1970-01-01T${endTime}`);
     }
     
-    if (dayOfWeek !== undefined) {
-      updateData.dayOfWeek = parseInt(dayOfWeek);
-    }
+    // if (dayOfWeek !== undefined) {
+    //   updateData.dayOfWeek = parseInt(dayOfWeek);
+    // }
     
     if (batchId !== undefined) {
       updateData.batchId = parseInt(batchId);
@@ -144,7 +140,7 @@ router.put('/:id', async (req, res) => {
       updateData.platform = platform;
     }
     
-    const schedule = await prisma.schedule.update({
+    const schedule = await prisma.Schedule.update({
       where: { scheduleId },
       data: updateData
     });
@@ -160,7 +156,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const scheduleId = parseInt(req.params.id);
     
-    await prisma.schedule.delete({
+    await prisma.Schedule.delete({
       where: { scheduleId }
     });
     

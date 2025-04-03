@@ -14,6 +14,7 @@ import Instructors from "./pages/Instructors";
 import Resources from "./pages/Resources";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AddCourse from "./pages/AddCourse";
+import AddUser from "./pages/AddUser";
 import EditCourse from "./pages/EditCourse";
 import UserProfile from "./pages/UserProfile";
 
@@ -58,6 +59,8 @@ function App() {
       <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
       <Route path="/students/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
       <Route path="/students/:userId/edit" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+      {/* Add User route */}
+<Route path="/add-user" element={<ProtectedRoute><AddUser /></ProtectedRoute>} />
 
       {/* Instructors routes */}
       <Route path="/instructors" element={<ProtectedRoute><Instructors /></ProtectedRoute>} />

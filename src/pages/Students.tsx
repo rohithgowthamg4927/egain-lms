@@ -132,10 +132,12 @@ const Students = () => {
       header: 'Name',
       cell: ({ row }: { row: { original: User } }) => (
         <div className="flex items-center gap-3">
-          <Avatar className="cursor-pointer hover:ring-2 hover:ring-primary transition-all">
-            <AvatarImage src={row.original.profilePicture?.fileUrl} alt={row.original.fullName} />
-            <AvatarFallback>{getInitials(row.original.fullName)}</AvatarFallback>
-          </Avatar>
+          <Link to={`/students/${row.original.userId}`}>
+            <Avatar className="cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+              <AvatarImage src={row.original.profilePicture?.fileUrl} alt={row.original.fullName} />
+              <AvatarFallback>{getInitials(row.original.fullName)}</AvatarFallback>
+            </Avatar>
+          </Link>
           <div>
             <p className="font-medium">{row.original.fullName}</p>
             <p className="text-sm text-gray-500">{row.original.email}</p>

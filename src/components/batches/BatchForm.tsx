@@ -50,7 +50,7 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
   });
 
   const courses = coursesData?.data || [];
-  const instructors = instructorsData?.data || [];
+  const instructors = instructorsData?.data ? (Array.isArray(instructorsData.data) ? instructorsData.data : [instructorsData.data]) : [];
 
   useEffect(() => {
     if (startDate) {

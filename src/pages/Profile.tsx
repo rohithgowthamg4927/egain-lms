@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getUser } from '@/lib/api';
@@ -95,7 +94,7 @@ const Profile: React.FC<ProfileProps> = ({ noHeader = false }) => {
           </CardHeader>
           <CardContent className="flex flex-col items-center">
             <Avatar className="h-32 w-32 mb-4">
-              <AvatarImage src={user.profilePicture || ''} alt={user.fullName} />
+              <AvatarImage src={user.profilePicture?.fileUrl || ''} alt={user.fullName} />
               <AvatarFallback className="text-2xl">{`${user.fullName?.charAt(0) || ''}`}</AvatarFallback>
             </Avatar>
             <h2 className="text-2xl font-bold">{user.fullName || ''}</h2>

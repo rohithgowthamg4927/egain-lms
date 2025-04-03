@@ -1,3 +1,4 @@
+
 import { User, Role } from '@/lib/types';
 import { apiFetch } from './core';
 
@@ -11,7 +12,15 @@ export const getUsers = async (role?: Role, userId?: number): Promise<{ success:
     if (userId && response.success && response.data) {
       return {
         success: true,
-        data: Array.isArray(response.data) ? response.data[0] : response.data
+        data: Array.isArray(response.data) ? response.data : [response.data]
+      };
+    }
+    
+    // Ensure we always return an array of users
+    if (response.success && response.data) {
+      return {
+        success: true,
+        data: Array.isArray(response.data) ? response.data : [response.data]
       };
     }
     

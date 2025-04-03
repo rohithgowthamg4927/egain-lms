@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -44,7 +45,8 @@ const Instructors = () => {
       console.log('Response:', response);
       
       if (response.success && response.data) {
-        setInstructors(response.data);
+        const instructorsList = Array.isArray(response.data) ? response.data : [response.data];
+        setInstructors(instructorsList);
       } else {
         console.error('API error:', response.error);
         toast({

@@ -57,17 +57,20 @@ const ManageStudents = () => {
 
         // Fetch enrolled students
         const enrolledStudentsResponse = await getBatchStudents(parseInt(batchId));
-        if (enrolledStudentsResponse.success && enrolledStudentsResponse.data) {
-          setEnrolledStudents(enrolledStudentsResponse.data);
-        }
+        const enrolledStudentsList = enrolledStudentsResponse.success && enrolledStudentsResponse.data
+          ? (Array.isArray(enrolledStudentsResponse.data) ? enrolledStudentsResponse.data : [enrolledStudentsResponse.data])
+          : [];
+        
+        setEnrolledStudents(enrolledStudentsList);
 
         // Fetch all students
         const allStudentsResponse = await getUsers(Role.student);
         if (allStudentsResponse.success && allStudentsResponse.data) {
-          const allStudents = allStudentsResponse.data;
-          const enrolledIds = enrolledStudentsResponse.success && Array.isArray(enrolledStudentsResponse.data) ? 
-            enrolledStudentsResponse.data.map((student: User) => student.userId) : 
-            [];
+          const allStudents = Array.isArray(allStudentsResponse.data) 
+            ? allStudentsResponse.data 
+            : [allStudentsResponse.data];
+          
+          const enrolledIds = enrolledStudentsList.map((student: User) => student.userId);
           
           // Filter out already enrolled students
           const notEnrolledStudents = allStudents.filter(

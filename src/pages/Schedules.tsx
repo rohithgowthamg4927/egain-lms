@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +27,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -42,12 +44,12 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { getAllBatches } from '@/lib/api';
+import { getBatches } from '@/lib/api';
 import { getAllSchedules, createSchedule, updateSchedule, deleteSchedule } from '@/lib/api/schedules';
 import { Schedule, Batch } from '@/lib/types';
 import { cn, formatDate } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CalendarDays, Check, ChevronDown, Plus, RefreshCw, Trash2, X } from 'lucide-react';
+import { CalendarDays, Check, ChevronDown, Edit, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -158,7 +160,7 @@ const Schedules = () => {
 
   const fetchBatches = async () => {
     try {
-      const response = await getAllBatches();
+      const response = await getBatches();
 
       if (response.success && response.data) {
         setBatches(response.data);
@@ -204,7 +206,27 @@ const Schedules = () => {
     setIsCreating(true);
 
     try {
-      const response = await createSchedule(values);
+      // Make sure batchId is provided
+      if (!values.batchId) {
+        toast({
+          title: 'Error',
+          description: 'Batch ID is required',
+          variant: 'destructive',
+        });
+        setIsCreating(false);
+        return;
+      }
+
+      const scheduleInput = {
+        batchId: values.batchId,
+        topic: values.topic,
+        startTime: values.startTime,
+        endTime: values.endTime,
+        meetingLink: values.meetingLink || null,
+        description: values.description || null,
+      };
+
+      const response = await createSchedule(scheduleInput);
 
       if (response.success && response.data) {
         toast({

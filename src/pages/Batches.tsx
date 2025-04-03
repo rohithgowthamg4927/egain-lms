@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -173,7 +172,6 @@ const Batches = () => {
           description: `Batch "${batchToDelete.batchName}" has been deleted successfully.`,
         });
         
-        // Refresh the batches list
         fetchBatches();
       } else {
         toast({
@@ -232,11 +230,9 @@ const Batches = () => {
             <div className="flex items-center justify-between">
               <span className="text-3xl font-bold">
                 {batches.reduce((total, batch) => {
-                  // Check if students is an array before using length
                   if (Array.isArray(batch.students)) {
                     return total + batch.students.length;
                   }
-                  // If it's a count property (studentsCount)
                   else if (typeof batch.studentsCount === 'number') {
                     return total + batch.studentsCount;
                   }

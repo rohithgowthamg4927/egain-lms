@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { getBatch, enrollStudentInBatch, getBatchStudents } from '@/lib/api/batches';
 import { getUsers } from '@/lib/api/users';
 import { User, Role } from '@/lib/types';
+import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 const ManageStudents = () => {
   const navigate = useNavigate();
@@ -64,7 +65,7 @@ const ManageStudents = () => {
         const allStudentsResponse = await getUsers(Role.student);
         if (allStudentsResponse.success && allStudentsResponse.data) {
           const allStudents = allStudentsResponse.data;
-          const enrolledIds = enrolledStudentsResponse.success ? 
+          const enrolledIds = enrolledStudentsResponse.success && Array.isArray(enrolledStudentsResponse.data) ? 
             enrolledStudentsResponse.data.map((student: User) => student.userId) : 
             [];
           
@@ -156,6 +157,12 @@ const ManageStudents = () => {
     student.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  const breadcrumbItems = batch ? [
+    { label: 'Batches', link: '/batches' },
+    { label: batch.batchName, link: `/batches/${batchId}` },
+    { label: 'Manage Students', link: `/batches/manage-students?batchId=${batchId}` },
+  ] : [];
 
   if (isLoading) {
     return (
@@ -168,6 +175,7 @@ const ManageStudents = () => {
   return (
     <div className="p-0">
       <div className="flex flex-col gap-2 mb-6">
+        <BreadcrumbNav items={breadcrumbItems} />
         <div className="flex items-center justify-between">
           <Button 
             variant="outline" 

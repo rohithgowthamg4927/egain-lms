@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getBatch, getBatchStudents, deleteBatch } from '@/lib/api/batches';
+import { getBatch, getBatchStudents, deleteBatch, unenrollStudentFromBatch } from '@/lib/api/batches';
 import { getSchedules } from '@/lib/api/schedules'; 
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -159,10 +159,13 @@ const BatchDetail = () => {
   }
 
   const breadcrumbItems = [
-    { label: 'Dashboard', link: '/dashboard' },
     { label: 'Batches', link: '/batches' },
     { label: batch.batchName, link: `/batches/${batchId}` },
   ];
+
+  const handleManageStudents = () => {
+    navigate(`/batches/manage-students?batchId=${batchId}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -270,11 +273,13 @@ const BatchDetail = () => {
                 Manage Schedules
               </Link>
             </Button>
-            <Button asChild variant="outline" className="justify-start">
-              <Link to="/batches/manage-students">
-                <Users className="h-4 w-4 mr-2" />
-                Manage Students
-              </Link>
+            <Button 
+              variant="outline" 
+              className="justify-start" 
+              onClick={handleManageStudents}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Manage Students
             </Button>
           </CardContent>
         </Card>
@@ -301,11 +306,9 @@ const BatchDetail = () => {
               {students.length === 0 ? (
                 <div className="text-center py-6">
                   <p className="text-muted-foreground">No students enrolled in this batch yet.</p>
-                  <Button asChild className="mt-4">
-                    <Link to="/batches/manage-students">
-                      <Users className="h-4 w-4 mr-2" />
-                      Manage Students
-                    </Link>
+                  <Button onClick={handleManageStudents} className="mt-4">
+                    <Users className="h-4 w-4 mr-2" />
+                    Manage Students
                   </Button>
                 </div>
               ) : (

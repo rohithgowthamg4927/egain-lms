@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -47,7 +46,7 @@ import { Badge } from '@/components/ui/badge';
 import { getBatches } from '@/lib/api';
 import { getAllSchedules, createSchedule, updateSchedule, deleteSchedule } from '@/lib/api/schedules';
 import { Schedule, Batch } from '@/lib/types';
-import { cn, formatDate } from '@/lib/utils';
+import { cn, formatDate, formatInIST } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CalendarDays, Check, ChevronDown, Edit, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import { format } from 'date-fns';
@@ -635,8 +634,8 @@ const Schedules = () => {
                     <TableRow key={schedule.scheduleId}>
                       <TableCell>{batches.find((batch) => batch.batchId === schedule.batchId)?.batchName}</TableCell>
                       <TableCell>{schedule.topic}</TableCell>
-                      <TableCell>{format(new Date(schedule.startTime), 'yyyy-MM-dd HH:mm')}</TableCell>
-                      <TableCell>{format(new Date(schedule.endTime), 'yyyy-MM-dd HH:mm')}</TableCell>
+                      <TableCell>{formatInIST(schedule.startTime, 'yyyy-MM-dd HH:mm')}</TableCell>
+                      <TableCell>{formatInIST(schedule.endTime, 'yyyy-MM-dd HH:mm')}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Dialog>

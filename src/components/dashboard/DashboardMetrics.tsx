@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Users, BookOpen, Calendar, Award, TrendingUp, Bell, AlertCircle, PieChart as PieChartIcon, BarChart as BarChartIcon } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { DashboardMetrics as DashboardMetricsType } from "@/lib/types";
-import { format } from "date-fns";
+import { formatInIST } from '@/lib/utils/date-helpers';
 
 interface DashboardMetricsProps {
   data?: DashboardMetricsType;
@@ -287,8 +287,8 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
                     <div className="flex-1">
                       <p className="font-medium">{schedule.topic}</p>
                       <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                        <span>{format(new Date(schedule.startTime), 'E, MMM d')}</span>
-                        <span>{format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}</span>
+                        <span>{formatInIST(schedule.startTime, 'E, MMM d')}</span>
+                        <span>{formatInIST(schedule.startTime, 'h:mm a')} - {formatInIST(schedule.endTime, 'h:mm a')}</span>
                       </div>
                     </div>
                     <div className="text-sm">

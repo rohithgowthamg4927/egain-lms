@@ -1,8 +1,6 @@
-
 import {
   Routes,
   Route,
-  Navigate,
 } from "react-router-dom";
 
 import Login from "./pages/Login";
@@ -30,13 +28,8 @@ import Schedules from "./pages/Schedules";
 function App() {
   return (
     <Routes>
-      {/* Redirect root to login page */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      
-      {/* Login route without protection */}
       <Route path="/login" element={<Login />} />
-      
-      {/* Dashboard route with protection */}
+      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
       {/* Course routes */}

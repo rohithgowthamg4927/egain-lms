@@ -1,4 +1,3 @@
-
 import {
   Routes,
   Route,
@@ -64,10 +63,12 @@ function App() {
           {/* Students routes */}
           <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
           <Route path="/students/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+          <Route path="/students/:userId/edit" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
 
           {/* Instructors routes */}
           <Route path="/instructors" element={<ProtectedRoute><Instructors /></ProtectedRoute>} />
           <Route path="/instructors/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+          <Route path="/instructors/:userId/edit" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
 
           {/* Resources routes */}
           <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />

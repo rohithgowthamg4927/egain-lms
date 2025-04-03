@@ -1,8 +1,7 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { getUsers, updateUser } from '@/lib/api';
+import { getUser, updateUser, deleteUser } from '@/lib/api';
 import { getAllSchedules } from '@/lib/api/schedules';
 import { User, Role, Schedule } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -44,6 +43,7 @@ const UserProfile = () => {
   const [batchSchedules, setBatchSchedules] = useState<Schedule[]>([]);
   const [instructorBatch, setInstructorBatch] = useState<{ batchId: number; batchName: string } | null>(null);
   const [selectedBatch, setSelectedBatch] = useState<{ batchId: number; batchName: string } | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -55,28 +55,21 @@ const UserProfile = () => {
           description: 'User ID is missing',
           variant: 'destructive',
         });
-        navigate('/dashboard');
+        navigate('/users');
         return;
       }
       
       try {
-        // When using the userId in params, we need to parse it as a number
-        const userIdNum = parseInt(userId);
-        console.log("Fetching user with ID:", userIdNum);
+        const response = await getUser(parseInt(userId));
         
-        // We'll use getUsers with the userId filter
-        const response = await getUsers(undefined, userIdNum);
-        console.log("User API response:", response);
-        
-        if (response.success && response.data && response.data.length > 0) {
-          const userData = response.data[0];
+        if (response.success && response.data) {
+          const userData = response.data;
           setUser(userData);
           setFullName(userData.fullName);
           setEmail(userData.email);
           setPhoneNumber(userData.phoneNumber || '');
           setBio(userData.bio || '');
           
-          // For instructors, fetch their batches (example data, replace with actual API)
           if (userData.role === Role.instructor) {
             setInstructorBatch({ batchId: 1, batchName: 'Sample Batch' });
           }
@@ -86,7 +79,7 @@ const UserProfile = () => {
             description: response.error || 'Failed to fetch user details',
             variant: 'destructive',
           });
-          navigate('/dashboard');
+          navigate('/users');
           return;
         }
       } catch (error) {
@@ -201,7 +194,36 @@ const UserProfile = () => {
     } else if (user?.role === Role.instructor) {
       navigate('/instructors');
     } else {
-      navigate('/dashboard');
+      navigate('/users');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await deleteUser(user.userId);
+      
+      if (response.success) {
+        toast({
+          title: 'User deleted',
+          description: 'The user has been deleted successfully.',
+        });
+        handleGoBack();
+      } else {
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to delete user',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete user',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -247,25 +269,47 @@ const UserProfile = () => {
             </Button>
           </div>
         ) : (
-          <Button onClick={handleEditProfile} className="bg-blue-600 hover:bg-blue-700">
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Profile
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleEditProfile} className="bg-blue-600 hover:bg-blue-700">
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Profile
+            </Button>
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the user
+                    and remove any associated data.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="shadow-md border-blue-100 md:col-span-2">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserIcon className="h-5 w-5" />
-              <span>Personal Information</span>
-            </CardTitle>
+            <CardTitle>Profile Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             {isEditing ? (
               <div className="space-y-4">
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input
                     id="fullName"
@@ -273,7 +317,7 @@ const UserProfile = () => {
                     onChange={(e) => setFullName(e.target.value)}
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
@@ -282,7 +326,7 @@ const UserProfile = () => {
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="phoneNumber">Phone Number</Label>
                   <Input
                     id="phoneNumber"
@@ -290,7 +334,7 @@ const UserProfile = () => {
                     onChange={(e) => setPhoneNumber(e.target.value)}
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="bio">Bio</Label>
                   <Textarea
                     id="bio"
@@ -301,151 +345,90 @@ const UserProfile = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium text-lg">{user.fullName}</h3>
-                  <p className="text-gray-500 mt-1">Email: {user.email}</p>
-                  {user.phoneNumber && (
-                    <p className="text-gray-500">Phone: {user.phoneNumber}</p>
-                  )}
-                  {user.bio && (
-                    <>
-                      <Separator className="my-4" />
-                      <p className="text-gray-600">{user.bio}</p>
-                    </>
-                  )}
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={user.profilePicture?.fileUrl} alt={user.fullName} />
+                    <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-lg font-semibold">{user.fullName}</h3>
+                    <p className="text-gray-500">{user.email}</p>
+                  </div>
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-500">Phone Number</p>
+                  <p>{user.phoneNumber || 'Not provided'}</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-500">Bio</p>
+                  <p>{user.bio || 'No bio available'}</p>
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="shadow-md border-blue-100">
+        <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user.profilePicture?.fileUrl} />
-                <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
-              </Avatar>
-              <span>Profile Picture</span>
-            </CardTitle>
+            <CardTitle>Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-4">
-              <div>
-                <h3 className="font-medium">{user.fullName}</h3>
-                <p className="text-sm text-gray-500">{user.email}</p>
-                <p className="text-sm text-gray-500 mt-1">{user.phoneNumber || 'No phone number'}</p>
-              </div>
-            </div>
+            <Tabs defaultValue="schedules">
+              <TabsList>
+                <TabsTrigger value="schedules">Schedules</TabsTrigger>
+                <TabsTrigger value="courses">Courses</TabsTrigger>
+              </TabsList>
+              <TabsContent value="schedules">
+                {user.role === Role.instructor ? (
+                  <div className="space-y-4">
+                    {schedules.length > 0 ? (
+                      schedules.map((schedule) => (
+                        <div key={schedule.scheduleId} className="flex items-center gap-4 p-4 border rounded-lg">
+                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <CalendarDays className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium">{schedule.topic}</h4>
+                            <p className="text-sm text-gray-500">
+                              {format(new Date(schedule.startTime), 'MMM d, yyyy h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500">No schedules found</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {batchSchedules.length > 0 ? (
+                      batchSchedules.map((schedule) => (
+                        <div key={schedule.scheduleId} className="flex items-center gap-4 p-4 border rounded-lg">
+                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <CalendarDays className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium">{schedule.topic}</h4>
+                            <p className="text-sm text-gray-500">
+                              {format(new Date(schedule.startTime), 'MMM d, yyyy h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500">No schedules found</p>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+              <TabsContent value="courses">
+                <p className="text-gray-500">Course information will be available in a future update.</p>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>
-
-      {user.role === Role.instructor && instructorBatch ? (
-        <Tabs defaultValue="schedules" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="schedules" className="gap-2">
-              <CalendarDays className="h-4 w-4" />
-              Schedules for {instructorBatch.batchName}
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="schedules" className="space-y-4">
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle>Class Schedules</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {schedules.length === 0 ? (
-                  <div className="text-center py-8">
-                    <CalendarDays className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                    <h3 className="text-lg font-medium">No schedules found</h3>
-                    <p className="text-gray-500 mt-1">No class schedules assigned yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {schedules.map((schedule) => (
-                      <div 
-                        key={schedule.scheduleId} 
-                        className="flex items-center gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="bg-blue-600/10 p-3 rounded-lg">
-                          <CalendarDays className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-medium">{schedule.topic}</h3>
-                          <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
-                            <span className="flex items-center gap-1">
-                              <CalendarDays className="h-3 w-3" />
-                              {format(new Date(schedule.startTime), 'EEEE, MMMM d, yyyy')}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      ) : null}
-
-      {user.role === Role.student && selectedBatch ? (
-        <Tabs defaultValue="schedules" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="schedules" className="gap-2">
-              <CalendarDays className="h-4 w-4" />
-              Schedules for {selectedBatch.batchName}
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="schedules" className="space-y-4">
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle>Class Schedules</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {batchSchedules.length === 0 ? (
-                  <div className="text-center py-8">
-                    <CalendarDays className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                    <h3 className="text-lg font-medium">No schedules found</h3>
-                    <p className="text-gray-500 mt-1">No class schedules assigned yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {batchSchedules.map((schedule) => (
-                      <div 
-                        key={schedule.scheduleId} 
-                        className="flex items-center gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="bg-blue-600/10 p-3 rounded-lg">
-                          <CalendarDays className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-medium">{schedule.topic}</h3>
-                          <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
-                            <span className="flex items-center gap-1">
-                              <CalendarDays className="h-3 w-3" />
-                              {format(new Date(schedule.startTime), 'EEEE, MMMM d, yyyy')}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      ) : null}
     </div>
   );
 };

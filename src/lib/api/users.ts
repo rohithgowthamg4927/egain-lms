@@ -1,12 +1,20 @@
-
 import { User, Role } from '@/lib/types';
 import { apiFetch } from './core';
 
 // Get all users or filter by role
-export const getUsers = async (role?: Role, userId?: number): Promise<{ success: boolean; data?: User[]; error?: string }> => {
+export const getUsers = async (role?: Role, userId?: number): Promise<{ success: boolean; data?: User[] | User; error?: string }> => {
   try {
     const endpoint = userId ? `/users/${userId}` : role ? `/users?role=${role}` : '/users';
-    const response = await apiFetch<User[]>(endpoint);
+    const response = await apiFetch<User[] | User>(endpoint);
+    
+    // If fetching a single user, wrap the response in an array for consistency
+    if (userId && response.success && response.data) {
+      return {
+        success: true,
+        data: Array.isArray(response.data) ? response.data[0] : response.data
+      };
+    }
+    
     return response;
   } catch (error) {
     console.error('Error fetching users:', error);

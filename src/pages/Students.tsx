@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { getUsers, deleteUser } from '@/lib/api';
 import { getCourses } from '@/lib/api/courses';
 import { getDashboardCounts } from '@/lib/api/dashboard';
 import { Role, User } from '@/lib/types';
-import { Plus, Search, GraduationCap, BookOpen } from 'lucide-react';
+import { Plus, Search, GraduationCap, BookOpen, Eye, Edit, Trash } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useNavigate, Link } from 'react-router-dom';
 import { getInitials } from '@/lib/utils';
@@ -140,7 +139,7 @@ const Students = () => {
   };
   
   const handleEditStudent = (student: User) => {
-    navigate(`/add-user`, { state: { userId: student.userId, role: Role.student } });
+    navigate(`/students/${student.userId}/edit`);
   };
 
   const studentColumns = [
@@ -191,18 +190,18 @@ const Students = () => {
   const studentActions = [
     {
       label: 'View Profile',
-      onClick: handleViewStudent, // Make sure this is correctly bound
-      icon: 'eye',
+      onClick: (student: User) => handleViewStudent(student),
+      icon: <Eye className="h-4 w-4" />,
     },
     {
       label: 'Edit',
-      onClick: handleEditStudent,
-      icon: 'edit',
+      onClick: (student: User) => handleEditStudent(student),
+      icon: <Edit className="h-4 w-4" />,
     },
     {
       label: 'Delete',
-      onClick: handleDeleteConfirmation,
-      icon: 'trash',
+      onClick: (student: User) => handleDeleteConfirmation(student),
+      icon: <Trash className="h-4 w-4" />,
     },
   ];
 

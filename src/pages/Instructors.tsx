@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -145,7 +144,7 @@ const Instructors = () => {
   };
 
   const handleEditInstructor = (instructor: User) => {
-    navigate(`/add-user`, { state: { userId: instructor.userId, role: Role.instructor } });
+    navigate(`/instructors/${instructor.userId}/edit`);
   };
 
   const instructorColumns = [
@@ -203,17 +202,17 @@ const Instructors = () => {
   const instructorActions = [
     {
       label: 'View Profile',
-      onClick: handleViewInstructor,
+      onClick: (instructor: User) => handleViewInstructor(instructor),
       icon: <Eye className="h-4 w-4" />,
     },
     {
       label: 'Edit',
-      onClick: handleEditInstructor,
+      onClick: (instructor: User) => handleEditInstructor(instructor),
       icon: <Edit className="h-4 w-4" />,
     },
     {
       label: 'Delete',
-      onClick: handleDeleteConfirmation,
+      onClick: (instructor: User) => handleDeleteConfirmation(instructor),
       icon: <Trash className="h-4 w-4" />,
     },
   ];

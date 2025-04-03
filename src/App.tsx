@@ -43,7 +43,7 @@ function App() {
       <Route path="/batches/add" element={<ProtectedRoute><AddBatch /></ProtectedRoute>} />
       <Route path="/batches/:batchId" element={<ProtectedRoute><BatchDetail /></ProtectedRoute>} />
       <Route path="/batches/:batchId/edit" element={<ProtectedRoute><EditBatch /></ProtectedRoute>} />
-      <Route path="/batches/manage-students" element={<ProtectedRoute><ManageStudents /></ProtectedRoute>} />
+      <Route path="/batches/:batchId/manage-students" element={<ProtectedRoute><ManageStudents /></ProtectedRoute>} />
       
       {/* Schedule routes */}
       <Route path="/schedules" element={<ProtectedRoute><Schedules /></ProtectedRoute>} />

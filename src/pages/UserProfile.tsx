@@ -27,6 +27,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { CalendarDays, Clock, Edit, User as UserIcon, ChevronLeft, Trash } from 'lucide-react';
 import { format } from 'date-fns';
 import { getInitials } from '@/lib/utils';
+import { formatInIST } from '@/lib/utils/date-helpers';
 
 const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -391,7 +392,7 @@ const UserProfile = () => {
                           <div>
                             <h4 className="font-medium">{schedule.topic}</h4>
                             <p className="text-sm text-gray-500">
-                              {format(new Date(schedule.startTime), 'MMM d, yyyy h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
+                              {formatInIST(schedule.startTime, 'MMM d, yyyy h:mm a')} - {formatInIST(schedule.endTime, 'h:mm a')}
                             </p>
                           </div>
                         </div>
@@ -411,7 +412,7 @@ const UserProfile = () => {
                           <div>
                             <h4 className="font-medium">{schedule.topic}</h4>
                             <p className="text-sm text-gray-500">
-                              {format(new Date(schedule.startTime), 'MMM d, yyyy h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
+                              {formatInIST(schedule.startTime, 'MMM d, yyyy h:mm a')} - {formatInIST(schedule.endTime, 'h:mm a')}
                             </p>
                           </div>
                         </div>

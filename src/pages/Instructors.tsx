@@ -27,6 +27,7 @@ import {
 
 const Instructors = () => {
   const navigate = useNavigate();
+  // Explicitly define instructors as an array of User
   const [instructors, setInstructors] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -71,7 +72,9 @@ const Instructors = () => {
     try {
       const response = await getCourses();
       if (response.success && response.data) {
-        setCoursesCount(response.data.length);
+        // Ensure we're setting the length of an array
+        const coursesData = Array.isArray(response.data) ? response.data : [response.data];
+        setCoursesCount(coursesData.length);
       }
     } catch (error) {
       console.error('Error fetching courses count:', error);
@@ -82,7 +85,9 @@ const Instructors = () => {
     try {
       const response = await getUsers(Role.student);
       if (response.success && response.data) {
-        setStudentsCount(response.data.length);
+        // Ensure we're setting the length of an array
+        const studentsData = Array.isArray(response.data) ? response.data : [response.data];
+        setStudentsCount(studentsData.length);
       }
     } catch (error) {
       console.error('Error fetching students count:', error);

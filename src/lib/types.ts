@@ -1,4 +1,3 @@
-
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -96,6 +95,7 @@ export interface Batch {
 export interface Schedule {
   scheduleId: number;
   batchId?: number; // Adding batchId as optional 
+  dayOfWeek: number;
   startTime: string;
   endTime: string;
   createdAt: string;

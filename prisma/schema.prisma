@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,137 +9,165 @@ datasource db {
 }
 
 model User {
-  userId            Int       @id @default(autoincrement()) @map("user_id")
-  fullName          String    @map("full_name") @db.VarChar(255)
-  email             String    @unique @db.VarChar(255)
-  phoneNumber       String?   @map("phone_number") @db.VarChar(20)
-  role              Role
-  password          String    @db.VarChar(255)
-  mustResetPassword Boolean?  @default(true) @map("must_reset_password")
-  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
-  address           String?
+  userId           Int             @id @default(autoincrement()) @map("user_id")
+  fullName         String          @map("full_name")
+  email            String          @unique
+  phoneNumber      String?         @map("phone_number")
+  address          String?         
+  role             Role
+  password         String
+  mustResetPassword Boolean        @default(true) @map("must_reset_password")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @default(now()) @map("updated_at")
+  profilePicture   ProfilePicture?
+  teachingBatches  Batch[]
+  courseReviews    CourseReview[]
+  studentBatches   StudentBatch[]
+  studentCourses   StudentCourse[]
+  instructorCourses InstructorCourse[]
 
   @@map("users")
 }
 
 model ProfilePicture {
-  pictureId Int       @id @default(autoincrement()) @map("picture_id")
-  userId    Int?      @unique @map("user_id")
-  fileName  String    @map("file_name") @db.VarChar(255)
-  fileUrl   String    @map("file_url") @db.VarChar(255)
-  fileType  String    @map("file_type") @db.VarChar(50)
-  fileSize  Int       @map("file_size")
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  pictureId   Int      @id @default(autoincrement()) @map("picture_id")
+  userId      Int      @unique @map("user_id")
+  fileName    String   @map("file_name")
+  fileUrl     String   @map("file_url")
+  fileType    String   @map("file_type")
+  fileSize    Int      @map("file_size")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @map("updated_at")
+  user        User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@map("profile_pictures")
 }
 
 model CourseCategory {
-  categoryId   Int       @id @default(autoincrement()) @map("category_id")
-  categoryName String    @map("category_name") @db.VarChar(255)
-  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  categoryId   Int      @id @default(autoincrement()) @map("category_id")
+  categoryName String   @map("category_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @map("updated_at")
+  courses      Course[]
 
   @@map("course_categories")
 }
 
 model Course {
-  courseId     Int       @id @default(autoincrement()) @map("course_id")
-  courseName   String    @map("course_name") @db.VarChar(255)
-  courseLevel  Level     @map("course_level")
-  categoryId   Int?      @map("category_id")
-  description  String?
-  thumbnailUrl String?   @map("thumbnail_url") @db.VarChar(255)
-  isPublished  Boolean?  @default(false) @map("is_published")
-  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  courseId         Int                @id @default(autoincrement()) @map("course_id")
+  courseName       String             @map("course_name")
+  courseLevel      Level              @map("course_level")
+  categoryId       Int                @map("category_id")
+  description      String?
+  thumbnailUrl     String?            @map("thumbnail_url")
+  isPublished      Boolean            @default(false) @map("is_published")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @default(now()) @map("updated_at")
+  category         CourseCategory     @relation(fields: [categoryId], references: [categoryId], onDelete: Cascade)
+  batches          Batch[]
+  reviews          CourseReview[]
+  resources        Resource[]
+  studentCourses   StudentCourse[]
+  instructorCourses InstructorCourse[]
 
   @@map("courses")
 }
 
 model Batch {
-  batchId      Int       @id @default(autoincrement()) @map("batch_id")
-  batchName    String    @map("batch_name") @db.VarChar(255)
-  courseId     Int?      @map("course_id")
-  instructorId Int?      @map("instructor_id")
-  startDate    DateTime  @map("start_date") @db.Timestamptz(6)
-  endDate      DateTime  @map("end_date") @db.Timestamptz(6)
-  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
-  course       Course?   @relation(fields: [courseId], references: [courseId])
+  batchId      Int            @id @default(autoincrement()) @map("batch_id")
+  batchName    String         @map("batch_name")
+  courseId     Int            @map("course_id")
+  instructorId Int            @map("instructor_id")
+  startDate    DateTime       @map("start_date")
+  endDate      DateTime       @map("end_date")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @default(now()) @map("updated_at")
+  course       Course         @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  instructor   User           @relation(fields: [instructorId], references: [userId], onDelete: Cascade)
+  schedules    Schedule[]
+  students     StudentBatch[]
 
   @@map("batches")
 }
 
 model StudentCourse {
-  studentCourseId Int       @id @default(autoincrement()) @map("student_course_id")
-  studentId       Int?      @map("student_id")
-  courseId        Int?      @map("course_id")
-  createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  studentCourseId Int      @id @default(autoincrement()) @map("student_course_id")
+  studentId       Int      @map("student_id")
+  courseId        Int      @map("course_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @map("updated_at")
+  student         User     @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  course          Course   @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
 
   @@unique([studentId, courseId])
   @@map("student_courses")
 }
 
 model StudentBatch {
-  studentBatchId Int       @id @default(autoincrement()) @map("student_batch_id")
-  studentId      Int?      @map("student_id")
-  batchId        Int?      @map("batch_id")
-  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  studentBatchId Int      @id @default(autoincrement()) @map("student_batch_id")
+  studentId      Int      @map("student_id")
+  batchId        Int      @map("batch_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @map("updated_at")
+  student        User     @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  batch          Batch    @relation(fields: [batchId], references: [batchId], onDelete: Cascade)
 
   @@unique([studentId, batchId])
   @@map("student_batches")
 }
 
 model InstructorCourse {
-  instructorCourseId Int       @id @default(autoincrement()) @map("instructor_course_id")
-  instructorId       Int?      @map("instructor_id")
-  courseId           Int?      @map("course_id")
-  createdAt          DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  instructorCourseId Int      @id @default(autoincrement()) @map("instructor_course_id")
+  instructorId       Int      @map("instructor_id")
+  courseId           Int      @map("course_id")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @default(now()) @map("updated_at")
+  instructor         User     @relation(fields: [instructorId], references: [userId], onDelete: Cascade)
+  course             Course   @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
 
   @@unique([instructorId, courseId])
   @@map("instructor_courses")
 }
 
 model Schedule {
-  scheduleId  Int       @id @default(autoincrement()) @map("schedule_id")
-  batchId     Int?      @map("batch_id")
-  startTime   DateTime  @map("start_time") @db.Time(6)
-  endTime     DateTime  @map("end_time") @db.Time(6)
-  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
-  meetingLink String?   @map("meeting_link")
-  topic       String?   @map("topic")
-  platform    String?   @map("platform")
+  scheduleId  Int      @id @default(autoincrement()) @map("schedule_id")
+  batchId     Int      @map("batch_id")
+  dayOfWeek   Int      @map("day_of_week")
+  startTime   DateTime @map("start_time") @db.Time()
+  endTime     DateTime @map("end_time") @db.Time()
+  topic       String?  @map("topic")
+  platform    String?  @map("platform")
+  meetingLink String?  @map("meeting_link")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @map("updated_at")
+  batch       Batch    @relation(fields: [batchId], references: [batchId], onDelete: Cascade)
 
   @@map("schedules")
 }
 
 model Resource {
-  resourceId Int       @id @default(autoincrement()) @map("resource_id")
-  courseId   Int?      @map("course_id")
-  title      String    @db.VarChar(255)
-  type       String    @db.VarChar(50)
-  url        String    @db.VarChar(255)
-  createdAt  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt  DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  resourceId Int      @id @default(autoincrement()) @map("resource_id")
+  courseId   Int      @map("course_id")
+  title      String
+  type       String
+  url        String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @map("updated_at")
+  course     Course   @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
 
   @@map("resources")
 }
 
 model CourseReview {
-  reviewId  Int       @id @default(autoincrement()) @map("review_id")
-  courseId  Int?      @map("course_id")
-  userId    Int?      @map("user_id")
-  rating    Int       @db.SmallInt
+  reviewId  Int      @id @default(autoincrement()) @map("review_id")
+  courseId  Int      @map("course_id")
+  userId    Int      @map("user_id")
+  rating    Int
   review    String?
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  course    Course   @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([courseId, userId])
   @@map("course_reviews")

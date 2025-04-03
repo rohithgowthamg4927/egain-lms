@@ -12,18 +12,18 @@ router.get('/', async (req, res) => {
     console.log("Fetching dashboard metrics");
     
     // Get counts for various entities - Using enum values from Prisma
-    const studentsCount = await prisma.User.count({
+    const studentsCount = await prisma.user.count({
       where: { role: Role.student }
     });
     
-    const instructorsCount = await prisma.User.count({
+    const instructorsCount = await prisma.user.count({
       where: { role: Role.instructor }
     });
     
-    const coursesCount = await prisma.Course.count();
+    const coursesCount = await prisma.course.count();
     
     // Get recent batches
-    const recentBatches = await prisma.Batch.findMany({
+    const recentBatches = await prisma.batch.findMany({
       take: 5,
       orderBy: { startDate: 'desc' },
       include: {
@@ -51,7 +51,7 @@ router.get('/', async (req, res) => {
     }));
     
     // Get categories with course counts
-    const categories = await prisma.CourseCategory.findMany({
+    const categories = await prisma.courseCategory.findMany({
       include: {
         courses: {
           include: {
@@ -74,7 +74,7 @@ router.get('/', async (req, res) => {
     }));
     
     // Get popular courses (by enrollment count)
-    const popularCourses = await prisma.Course.findMany({
+    const popularCourses = await prisma.course.findMany({
       take: 5,
       include: {
         category: true,
@@ -102,7 +102,7 @@ router.get('/', async (req, res) => {
     
     // Calculate upcoming schedule items
     const now = new Date();
-    const upcomingSchedules = await prisma.Schedule.findMany({
+    const upcomingSchedules = await prisma.schedule.findMany({
       take: 5,
       where: {
         startTime: {
@@ -178,8 +178,8 @@ router.get('/', async (req, res) => {
 // New endpoint to get course and student counts
 router.get('/counts', async (req, res) => {
   try {
-    const coursesCount = await prisma.Course.count();
-    const studentsCount = await prisma.User.count({
+    const coursesCount = await prisma.course.count();
+    const studentsCount = await prisma.user.count({
       where: { role: Role.student }
     });
     

@@ -23,6 +23,7 @@ router.get('/', async (req, res) => {
           }
         }
       },
+      orderBy: { dayOfWeek: 'asc' }
     });
     
     res.json({ success: true, data: schedules });
@@ -67,6 +68,7 @@ router.post('/', async (req, res) => {
     const { 
       startTime,
       endTime,
+      dayOfWeek,
       batchId,
       meetingLink,
       topic,
@@ -74,14 +76,15 @@ router.post('/', async (req, res) => {
     } = req.body;
     
     console.log('Creating schedule with data:', { 
-      startTime, endTime, batchId, meetingLink, topic, platform 
+      startTime, endTime, dayOfWeek, batchId, meetingLink, topic, platform 
     });
 
     // Create the schedule with all fields
-    const schedule = await prisma.Schedule.create({
+    const schedule = await prisma.schedule.create({
       data: {
         startTime: new Date(`1970-01-01T${startTime}`),
         endTime: new Date(`1970-01-01T${endTime}`),
+        dayOfWeek: parseInt(dayOfWeek),
         batchId: parseInt(batchId),
         meetingLink: meetingLink || null,
         topic: topic || null,
@@ -105,6 +108,7 @@ router.put('/:id', async (req, res) => {
       platform,
       startTime,
       endTime,
+      dayOfWeek,
       batchId,
       meetingLink
     } = req.body;
@@ -118,6 +122,10 @@ router.put('/:id', async (req, res) => {
     
     if (endTime !== undefined) {
       updateData.endTime = new Date(`1970-01-01T${endTime}`);
+    }
+    
+    if (dayOfWeek !== undefined) {
+      updateData.dayOfWeek = parseInt(dayOfWeek);
     }
     
     if (batchId !== undefined) {
@@ -136,7 +144,7 @@ router.put('/:id', async (req, res) => {
       updateData.platform = platform;
     }
     
-    const schedule = await prisma.Schedule.update({
+    const schedule = await prisma.schedule.update({
       where: { scheduleId },
       data: updateData
     });
@@ -152,7 +160,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const scheduleId = parseInt(req.params.id);
     
-    await prisma.Schedule.delete({
+    await prisma.schedule.delete({
       where: { scheduleId }
     });
     

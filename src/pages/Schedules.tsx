@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -205,6 +206,7 @@ const Schedules = () => {
     setIsCreating(true);
 
     try {
+      // Make sure batchId is provided
       if (!values.batchId) {
         toast({
           title: 'Error',

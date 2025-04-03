@@ -11,7 +11,6 @@ router.get('/', async (req, res) => {
   try {
     console.log("Fetching dashboard metrics");
     
-    // Get counts for various entities - Using enum values from Prisma
     const studentsCount = await prisma.User.count({
       where: { role: Role.student }
     });
@@ -22,7 +21,6 @@ router.get('/', async (req, res) => {
     
     const coursesCount = await prisma.Course.count();
     
-    // Get recent batches
     const recentBatches = await prisma.Batch.findMany({
       take: 5,
       orderBy: { startDate: 'desc' },
@@ -39,7 +37,6 @@ router.get('/', async (req, res) => {
       }
     });
     
-    // Transform the batches to include student count
     const formattedBatches = recentBatches.map(batch => ({
       batchId: batch.batchId,
       batchName: batch.batchName,
@@ -50,7 +47,6 @@ router.get('/', async (req, res) => {
       studentsCount: batch.students?.length || 0
     }));
     
-    // Get categories with course counts
     const categories = await prisma.CourseCategory.findMany({
       include: {
         courses: {
@@ -61,7 +57,6 @@ router.get('/', async (req, res) => {
       }
     });
     
-    // Process categories for chart data
     const coursesByCategory = categories.map(category => ({
       categoryId: category.categoryId,
       categoryName: category.categoryName,
@@ -73,30 +68,29 @@ router.get('/', async (req, res) => {
       }))
     }));
     
-    // Get popular courses (by enrollment count)
+    //Top 5 courses by student count
   const popularCourses = await prisma.Batch.findMany({
     take: 5,
     where: {
       course: {
-        isNot: null, // Ensure the course exists
+        isNot: null,
       },
     },
     include: {
       course: {
         include: {
-          category: true, // Include the course category
+          category: true,
         },
       },
-      students: true, // Include students to calculate enrollment count
+      students: true, 
     },
     orderBy: {
       students: {
-        _count: 'desc', // Order by the number of students enrolled
+        _count: 'desc',
       },
     },
   });
     
-    // Transform courses for the response
     const formattedPopularCourses = popularCourses.map(batch => ({
       course: {
         courseId: batch.course.courseId,
@@ -109,7 +103,6 @@ router.get('/', async (req, res) => {
       }
     }));
     
-    // Calculate upcoming schedule items
     const now = new Date();
     const upcomingSchedules = await prisma.Schedule.findMany({
       take: 5,
@@ -137,7 +130,6 @@ router.get('/', async (req, res) => {
       }
     });
     
-    // Format upcoming schedules
     const formattedSchedules = upcomingSchedules.map(schedule => ({
       scheduleId: schedule.scheduleId,
       startTime: schedule.startTime,
@@ -148,9 +140,7 @@ router.get('/', async (req, res) => {
       batch: schedule.batch
     }));
     
-    // Get category distribution (students per category)
     const categoryDistribution = categories.map(category => {
-      // Sum up students across all courses in this category
       const totalStudents = category.courses.reduce((sum, course) => {
         return sum + (course.studentCourses?.length || 0);
       }, 0);
@@ -161,7 +151,6 @@ router.get('/', async (req, res) => {
       };
     });
     
-    // Prepare and return metrics
     const metrics = {
       counts: {
         students: studentsCount,
@@ -184,7 +173,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// New endpoint to get course and student counts
 router.get('/counts', async (req, res) => {
   try {
     const coursesCount = await prisma.Course.count();

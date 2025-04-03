@@ -1,7 +1,8 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { getUser, updateUser, deleteUser } from '@/lib/api';
+import { getUser, updateUser, deleteUser, regenerateUserPassword } from '@/lib/api';
 import { getAllSchedules } from '@/lib/api/schedules';
 import { User, Role, Schedule } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CalendarDays, Clock, Edit, User as UserIcon, ChevronLeft, Trash } from 'lucide-react';
+import { CalendarDays, Clock, Edit, User as UserIcon, ChevronLeft, Trash, RefreshCw, Copy, Check, KeyRound } from 'lucide-react';
 import { format } from 'date-fns';
 import { getInitials } from '@/lib/utils';
 
@@ -44,6 +45,8 @@ const UserProfile = () => {
   const [instructorBatch, setInstructorBatch] = useState<{ batchId: number; batchName: string } | null>(null);
   const [selectedBatch, setSelectedBatch] = useState<{ batchId: number; batchName: string } | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isRegeneratingPassword, setIsRegeneratingPassword] = useState(false);
+  const [passwordCopied, setPasswordCopied] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -227,6 +230,56 @@ const UserProfile = () => {
     }
   };
 
+  const handleCopyPassword = () => {
+    if (user?.password) {
+      navigator.clipboard.writeText(user.password);
+      setPasswordCopied(true);
+      toast({
+        title: 'Password copied',
+        description: 'Password copied to clipboard',
+      });
+      
+      setTimeout(() => setPasswordCopied(false), 2000);
+    }
+  };
+
+  const handleRegeneratePassword = async () => {
+    if (!user) return;
+    
+    setIsRegeneratingPassword(true);
+    try {
+      const response = await regenerateUserPassword(user.userId);
+      
+      if (response.success && response.data) {
+        // Update user object with new password
+        setUser({
+          ...user,
+          password: response.data.password
+        });
+        
+        toast({
+          title: 'Password regenerated',
+          description: 'The password has been regenerated successfully.',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to regenerate password',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error regenerating password:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to regenerate password',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRegeneratingPassword(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -378,6 +431,7 @@ const UserProfile = () => {
               <TabsList>
                 <TabsTrigger value="schedules">Schedules</TabsTrigger>
                 <TabsTrigger value="courses">Courses</TabsTrigger>
+                <TabsTrigger value="password">Password</TabsTrigger>
               </TabsList>
               <TabsContent value="schedules">
                 {user.role === Role.instructor ? (
@@ -424,6 +478,57 @@ const UserProfile = () => {
               </TabsContent>
               <TabsContent value="courses">
                 <p className="text-gray-500">Course information will be available in a future update.</p>
+              </TabsContent>
+              <TabsContent value="password">
+                <div className="space-y-4">
+                  <div className="p-4 bg-gray-50 rounded-lg border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <KeyRound className="h-5 w-5 text-blue-600" />
+                      <h3 className="font-medium">User Password</h3>
+                    </div>
+                    <p className="text-sm text-gray-500 mb-4">
+                      The current password for this user is shown below. You can copy it or regenerate a new password.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 relative">
+                        <Input 
+                          value={user.password || "No password set"} 
+                          readOnly 
+                          className="pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3"
+                          onClick={handleCopyPassword}
+                        >
+                          {passwordCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                      <Button
+                        onClick={handleRegeneratePassword}
+                        disabled={isRegeneratingPassword}
+                        variant="outline"
+                      >
+                        {isRegeneratingPassword ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            Regenerating...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Regenerate
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Note: When regenerating a password, the user will need to reset it on their next login.
+                    </p>
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
           </CardContent>

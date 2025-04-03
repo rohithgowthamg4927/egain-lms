@@ -12,7 +12,7 @@ export * from './student-courses';
 export * from './dashboard';
 
 // Re-export getUser from users.ts for backward compatibility
-export { getUser, updateUser, deleteUser } from './users';
+export { getUser, updateUser, deleteUser, regenerateUserPassword } from './users';
 
 // Make sure we export unenrollStudentFromBatch for backward compatibility
 export { 

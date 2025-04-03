@@ -3,9 +3,32 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { handleApiError } from '../utils/errorHandler.js';
+import crypto from 'crypto';
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+// Helper function to generate random password
+const generateRandomPassword = (length = 8) => {
+  const uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lowercase = "abcdefghijkmnpqrstuvwxyz";
+  const numbers = "23456789";
+  const symbols = "!@#$%^&*";
+  
+  const allChars = uppercase + lowercase + numbers + symbols;
+  
+  let password = "";
+  password += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+  password += lowercase.charAt(Math.floor(Math.random() * lowercase.length));
+  password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+  password += symbols.charAt(Math.floor(Math.random() * symbols.length));
+  
+  for (let i = 4; i < length; i++) {
+    password += allChars.charAt(Math.floor(Math.random() * allChars.length));
+  }
+  
+  return password.split('').sort(() => 0.5 - Math.random()).join('');
+};
 
 // Get all users
 router.get('/', async (req, res) => {
@@ -83,8 +106,7 @@ router.post('/', async (req, res) => {
       });
     }
     
-    
-    // Create user - removed 'active' field since it doesn't exist in schema
+    // Create user without hashing password as requested
     const user = await prisma.User.create({
       data: {
         fullName,
@@ -99,12 +121,9 @@ router.post('/', async (req, res) => {
       }
     });
     
-    // Filter out password from response
-    const { password: _, ...userWithoutPassword } = user;
-    
     res.status(201).json({
       success: true,
-      data: userWithoutPassword
+      data: user
     });
   } catch (error) {
     handleApiError(res, error);
@@ -158,10 +177,10 @@ router.put('/:id', async (req, res) => {
       ...(role !== undefined && { role }),
       ...(phoneNumber !== undefined && { phoneNumber }),
       ...(address !== undefined && { address }),
+      ...(password !== undefined && { password }),
       ...(mustResetPassword !== undefined && { mustResetPassword }),
       updatedAt: new Date()
     };
-    
     
     // Update user
     const updatedUser = await prisma.User.update({
@@ -169,12 +188,9 @@ router.put('/:id', async (req, res) => {
       data: updateData
     });
     
-    // Filter out password from response
-    const { password: _, ...userWithoutPassword } = updatedUser;
-    
     res.json({
       success: true,
-      data: userWithoutPassword
+      data: updatedUser
     });
   } catch (error) {
     handleApiError(res, error);
@@ -238,6 +254,45 @@ router.delete('/:id', async (req, res) => {
     
     res.json({
       success: true
+    });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Regenerate password for a user
+router.post('/:id/regenerate-password', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    
+    // Check if user exists
+    const user = await prisma.User.findUnique({
+      where: { userId }
+    });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+    
+    // Generate new password
+    const newPassword = generateRandomPassword(10);
+    
+    // Update user with new password
+    await prisma.User.update({
+      where: { userId },
+      data: { 
+        password: newPassword,
+        mustResetPassword: true,
+        updatedAt: new Date()
+      }
+    });
+    
+    res.json({
+      success: true,
+      data: { password: newPassword }
     });
   } catch (error) {
     handleApiError(res, error);

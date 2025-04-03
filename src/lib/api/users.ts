@@ -90,13 +90,15 @@ export const createUser = async (data: Partial<UserData>): Promise<{ success: bo
 // Update a user
 export const updateUser = async (userId: number, data: Partial<UserData>): Promise<{ success: boolean; data?: User; error?: string }> => {
   try {
-    const userData: UserData = {
-      fullName: data.fullName || '',
-      email: data.email || '',
-      phoneNumber: data.phoneNumber || null,
-      bio: data.bio || null,
-      address: data.address || null,
-      role: data.role || Role.student
+    const userData: Partial<UserData> = {
+      ...(data.fullName !== undefined && { fullName: data.fullName }),
+      ...(data.email !== undefined && { email: data.email }),
+      ...(data.phoneNumber !== undefined && { phoneNumber: data.phoneNumber || null }),
+      ...(data.bio !== undefined && { bio: data.bio || null }),
+      ...(data.address !== undefined && { address: data.address || null }),
+      ...(data.role !== undefined && { role: data.role }),
+      ...(data.password !== undefined && { password: data.password }),
+      ...(data.mustResetPassword !== undefined && { mustResetPassword: data.mustResetPassword })
     };
     
     const response = await apiFetch<User>(`/users/${userId}`, {
@@ -125,6 +127,22 @@ export const deleteUser = async (userId: number): Promise<{ success: boolean; er
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete user'
+    };
+  }
+};
+
+// Regenerate user password
+export const regenerateUserPassword = async (userId: number): Promise<{ success: boolean; data?: { password: string }; error?: string }> => {
+  try {
+    const response = await apiFetch<{ password: string }>(`/users/${userId}/regenerate-password`, {
+      method: 'POST'
+    });
+    return response;
+  } catch (error) {
+    console.error(`Error regenerating password for user ${userId}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to regenerate password'
     };
   }
 };

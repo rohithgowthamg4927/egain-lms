@@ -12,19 +12,20 @@ export enum Level {
 
 export interface User {
   userId: number;
-  id?: number; // Added for API compatibility
   fullName: string;
   email: string;
-  phoneNumber?: string;
-  address?: string;
   role: Role;
+  phoneNumber?: string | null;
+  address?: string | null;
+  bio?: string | null;
+  password?: string;
+  mustResetPassword?: boolean;
   createdAt: string;
   updatedAt: string;
-  mustResetPassword: boolean;
+  profilePictureId?: number;
   profilePicture?: ProfilePicture;
   // Additional fields needed by components
   photoUrl?: string;
-  bio?: string;
   enrollmentDate?: string; // Used for displaying when a student enrolled in a batch
 }
 
@@ -41,7 +42,6 @@ export interface ProfilePicture {
 
 export interface Course {
   courseId: number;
-  id?: number; // Added for API compatibility
   courseName: string;
   courseLevel: Level;
   categoryId: number;
@@ -60,7 +60,6 @@ export interface Course {
 
 export interface Category {
   categoryId: number;
-  id?: number; // Added for API compatibility
   categoryName: string;
   description?: string;
   createdAt: string;
@@ -74,7 +73,6 @@ export type CourseCategory = Category;
 
 export interface Batch {
   batchId: number;
-  id?: number; // Added for API compatibility
   batchName: string;
   courseId: number;
   instructorId: number;
@@ -92,8 +90,6 @@ export interface Batch {
 
 export interface Schedule {
   scheduleId: number;
-  id?: number; // Added for API compatibility
-  batchId: number;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
@@ -117,8 +113,6 @@ export interface StudentBatch {
 
 export interface Resource {
   resourceId: number;
-  id?: number; // Added for API compatibility
-  courseId: number;
   title: string;
   type: string;
   url: string;

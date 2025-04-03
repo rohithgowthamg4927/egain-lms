@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { UserForm } from '@/components/users/UserForm';
@@ -36,7 +37,7 @@ const AddUser = () => {
     try {
       const { password, ...userData } = data;
       
-      console.log('Submitting user data:', { ...userData, password: '[REDACTED]' });
+      console.log('Submitting user data:', { ...userData, password: password });
       
       const response = await createUser({
         fullName: userData.fullName,

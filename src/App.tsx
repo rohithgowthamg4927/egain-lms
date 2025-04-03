@@ -15,6 +15,7 @@ import Resources from "./pages/Resources";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AddCourse from "./pages/AddCourse";
 import EditCourse from "./pages/EditCourse";
+import AddUser from "./pages/AddUser";
 import UserProfile from "./pages/UserProfile";
 
 // Import batch-related routes
@@ -58,11 +59,13 @@ function App() {
       <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
       <Route path="/students/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
       <Route path="/students/:userId/edit" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+      <Route path="/add-user" element={<ProtectedRoute><AddUser /></ProtectedRoute>} />
 
       {/* Instructors routes */}
       <Route path="/instructors" element={<ProtectedRoute><Instructors /></ProtectedRoute>} />
       <Route path="/instructors/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
       <Route path="/instructors/:userId/edit" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+      <Route path="/add-user" element={<ProtectedRoute><AddUser /></ProtectedRoute>} />
 
       {/* Resources routes */}
       <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />

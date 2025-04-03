@@ -347,7 +347,7 @@ const Schedules = () => {
         <div className="flex items-center gap-4">
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline">
+              <Button className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Schedule
               </Button>
@@ -464,7 +464,7 @@ const Schedules = () => {
               </Form>
             </DialogContent>
           </Dialog>
-          <Button variant="ghost" onClick={fetchSchedules} disabled={isLoading}>
+          <Button onClick={fetchSchedules} disabled={isLoading} className="bg-green-600 hover:bg-green-700 text-white">
             {isLoading ? (
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
             ) : (

@@ -1,4 +1,3 @@
-
 import { ReactNode, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
@@ -41,6 +40,17 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
+  // Generate breadcrumb items based on the current path
+  const generateBreadcrumbItems = () => {
+    const pathSegments = location.pathname.split('/').filter(Boolean);
+    const items = pathSegments.map((segment, index) => {
+      const path = `/${pathSegments.slice(0, index + 1).join('/')}`;
+      const label = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
+      return { label, link: path };
+    });
+    return items;
+  };
+
   // If authenticated, render the outlet inside Layout with Sidebar
   return (
     <div className="min-h-screen bg-background flex">
@@ -49,7 +59,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         <Header />
         <main className="flex-1 p-6 overflow-auto">
           <div className="max-w-7xl mx-auto animate-fade-in">
-            <BreadcrumbNav />
+            <BreadcrumbNav items={generateBreadcrumbItems()} />
             {children}
           </div>
         </main>

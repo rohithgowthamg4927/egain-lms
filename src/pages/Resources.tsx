@@ -171,7 +171,7 @@ const Resources = () => {
       ),
     },
     {
-      accessorKey: 'courseId' as keyof Resource,
+      accessorKey: 'resourceId' as keyof Resource,
       header: 'Course',
       cell: ({ row }: { row: { original: Resource } }) => {
         const course = courses.find(c => c.courseId === row.original.courseId);
@@ -219,7 +219,9 @@ const Resources = () => {
     },
   ];
 
+  
   return (
+    
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>

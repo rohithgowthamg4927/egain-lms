@@ -9,7 +9,6 @@ export class EntityAdapter {
   static adaptCourse(apiCourse: any): Course {
     return {
       courseId: apiCourse.id || apiCourse.courseId,
-      id: apiCourse.id || apiCourse.courseId,
       courseName: apiCourse.courseName,
       courseLevel: apiCourse.courseLevel,
       categoryId: apiCourse.categoryId,
@@ -45,7 +44,6 @@ export class EntityAdapter {
   static adaptCategory(apiCategory: any): Category {
     return {
       categoryId: apiCategory.id || apiCategory.categoryId,
-      id: apiCategory.id || apiCategory.categoryId,
       categoryName: apiCategory.categoryName,
       createdAt: dateToString(apiCategory.createdAt),
       updatedAt: dateToString(apiCategory.updatedAt)
@@ -55,7 +53,6 @@ export class EntityAdapter {
   static adaptBatch(apiBatch: any): Batch {
     return {
       batchId: apiBatch.id || apiBatch.batchId,
-      id: apiBatch.id || apiBatch.batchId,
       batchName: apiBatch.batchName,
       courseId: apiBatch.courseId,
       instructorId: apiBatch.instructorId,
@@ -89,7 +86,6 @@ export class EntityAdapter {
   static adaptResource(apiResource: any): Resource {
     return {
       resourceId: apiResource.id || apiResource.resourceId,
-      id: apiResource.id || apiResource.resourceId,
       courseId: apiResource.courseId,
       title: apiResource.title,
       type: apiResource.type,

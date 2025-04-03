@@ -1,3 +1,4 @@
+
 import { Course, CourseCategory, User, Batch } from "../types";
 
 // Helper function to get course name safely
@@ -11,7 +12,7 @@ export const getCourseName = (course: Course | undefined | null, courseId?: numb
 
 // Helper function to get category name safely
 export const getCategoryName = (course: Course, categories: CourseCategory[]): string => {
-  const category = categories.find(cat => cat.id === course.categoryId);
+  const category = categories.find(cat => cat.categoryId === course.categoryId);
   return category ? category.categoryName : 'N/A';
 };
 

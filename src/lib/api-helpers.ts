@@ -48,7 +48,6 @@ export function ensureIdProperties<T extends { [key: string]: any }>(entity: T, 
 export function mapApiCourse(course: any): Course {
   return {
     courseId: course.id || course.courseId,
-    id: course.id || course.courseId,
     courseName: course.courseName,
     courseLevel: course.courseLevel,
     categoryId: course.categoryId,
@@ -68,7 +67,6 @@ export function mapApiCourse(course: any): Course {
 export function mapApiUser(user: any): User {
   return {
     userId: user.id || user.userId,
-    id: user.id || user.userId, // Adding id for compatibility
     fullName: user.fullName,
     email: user.email,
     phoneNumber: user.phoneNumber || user.phone,
@@ -85,7 +83,6 @@ export function mapApiUser(user: any): User {
 export function mapApiCategory(category: any): Category {
   return {
     categoryId: category.id || category.categoryId,
-    id: category.id || category.categoryId,
     categoryName: category.categoryName,
     description: category.description,
     createdAt: dateToString(category.createdAt || new Date()),
@@ -96,7 +93,6 @@ export function mapApiCategory(category: any): Category {
 export function mapApiBatch(batch: any): Batch {
   return {
     batchId: batch.id || batch.batchId,
-    id: batch.id || batch.batchId,
     batchName: batch.batchName,
     courseId: batch.courseId,
     instructorId: batch.instructorId,

@@ -109,7 +109,7 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
                   </FormControl>
                   <SelectContent>
                     {courses.map((course) => (
-                      <SelectItem key={course.id} value={String(course.id)}>
+                      <SelectItem key={course.courseId} value={String(course.courseId)}>
                         {course.courseName}
                       </SelectItem>
                     ))}
@@ -137,7 +137,7 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
                   </FormControl>
                   <SelectContent>
                     {instructors.map((instructor: User) => (
-                      <SelectItem key={instructor.id} value={String(instructor.id)}>
+                      <SelectItem key={instructor.userId} value={String(instructor.userId)}>
                         {instructor.fullName}
                       </SelectItem>
                     ))}

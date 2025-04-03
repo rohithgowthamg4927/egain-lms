@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -129,7 +128,7 @@ const Students = () => {
 
   const studentColumns = [
     {
-      accessorKey: 'fullName',
+      accessorKey: 'fullName' as keyof User,
       header: 'Name',
       cell: ({ row }: { row: { original: User } }) => (
         <div className="flex items-center gap-3">
@@ -145,19 +144,19 @@ const Students = () => {
       ),
     },
     {
-      accessorKey: 'phoneNumber',
+      accessorKey: 'phoneNumber' as keyof User,
       header: 'Phone',
       cell: ({ row }: { row: { original: User } }) => row.original.phoneNumber || 'N/A',
     },
     {
-      accessorKey: 'createdAt',
+      accessorKey: 'createdAt' as keyof User,
       header: 'Joined',
       cell: ({ row }: { row: { original: User } }) => {
         return formatDate(row.original.createdAt);
       },
     },
     {
-      accessorKey: 'courses',
+      accessorKey: 'userId' as keyof User,
       header: 'Courses',
       cell: ({ row }: { row: { original: User } }) => {
         const courses = studentCourses[row.original.userId] || [];

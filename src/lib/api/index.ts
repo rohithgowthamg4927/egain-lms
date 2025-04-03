@@ -25,3 +25,10 @@ export {
   enrollStudentInBatch, 
   unenrollStudentFromBatch as removeStudentFromBatch 
 } from './batches';
+
+// Re-export student course functions
+export {
+  getStudentCourses,
+  enrollStudentInCourse,
+  removeStudentFromCourse
+} from './student-courses';

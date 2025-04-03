@@ -12,6 +12,7 @@ export enum Level {
 
 export interface User {
   userId: number;
+  id?: number; // Adding ID as optional for backward compatibility
   fullName: string;
   email: string;
   role: Role;
@@ -42,6 +43,7 @@ export interface ProfilePicture {
 
 export interface Course {
   courseId: number;
+  id?: number; // Adding ID as optional for backward compatibility
   courseName: string;
   courseLevel: Level;
   categoryId: number;
@@ -60,6 +62,7 @@ export interface Course {
 
 export interface Category {
   categoryId: number;
+  id?: number; // Adding ID as optional for backward compatibility
   categoryName: string;
   description?: string;
   createdAt: string;
@@ -73,6 +76,7 @@ export type CourseCategory = Category;
 
 export interface Batch {
   batchId: number;
+  id?: number; // Adding ID as optional for backward compatibility
   batchName: string;
   courseId: number;
   instructorId: number;
@@ -90,6 +94,7 @@ export interface Batch {
 
 export interface Schedule {
   scheduleId: number;
+  batchId?: number; // Adding batchId as optional 
   dayOfWeek: number;
   startTime: string;
   endTime: string;
@@ -113,6 +118,8 @@ export interface StudentBatch {
 
 export interface Resource {
   resourceId: number;
+  id?: number; // Adding ID as optional for backward compatibility
+  courseId?: number; // Adding courseId as optional
   title: string;
   type: string;
   url: string;
@@ -129,6 +136,16 @@ export interface CourseReview {
   review?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface StudentCourse {
+  studentCourseId: number;
+  studentId: number;
+  courseId: number;
+  createdAt: string;
+  updatedAt: string;
+  student?: User;
+  course?: Course;
 }
 
 export interface DashboardMetrics {

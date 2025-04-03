@@ -95,10 +95,10 @@ const Profile: React.FC<ProfileProps> = ({ noHeader = false }) => {
           </CardHeader>
           <CardContent className="flex flex-col items-center">
             <Avatar className="h-32 w-32 mb-4">
-              <AvatarImage src={user.profilePicture || ''} alt={user.firstName} />
-              <AvatarFallback className="text-2xl">{`${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`}</AvatarFallback>
+              <AvatarImage src={user.profilePicture || ''} alt={user.fullName} />
+              <AvatarFallback className="text-2xl">{`${user.fullName?.charAt(0) || ''}`}</AvatarFallback>
             </Avatar>
-            <h2 className="text-2xl font-bold">{`${user.firstName || ''} ${user.lastName || ''}`}</h2>
+            <h2 className="text-2xl font-bold">{user.fullName || ''}</h2>
             <p className="text-muted-foreground mb-2">{user.email}</p>
             <Badge variant="outline" className="mb-4">
               {user.role === 'student' ? 'Student' : user.role === 'instructor' ? 'Instructor' : 'Administrator'}
@@ -106,7 +106,7 @@ const Profile: React.FC<ProfileProps> = ({ noHeader = false }) => {
             <div className="w-full space-y-2 mt-4">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Phone:</span>
-                <span>{user.phone || 'N/A'}</span>
+                <span>{user.phoneNumber || 'N/A'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Joined:</span>
@@ -129,13 +129,13 @@ const Profile: React.FC<ProfileProps> = ({ noHeader = false }) => {
               {user.role === 'student' && (
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground">Education</h3>
-                  <p className="text-base">{user.education || 'No education information available'}</p>
+                  <p className="text-base">{'No education information available'}</p>
                 </div>
               )}
               {user.role === 'instructor' && (
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground">Expertise</h3>
-                  <p className="text-base">{user.expertise || 'No expertise information available'}</p>
+                  <p className="text-base">{'No expertise information available'}</p>
                 </div>
               )}
               {user.address && (

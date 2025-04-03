@@ -11,6 +11,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Eye, EyeOff, Upload, Lock, Shield, Bell } from 'lucide-react';
 
+interface ProfileLayoutProps {
+  children: React.ReactNode;
+  noHeader?: boolean;
+}
+
 const Profile = () => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);

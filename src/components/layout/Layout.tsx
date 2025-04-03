@@ -8,15 +8,14 @@ import { useAuth } from '@/hooks/use-auth';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Layout = () => {
-  const { isAuthenticated, setRedirectPath } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { pathname } = useLocation();
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      setRedirectPath(pathname);
-    }
-  }, [isAuthenticated, pathname, setRedirectPath]);
+    // Log authentication state for debugging
+    console.log("Layout render - Auth State:", { isAuthenticated, path: pathname });
+  }, [isAuthenticated, pathname]);
 
   return (
     <div className="flex h-screen w-full bg-slate-50 overflow-hidden">

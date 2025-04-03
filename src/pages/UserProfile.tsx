@@ -55,12 +55,18 @@ const UserProfile = () => {
           description: 'User ID is missing',
           variant: 'destructive',
         });
-        navigate('/users');
+        navigate('/dashboard');
         return;
       }
       
       try {
-        const response = await getUsers(undefined, parseInt(userId));
+        // When using the userId in params, we need to parse it as a number
+        const userIdNum = parseInt(userId);
+        console.log("Fetching user with ID:", userIdNum);
+        
+        // We'll use getUsers with the userId filter
+        const response = await getUsers(undefined, userIdNum);
+        console.log("User API response:", response);
         
         if (response.success && response.data && response.data.length > 0) {
           const userData = response.data[0];
@@ -70,6 +76,7 @@ const UserProfile = () => {
           setPhoneNumber(userData.phoneNumber || '');
           setBio(userData.bio || '');
           
+          // For instructors, fetch their batches (example data, replace with actual API)
           if (userData.role === Role.instructor) {
             setInstructorBatch({ batchId: 1, batchName: 'Sample Batch' });
           }
@@ -79,7 +86,7 @@ const UserProfile = () => {
             description: response.error || 'Failed to fetch user details',
             variant: 'destructive',
           });
-          navigate('/users');
+          navigate('/dashboard');
           return;
         }
       } catch (error) {
@@ -194,7 +201,7 @@ const UserProfile = () => {
     } else if (user?.role === Role.instructor) {
       navigate('/instructors');
     } else {
-      navigate('/users');
+      navigate('/dashboard');
     }
   };
 
@@ -316,7 +323,7 @@ const UserProfile = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user.photoUrl} />
+                <AvatarImage src={user.profilePicture?.fileUrl} />
                 <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
               </Avatar>
               <span>Profile Picture</span>

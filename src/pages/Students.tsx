@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import { getUsers, deleteUser } from '@/lib/api';
 import { getCourses } from '@/lib/api/courses';
+import { getDashboardCounts } from '@/lib/api/dashboard';
 import { Role, User } from '@/lib/types';
 import { Plus, Search, GraduationCap, BookOpen } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -66,9 +67,16 @@ const Students = () => {
   
   const fetchCoursesCount = async () => {
     try {
-      const response = await getCourses();
+      // Use dashboard counts endpoint to get course count
+      const response = await getDashboardCounts();
       if (response.success && response.data) {
-        setCoursesCount(response.data.length);
+        setCoursesCount(response.data.coursesCount);
+      } else {
+        // Fallback to courses endpoint if dashboard counts fails
+        const coursesResponse = await getCourses();
+        if (coursesResponse.success && coursesResponse.data) {
+          setCoursesCount(coursesResponse.data.length);
+        }
       }
     } catch (error) {
       console.error('Error fetching courses count:', error);
@@ -127,6 +135,7 @@ const Students = () => {
   };
 
   const handleViewStudent = (student: User) => {
+    console.log("Navigating to student profile:", student.userId);
     navigate(`/students/${student.userId}`);
   };
   
@@ -182,7 +191,7 @@ const Students = () => {
   const studentActions = [
     {
       label: 'View Profile',
-      onClick: handleViewStudent,
+      onClick: handleViewStudent, // Make sure this is correctly bound
       icon: 'eye',
     },
     {

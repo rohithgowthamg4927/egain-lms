@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useLocation, Link } from 'react-router-dom';
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -23,15 +23,6 @@ const BreadcrumbNav = ({ items }: BreadcrumbNavProps) => {
   return (
     <Breadcrumb className="mb-4">
       <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link to="/dashboard">
-              <Home className="h-4 w-4 mr-1" />
-              Home
-            </Link>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        {items.length > 0 && <BreadcrumbSeparator />}
         {items.map((item, index) => (
           <React.Fragment key={item.link}>
             <BreadcrumbItem>

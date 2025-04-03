@@ -1,5 +1,3 @@
-import { format } from 'date-fns';
-import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
 
 /**
  * Checks if a value is a valid date
@@ -110,15 +108,4 @@ export const formatTimeRange = (startTime: string | Date | null | undefined, end
   const formattedEnd = endTime ? formatTime(endTime) : 'N/A';
   
   return `${formattedStart} - ${formattedEnd}`;
-};
-
-export const formatInIST = (date: string | Date, formatString: string) => {
-  const utcDate = typeof date === 'string' ? new Date(date) : date;
-  const istDate = utcToZonedTime(utcDate, 'Asia/Kolkata');
-  return format(istDate, formatString);
-};
-
-export const parseToIST = (date: string | Date) => {
-  const utcDate = typeof date === 'string' ? new Date(date) : date;
-  return utcToZonedTime(utcDate, 'Asia/Kolkata');
 };

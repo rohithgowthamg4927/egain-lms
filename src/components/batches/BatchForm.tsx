@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -13,7 +14,6 @@ import { cn } from '@/lib/utils';
 import { getCourses } from '@/lib/api/courses';
 import { getUsers } from '@/lib/api/users';
 import { Batch, User, Role } from '@/lib/types';
-import { formatInIST } from '@/lib/utils/date-helpers';
 
 type BatchFormProps = {
   batch?: Batch;
@@ -165,7 +165,7 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
                         )}
                       >
                         {field.value ? (
-                          formatInIST(field.value, "PPP")
+                          format(new Date(field.value), "PPP")
                         ) : (
                           <span>Pick a date</span>
                         )}
@@ -204,7 +204,7 @@ const BatchForm = ({ batch, onSubmit, isSubmitting }: BatchFormProps) => {
                         )}
                       >
                         {field.value ? (
-                          formatInIST(field.value, "PPP")
+                          format(new Date(field.value), "PPP")
                         ) : (
                           <span>Pick a date</span>
                         )}

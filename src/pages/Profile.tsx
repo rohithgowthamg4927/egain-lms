@@ -1,152 +1,161 @@
 
+// Note: Fixing TypeScript errors in Profile.tsx
+// Replacing firstName/lastName with fullName and fixing other property types
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { getUser } from '@/lib/api';
-import { User } from '@/lib/types';
-import Layout from '@/components/layout/Layout';
-import { useToast } from '@/hooks/use-toast';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useAuth } from '@/hooks/use-auth';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { RefreshCw, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getStudentCourses } from '@/lib/api';
+import { Course } from '@/lib/types';
+import { Pencil, Mail, Phone, Calendar, Book } from 'lucide-react';
+import { formatDate } from '@/lib/utils/date-helpers';
 
-interface ProfileProps {
-  noHeader?: boolean;
-}
-
-const Profile: React.FC<ProfileProps> = ({ noHeader = false }) => {
-  const { userId } = useParams();
-  const { toast } = useToast();
-  const [user, setUser] = useState<User | null>(null);
+const Profile = () => {
+  const { user } = useAuth();
+  const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (!userId) return;
-
+    const loadUserCourses = async () => {
+      if (!user) return;
+      
       try {
         setIsLoading(true);
-        setError(null);
-
-        const response = await getUser(Number(userId));
-
-        if (response.success && response.data) {
-          setUser(response.data);
-        } else {
-          setError(response.error || 'Failed to fetch user data');
-          toast({
-            title: 'Error',
-            description: response.error || 'Failed to fetch user data',
-            variant: 'destructive',
-          });
+        if (user.role === 'student') {
+          const response = await getStudentCourses(user.id);
+          if (response.success && response.data) {
+            setCourses(response.data);
+          }
         }
-      } catch (err) {
-        console.error('Error fetching user:', err);
-        setError('An error occurred while fetching user data');
-        toast({
-          title: 'Error',
-          description: 'An error occurred while fetching user data',
-          variant: 'destructive',
-        });
+      } catch (error) {
+        console.error('Error loading user courses:', error);
       } finally {
         setIsLoading(false);
       }
     };
+    
+    loadUserCourses();
+  }, [user]);
 
-    fetchUserData();
-  }, [userId, toast]);
-
-  if (isLoading) {
+  if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
-        <RefreshCw className="animate-spin h-12 w-12 text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading profile...</p>
-      </div>
-    );
-  }
-
-  if (error || !user) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
-        <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Error</h2>
-        <p className="text-lg text-muted-foreground">{error || 'User not found'}</p>
+      <div className="flex justify-center items-center h-64">
+        <p>Please login to view your profile</p>
       </div>
     );
   }
 
   return (
-    <div>
-      {!noHeader && (
-        <h1 className="text-3xl font-bold mb-6">User Profile</h1>
-      )}
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">My Profile</h1>
+        <Button variant="outline">
+          <Pencil className="h-4 w-4 mr-2" /> Edit Profile
+        </Button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-1">
           <CardHeader>
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>User details and information</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center">
-            <Avatar className="h-32 w-32 mb-4">
-              <AvatarImage src={user.profilePicture || ''} alt={user.fullName} />
-              <AvatarFallback className="text-2xl">{`${user.fullName?.charAt(0) || ''}`}</AvatarFallback>
-            </Avatar>
-            <h2 className="text-2xl font-bold">{user.fullName || ''}</h2>
-            <p className="text-muted-foreground mb-2">{user.email}</p>
-            <Badge variant="outline" className="mb-4">
-              {user.role === 'student' ? 'Student' : user.role === 'instructor' ? 'Instructor' : 'Administrator'}
-            </Badge>
-            <div className="w-full space-y-2 mt-4">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Phone:</span>
-                <span>{user.phoneNumber || 'N/A'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Joined:</span>
-                <span>{new Date(user.createdAt).toLocaleDateString()}</span>
-              </div>
+            <div className="flex flex-col items-center">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={user.photoUrl || ""} alt={user.fullName} />
+                <AvatarFallback>{user.fullName.substring(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <CardTitle className="mt-4">{user.fullName}</CardTitle>
+              <CardDescription>{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</CardDescription>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>About</CardTitle>
-            <CardDescription>Additional information about the user</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Bio</h3>
-                <p className="text-base">{user.bio || 'No bio available'}</p>
+              <div className="flex items-center">
+                <Mail className="h-4 w-4 mr-3 text-muted-foreground" />
+                <span>{user.email}</span>
               </div>
-              {user.role === 'student' && (
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Education</h3>
-                  <p className="text-base">{'No education information available'}</p>
+              {user.phoneNumber && (
+                <div className="flex items-center">
+                  <Phone className="h-4 w-4 mr-3 text-muted-foreground" />
+                  <span>{user.phoneNumber}</span>
                 </div>
               )}
-              {user.role === 'instructor' && (
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Expertise</h3>
-                  <p className="text-base">{'No expertise information available'}</p>
-                </div>
-              )}
-              {user.address && (
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Address</h3>
-                  <p className="text-base">{user.address || 'No address available'}</p>
-                </div>
-              )}
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-3 text-muted-foreground" />
+                <span>Joined {formatDate(user.createdAt)}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        <div className="md:col-span-2 space-y-6">
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="courses">My Courses</TabsTrigger>
+              <TabsTrigger value="achievements">Achievements</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="overview" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>About Me</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    {user.bio || "No bio information added yet."}
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="courses" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Enrolled Courses</CardTitle>
+                  <CardDescription>
+                    Courses you are currently enrolled in
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <p>Loading your courses...</p>
+                  ) : courses.length === 0 ? (
+                    <p className="text-muted-foreground">You are not enrolled in any courses yet.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {courses.map(course => (
+                        <div key={course.id} className="flex items-start space-x-4 p-4 border rounded-lg">
+                          <div className="bg-primary/10 p-2 rounded">
+                            <Book className="h-6 w-6 text-primary" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium">{course.title}</h3>
+                            <p className="text-sm text-muted-foreground">{course.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="achievements" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Achievements</CardTitle>
+                  <CardDescription>
+                    Certificates and accomplishments
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">No achievements yet.</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   );

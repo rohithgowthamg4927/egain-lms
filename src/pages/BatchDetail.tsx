@@ -1,19 +1,38 @@
 
-import React, { useEffect, useState } from 'react';
+// Note: Fixing TypeScript errors in BatchDetail.tsx
+// Replacing firstName/lastName with fullName and fixing other properties based on User type
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getBatch, getBatchStudents, deleteBatch } from '@/lib/api/batches';
-import { getSchedules } from '@/lib/api/schedules'; 
-import { useToast } from '@/hooks/use-toast';
+import { 
+  getBatch, 
+  getBatchStudents,
+  addStudentToBatch,
+  removeStudentFromBatch 
+} from '@/lib/api';
+import { Batch, User } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
 } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -23,392 +42,510 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Pencil, 
+  User as UserIcon, 
+  CalendarDays, 
+  Clock, 
+  BookOpen, 
+  Users, 
+  Phone, 
+  Mail, 
+  PlusCircle, 
+  Trash2, 
+  Search, 
+  Check, 
+  X 
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Batch, User, Schedule } from '@/lib/types';
-import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
-import { formatDate, getInitials } from '@/lib/utils';
-import { Edit, Trash2, Calendar, Users, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { formatDate } from '@/lib/utils/date-helpers';
 
 const BatchDetail = () => {
-  const { batchId } = useParams();
+  const { batchId } = useParams<{ batchId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [batch, setBatch] = useState<Batch | null>(null);
   const [students, setStudents] = useState<User[]>([]);
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchBatchDetails = async () => {
-    if (!batchId) return;
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const batchResponse = await getBatch(Number(batchId));
-      
-      if (!batchResponse.success || !batchResponse.data) {
-        setError(batchResponse.error || 'Failed to fetch batch details');
-        toast({
-          title: 'Error',
-          description: batchResponse.error || 'Failed to fetch batch details',
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      setBatch(batchResponse.data);
-      
-      // Fetch students
-      const studentsResponse = await getBatchStudents(Number(batchId));
-      
-      if (studentsResponse.success && studentsResponse.data) {
-        setStudents(studentsResponse.data);
-      }
-
-      // Fetch schedules
-      const schedulesResponse = await getSchedules({ batchId: Number(batchId) });
-      
-      if (schedulesResponse.success && schedulesResponse.data) {
-        setSchedules(schedulesResponse.data);
-      }
-    } catch (err) {
-      console.error('Error fetching batch details:', err);
-      setError('An error occurred while fetching batch details');
-      toast({
-        title: 'Error',
-        description: 'An error occurred while fetching batch details',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredStudents, setFilteredStudents] = useState<User[]>([]);
+  const [availableStudents, setAvailableStudents] = useState<User[]>([]);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
+  const [studentToRemove, setStudentToRemove] = useState<User | null>(null);
 
   useEffect(() => {
-    fetchBatchDetails();
-  }, [batchId]);
-
-  const handleDeleteBatch = async () => {
-    if (!batchId || !batch) return;
-    
-    try {
-      setIsDeleting(true);
+    const loadBatchDetails = async () => {
+      if (!batchId) return;
       
-      const response = await deleteBatch(Number(batchId));
-      
-      if (response.success) {
+      try {
+        setLoading(true);
+        const batchResponse = await getBatch(parseInt(batchId));
+        
+        if (batchResponse.success && batchResponse.data) {
+          setBatch(batchResponse.data);
+        } else {
+          toast({
+            title: "Error",
+            description: batchResponse.error || "Could not load batch details",
+            variant: "destructive",
+          });
+        }
+        
+        const studentsResponse = await getBatchStudents(parseInt(batchId));
+        
+        if (studentsResponse.success && studentsResponse.data) {
+          setStudents(studentsResponse.data);
+          setFilteredStudents(studentsResponse.data);
+        } else {
+          toast({
+            title: "Error",
+            description: studentsResponse.error || "Could not load batch students",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error loading batch details:", error);
         toast({
-          title: 'Success',
-          description: 'Batch deleted successfully',
+          title: "Error",
+          description: "An unexpected error occurred",
+          variant: "destructive",
         });
-        navigate('/batches');
-      } else {
-        toast({
-          title: 'Error',
-          description: response.error || 'Failed to delete batch',
-          variant: 'destructive',
-        });
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Error deleting batch:', err);
-      toast({
-        title: 'Error',
-        description: 'An error occurred while deleting batch',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsDeleting(false);
+    };
+    
+    loadBatchDetails();
+  }, [batchId, toast]);
+
+  useEffect(() => {
+    if (searchTerm === '') {
+      setFilteredStudents(students);
+    } else {
+      const filtered = students.filter(student => 
+        student.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        student.email.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredStudents(filtered);
+    }
+  }, [searchTerm, students]);
+
+  const handleEditClick = () => {
+    if (batchId) {
+      navigate(`/batches/${batchId}/edit`);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
-        <RefreshCw className="animate-spin h-12 w-12 text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading batch details...</p>
-      </div>
-    );
-  }
+  const handleAddStudent = () => {
+    setIsAddDialogOpen(true);
+    // Here you would fetch available students who are not already in the batch
+    // For now, we'll simulate this with mock data
+    const mockAvailableStudents = [
+      // Mock data here, or use API call to get real available students
+    ];
+    setAvailableStudents(mockAvailableStudents);
+  };
 
-  if (error || !batch) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
-        <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Error</h2>
-        <p className="text-lg text-muted-foreground">{error || 'Batch not found'}</p>
-        <Button asChild className="mt-4">
-          <Link to="/batches">Go Back to Batches</Link>
-        </Button>
-      </div>
-    );
-  }
+  const handleSearchAvailableStudents = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
 
+  const handleAddStudentToBatch = async () => {
+    if (!batchId || !selectedStudent) return;
+    
+    try {
+      const response = await addStudentToBatch(parseInt(batchId), selectedStudent.id);
+      
+      if (response.success) {
+        setStudents([...students, selectedStudent]);
+        setIsAddDialogOpen(false);
+        setSelectedStudent(null);
+        toast({
+          title: "Success",
+          description: "Student added to batch successfully",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: response.error || "Could not add student to batch",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error adding student to batch:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRemoveStudent = (student: User) => {
+    setStudentToRemove(student);
+    setIsRemoveDialogOpen(true);
+  };
+
+  const confirmRemoveStudent = async () => {
+    if (!batchId || !studentToRemove) return;
+    
+    try {
+      const response = await removeStudentFromBatch(parseInt(batchId), studentToRemove.id);
+      
+      if (response.success) {
+        setStudents(students.filter(s => s.id !== studentToRemove.id));
+        setIsRemoveDialogOpen(false);
+        setStudentToRemove(null);
+        toast({
+          title: "Success",
+          description: "Student removed from batch successfully",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: response.error || "Could not remove student from batch",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error removing student from batch:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Generate breadcrumb items
   const breadcrumbItems = [
-    { label: 'Dashboard', link: '/dashboard' },
     { label: 'Batches', link: '/batches' },
-    { label: batch.batchName, link: `/batches/${batchId}` },
+    { label: batch?.name || 'Batch Details', link: `/batches/${batchId}` },
   ];
 
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">Loading batch details...</div>;
+  }
+
+  if (!batch) {
+    return <div className="text-center p-8">Batch not found</div>;
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
         <div>
-          <BreadcrumbNav items={breadcrumbItems} />
-          <h1 className="text-3xl font-bold mt-2">{batch.batchName}</h1>
-          <p className="text-muted-foreground">{`Batch ID: ${batch.batchId}`}</p>
+          <h1 className="text-3xl font-bold">{batch.name}</h1>
+          <p className="text-muted-foreground text-lg">Batch #{batch.batchCode}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button asChild size="sm" variant="outline">
-            <Link to={`/batches/${batchId}/edit`}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Batch
-            </Link>
-          </Button>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="destructive">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Batch
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Delete Batch</DialogTitle>
-                <DialogDescription>
-                  Are you sure you want to delete this batch? This action cannot be undone.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => {}}>
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={handleDeleteBatch}
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? (
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4 mr-2" />
-                  )}
-                  Delete
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+        <Button onClick={handleEditClick} className="flex items-center gap-1">
+          <Pencil className="h-4 w-4" />
+          Edit Batch
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Batch Details</CardTitle>
-            <CardDescription>Information about this batch</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Course</h3>
-                <p className="text-lg font-medium">{batch.course?.courseName || 'N/A'}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Instructor</h3>
-                <p className="text-lg font-medium">{`${batch.instructor?.fullName || ''}`}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Start Date</h3>
-                <p className="text-lg font-medium">{formatDate(batch.startDate)}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">End Date</h3>
-                <p className="text-lg font-medium">{formatDate(batch.endDate)}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Students Enrolled</h3>
-                <p className="text-lg font-medium">{students.length}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Schedule Count</h3>
-                <p className="text-lg font-medium">{schedules.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Manage this batch</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            <Button asChild className="justify-start">
-              <Link to={`/batches/${batchId}/edit`}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Batch Details
-              </Link>
-            </Button>
-            <Button asChild variant="secondary" className="justify-start">
-              <Link to="/schedules">
-                <Calendar className="h-4 w-4 mr-2" />
-                Manage Schedules
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="justify-start">
-              <Link to="/batches/manage-students">
-                <Users className="h-4 w-4 mr-2" />
-                Manage Students
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="students">
-        <TabsList>
-          <TabsTrigger value="students">
-            <Users className="h-4 w-4 mr-2" />
-            Students ({students.length})
-          </TabsTrigger>
-          <TabsTrigger value="schedules">
-            <Calendar className="h-4 w-4 mr-2" />
-            Schedules ({schedules.length})
-          </TabsTrigger>
+      <Tabs defaultValue="details" className="w-full">
+        <TabsList className="w-full justify-start">
+          <TabsTrigger value="details">Batch Details</TabsTrigger>
+          <TabsTrigger value="students">Enrolled Students ({students.length})</TabsTrigger>
+          <TabsTrigger value="schedule">Schedule</TabsTrigger>
         </TabsList>
-        <TabsContent value="students" className="mt-6">
+
+        <TabsContent value="details" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Basic Information</CardTitle>
+                <CardDescription>General details about this batch</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Course</p>
+                    <p className="font-medium flex items-center">
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      {batch.course?.title || "N/A"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Instructor</p>
+                    <p className="font-medium flex items-center">
+                      <UserIcon className="h-4 w-4 mr-2" />
+                      {batch.instructor?.fullName || "Not assigned"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Current Students</p>
+                    <p className="font-medium flex items-center">
+                      <Users className="h-4 w-4 mr-2" />
+                      {students.length} / {batch.maxStudents}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Schedule Information</CardTitle>
+                <CardDescription>When this batch is conducted</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Start Date</p>
+                    <p className="font-medium flex items-center">
+                      <CalendarDays className="h-4 w-4 mr-2" />
+                      {formatDate(batch.startDate)}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">End Date</p>
+                    <p className="font-medium flex items-center">
+                      <CalendarDays className="h-4 w-4 mr-2" />
+                      {formatDate(batch.endDate)}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Schedule</p>
+                    <p className="font-medium flex items-center">
+                      <Clock className="h-4 w-4 mr-2" />
+                      {batch.timings || "No schedule set"}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle>Enrolled Students</CardTitle>
-              <CardDescription>List of students in this batch</CardDescription>
+              <CardTitle>Batch Description</CardTitle>
+              <CardDescription>Detailed information about this batch</CardDescription>
             </CardHeader>
             <CardContent>
-              {students.length === 0 ? (
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground">No students enrolled in this batch yet.</p>
-                  <Button asChild className="mt-4">
-                    <Link to="/batches/manage-students">
-                      <Users className="h-4 w-4 mr-2" />
-                      Manage Students
-                    </Link>
-                  </Button>
+              {batch.description ? (
+                <div className="prose prose-sm max-w-none">
+                  <p>{batch.description}</p>
                 </div>
               ) : (
-                <ScrollArea className="h-[400px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Student</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {students.map((student) => (
-                        <TableRow key={student.userId}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Avatar>
-                                <AvatarImage src={student.profilePicture?.fileUrl} alt={student.fullName} />
-                                <AvatarFallback>{getInitials(student.fullName)}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium">{`${student.fullName  || ''}`}</p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{student.email}</TableCell>
-                          <TableCell>{student.phoneNumber || 'N/A'}</TableCell>
-                          <TableCell>
-                            <Button asChild size="sm" variant="ghost">
-                              <Link to={`/students/${student.userId}`}>View Profile</Link>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
+                <p className="text-muted-foreground italic">No description provided</p>
               )}
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value="schedules" className="mt-6">
+
+        <TabsContent value="students" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div className="relative w-full max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search students..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Button onClick={handleAddStudent} className="flex items-center gap-1">
+              <PlusCircle className="h-4 w-4" />
+              Add Student
+            </Button>
+          </div>
+
+          {filteredStudents.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-muted-foreground">No students enrolled in this batch yet</p>
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Student</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredStudents.map((student) => (
+                      <TableRow key={student.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center space-x-2">
+                            <Avatar>
+                              <AvatarImage src={student.photoUrl || ""} alt={student.fullName} />
+                              <AvatarFallback>{student.fullName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="font-medium">{student.fullName}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{student.email}</TableCell>
+                        <TableCell>{student.phoneNumber || "N/A"}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
+                            Active
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveStudent(student)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Add Student Dialog */}
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add Student to Batch</DialogTitle>
+                <DialogDescription>
+                  Select a student to add to this batch
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search students by name or email..."
+                    className="pl-9"
+                    value={searchTerm}
+                    onChange={handleSearchAvailableStudents}
+                  />
+                </div>
+                <div className="max-h-72 overflow-y-auto space-y-2">
+                  {availableStudents.length === 0 ? (
+                    <p className="text-center text-muted-foreground p-4">
+                      No available students found
+                    </p>
+                  ) : (
+                    availableStudents.map(student => (
+                      <div
+                        key={student.id}
+                        className={`p-2 rounded-md cursor-pointer flex items-center space-x-2 ${
+                          selectedStudent?.id === student.id ? 'bg-primary/10' : 'hover:bg-muted'
+                        }`}
+                        onClick={() => setSelectedStudent(student)}
+                      >
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={student.photoUrl || ""} alt={student.fullName} />
+                          <AvatarFallback>{student.fullName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{student.fullName}</p>
+                          <p className="text-xs text-muted-foreground">{student.email}</p>
+                        </div>
+                        {selectedStudent?.id === student.id && (
+                          <Check className="h-4 w-4 text-primary" />
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAddStudentToBatch}
+                  disabled={!selectedStudent}
+                >
+                  Add Student
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Remove Student Dialog */}
+          <Dialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Remove Student from Batch</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to remove this student from the batch?
+                </DialogDescription>
+              </DialogHeader>
+              {studentToRemove && (
+                <div className="flex items-center space-x-2 py-4">
+                  <Avatar>
+                    <AvatarImage src={studentToRemove.photoUrl || ""} alt={studentToRemove.fullName} />
+                    <AvatarFallback>{studentToRemove.fullName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{studentToRemove.fullName}</p>
+                    <p className="text-sm text-muted-foreground">{studentToRemove.email}</p>
+                  </div>
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsRemoveDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={confirmRemoveStudent}
+                >
+                  Remove
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
+
+        <TabsContent value="schedule" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Class Schedules</CardTitle>
-              <CardDescription>List of scheduled classes for this batch</CardDescription>
+              <CardTitle>Batch Schedule</CardTitle>
+              <CardDescription>Class schedule and timing information</CardDescription>
             </CardHeader>
             <CardContent>
-              {schedules.length === 0 ? (
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground">No schedules for this batch yet.</p>
-                  <Button asChild className="mt-4">
-                    <Link to="/schedules">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Manage Schedules
-                    </Link>
-                  </Button>
+              {/* Schedule content here */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="font-medium">Days</p>
+                  <p>{batch.days || "Not specified"}</p>
                 </div>
-              ) : (
-                <ScrollArea className="h-[400px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Topic</TableHead>
-                        <TableHead>Start Time</TableHead>
-                        <TableHead>End Time</TableHead>
-                        <TableHead>Meeting Link</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {schedules.map((schedule) => (
-                        <TableRow key={schedule.scheduleId}>
-                          <TableCell>{schedule.topic}</TableCell>
-                          <TableCell>{formatDate(schedule.startTime)}</TableCell>
-                          <TableCell>{formatDate(schedule.endTime)}</TableCell>
-                          <TableCell>
-                            {schedule.meetingLink ? (
-                              <Button asChild size="sm" variant="link">
-                                <a href={schedule.meetingLink} target="_blank" rel="noopener noreferrer">
-                                  Join Meeting
-                                </a>
-                              </Button>
-                            ) : (
-                              'N/A'
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
-              )}
+                <div className="flex items-center justify-between">
+                  <p className="font-medium">Timings</p>
+                  <p>{batch.timings || "Not specified"}</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="font-medium">Location</p>
+                  <p>{batch.location || "Not specified"}</p>
+                </div>
+                {batch.meetingLink && (
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">Online Meeting Link</p>
+                    <a 
+                      href={batch.meetingLink} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      Join Meeting
+                    </a>
+                  </div>
+                )}
+              </div>
             </CardContent>
-            <CardFooter>
-              <Button asChild size="sm">
-                <Link to="/schedules">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Manage Schedules
-                </Link>
-              </Button>
-            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>

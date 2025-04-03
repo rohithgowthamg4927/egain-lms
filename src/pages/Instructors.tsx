@@ -1,22 +1,39 @@
+
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import { getUsers, deleteUser } from '@/lib/api';
+import { getCourses } from '@/lib/api/courses';
 import { Role, User } from '@/lib/types';
 import { Plus, Search, Award, BookOpen, Users, Eye, Edit, Trash } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { formatDate } from '@/lib/utils/date-helpers';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from '@/components/ui/alert-dialog';
 
 const Instructors = () => {
   const navigate = useNavigate();
   const [instructors, setInstructors] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [instructorToDelete, setInstructorToDelete] = useState<User | null>(null);
+  const [coursesCount, setCoursesCount] = useState(0);
+  const [studentsCount, setStudentsCount] = useState(0);
   const { toast } = useToast();
 
   const fetchInstructors = async () => {
@@ -48,9 +65,33 @@ const Instructors = () => {
       setIsLoading(false);
     }
   };
+
+  const fetchCoursesCount = async () => {
+    try {
+      const response = await getCourses();
+      if (response.success && response.data) {
+        setCoursesCount(response.data.length);
+      }
+    } catch (error) {
+      console.error('Error fetching courses count:', error);
+    }
+  };
+
+  const fetchStudentsCount = async () => {
+    try {
+      const response = await getUsers(Role.student);
+      if (response.success && response.data) {
+        setStudentsCount(response.data.length);
+      }
+    } catch (error) {
+      console.error('Error fetching students count:', error);
+    }
+  };
   
   useEffect(() => {
     fetchInstructors();
+    fetchCoursesCount();
+    fetchStudentsCount();
   }, []);
 
   const filteredInstructors = instructors.filter((instructor) =>
@@ -62,30 +103,33 @@ const Instructors = () => {
     navigate('/add-user', { state: { role: Role.instructor } });
   };
   
-  const handleDeleteInstructor = async (instructor: User) => {
+  const handleDeleteConfirmation = (instructor: User) => {
+    setInstructorToDelete(instructor);
+    setShowDeleteDialog(true);
+  };
+  
+  const handleDeleteInstructor = async () => {
+    if (!instructorToDelete) return;
+    
     try {
-      // Confirm before deleting
-      const confirmed = window.confirm(`Are you sure you want to delete ${instructor.fullName}?`);
+      console.log(`Deleting instructor with ID: ${instructorToDelete.userId}`);
       
-      if (!confirmed) {
-        return;
-      }
-      
-      console.log(`Deleting instructor with ID: ${instructor.userId}`);
-      
-      const response = await deleteUser(instructor.userId);
+      const response = await deleteUser(instructorToDelete.userId);
       
       if (!response.success) {
         throw new Error(response.error || 'Failed to delete instructor');
       }
       
       // Update the local state
-      setInstructors(instructors.filter(i => i.userId !== instructor.userId));
+      setInstructors(instructors.filter(i => i.userId !== instructorToDelete.userId));
       
       toast({
         title: 'Instructor deleted',
-        description: `${instructor.fullName} has been deleted successfully`,
+        description: `${instructorToDelete.fullName} has been deleted successfully`,
       });
+      
+      setShowDeleteDialog(false);
+      setInstructorToDelete(null);
     } catch (error) {
       console.error('Error deleting instructor:', error);
       toast({
@@ -96,16 +140,26 @@ const Instructors = () => {
     }
   };
 
+  const handleViewInstructor = (instructor: User) => {
+    navigate(`/instructors/${instructor.userId}`);
+  };
+
+  const handleEditInstructor = (instructor: User) => {
+    navigate(`/add-user`, { state: { userId: instructor.userId, role: Role.instructor } });
+  };
+
   const instructorColumns = [
     {
       accessorKey: 'fullName' as keyof User,
       header: 'Name',
       cell: ({ row }: { row: { original: User } }) => (
         <div className="flex items-center gap-3">
-          <Avatar>
-            <AvatarImage src={row.original.profilePicture?.fileUrl} alt={row.original.fullName} />
-            <AvatarFallback>{getInitials(row.original.fullName)}</AvatarFallback>
-          </Avatar>
+          <Link to={`/instructors/${row.original.userId}`}>
+            <Avatar className="cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+              <AvatarImage src={row.original.profilePicture?.fileUrl} alt={row.original.fullName} />
+              <AvatarFallback>{getInitials(row.original.fullName)}</AvatarFallback>
+            </Avatar>
+          </Link>
           <div>
             <p className="font-medium">{row.original.fullName}</p>
             <p className="text-sm text-gray-500">{row.original.email}</p>
@@ -134,14 +188,14 @@ const Instructors = () => {
       accessorKey: 'courses' as keyof User,
       header: 'Courses',
       cell: () => {
-        return "N/A"; // Remove mock data
+        return "N/A"; // This will be improved in a future update
       },
     },
     {
       accessorKey: 'students' as keyof User,
       header: 'Students',
       cell: () => {
-        return "N/A"; // Remove mock data
+        return "N/A"; // This will be improved in a future update
       },
     },
   ];
@@ -149,21 +203,17 @@ const Instructors = () => {
   const instructorActions = [
     {
       label: 'View Profile',
-      onClick: (instructor: User) => {
-        navigate(`/instructors/${instructor.userId}`);
-      },
+      onClick: handleViewInstructor,
       icon: <Eye className="h-4 w-4" />,
     },
     {
       label: 'Edit',
-      onClick: (instructor: User) => {
-        navigate(`/add-user`, { state: { userId: instructor.userId, role: Role.instructor } });
-      },
+      onClick: handleEditInstructor,
       icon: <Edit className="h-4 w-4" />,
     },
     {
       label: 'Delete',
-      onClick: handleDeleteInstructor,
+      onClick: handleDeleteConfirmation,
       icon: <Trash className="h-4 w-4" />,
     },
   ];
@@ -199,7 +249,7 @@ const Instructors = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <span className="text-3xl font-bold">N/A</span>
+              <span className="text-3xl font-bold">{coursesCount}</span>
               <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
                 <BookOpen className="h-5 w-5 text-blue-600" />
               </div>
@@ -213,7 +263,7 @@ const Instructors = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <span className="text-3xl font-bold">N/A</span>
+              <span className="text-3xl font-bold">{studentsCount}</span>
               <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
                 <Users className="h-5 w-5 text-blue-600" />
               </div>
@@ -250,6 +300,27 @@ const Instructors = () => {
           />
         )}
       </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Instructor</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this instructor? This action cannot be undone.
+              The instructor will be removed from all assigned batches.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteInstructor}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -188,7 +189,13 @@ const UserProfile = () => {
   };
 
   const handleGoBack = () => {
-    navigate('/users');
+    if (user?.role === Role.student) {
+      navigate('/students');
+    } else if (user?.role === Role.instructor) {
+      navigate('/instructors');
+    } else {
+      navigate('/users');
+    }
   };
 
   if (isLoading) {
@@ -206,7 +213,7 @@ const UserProfile = () => {
         <p className="text-gray-500 mt-2">The user you're looking for doesn't exist or has been removed.</p>
         <Button onClick={handleGoBack} variant="outline" className="mt-4">
           <ChevronLeft className="h-4 w-4 mr-2" />
-          Back to Users
+          Back
         </Button>
       </div>
     );

@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import { getUsers, deleteUser } from '@/lib/api';
+import { getCourses } from '@/lib/api/courses';
 import { Role, User } from '@/lib/types';
 import { Plus, Search, GraduationCap, BookOpen } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { getInitials } from '@/lib/utils';
 import { formatDate } from '@/lib/utils/date-helpers';
 import { 
@@ -30,6 +31,7 @@ const Students = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [studentToDelete, setStudentToDelete] = useState<User | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [coursesCount, setCoursesCount] = useState(0);
   const { toast } = useToast();
 
   const fetchStudents = async () => {
@@ -62,8 +64,20 @@ const Students = () => {
     }
   };
   
+  const fetchCoursesCount = async () => {
+    try {
+      const response = await getCourses();
+      if (response.success && response.data) {
+        setCoursesCount(response.data.length);
+      }
+    } catch (error) {
+      console.error('Error fetching courses count:', error);
+    }
+  };
+  
   useEffect(() => {
     fetchStudents();
+    fetchCoursesCount();
   }, [toast]);
 
   const filteredStudents = students.filter((student) =>
@@ -126,10 +140,12 @@ const Students = () => {
       header: 'Name',
       cell: ({ row }: { row: { original: User } }) => (
         <div className="flex items-center gap-3">
-          <Avatar>
-            <AvatarImage src={row.original.profilePicture?.fileUrl} alt={row.original.fullName} />
-            <AvatarFallback>{getInitials(row.original.fullName)}</AvatarFallback>
-          </Avatar>
+          <Link to={`/students/${row.original.userId}`}>
+            <Avatar className="cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+              <AvatarImage src={row.original.profilePicture?.fileUrl} alt={row.original.fullName} />
+              <AvatarFallback>{getInitials(row.original.fullName)}</AvatarFallback>
+            </Avatar>
+          </Link>
           <div>
             <p className="font-medium">{row.original.fullName}</p>
             <p className="text-sm text-muted-foreground">{row.original.email}</p>
@@ -182,10 +198,10 @@ const Students = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-in space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h1 className="text-3xl font-bold">Students</h1>
-        <Button onClick={handleAddStudent}>
+        <Button onClick={handleAddStudent} className="bg-blue-600 hover:bg-blue-700">
           <Plus className="h-4 w-4 mr-2" />
           Add Student
         </Button>
@@ -212,7 +228,7 @@ const Students = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <span className="text-3xl font-bold">N/A</span>
+              <span className="text-3xl font-bold">{coursesCount}</span>
               <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
                 <BookOpen className="h-5 w-5 text-blue-600" />
               </div>

@@ -175,4 +175,25 @@ router.get('/', async (req, res) => {
   }
 });
 
+// New endpoint to get course and student counts
+router.get('/counts', async (req, res) => {
+  try {
+    const coursesCount = await prisma.course.count();
+    const studentsCount = await prisma.user.count({
+      where: { role: Role.student }
+    });
+    
+    res.json({
+      success: true,
+      data: {
+        coursesCount,
+        studentsCount
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching counts:', error);
+    handleApiError(res, error);
+  }
+});
+
 export default router;

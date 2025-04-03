@@ -144,7 +144,7 @@ export default function Sidebar({ className }: SidebarProps) {
             size={isCollapsed ? "icon" : "default"}
             className={cn(
               "w-full justify-start",
-              pathname === "/students" && "bg-accent text-accent-foreground",
+              (pathname === "/students" || pathname.startsWith("/students/")) && "bg-accent text-accent-foreground",
               isCollapsed && "flex h-10 w-10 p-0 justify-center"
             )}
           >
@@ -161,7 +161,7 @@ export default function Sidebar({ className }: SidebarProps) {
             size={isCollapsed ? "icon" : "default"}
             className={cn(
               "w-full justify-start",
-              pathname === "/instructors" && "bg-accent text-accent-foreground",
+              (pathname === "/instructors" || pathname.startsWith("/instructors/")) && "bg-accent text-accent-foreground",
               isCollapsed && "flex h-10 w-10 p-0 justify-center"
             )}
           >
@@ -255,7 +255,7 @@ export default function Sidebar({ className }: SidebarProps) {
   return (
     <div
       className={cn(
-        "flex flex-col border-r bg-sidebar shadow-sm transition-all duration-300",
+        "flex flex-col border-r bg-sidebar shadow-sm transition-all duration-300 min-h-screen flex-none",
         isCollapsed ? "w-[70px]" : "w-64",
         className
       )}

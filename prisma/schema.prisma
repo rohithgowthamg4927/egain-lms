@@ -67,6 +67,7 @@ model Batch {
   endDate      DateTime  @map("end_date") @db.Timestamptz(6)
   createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  course       Course?   @relation(fields: [courseId], references: [courseId])
 
   @@map("batches")
 }

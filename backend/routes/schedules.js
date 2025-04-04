@@ -82,9 +82,9 @@ router.get('/:id', async (req, res) => {
 // Create a new schedule
 router.post('/', async (req, res) => {
   try {
-    const { batchId, topic, startTime, endTime, meetingLink, platform } = req.body;
+    const { batchId, topic, startTime, endTime, meetingLink, platform, description } = req.body;
 
-    console.log('Creating schedule with data:', { batchId, topic, startTime, endTime, meetingLink, platform });
+    console.log('Creating schedule with data:', { batchId, topic, startTime, endTime, meetingLink, platform, description });
 
     const batch = await prisma.Batch.findUnique({
       where: { batchId: parseInt(batchId) }
@@ -97,7 +97,7 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Parse the dates to ensure they're in the correct format
+    // Ensure we have valid dates by parsing startTime and endTime
     const parsedStartTime = new Date(startTime);
     const parsedEndTime = new Date(endTime);
     
@@ -107,6 +107,8 @@ router.post('/', async (req, res) => {
         error: 'Invalid date format for startTime or endTime'
       });
     }
+
+    console.log('Parsed dates:', { parsedStartTime, parsedEndTime });
 
     const schedule = await prisma.Schedule.create({
       data: {
@@ -132,7 +134,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const scheduleId = parseInt(req.params.id);
-    const { topic, platform, startTime, endTime, batchId, meetingLink } = req.body;
+    const { topic, platform, startTime, endTime, batchId, meetingLink, description } = req.body;
 
     const updateData = {};
     

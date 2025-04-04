@@ -97,10 +97,6 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Calculate day of week (1 = Sunday, 2 = Monday, ..., 7 = Saturday)
-    const scheduleDate = new Date(startTime);
-    const dayOfWeek = scheduleDate.getDay() + 1; // JavaScript getDay() returns 0-6
-
     const schedule = await prisma.Schedule.create({
       data: {
         batch: {
@@ -111,8 +107,7 @@ router.post('/', async (req, res) => {
         endTime: new Date(endTime),
         meetingLink: meetingLink || null,
         platform: platform || null,
-        description: description || null,
-        dayOfWeek: dayOfWeek
+        description: description || null
       }
     });
 
@@ -135,14 +130,7 @@ router.put('/:id', async (req, res) => {
     if (platform !== undefined) updateData.platform = platform;
     if (meetingLink !== undefined) updateData.meetingLink = meetingLink;
     if (description !== undefined) updateData.description = description;
-    
-    if (startTime !== undefined) {
-      updateData.startTime = new Date(startTime);
-      // Update day of week when start time changes
-      const scheduleDate = new Date(startTime);
-      updateData.dayOfWeek = scheduleDate.getDay() + 1; // JavaScript getDay() returns 0-6
-    }
-    
+    if (startTime !== undefined) updateData.startTime = new Date(startTime);
     if (endTime !== undefined) updateData.endTime = new Date(endTime);
     if (batchId !== undefined) updateData.batchId = parseInt(batchId);
 

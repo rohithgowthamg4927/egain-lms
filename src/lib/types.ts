@@ -95,7 +95,6 @@ export interface Batch {
 export interface Schedule {
   scheduleId: number;
   batchId?: number; // Adding batchId as optional 
-  dayOfWeek: number; // 1-7 (Sunday to Saturday)
   startTime: string;
   endTime: string;
   createdAt: string;

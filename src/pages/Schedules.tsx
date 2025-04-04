@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { toZonedTime } from 'date-fns-tz';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -784,9 +785,13 @@ const Schedules = () => {
                 <TableBody>
                   {filteredSchedules.map((schedule) => {
                     const scheduleBatch = batches.find(b => b.batchId === schedule.batchId);
-                    const scheduleDate = new Date(schedule.startTime);
-                    const scheduleStartTime = format(new Date(schedule.startTime), 'HH:mm');
-                    const scheduleEndTime = format(new Date(schedule.endTime), 'HH:mm');
+
+                    // Convert UTC time to IST (Asia/Kolkata)
+                    const scheduleStartTime = new Date(schedule.startTime);
+                    const scheduleEndTime = new Date(schedule.endTime);
+
+                    const scheduleStartTimeIST = toZonedTime(scheduleStartTime, 'Asia/Kolkata');
+                    const scheduleEndTimeIST = toZonedTime(scheduleEndTime, 'Asia/Kolkata');
                     
                     return (
                       <TableRow key={schedule.scheduleId}>
@@ -794,10 +799,10 @@ const Schedules = () => {
                           {scheduleBatch?.batchName || 'Unknown Batch'}
                         </TableCell>
                         <TableCell>
-                          {format(scheduleDate, 'MMM d, yyyy')}
+                          {format(scheduleStartTimeIST, 'MMM d, yyyy')}
                         </TableCell>
                         <TableCell>
-                          {`${scheduleStartTime} - ${scheduleEndTime}`}
+                          {`${format(scheduleStartTimeIST, 'HH:mm')} - ${format(scheduleEndTimeIST, 'HH:mm')}`}
                         </TableCell>
                         <TableCell>
                           {schedule.topic || 'No Topic'}

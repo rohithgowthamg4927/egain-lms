@@ -83,12 +83,10 @@ export const createSchedule = async (data: ScheduleInput): Promise<{ success: bo
     console.log('Creating schedule with data:', data);
     
     // Ensure we have valid ISO strings for startTime and endTime
-    // These should already be Date objects with the selected date + time
-    // We just need to make sure they are ISO strings
     const cleanedData = {
       ...data,
-      startTime: data.startTime instanceof Date ? data.startTime.toISOString() : data.startTime,
-      endTime: data.endTime instanceof Date ? data.endTime.toISOString() : data.endTime,
+      startTime: typeof data.startTime === 'object' ? (data.startTime as Date).toISOString() : data.startTime,
+      endTime: typeof data.endTime === 'object' ? (data.endTime as Date).toISOString() : data.endTime,
     };
     
     console.log('Sending cleaned data to API:', cleanedData);
@@ -114,13 +112,13 @@ export const updateSchedule = async (scheduleId: number, data: Partial<ScheduleI
     const cleanedData = { ...data };
     
     if (data.startTime) {
-      cleanedData.startTime = data.startTime instanceof Date ? 
-        data.startTime.toISOString() : data.startTime;
+      cleanedData.startTime = typeof data.startTime === 'object' ? 
+        (data.startTime as Date).toISOString() : data.startTime;
     }
     
     if (data.endTime) {
-      cleanedData.endTime = data.endTime instanceof Date ? 
-        data.endTime.toISOString() : data.endTime;
+      cleanedData.endTime = typeof data.endTime === 'object' ? 
+        (data.endTime as Date).toISOString() : data.endTime;
     }
     
     const response = await apiFetch<Schedule>(`/schedules/${scheduleId}`, {

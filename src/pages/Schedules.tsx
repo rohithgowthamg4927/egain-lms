@@ -120,7 +120,6 @@ const scheduleFormSchema = z.object({
   }),
 });
 
-// For edit mode
 const editScheduleFormSchema = z.object({
   batchId: z.number({
     required_error: "Please select a batch",
@@ -159,7 +158,6 @@ const Schedules = () => {
   const [selectedBatchForAdd, setSelectedBatchForAdd] = useState<Batch | null>(null);
   const { toast } = useToast();
 
-  // Edit mode states
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [currentSchedule, setCurrentSchedule] = useState<Schedule | null>(null);
   const [selectedBatchForEdit, setSelectedBatchForEdit] = useState<Batch | null>(null);
@@ -231,7 +229,6 @@ const Schedules = () => {
     }
   }, [watchEditBatchId, batches]);
 
-  // Function to get date validation constraints based on batch
   const getBatchDateConstraints = (batchId: number) => {
     const batch = batches.find(b => b.batchId === batchId);
     if (!batch) return { minDate: new Date(), maxDate: addHours(new Date(), 24) };
@@ -242,7 +239,6 @@ const Schedules = () => {
     };
   };
 
-  // Determine if a date is within the batch period
   const isDateInBatchPeriod = (date: Date, batchId: number) => {
     const { minDate, maxDate } = getBatchDateConstraints(batchId);
     return isWithinInterval(date, { start: minDate, end: maxDate });
@@ -314,7 +310,6 @@ const Schedules = () => {
       if (response.success && response.data) {
         setBatches(response.data);
         
-        // Create a map of batch instructors
         const instructorsMap: Record<number, User> = {};
         response.data.forEach(batch => {
           if (batch.instructor && batch.batchId) {
@@ -379,17 +374,13 @@ const Schedules = () => {
     const totalSchedules = values.schedules.length;
     
     try {
-      // Create each schedule
       for (const scheduleItem of values.schedules) {
-        // Combine date and time for startTime and endTime
         const scheduleDate = scheduleItem.date;
         
-        // Create start time by combining date with time
         const startParts = scheduleItem.startTime.split(':');
         const startDate = new Date(scheduleDate);
         startDate.setHours(parseInt(startParts[0]), parseInt(startParts[1]), 0, 0);
         
-        // Create end time by combining date with time
         const endParts = scheduleItem.endTime.split(':');
         const endDate = new Date(scheduleDate);
         endDate.setHours(parseInt(endParts[0]), parseInt(endParts[1]), 0, 0);
@@ -425,7 +416,6 @@ const Schedules = () => {
           description: `Created ${successCount}/${totalSchedules} schedules successfully`,
         });
         
-        // Only close dialog and reset form if all schedules were created successfully
         if (successCount === totalSchedules) {
           setShowAddDialog(false);
           form.reset({
@@ -444,7 +434,7 @@ const Schedules = () => {
           });
         }
         
-        fetchSchedules(); // Refresh the list
+        fetchSchedules();
       }
     } catch (error) {
       toast({
@@ -465,15 +455,12 @@ const Schedules = () => {
         const schedule = response.data;
         setCurrentSchedule(schedule);
         
-        // Parse dates and times
         const startTime = new Date(schedule.startTime);
         const endTime = new Date(schedule.endTime);
         
-        // Format times for form
         const formattedStartTime = format(startTime, 'HH:mm');
         const formattedEndTime = format(endTime, 'HH:mm');
         
-        // Set form values
         editForm.reset({
           batchId: schedule.batchId || 0,
           topic: schedule.topic || '',
@@ -508,15 +495,12 @@ const Schedules = () => {
     setIsSubmitting(true);
     
     try {
-      // Combine date and times
       const scheduleDate = values.date;
       
-      // Create start time
       const startParts = values.startTime.split(':');
       const startDate = new Date(scheduleDate);
       startDate.setHours(parseInt(startParts[0]), parseInt(startParts[1]), 0, 0);
       
-      // Create end time
       const endParts = values.endTime.split(':');
       const endDate = new Date(scheduleDate);
       endDate.setHours(parseInt(endParts[0]), parseInt(endParts[1]), 0, 0);
@@ -539,7 +523,7 @@ const Schedules = () => {
           description: 'Schedule updated successfully',
         });
         setShowEditDialog(false);
-        fetchSchedules(); // Refresh the list
+        fetchSchedules();
       } else {
         toast({
           title: 'Error',
@@ -567,7 +551,7 @@ const Schedules = () => {
           title: 'Success',
           description: 'Schedule deleted successfully',
         });
-        fetchSchedules(); // Refresh the list
+        fetchSchedules();
       } else {
         toast({
           title: 'Error',
@@ -784,6 +768,8 @@ const Schedules = () => {
                 <TableBody>
                   {filteredSchedules.map((schedule) => {
                     const scheduleBatch = batches.find(b => b.batchId === schedule.batchId);
+                    const startDateTime = schedule.startTime ? new Date(schedule.startTime) : null;
+                    const isValidDate = startDateTime && !isNaN(startDateTime.getTime());
                     
                     return (
                       <TableRow key={schedule.scheduleId}>
@@ -791,7 +777,7 @@ const Schedules = () => {
                           {scheduleBatch?.batchName || 'Unknown Batch'}
                         </TableCell>
                         <TableCell>
-                          {formatDate(schedule.startTime)}
+                          {isValidDate ? format(startDateTime as Date, 'MMM d, yyyy') : 'Invalid Date'}
                         </TableCell>
                         <TableCell>
                           {`${formatTime(schedule.startTime)} - ${formatTime(schedule.endTime)}`}
@@ -839,7 +825,6 @@ const Schedules = () => {
         </CardContent>
       </Card>
 
-      {/* Add Schedule Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-3xl overflow-y-auto max-h-[90vh]">
           <DialogHeader>
@@ -852,7 +837,6 @@ const Schedules = () => {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Batch Selection */}
                 <FormField
                   control={form.control}
                   name="batchId"
@@ -882,7 +866,6 @@ const Schedules = () => {
                   )}
                 />
                 
-                {/* Instructor (Auto-populated) */}
                 <FormItem>
                   <FormLabel>Instructor</FormLabel>
                   <Input 
@@ -893,7 +876,6 @@ const Schedules = () => {
                 </FormItem>
               </div>
               
-              {/* Topic */}
               <FormField
                 control={form.control}
                 name="topic"
@@ -908,7 +890,6 @@ const Schedules = () => {
                 )}
               />
               
-              {/* Platform and Meeting Link */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -954,7 +935,6 @@ const Schedules = () => {
                 />
               </div>
               
-              {/* Description */}
               <FormField
                 control={form.control}
                 name="description"
@@ -974,7 +954,6 @@ const Schedules = () => {
                 )}
               />
               
-              {/* Schedule Items Section */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-medium text-lg">Schedule Sessions</h3>
@@ -1010,7 +989,6 @@ const Schedules = () => {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          {/* Date Selector */}
                           <FormField
                             control={form.control}
                             name={`schedules.${index}.date`}
@@ -1052,7 +1030,6 @@ const Schedules = () => {
                             )}
                           />
                           
-                          {/* Start Time */}
                           <FormField
                             control={form.control}
                             name={`schedules.${index}.startTime`}
@@ -1078,7 +1055,6 @@ const Schedules = () => {
                             )}
                           />
                           
-                          {/* End Time */}
                           <FormField
                             control={form.control}
                             name={`schedules.${index}.endTime`}
@@ -1142,7 +1118,6 @@ const Schedules = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Schedule Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-3xl overflow-y-auto max-h-[90vh]">
           <DialogHeader>
@@ -1155,7 +1130,6 @@ const Schedules = () => {
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Batch Selection */}
                 <FormField
                   control={editForm.control}
                   name="batchId"
@@ -1185,7 +1159,6 @@ const Schedules = () => {
                   )}
                 />
                 
-                {/* Instructor (Auto-populated) */}
                 <FormItem>
                   <FormLabel>Instructor</FormLabel>
                   <Input 
@@ -1196,7 +1169,6 @@ const Schedules = () => {
                 </FormItem>
               </div>
               
-              {/* Topic */}
               <FormField
                 control={editForm.control}
                 name="topic"
@@ -1211,7 +1183,6 @@ const Schedules = () => {
                 )}
               />
               
-              {/* Platform and Meeting Link */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={editForm.control}
@@ -1257,7 +1228,6 @@ const Schedules = () => {
                 />
               </div>
               
-              {/* Description */}
               <FormField
                 control={editForm.control}
                 name="description"
@@ -1277,9 +1247,7 @@ const Schedules = () => {
                 )}
               />
               
-              {/* Schedule Date and Time */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Date Selector */}
                 <FormField
                   control={editForm.control}
                   name="date"
@@ -1321,7 +1289,6 @@ const Schedules = () => {
                   )}
                 />
                 
-                {/* Start Time */}
                 <FormField
                   control={editForm.control}
                   name="startTime"
@@ -1351,7 +1318,6 @@ const Schedules = () => {
                   )}
                 />
                 
-                {/* End Time */}
                 <FormField
                   control={editForm.control}
                   name="endTime"

@@ -97,14 +97,25 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Parse the dates to ensure they're in the correct format
+    const parsedStartTime = new Date(startTime);
+    const parsedEndTime = new Date(endTime);
+    
+    if (isNaN(parsedStartTime.getTime()) || isNaN(parsedEndTime.getTime())) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid date format for startTime or endTime'
+      });
+    }
+
     const schedule = await prisma.Schedule.create({
       data: {
         batch: {
           connect: { batchId: parseInt(batchId) },
         },
         topic: topic || null,
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
+        startTime: parsedStartTime,
+        endTime: parsedEndTime,
         meetingLink: meetingLink || null,
         platform: platform || null,
         description: description || null
@@ -130,8 +141,29 @@ router.put('/:id', async (req, res) => {
     if (platform !== undefined) updateData.platform = platform;
     if (meetingLink !== undefined) updateData.meetingLink = meetingLink;
     if (description !== undefined) updateData.description = description;
-    if (startTime !== undefined) updateData.startTime = new Date(startTime);
-    if (endTime !== undefined) updateData.endTime = new Date(endTime);
+    
+    if (startTime !== undefined) {
+      const parsedStartTime = new Date(startTime);
+      if (isNaN(parsedStartTime.getTime())) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid date format for startTime'
+        });
+      }
+      updateData.startTime = parsedStartTime;
+    }
+    
+    if (endTime !== undefined) {
+      const parsedEndTime = new Date(endTime);
+      if (isNaN(parsedEndTime.getTime())) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid date format for endTime'
+        });
+      }
+      updateData.endTime = parsedEndTime;
+    }
+    
     if (batchId !== undefined) updateData.batchId = parseInt(batchId);
 
     const schedule = await prisma.Schedule.update({

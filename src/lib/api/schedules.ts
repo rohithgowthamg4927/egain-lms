@@ -81,9 +81,19 @@ export interface ScheduleInput {
 export const createSchedule = async (data: ScheduleInput): Promise<{ success: boolean; data?: Schedule; error?: string }> => {
   try {
     console.log('Creating schedule with data:', data);
+    
+    // Ensure we have valid ISO strings for startTime and endTime
+    const cleanedData = {
+      ...data,
+      startTime: new Date(data.startTime).toISOString(),
+      endTime: new Date(data.endTime).toISOString()
+    };
+    
+    console.log('Sending cleaned data to API:', cleanedData);
+    
     const response = await apiFetch<Schedule>('/schedules', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(cleanedData),
     });
     return response;
   } catch (error) {
@@ -98,9 +108,20 @@ export const createSchedule = async (data: ScheduleInput): Promise<{ success: bo
 // Update a schedule
 export const updateSchedule = async (scheduleId: number, data: Partial<ScheduleInput>): Promise<{ success: boolean; data?: Schedule; error?: string }> => {
   try {
+    // If we have date properties, ensure they're properly formatted
+    const cleanedData = { ...data };
+    
+    if (data.startTime) {
+      cleanedData.startTime = new Date(data.startTime).toISOString();
+    }
+    
+    if (data.endTime) {
+      cleanedData.endTime = new Date(data.endTime).toISOString();
+    }
+    
     const response = await apiFetch<Schedule>(`/schedules/${scheduleId}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify(cleanedData),
     });
     return response;
   } catch (error) {

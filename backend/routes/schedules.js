@@ -9,9 +9,27 @@ const prisma = new PrismaClient();
 // Get all schedules
 router.get('/', async (req, res) => {
   try {
-    const { batchId } = req.query;
+    const { batchId, date } = req.query;
     
-    const whereClause = batchId ? { batchId: parseInt(batchId) } : {};
+    let whereClause = {};
+    
+    if (batchId) {
+      whereClause.batchId = parseInt(batchId);
+    }
+    
+    if (date) {
+      // Filter schedules for the specific date
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      whereClause.startTime = {
+        gte: startOfDay,
+        lte: endOfDay
+      };
+    }
     
     const schedules = await prisma.schedule.findMany({
       where: whereClause,
@@ -92,6 +110,7 @@ router.post('/', async (req, res) => {
         endTime: new Date(endTime),
         meetingLink: meetingLink || null,
         platform: platform || null,
+        description: description || null,
         dayOfWeek: dayOfWeek
       }
     });

@@ -7,6 +7,7 @@ export interface ScheduleQueryParams {
   instructorId?: number;
   startDate?: string;
   endDate?: string;
+  date?: string;
 }
 
 // Get schedules with optional filters
@@ -29,6 +30,10 @@ export const getAllSchedules = async (params?: ScheduleQueryParams): Promise<{ s
     
     if (params?.endDate) {
       queryParams.append('endDate', params.endDate);
+    }
+
+    if (params?.date) {
+      queryParams.append('date', params.date);
     }
     
     const queryString = queryParams.toString();
@@ -75,6 +80,7 @@ export interface ScheduleInput {
 // Create a new schedule
 export const createSchedule = async (data: ScheduleInput): Promise<{ success: boolean; data?: Schedule; error?: string }> => {
   try {
+    console.log('Creating schedule with data:', data);
     const response = await apiFetch<Schedule>('/schedules', {
       method: 'POST',
       body: JSON.stringify(data),

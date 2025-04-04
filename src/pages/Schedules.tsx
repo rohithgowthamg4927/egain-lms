@@ -50,7 +50,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { getBatches } from '@/lib/api';
-import { getAllSchedules, createSchedule, updateSchedule, deleteSchedule } from '@/lib/api/schedules';
+import { getAllSchedules, createSchedule, updateSchedule, deleteSchedule, getSchedule } from '@/lib/api/schedules';
 import { Schedule, Batch, User } from '@/lib/types';
 import { cn, formatDate } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -120,8 +120,33 @@ const scheduleFormSchema = z.object({
   }),
 });
 
+// For edit mode
+const editScheduleFormSchema = z.object({
+  batchId: z.number({
+    required_error: "Please select a batch",
+  }),
+  topic: z.string().min(2, { 
+    message: "Topic must be at least 2 characters long" 
+  }),
+  meetingLink: z.string().optional(),
+  platform: z.string({
+    required_error: "Please select a platform",
+  }),
+  description: z.string().optional(),
+  date: z.date({
+    required_error: "Please select a date",
+  }),
+  startTime: z.string({
+    required_error: "Please select a start time",
+  }),
+  endTime: z.string({
+    required_error: "Please select an end time",
+  }),
+});
+
 type FilterFormValues = z.infer<typeof filterSchema>;
 type ScheduleFormValues = z.infer<typeof scheduleFormSchema>;
+type EditScheduleFormValues = z.infer<typeof editScheduleFormSchema>;
 
 const Schedules = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -133,6 +158,11 @@ const Schedules = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedBatchForAdd, setSelectedBatchForAdd] = useState<Batch | null>(null);
   const { toast } = useToast();
+
+  // Edit mode states
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [currentSchedule, setCurrentSchedule] = useState<Schedule | null>(null);
+  const [selectedBatchForEdit, setSelectedBatchForEdit] = useState<Batch | null>(null);
 
   const defaultValues: FilterFormValues = {
     batch: Number(searchParams.get('batch')) || undefined,
@@ -165,12 +195,27 @@ const Schedules = () => {
     },
   });
 
+  const editForm = useForm<EditScheduleFormValues>({
+    resolver: zodResolver(editScheduleFormSchema),
+    defaultValues: {
+      batchId: 0,
+      topic: '',
+      meetingLink: '',
+      platform: '',
+      description: '',
+      date: new Date(),
+      startTime: '09:00',
+      endTime: '10:30',
+    },
+  });
+
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "schedules"
   });
 
   const watchBatchId = form.watch("batchId");
+  const watchEditBatchId = editForm.watch("batchId");
 
   useEffect(() => {
     if (watchBatchId) {
@@ -178,6 +223,13 @@ const Schedules = () => {
       setSelectedBatchForAdd(selectedBatch || null);
     }
   }, [watchBatchId, batches]);
+
+  useEffect(() => {
+    if (watchEditBatchId) {
+      const selectedBatch = batches.find(batch => batch.batchId === watchEditBatchId);
+      setSelectedBatchForEdit(selectedBatch || null);
+    }
+  }, [watchEditBatchId, batches]);
 
   // Function to get date validation constraints based on batch
   const getBatchDateConstraints = (batchId: number) => {
@@ -219,8 +271,21 @@ const Schedules = () => {
   const fetchSchedules = async () => {
     setIsLoading(true);
 
+    const queryParams: {
+      batchId?: number;
+      date?: string;
+    } = {};
+
+    if (filters.batch) {
+      queryParams.batchId = filters.batch;
+    }
+
+    if (filters.date) {
+      queryParams.date = format(filters.date, 'yyyy-MM-dd');
+    }
+
     try {
-      const response = await getAllSchedules();
+      const response = await getAllSchedules(queryParams);
 
       if (response.success && response.data) {
         setSchedules(response.data);
@@ -279,6 +344,10 @@ const Schedules = () => {
   }, []);
 
   useEffect(() => {
+    fetchSchedules();
+  }, [filters]);
+
+  useEffect(() => {
     filterForm.setValue('batch', Number(searchParams.get('batch')) || undefined);
     filterForm.setValue('date', searchParams.get('date') ? new Date(searchParams.get('date') as string) : undefined);
   }, [searchParams, filterForm]);
@@ -288,7 +357,7 @@ const Schedules = () => {
       return false;
     }
 
-    if (filters.date) {
+    if (filters.date && schedule.startTime) {
       try {
         const scheduleDate = new Date(schedule.startTime);
         return isSameDay(scheduleDate, filters.date);
@@ -335,6 +404,8 @@ const Schedules = () => {
           description: values.description || null
         };
 
+        console.log('Creating schedule with input:', scheduleInput);
+
         const response = await createSchedule(scheduleInput);
 
         if (response.success) {
@@ -357,7 +428,20 @@ const Schedules = () => {
         // Only close dialog and reset form if all schedules were created successfully
         if (successCount === totalSchedules) {
           setShowAddDialog(false);
-          form.reset();
+          form.reset({
+            batchId: 0,
+            topic: '',
+            meetingLink: '',
+            platform: '',
+            description: '',
+            schedules: [
+              { 
+                date: new Date(),
+                startTime: '09:00',
+                endTime: '10:30',
+              }
+            ]
+          });
         }
         
         fetchSchedules(); // Refresh the list
@@ -366,6 +450,107 @@ const Schedules = () => {
       toast({
         title: 'Error',
         description: 'An unexpected error occurred while creating schedules',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditClick = async (scheduleId: number) => {
+    try {
+      const response = await getSchedule(scheduleId);
+      
+      if (response.success && response.data) {
+        const schedule = response.data;
+        setCurrentSchedule(schedule);
+        
+        // Parse dates and times
+        const startTime = new Date(schedule.startTime);
+        const endTime = new Date(schedule.endTime);
+        
+        // Format times for form
+        const formattedStartTime = format(startTime, 'HH:mm');
+        const formattedEndTime = format(endTime, 'HH:mm');
+        
+        // Set form values
+        editForm.reset({
+          batchId: schedule.batchId || 0,
+          topic: schedule.topic || '',
+          meetingLink: schedule.meetingLink || '',
+          platform: schedule.platform || '',
+          description: schedule.description || '',
+          date: startTime,
+          startTime: formattedStartTime,
+          endTime: formattedEndTime,
+        });
+        
+        setShowEditDialog(true);
+      } else {
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to fetch schedule details',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred while fetching schedule details',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleEditSubmit = async (values: EditScheduleFormValues) => {
+    if (!currentSchedule) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Combine date and times
+      const scheduleDate = values.date;
+      
+      // Create start time
+      const startParts = values.startTime.split(':');
+      const startDate = new Date(scheduleDate);
+      startDate.setHours(parseInt(startParts[0]), parseInt(startParts[1]), 0, 0);
+      
+      // Create end time
+      const endParts = values.endTime.split(':');
+      const endDate = new Date(scheduleDate);
+      endDate.setHours(parseInt(endParts[0]), parseInt(endParts[1]), 0, 0);
+      
+      const updateInput = {
+        batchId: values.batchId,
+        topic: values.topic,
+        startTime: startDate.toISOString(),
+        endTime: endDate.toISOString(),
+        meetingLink: values.meetingLink || null,
+        platform: values.platform || null,
+        description: values.description || null
+      };
+      
+      const response = await updateSchedule(currentSchedule.scheduleId, updateInput);
+      
+      if (response.success) {
+        toast({
+          title: 'Success',
+          description: 'Schedule updated successfully',
+        });
+        setShowEditDialog(false);
+        fetchSchedules(); // Refresh the list
+      } else {
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to update schedule',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred while updating the schedule',
         variant: 'destructive',
       });
     } finally {
@@ -628,15 +813,24 @@ const Schedules = () => {
                           ) : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            className="ml-2"
-                            onClick={() => handleDeleteSchedule(schedule.scheduleId)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Delete</span>
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditClick(schedule.scheduleId)}
+                            >
+                              <Edit className="h-4 w-4" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteSchedule(schedule.scheduleId)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete</span>
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -671,6 +865,7 @@ const Schedules = () => {
                       <Select 
                         onValueChange={(value) => field.onChange(parseInt(value))}
                         defaultValue={field.value.toString()}
+                        value={field.value.toString()}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -727,6 +922,7 @@ const Schedules = () => {
                       <Select 
                         onValueChange={field.onChange}
                         defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -753,7 +949,7 @@ const Schedules = () => {
                     <FormItem>
                       <FormLabel>Meeting Link</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter meeting link" {...field} />
+                        <Input placeholder="Enter meeting link" {...field} value={field.value || ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -773,6 +969,7 @@ const Schedules = () => {
                         placeholder="Enter class description or agenda" 
                         className="min-h-[100px]" 
                         {...field} 
+                        value={field.value || ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -865,7 +1062,7 @@ const Schedules = () => {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Start Time</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                                   <FormControl>
                                     <SelectTrigger>
                                       <SelectValue placeholder="Select start time" />
@@ -891,7 +1088,7 @@ const Schedules = () => {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>End Time</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                                   <FormControl>
                                     <SelectTrigger>
                                       <SelectValue placeholder="Select end time" />
@@ -939,6 +1136,278 @@ const Schedules = () => {
                     <>
                       <Save className="mr-2 h-4 w-4" />
                       Create Schedules
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Schedule Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-3xl overflow-y-auto max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Edit Schedule</DialogTitle>
+            <DialogDescription>
+              Update the schedule details.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Batch Selection */}
+                <FormField
+                  control={editForm.control}
+                  name="batchId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Select Batch</FormLabel>
+                      <Select 
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                        defaultValue={field.value.toString()}
+                        value={field.value.toString()}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a batch" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {batches.map((batch) => (
+                            <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
+                              {batch.batchName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {/* Instructor (Auto-populated) */}
+                <FormItem>
+                  <FormLabel>Instructor</FormLabel>
+                  <Input 
+                    value={selectedBatchForEdit?.instructor?.fullName || "No instructor assigned"}
+                    disabled
+                    className="bg-gray-100"
+                  />
+                </FormItem>
+              </div>
+              
+              {/* Topic */}
+              <FormField
+                control={editForm.control}
+                name="topic"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Topic</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter topic for the class" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Platform and Meeting Link */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="platform"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Platform</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange}
+                        defaultValue={field.value || ''}
+                        value={field.value || ''}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select platform" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {PLATFORM_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editForm.control}
+                  name="meetingLink"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Meeting Link</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter meeting link" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              {/* Description */}
+              <FormField
+                control={editForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter class description or agenda" 
+                        className="min-h-[100px]" 
+                        {...field}
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Schedule Date and Time */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Date Selector */}
+                <FormField
+                  control={editForm.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                              disabled={!watchEditBatchId}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => watchEditBatchId && !isDateInBatchPeriod(date, watchEditBatchId)}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {/* Start Time */}
+                <FormField
+                  control={editForm.control}
+                  name="startTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start Time</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select start time" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {TIME_SLOTS.map((slot) => (
+                            <SelectItem key={`edit-start-${slot.value}`} value={slot.value}>
+                              {slot.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {/* End Time */}
+                <FormField
+                  control={editForm.control}
+                  name="endTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>End Time</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select end time" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {TIME_SLOTS.map((slot) => (
+                            <SelectItem key={`edit-end-${slot.value}`} value={slot.value}>
+                              {slot.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowEditDialog(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={isSubmitting || !watchEditBatchId}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Update Schedule
                     </>
                   )}
                 </Button>

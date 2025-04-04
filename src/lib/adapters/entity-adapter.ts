@@ -72,14 +72,14 @@ export class EntityAdapter {
     return {
       scheduleId: apiSchedule.id || apiSchedule.scheduleId,
       batchId: apiSchedule.batchId,
-      dayOfWeek: apiSchedule.dayOfWeek,
       startTime: apiSchedule.startTime ? dateToString(apiSchedule.startTime) : "",
       endTime: apiSchedule.endTime ? dateToString(apiSchedule.endTime) : "",
       createdAt: dateToString(apiSchedule.createdAt),
       updatedAt: dateToString(apiSchedule.updatedAt),
       topic: apiSchedule.topic,
       platform: apiSchedule.platform,
-      meetingLink: apiSchedule.meetingLink
+      meetingLink: apiSchedule.meetingLink,
+      description: apiSchedule.description
     };
   }
   

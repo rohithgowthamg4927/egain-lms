@@ -82,7 +82,7 @@ router.get('/:id', async (req, res) => {
 // Create a new schedule
 router.post('/', async (req, res) => {
   try {
-    const { batchId, topic, startTime, endTime, meetingLink, platform, description } = req.body;
+    const { batchId, topic, startTime, endTime, meetingLink, platform } = req.body;
 
     console.log('Creating schedule with data:', { batchId, topic, startTime, endTime, meetingLink, platform });
 
@@ -117,8 +117,7 @@ router.post('/', async (req, res) => {
         startTime: parsedStartTime,
         endTime: parsedEndTime,
         meetingLink: meetingLink || null,
-        platform: platform || null,
-        description: description || null
+        platform: platform || null
       }
     });
 
@@ -133,14 +132,13 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const scheduleId = parseInt(req.params.id);
-    const { topic, platform, startTime, endTime, batchId, meetingLink, description } = req.body;
+    const { topic, platform, startTime, endTime, batchId, meetingLink } = req.body;
 
     const updateData = {};
     
     if (topic !== undefined) updateData.topic = topic;
     if (platform !== undefined) updateData.platform = platform;
     if (meetingLink !== undefined) updateData.meetingLink = meetingLink;
-    if (description !== undefined) updateData.description = description;
     
     if (startTime !== undefined) {
       const parsedStartTime = new Date(startTime);

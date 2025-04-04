@@ -66,27 +66,33 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { 
+      batchId,
+      topic,
       startTime,
       endTime,
-      batchId,
       meetingLink,
-      topic,
-      platform
+      platform,
+      description
     } = req.body;
     
     console.log('Creating schedule with data:', { 
-      startTime, endTime, batchId, meetingLink, topic, platform 
+      batchId, topic, startTime, endTime, meetingLink, platform, description
     });
 
+    // Calculate dayOfWeek based on the date (1 = Sunday, 7 = Saturday)
+    const date = new Date(startTime);
+    const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay(); // Convert 0 (Sunday) to 7
+    
     // Create the schedule with all fields
     const schedule = await prisma.schedule.create({
       data: {
-        startTime: new Date(`1970-01-01T${startTime}`),
-        endTime: new Date(`1970-01-01T${endTime}`),
         batchId: parseInt(batchId),
-        meetingLink: meetingLink || null,
         topic: topic || null,
-        platform: platform || null
+        startTime: new Date(startTime),
+        endTime: new Date(endTime),
+        meetingLink: meetingLink || null,
+        platform: platform || null,
+        dayOfWeek: dayOfWeek
       }
     });
     
@@ -107,18 +113,23 @@ router.put('/:id', async (req, res) => {
       startTime,
       endTime,
       batchId,
-      meetingLink
+      meetingLink,
+      description
     } = req.body;
     
     // Build update data conditionally
     const updateData = {};
     
     if (startTime !== undefined) {
-      updateData.startTime = new Date(`1970-01-01T${startTime}`);
+      const date = new Date(startTime);
+      updateData.startTime = date;
+      // Update dayOfWeek based on the new date (1 = Sunday, 7 = Saturday)
+      const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay(); // Convert 0 (Sunday) to 7
+      updateData.dayOfWeek = dayOfWeek;
     }
     
     if (endTime !== undefined) {
-      updateData.endTime = new Date(`1970-01-01T${endTime}`);
+      updateData.endTime = new Date(endTime);
     }
     
     if (batchId !== undefined) {
@@ -135,6 +146,10 @@ router.put('/:id', async (req, res) => {
     
     if (platform !== undefined) {
       updateData.platform = platform;
+    }
+    
+    if (description !== undefined) {
+      updateData.description = description;
     }
     
     const schedule = await prisma.schedule.update({

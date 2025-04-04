@@ -68,6 +68,7 @@ export interface ScheduleInput {
   startTime: string;
   endTime: string;
   meetingLink?: string | null;
+  platform?: string | null;
   description?: string | null;
 }
 

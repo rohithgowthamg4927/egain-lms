@@ -95,7 +95,7 @@ export interface Batch {
 export interface Schedule {
   scheduleId: number;
   batchId?: number; // Adding batchId as optional 
-  dayOfWeek: number;
+  dayOfWeek: number; // 1-7 (Sunday to Saturday)
   startTime: string;
   endTime: string;
   createdAt: string;
@@ -104,6 +104,8 @@ export interface Schedule {
   // Additional fields needed by components
   topic?: string;
   platform?: string;
+  description?: string;
+  batch?: Batch;
 }
 
 export interface StudentBatch {

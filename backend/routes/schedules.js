@@ -1,16 +1,10 @@
+
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
-
-// Convert UTC to IST
-const convertToIST = (date) => {
-  if (!date) return null;
-  const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
-  return new Date(date.getTime() + istOffset);
-};
 
 // Get all schedules
 router.get('/', async (req, res) => {
@@ -49,14 +43,7 @@ router.get('/', async (req, res) => {
       orderBy: { startTime: 'asc' }
     });
 
-    // Convert times to IST before sending response
-    const formattedSchedules = schedules.map(schedule => ({
-      ...schedule,
-      startTime: convertToIST(schedule.startTime),
-      endTime: convertToIST(schedule.endTime)
-    }));
-
-    res.json({ success: true, data: formattedSchedules });
+    res.json({ success: true, data: schedules });
   } catch (error) {
     handleApiError(res, error);
   }
@@ -85,10 +72,6 @@ router.get('/:id', async (req, res) => {
         error: 'Schedule not found'
       });
     }
-    
-    // Convert times to IST before sending response
-    schedule.startTime = convertToIST(schedule.startTime);
-    schedule.endTime = convertToIST(schedule.endTime);
 
     res.json({ success: true, data: schedule });
   } catch (error) {
@@ -97,10 +80,9 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create a new schedule
-// Create a new schedule
 router.post('/', async (req, res) => {
   try {
-    const { batchId, topic, startTime, endTime, meetingLink, platform } = req.body;
+    const { batchId, topic, startTime, endTime, meetingLink, platform, description } = req.body;
 
     console.log('Creating schedule with data:', { batchId, topic, startTime, endTime, meetingLink, platform });
 
@@ -115,9 +97,9 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Convert startTime and endTime to IST before saving
-    const startTimeIST = convertToIST(new Date(startTime));
-    const endTimeIST = convertToIST(new Date(endTime));
+    // Calculate day of week (1 = Sunday, 2 = Monday, ..., 7 = Saturday)
+    const scheduleDate = new Date(startTime);
+    const dayOfWeek = scheduleDate.getDay() + 1; // JavaScript getDay() returns 0-6
 
     const schedule = await prisma.Schedule.create({
       data: {
@@ -125,16 +107,14 @@ router.post('/', async (req, res) => {
           connect: { batchId: parseInt(batchId) },
         },
         topic: topic || null,
-        startTime: startTimeIST, // Save in IST
-        endTime: endTimeIST,     // Save in IST
+        startTime: new Date(startTime),
+        endTime: new Date(endTime),
         meetingLink: meetingLink || null,
-        platform: platform || null
+        platform: platform || null,
+        description: description || null,
+        dayOfWeek: dayOfWeek
       }
     });
-
-    // Convert times to IST before sending response
-    schedule.startTime = convertToIST(schedule.startTime);
-    schedule.endTime = convertToIST(schedule.endTime);
 
     res.status(201).json({ success: true, data: schedule });
   } catch (error) {
@@ -147,25 +127,29 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const scheduleId = parseInt(req.params.id);
-    const { topic, platform, startTime, endTime, batchId, meetingLink } = req.body;
+    const { topic, platform, startTime, endTime, batchId, meetingLink, description } = req.body;
 
     const updateData = {};
     
-    if (startTime !== undefined) updateData.startTime = new Date(startTime);
-    if (endTime !== undefined) updateData.endTime = new Date(endTime);
-    if (batchId !== undefined) updateData.batchId = parseInt(batchId);
-    if (meetingLink !== undefined) updateData.meetingLink = meetingLink;
     if (topic !== undefined) updateData.topic = topic;
     if (platform !== undefined) updateData.platform = platform;
+    if (meetingLink !== undefined) updateData.meetingLink = meetingLink;
+    if (description !== undefined) updateData.description = description;
+    
+    if (startTime !== undefined) {
+      updateData.startTime = new Date(startTime);
+      // Update day of week when start time changes
+      const scheduleDate = new Date(startTime);
+      updateData.dayOfWeek = scheduleDate.getDay() + 1; // JavaScript getDay() returns 0-6
+    }
+    
+    if (endTime !== undefined) updateData.endTime = new Date(endTime);
+    if (batchId !== undefined) updateData.batchId = parseInt(batchId);
 
     const schedule = await prisma.Schedule.update({
       where: { scheduleId },
       data: updateData
     });
-
-    // Convert times to IST before sending response
-    schedule.startTime = convertToIST(schedule.startTime);
-    schedule.endTime = convertToIST(schedule.endTime);
 
     res.json({ success: true, data: schedule });
   } catch (error) {

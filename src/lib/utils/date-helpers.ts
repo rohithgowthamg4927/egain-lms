@@ -109,3 +109,11 @@ export const formatTimeRange = (startTime: string | Date | null | undefined, end
   
   return `${formattedStart} - ${formattedEnd}`;
 };
+
+/**
+ * Gets the day of week from a date (1 = Sunday, 7 = Saturday)
+ */
+export const getDayOfWeek = (date: Date | string): number => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.getDay() + 1; // JavaScript getDay() returns 0-6
+};

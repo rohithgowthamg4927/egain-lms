@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await apiLogin(email, password, role);
       console.log("Login response:", response);
       
-      if (response.success && response.data) {
+      if (response.success && response.data && response.data.user) {
         const userData = response.data.user;
         console.log("Login successful, user data:", userData);
         

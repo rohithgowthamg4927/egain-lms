@@ -1,7 +1,7 @@
 
 import { toast } from "@/hooks/use-toast";
 
-// Your API base URL - updated to match the server port (3001)
+// Your API base URL - set to port 3001 to match backend
 export const API_URL = "http://localhost:3001/api";
 
 /**

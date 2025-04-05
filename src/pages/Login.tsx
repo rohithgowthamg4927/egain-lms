@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Login = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [isCheckingServer, setIsCheckingServer] = useState(true);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -29,10 +29,15 @@ const Login = () => {
     checkServerStatus();
   }, []);
 
-  console.log("Login page - Auth state:", { isAuthenticated });
+  console.log("Login page - Auth state:", { isAuthenticated, isLoading });
+
+  // Check localStorage directly as a fallback
+  const hasStoredToken = !!localStorage.getItem('authToken');
+  const hasStoredUser = !!localStorage.getItem('currentUser');
 
   // If already authenticated, redirect to dashboard
-  if (isAuthenticated) {
+  if (isAuthenticated || (hasStoredToken && hasStoredUser)) {
+    console.log("Already authenticated, redirecting to dashboard");
     return <Navigate to="/dashboard" replace />;
   }
 

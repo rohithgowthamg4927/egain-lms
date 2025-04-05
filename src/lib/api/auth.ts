@@ -37,21 +37,29 @@ export const login = async (email: string, password: string, role: Role): Promis
   const payload = { email, password, role };
   console.log("Sending login payload:", payload);
   
-  const response = await apiFetch<{ user: User; token: string }>('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-  
-  console.log("Login API response:", response);
-  
-  // If login was successful, store the auth data
-  if (response.success && response.data) {
-    localStorage.setItem('currentUser', JSON.stringify(response.data.user));
-    localStorage.setItem('authToken', response.data.token);
-    console.log("Stored user data in localStorage:", response.data.user);
+  try {
+    const response = await apiFetch<{ user: User; token: string }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    
+    console.log("Login API response:", response);
+    
+    // If login was successful, store the auth data
+    if (response.success && response.data) {
+      localStorage.setItem('currentUser', JSON.stringify(response.data.user));
+      localStorage.setItem('authToken', response.data.token);
+      console.log("Stored user data in localStorage:", response.data.user);
+    }
+    
+    return response;
+  } catch (error) {
+    console.error("Login fetch error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Network error during login"
+    };
   }
-  
-  return response;
 };
 
 export const logout = async (): Promise<{ success: boolean }> => {

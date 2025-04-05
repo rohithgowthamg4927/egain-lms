@@ -43,8 +43,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  // If not authenticated, redirect to login
-  if (!isAuthenticated) {
+  // Check localStorage directly as a fallback
+  const hasStoredToken = !!localStorage.getItem('authToken');
+  const hasStoredUser = !!localStorage.getItem('currentUser');
+  
+  // If not authenticated by context or localStorage, redirect to login
+  if (!isAuthenticated && (!hasStoredToken || !hasStoredUser)) {
     console.log("Not authenticated, redirecting to login from Protected Route");
     return <Navigate to="/" replace state={{ from: location }} />;
   }

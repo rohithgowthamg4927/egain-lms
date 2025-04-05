@@ -59,9 +59,9 @@ const StudentActivityPanel = ({ userId }: StudentActivityPanelProps) => {
         ) : coursesQuery.data?.data && coursesQuery.data.data.length > 0 ? (
           <div className="space-y-4">
             {coursesQuery.data.data.map((course) => (
-              <Card key={course.id} className="hover:bg-muted/50 transition-colors">
+              <Card key={course.studentCourseId} className="hover:bg-muted/50 transition-colors">
                 <CardContent className="p-4">
-                  <h4 className="font-semibold">{course.course?.title}</h4>
+                  <h4 className="font-semibold">{course.course?.courseName}</h4>
                   <p className="text-muted-foreground mt-1">
                     {course.course?.description?.slice(0, 100)}
                     {course.course?.description && course.course.description.length > 100 ? '...' : ''}
@@ -69,7 +69,7 @@ const StudentActivityPanel = ({ userId }: StudentActivityPanelProps) => {
                   <div className="flex flex-wrap gap-2 mt-2">
                     <Badge variant="outline" className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      {course.joinedDate && format(new Date(course.joinedDate), 'MMM dd, yyyy')}
+                      {course.createdAt && format(new Date(course.createdAt), 'MMM dd, yyyy')}
                     </Badge>
                   </div>
                 </CardContent>
@@ -103,16 +103,16 @@ const StudentActivityPanel = ({ userId }: StudentActivityPanelProps) => {
         ) : schedulesQuery.data?.data && schedulesQuery.data.data.length > 0 ? (
           <div className="space-y-4">
             {schedulesQuery.data.data.map((schedule) => (
-              <Card key={schedule.id} className="hover:bg-muted/50 transition-colors">
+              <Card key={schedule.scheduleId} className="hover:bg-muted/50 transition-colors">
                 <CardContent className="p-4">
-                  <h4 className="font-semibold">{schedule.batch?.course?.title}</h4>
+                  <h4 className="font-semibold">{schedule.batch?.course?.courseName}</h4>
                   <p className="text-muted-foreground mt-1">
-                    Batch: {schedule.batch?.name}
+                    Batch: {schedule.batch?.batchName}
                   </p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <Badge variant="outline" className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      {schedule.date && format(new Date(schedule.date), 'MMM dd, yyyy')}
+                      {schedule.scheduleDate && format(new Date(schedule.scheduleDate), 'MMM dd, yyyy')}
                     </Badge>
                     <Badge variant="outline" className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />

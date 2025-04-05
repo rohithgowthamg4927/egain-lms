@@ -1,8 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { getCourse, updateCourse } from '@/lib/api/courses';
+import { getCourseById, updateCourse } from '@/lib/api/courses';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import CourseForm from '@/components/courses/CourseForm';
@@ -19,7 +19,7 @@ const EditCourse = () => {
 
   const courseQuery = useQuery({
     queryKey: ['course', courseId],
-    queryFn: () => getCourse(Number(courseId)),
+    queryFn: () => getCourseById(Number(courseId)),
   });
 
   const handleSubmit = async (formData: any) => {
@@ -36,8 +36,13 @@ const EditCourse = () => {
         });
         
         // Invalidate and refetch relevant queries
-        queryClient.invalidateQueries({ queryKey: ['course', courseId] });
-        queryClient.invalidateQueries({ queryKey: ['courses'] });
+        queryClient.invalidateQueries({
+          queryKey: ['course', courseId]
+        });
+        
+        queryClient.invalidateQueries({
+          queryKey: ['courses']
+        });
         
         navigate(`/courses/${courseId}`);
       } else {
@@ -79,7 +84,7 @@ const EditCourse = () => {
     <div className="p-0">
       <BreadcrumbNav items={[
         { label: 'Courses', link: '/courses' },
-        { label: course?.title || 'Course Details', link: `/courses/${courseId}` },
+        { label: course?.courseName || 'Course Details', link: `/courses/${courseId}` },
         { label: 'Edit Course', link: `/courses/edit/${courseId}` }
       ]} />
       
@@ -112,7 +117,7 @@ const EditCourse = () => {
           <CourseForm 
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
-            initialData={course}
+            course={course}
           />
         )}
       </div>

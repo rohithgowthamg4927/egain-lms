@@ -287,7 +287,11 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
                     <div className="flex-1">
                       <p className="font-medium">{schedule.topic}</p>
                       <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                        <span>{format(new Date(schedule.startTime), 'E, MMM d')}</span>
+                        <span>
+                          {schedule.scheduleDate
+                            ? format(new Date(schedule.scheduleDate), 'E, MMM d')
+                            : 'Date not set'}
+                        </span>
                         <span>{format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}</span>
                       </div>
                     </div>

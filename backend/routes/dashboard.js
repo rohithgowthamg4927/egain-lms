@@ -108,11 +108,11 @@ router.get('/', async (req, res) => {
       take: 5,
       where: {
         startTime: {
-          gte: now
-        }
+          gte: now,
+        },
       },
       orderBy: {
-        startTime: 'asc'
+        startTime: 'asc',
       },
       include: {
         batch: {
@@ -122,16 +122,17 @@ router.get('/', async (req, res) => {
               select: {
                 userId: true,
                 fullName: true,
-                email: true
-              }
-            }
-          }
-        }
+                email: true,
+              },
+            },
+          },
+        },
       }
     });
     
     const formattedSchedules = upcomingSchedules.map(schedule => ({
       scheduleId: schedule.scheduleId,
+      scheduleDate: schedule.scheduleDate,
       startTime: schedule.startTime,
       endTime: schedule.endTime,
       topic: schedule.topic || 'Class Session',

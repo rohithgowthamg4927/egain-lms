@@ -195,6 +195,7 @@ export interface DashboardMetrics {
   upcomingSchedules: {
     scheduleId: number;
     startTime: string;
+    scheduleDate: string;
     endTime: string;
     topic: string;
     platform: string;

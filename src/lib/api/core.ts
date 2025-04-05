@@ -26,7 +26,7 @@ export async function apiFetch<T>(
     const headers = new Headers(options.headers);
     
     // Add content type if not already set
-    if (!headers.has("Content-Type") && !options.body instanceof FormData) {
+    if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
       headers.append("Content-Type", "application/json");
     }
     

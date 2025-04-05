@@ -12,15 +12,17 @@ import { AuthProvider } from '@/hooks/use-auth'
 console.log("==== STARTING APPLICATION ====");
 console.log("Environment:", import.meta.env.MODE);
 
-// Create a new QueryClient instance
+// Create a new QueryClient instance with correct options structure
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
       retry: 1,
-      // Add more console logging
-      onError: (error) => {
-        console.error("Query error:", error);
+      // Use the correct modern error handling approach
+      meta: {
+        onError: (error: Error) => {
+          console.error("Query error:", error);
+        }
       }
     },
   },
@@ -28,7 +30,7 @@ const queryClient = new QueryClient({
 
 // Log important app startup information
 console.log("Rendering React application...");
-console.log("API URL:", "http://localhost:4000/api");
+console.log("API URL:", "http://localhost:3001/api");
 
 // Check for existing authentication
 const existingToken = localStorage.getItem('authToken');

@@ -23,7 +23,7 @@ export const login = async (email: string, password: string, role: Role): Promis
   
   // First verify server is running
   try {
-    const healthCheck = await fetch(`http://localhost:4000/api/auth/health`);
+    const healthCheck = await fetch(`http://localhost:3001/api/auth/health`);
     if (!healthCheck.ok) {
       console.error("Server health check failed");
       return { success: false, error: "Backend server not responding" };

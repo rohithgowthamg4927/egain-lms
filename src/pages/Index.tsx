@@ -15,14 +15,17 @@ const Index = () => {
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
-        const response = await fetch('http://localhost:4000/api/auth/health');
+        const response = await fetch('http://localhost:3001/api/health');
         if (response.ok) {
           setServerStatus('online');
+          console.log('Backend server is online at port 3001');
         } else {
           setServerStatus('offline');
+          console.log('Backend server responded but with an error');
         }
       } catch (error) {
         setServerStatus('offline');
+        console.error('Cannot connect to backend server:', error);
       }
     };
     
@@ -83,8 +86,8 @@ const Index = () => {
             <AlertTitle>Backend Server Status: {serverStatus}</AlertTitle>
             <AlertDescription className="text-sm">
               {serverStatus === 'online' ? 
-                "Server is running at http://localhost:4000" : 
-                "Please ensure the backend server is running at http://localhost:4000"}
+                "Server is running at http://localhost:3001" : 
+                "Please ensure the backend server is running at http://localhost:3001"}
             </AlertDescription>
           </Alert>
         </div>

@@ -1,8 +1,8 @@
 
 import { toast } from "@/hooks/use-toast";
 
-// Your API base URL - updated to match the server port (4000)
-export const API_URL = "http://localhost:4000/api";
+// Your API base URL - updated to match the server port (3001)
+export const API_URL = "http://localhost:3001/api";
 
 /**
  * Core API fetch function with authentication and error handling
@@ -58,7 +58,7 @@ export async function apiFetch<T>(
       if (response.status === 401) {
         localStorage.removeItem("authToken");
         localStorage.removeItem("currentUser");
-        window.location.href = "/login";
+        window.location.href = "/";
         return { success: false, error: "Authentication failed", status: 401 };
       }
       

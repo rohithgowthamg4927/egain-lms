@@ -1,6 +1,6 @@
 
 import { useState, useEffect, ReactNode } from 'react';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
 
@@ -17,7 +17,8 @@ const ServerStatusCheck = ({ children, onComplete }: ServerStatusCheckProps) => 
 
   const checkServerStatus = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/health`, {
+      // Updated to use port 3001
+      const response = await fetch(`http://localhost:3001/api/health`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

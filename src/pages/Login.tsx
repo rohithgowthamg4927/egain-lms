@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import LoginForm from '@/components/auth/LoginForm';
-import ServerStatusCheck from '@/components/auth/ServerStatusCheck';
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -16,7 +15,7 @@ const Login = () => {
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
-        const response = await fetch('http://localhost:4000/api/auth/health');
+        const response = await fetch('http://localhost:3001/api/health');
         if (!response.ok) {
           setServerError('Backend server is not responding properly');
         }
@@ -56,7 +55,7 @@ const Login = () => {
           {serverError && (
             <Alert variant="destructive" className="mb-4">
               <AlertDescription>
-                {serverError}. Make sure the backend server is running at http://localhost:4000.
+                {serverError}. Make sure the backend server is running at http://localhost:3001.
               </AlertDescription>
             </Alert>
           )}

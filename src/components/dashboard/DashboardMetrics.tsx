@@ -5,6 +5,7 @@ import { Users, BookOpen, Calendar, Award, TrendingUp, Bell, AlertCircle, PieCha
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { DashboardMetrics as DashboardMetricsType } from "@/lib/types";
 import { format } from "date-fns";
+import { Link } from "react-router-dom";
 
 interface DashboardMetricsProps {
   data?: DashboardMetricsType;
@@ -280,6 +281,11 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
             ) : upcomingSchedules.length > 0 ? (
               <div className="space-y-4">
                 {upcomingSchedules.map((schedule) => (
+                  <Link 
+                    to={`/schedules`}
+                    key={schedule.scheduleId}
+                    className="flex items-center gap-4 p-3 rounded-lg border hover:bg-accent transition-colors"
+                    >
                   <div key={schedule.scheduleId} className="flex items-center gap-4 p-3 rounded-lg border hover:bg-accent transition-colors">
                     <div className="bg-blue-600/10 p-3 rounded-lg">
                       <Calendar className="h-5 w-5 text-blue-600" />
@@ -300,6 +306,7 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
                       <p className="text-muted-foreground">{schedule.batch?.batchName || 'N/A'}</p>
                     </div>
                   </div>
+                </Link>
                 ))}
               </div>
             ) : (

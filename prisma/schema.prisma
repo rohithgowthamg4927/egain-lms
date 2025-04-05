@@ -129,17 +129,17 @@ model InstructorCourse {
 }
 
 model Schedule {
-  scheduleId    Int       @id @default(autoincrement()) @map("schedule_id")
-  batchId       Int?      @map("batch_id")
-  startTime     DateTime  @map("start_time") @db.Time(6)
-  endTime       DateTime  @map("end_time") @db.Time(6)
-  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
-  meetingLink   String?   @map("meeting_link")
-  topic         String?   @map("topic")
-  platform      String?   @map("platform")
-  schedule_date DateTime  @default(now()) @db.Timestamp(6)
-  batch         Batch?    @relation("BatchSchedules", fields: [batchId], references: [batchId])
+  scheduleId   Int       @id @default(autoincrement()) @map("schedule_id")
+  batchId      Int?      @map("batch_id")
+  startTime    DateTime  @map("start_time") @db.Time(6)
+  endTime      DateTime  @map("end_time") @db.Time(6)
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  meetingLink  String?   @map("meeting_link")
+  topic        String?   @map("topic")
+  platform     String?   @map("platform")
+  scheduleDate DateTime  @default(now()) @map("schedule_date") @db.Timestamp(6)
+  batch        Batch?    @relation("BatchSchedules", fields: [batchId], references: [batchId])
 
   @@map("schedules")
 }

@@ -77,6 +77,8 @@ export class EntityAdapter {
       createdAt: dateToString(apiSchedule.createdAt),
       updatedAt: dateToString(apiSchedule.updatedAt),
       topic: apiSchedule.topic,
+      scheduleDate: apiSchedule.scheduleDate ? dateToString(apiSchedule.scheduleDate) : "",
+      batch: apiSchedule.batch ? this.adaptBatch(apiSchedule.batch) : undefined,
       platform: apiSchedule.platform,
       meetingLink: apiSchedule.meetingLink,
       description: apiSchedule.description

@@ -97,6 +97,7 @@ export interface Schedule {
   batchId?: number; // Adding batchId as optional 
   startTime: string;
   endTime: string;
+  scheduleDate: string;
   createdAt: string;
   updatedAt: string;
   meetingLink?: string; // Meeting link field

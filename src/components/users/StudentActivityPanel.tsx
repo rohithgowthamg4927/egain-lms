@@ -1,174 +1,142 @@
 
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
+import { useQuery } from '@tanstack/react-query';
 import { getStudentCourses, getStudentSchedules } from '@/lib/api/students';
 import { format } from 'date-fns';
-import { Calendar, BookOpen, Clock } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import PasswordChangeForm from './PasswordChangeForm';
+import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar, Clock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface StudentActivityPanelProps {
   userId: number;
 }
 
 const StudentActivityPanel = ({ userId }: StudentActivityPanelProps) => {
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('courses');
+  const [tab, setTab] = useState('courses');
 
   // Fetch student courses
   const coursesQuery = useQuery({
-    queryKey: ['student-courses', userId],
+    queryKey: ['studentCourses', userId],
     queryFn: () => getStudentCourses(userId),
-    enabled: activeTab === 'courses',
   });
 
   // Fetch student schedules
   const schedulesQuery = useQuery({
-    queryKey: ['student-schedules', userId],
+    queryKey: ['studentSchedules', userId],
     queryFn: () => getStudentSchedules(userId),
-    enabled: activeTab === 'schedules',
   });
 
-  // Show errors as toasts
-  useEffect(() => {
-    if (coursesQuery.isError) {
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch student courses',
-        variant: 'destructive',
-      });
-    }
-
-    if (schedulesQuery.isError) {
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch student schedules',
-        variant: 'destructive',
-      });
-    }
-  }, [coursesQuery.isError, schedulesQuery.isError, toast]);
-
   return (
-    <Card className="col-span-3">
-      <CardHeader>
-        <CardTitle>Activity</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="courses">Courses</TabsTrigger>
-            <TabsTrigger value="schedules">Schedules</TabsTrigger>
-            <TabsTrigger value="password">Password</TabsTrigger>
-          </TabsList>
+    <Tabs value={tab} onValueChange={setTab} className="w-full">
+      <TabsList className="grid grid-cols-3 mb-6">
+        <TabsTrigger value="courses">Courses</TabsTrigger>
+        <TabsTrigger value="schedules">Schedules</TabsTrigger>
+        <TabsTrigger value="password">Password</TabsTrigger>
+      </TabsList>
 
-          <TabsContent value="courses">
-            {coursesQuery.isLoading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-              </div>
-            ) : coursesQuery.isError ? (
-              <Alert>
-                <AlertDescription>Failed to fetch course information. Please try again later.</AlertDescription>
-              </Alert>
-            ) : coursesQuery.data?.data && coursesQuery.data.data.length > 0 ? (
-              <div className="space-y-3">
-                {coursesQuery.data.data.map((studentCourse) => (
-                  <Card key={`${studentCourse.courseId}-${studentCourse.studentId}`} className="overflow-hidden">
-                    <div className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-start gap-3">
-                          <div className="rounded-md bg-blue-100 p-2 flex-shrink-0">
-                            <BookOpen className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold">{studentCourse.course.courseName}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {studentCourse.course.category?.categoryName || 'Uncategorized'} · {studentCourse.course.courseLevel.charAt(0).toUpperCase() + studentCourse.course.courseLevel.slice(1)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Enrolled: {new Date(studentCourse.enrollmentDate).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <BookOpen className="mx-auto h-12 w-12 text-muted-foreground opacity-30 mb-3" />
-                <h3 className="font-medium text-lg">No Courses Found</h3>
-                <p className="text-muted-foreground">This student is not enrolled in any courses.</p>
-              </div>
-            )}
-          </TabsContent>
+      <TabsContent value="courses" className="space-y-4">
+        <h3 className="text-xl font-semibold mb-4">Enrolled Courses</h3>
+        
+        {coursesQuery.isLoading ? (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <Skeleton className="h-5 w-full" />
+                  <Skeleton className="h-4 w-3/4 mt-2" />
+                  <Skeleton className="h-4 w-1/2 mt-2" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : coursesQuery.isError ? (
+          <p className="text-destructive">
+            Error loading course information.
+          </p>
+        ) : coursesQuery.data?.data && coursesQuery.data.data.length > 0 ? (
+          <div className="space-y-4">
+            {coursesQuery.data.data.map((course) => (
+              <Card key={course.id} className="hover:bg-muted/50 transition-colors">
+                <CardContent className="p-4">
+                  <h4 className="font-semibold">{course.course?.title}</h4>
+                  <p className="text-muted-foreground mt-1">
+                    {course.course?.description?.slice(0, 100)}
+                    {course.course?.description && course.course.description.length > 100 ? '...' : ''}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {course.joinedDate && format(new Date(course.joinedDate), 'MMM dd, yyyy')}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground">No courses found.</p>
+        )}
+      </TabsContent>
 
-          <TabsContent value="schedules">
-            {schedulesQuery.isLoading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-              </div>
-            ) : schedulesQuery.isError ? (
-              <Alert>
-                <AlertDescription>Failed to fetch schedule information. Please try again later.</AlertDescription>
-              </Alert>
-            ) : schedulesQuery.data?.data && schedulesQuery.data.data.length > 0 ? (
-              <div className="space-y-3">
-                {schedulesQuery.data.data.map((schedule) => (
-                  <Card key={schedule.scheduleId} className="overflow-hidden">
-                    <div className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-start gap-3">
-                          <div className="rounded-md bg-blue-100 p-2 flex-shrink-0">
-                            <Calendar className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold">{schedule.topic}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {schedule.batch?.batchName || 'N/A'} · {schedule.batch?.course?.courseName || 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end text-sm">
-                          <div className="text-sm text-muted-foreground">
-                            {format(new Date(schedule.scheduleDate), 'MMM d, yyyy')}
-                          </div>
-                          <div className="flex items-center gap-1 text-muted-foreground mt-1">
-                            <Clock className="h-3 w-3" />
-                            <span className="text-xs">
-                              {format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Calendar className="mx-auto h-12 w-12 text-muted-foreground opacity-30 mb-3" />
-                <h3 className="font-medium text-lg">No Schedules Found</h3>
-                <p className="text-muted-foreground">This student does not have any upcoming schedules.</p>
-              </div>
-            )}
-          </TabsContent>
+      <TabsContent value="schedules" className="space-y-4">
+        <h3 className="text-xl font-semibold mb-4">Upcoming Classes</h3>
+        
+        {schedulesQuery.isLoading ? (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <Skeleton className="h-5 w-full" />
+                  <Skeleton className="h-4 w-3/4 mt-2" />
+                  <Skeleton className="h-4 w-1/2 mt-2" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : schedulesQuery.isError ? (
+          <p className="text-destructive">
+            Error loading schedule information.
+          </p>
+        ) : schedulesQuery.data?.data && schedulesQuery.data.data.length > 0 ? (
+          <div className="space-y-4">
+            {schedulesQuery.data.data.map((schedule) => (
+              <Card key={schedule.id} className="hover:bg-muted/50 transition-colors">
+                <CardContent className="p-4">
+                  <h4 className="font-semibold">{schedule.batch?.course?.title}</h4>
+                  <p className="text-muted-foreground mt-1">
+                    Batch: {schedule.batch?.name}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {schedule.date && format(new Date(schedule.date), 'MMM dd, yyyy')}
+                    </Badge>
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {schedule.startTime && format(new Date(schedule.startTime), 'hh:mm a')} - 
+                      {schedule.endTime && format(new Date(schedule.endTime), 'hh:mm a')}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground">No scheduled classes found.</p>
+        )}
+      </TabsContent>
 
-          <TabsContent value="password">
+      <TabsContent value="password">
+        <Card>
+          <CardContent className="pt-6">
             <PasswordChangeForm userId={userId} />
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
   );
 };
 

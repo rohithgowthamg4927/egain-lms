@@ -1,16 +1,17 @@
 
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { getCourseById, updateCourse } from '@/lib/api/courses';
+import { getCourse, updateCourse } from '@/lib/api/courses';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import CourseForm from '@/components/courses/CourseForm';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Skeleton } from '@/components/ui/skeleton';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 const EditCourse = () => {
-  const { courseId } = useParams<{ courseId: string }>();
+  const { courseId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -18,8 +19,7 @@ const EditCourse = () => {
 
   const courseQuery = useQuery({
     queryKey: ['course', courseId],
-    queryFn: () => getCourseById(Number(courseId)),
-    enabled: !!courseId,
+    queryFn: () => getCourse(Number(courseId)),
   });
 
   const handleSubmit = async (formData: any) => {
@@ -35,11 +35,10 @@ const EditCourse = () => {
           description: 'Course updated successfully',
         });
         
-        // Invalidate queries to refetch updated data
-        queryClient.invalidateQueries(['course', courseId]);
-        queryClient.invalidateQueries(['courses']);
+        // Invalidate and refetch relevant queries
+        queryClient.invalidateQueries({ queryKey: ['course', courseId] });
+        queryClient.invalidateQueries({ queryKey: ['courses'] });
         
-        // Navigate back to course details
         navigate(`/courses/${courseId}`);
       } else {
         toast({
@@ -64,12 +63,24 @@ const EditCourse = () => {
   const isError = courseQuery.isError;
   const course = courseQuery.data?.data;
 
+  if (isError) {
+    return (
+      <div className="text-center p-10">
+        <h2 className="text-2xl font-bold text-destructive">Error loading course data</h2>
+        <p className="mt-2 text-muted-foreground">Please try again later or contact support</p>
+        <Button className="mt-4" onClick={() => navigate('/courses')}>
+          Return to Courses
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="p-0">
       <BreadcrumbNav items={[
         { label: 'Courses', link: '/courses' },
-        { label: course?.courseName || 'Course', link: `/courses/${courseId}` },
-        { label: 'Edit', link: `/courses/edit/${courseId}` }
+        { label: course?.title || 'Course Details', link: `/courses/${courseId}` },
+        { label: 'Edit Course', link: `/courses/edit/${courseId}` }
       ]} />
       
       <div className="flex flex-col gap-2 mb-6">
@@ -87,27 +98,24 @@ const EditCourse = () => {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <p>Loading course details...</p>
-        </div>
-      ) : isError ? (
-        <div className="flex justify-center items-center h-64">
-          <p>Error loading course details. Please try again later.</p>
-        </div>
-      ) : !course ? (
-        <div className="flex justify-center items-center h-64">
-          <p>Course not found.</p>
-        </div>
-      ) : (
-        <div className="bg-card rounded-lg border shadow-sm p-6">
+      <div className="bg-card rounded-lg border shadow-sm p-6">
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <div className="flex justify-end">
+              <Skeleton className="h-10 w-32" />
+            </div>
+          </div>
+        ) : (
           <CourseForm 
-            course={course}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
+            initialData={course}
           />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

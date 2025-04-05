@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -138,14 +139,14 @@ const Schedules = () => {
     return format(new Date(timeString), 'HH:mm');
   };
 
-  // Table columns definition
+  // Table columns definition with properly typed accessorKey
   const columns = [
     {
-      accessorKey: 'topic',
+      accessorKey: 'topic' as keyof Schedule,
       header: 'Topic',
     },
     {
-      accessorKey: 'scheduleDate',
+      accessorKey: 'scheduleDate' as keyof Schedule,
       header: 'Date',
       cell: ({ row }: { row: { original: Schedule } }) => (
         <span>
@@ -156,28 +157,28 @@ const Schedules = () => {
       ),
     },
     {
-      accessorKey: 'startTime',
+      accessorKey: 'startTime' as keyof Schedule,
       header: 'Start Time',
       cell: ({ row }: { row: { original: Schedule } }) => (
         <span>{formatTime(row.original.startTime)}</span>
       ),
     },
     {
-      accessorKey: 'endTime',
+      accessorKey: 'endTime' as keyof Schedule,
       header: 'End Time',
       cell: ({ row }: { row: { original: Schedule } }) => (
         <span>{formatTime(row.original.endTime)}</span>
       ),
     },
     {
-      accessorKey: 'batch',
+      accessorKey: 'batch' as keyof Schedule,
       header: 'Batch',
       cell: ({ row }: { row: { original: Schedule } }) => (
         <span>{row.original.batch?.batchName || 'N/A'}</span>
       ),
     },
     {
-      accessorKey: 'platform',
+      accessorKey: 'platform' as keyof Schedule,
       header: 'Platform',
     },
   ];

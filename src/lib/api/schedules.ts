@@ -83,17 +83,10 @@ export const createSchedule = async (data: ScheduleInput): Promise<{ success: bo
   try {
     console.log('Creating schedule with data:', data);
     
-    // Ensure we have valid date strings
-    const cleanedData = {
-      ...data,
-      scheduleDate: data.scheduleDate,
-    };
-    
-    console.log('Sending cleaned data to API:', cleanedData);
-    
+    // Send the data directly to the API
     const response = await apiFetch<Schedule>('/schedules', {
       method: 'POST',
-      body: JSON.stringify(cleanedData),
+      body: JSON.stringify(data),
     });
     return response;
   } catch (error) {
@@ -108,12 +101,9 @@ export const createSchedule = async (data: ScheduleInput): Promise<{ success: bo
 // Update a schedule
 export const updateSchedule = async (scheduleId: number, data: Partial<ScheduleInput>): Promise<{ success: boolean; data?: Schedule; error?: string }> => {
   try {
-    // If we have date properties, ensure they're properly formatted
-    const cleanedData = { ...data };
-    
     const response = await apiFetch<Schedule>(`/schedules/${scheduleId}`, {
       method: 'PUT',
-      body: JSON.stringify(cleanedData),
+      body: JSON.stringify(data),
     });
     return response;
   } catch (error) {

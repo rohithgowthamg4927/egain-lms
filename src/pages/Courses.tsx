@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -13,6 +14,7 @@ import CourseGrid from '@/components/courses/CourseGrid';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 const Courses = () => {
   const navigate = useNavigate();
@@ -170,6 +172,10 @@ const Courses = () => {
 
   return (
     <div className="animate-fade-in">
+      <BreadcrumbNav items={[
+        { label: 'Courses', link: '/courses' }
+      ]} />
+
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
         <h1 className="text-3xl font-bold">Courses</h1>
         <Button 

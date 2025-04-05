@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -278,15 +279,14 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />
               </div>
-            ) : upcomingSchedules.length > 0 ? (
+            ) : upcomingSchedules && upcomingSchedules.length > 0 ? (
               <div className="space-y-4">
                 {upcomingSchedules.map((schedule) => (
                   <Link 
                     to={`/schedules`}
                     key={schedule.scheduleId}
                     className="flex items-center gap-4 p-3 rounded-lg border hover:bg-accent transition-colors"
-                    >
-                  <div key={schedule.scheduleId} className="flex items-center gap-4 p-3 rounded-lg border hover:bg-accent transition-colors">
+                  >
                     <div className="bg-blue-600/10 p-3 rounded-lg">
                       <Calendar className="h-5 w-5 text-blue-600" />
                     </div>
@@ -305,8 +305,7 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
                       <p className="font-medium">{schedule.batch?.course?.courseName || 'N/A'}</p>
                       <p className="text-muted-foreground">{schedule.batch?.batchName || 'N/A'}</p>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
                 ))}
               </div>
             ) : (

@@ -3,7 +3,54 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
 
+const router = express.Router();
 const prisma = new PrismaClient();
+
+// Get a student's schedules (all schedules for batches the student is enrolled in)
+router.get('/:id/schedules', async (req, res) => {
+  try {
+    const studentId = parseInt(req.params.id);
+    
+    // Get all batches that the student is enrolled in
+    const studentBatches = await prisma.StudentBatch.findMany({
+      where: { studentId },
+      select: { batchId: true }
+    });
+    
+    const batchIds = studentBatches.map(sb => sb.batchId);
+    
+    if (batchIds.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+    
+    // Get all schedules for these batches
+    const schedules = await prisma.Schedule.findMany({
+      where: {
+        batchId: {
+          in: batchIds
+        },
+        scheduleDate: {
+          gte: new Date()
+        }
+      },
+      orderBy: {
+        scheduleDate: 'asc',
+      },
+      include: {
+        batch: {
+          include: {
+            course: true
+          }
+        }
+      }
+    });
+    
+    res.json({ success: true, data: schedules });
+  } catch (error) {
+    console.error('Error fetching student schedules:', error);
+    handleApiError(res, error);
+  }
+});
 
 // Create student batch routes
 const batchRoutes = express.Router();
@@ -93,6 +140,7 @@ courseRoutes.post('/', async (req, res) => {
 });
 
 export default {
+  router,
   batchRoutes,
   courseRoutes
 };

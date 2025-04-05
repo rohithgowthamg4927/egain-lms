@@ -1,61 +1,37 @@
-import { useEffect } from 'react';
+
 import { useQuery } from '@tanstack/react-query';
+import { getDashboardMetrics } from '@/lib/api/dashboard';
 import DashboardMetrics from '@/components/dashboard/DashboardMetrics';
-import { getDashboardMetrics } from '@/lib/api';
-import { useAuth } from '@/hooks/use-auth';
-import { Role } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
+import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 const Dashboard = () => {
-  const { hasRole } = useAuth();
-  const { toast } = useToast();
-
-  // Fetch dashboard metrics with retry logic
-  const dashboardMetricsQuery = useQuery({
-    queryKey: ['dashboard-metrics'],
-    queryFn: getDashboardMetrics,
-    retry: 5, // Increased retries to handle potential network issues
-    refetchOnWindowFocus: false
+  // Fetch dashboard metrics
+  const metricsQuery = useQuery({
+    queryKey: ['dashboardMetrics'],
+    queryFn: getDashboardMetrics
   });
 
-  useEffect(() => {
-    if (dashboardMetricsQuery.isError) {
-      console.error('Error fetching dashboard metrics:', dashboardMetricsQuery.error);
-      toast({
-        title: 'Error loading dashboard data',
-        description: 'Could not load dashboard metrics. Please try again later.',
-        variant: 'destructive'
-      });
-    }
-  }, [dashboardMetricsQuery.isError, dashboardMetricsQuery.error, toast]);
+  const isLoading = metricsQuery.isLoading;
+  const isError = metricsQuery.isError;
+  const dashboardData = metricsQuery.data?.data;
 
-  // Log the received data for debugging
-  useEffect(() => {
-    if (dashboardMetricsQuery.data) {
-      console.log("Received API data:", JSON.stringify(dashboardMetricsQuery.data, null, 2));
-    }
-  }, [dashboardMetricsQuery.data]);
+  console.log("Dashboard data from the API:", dashboardData);
 
   return (
-    <div className="w-full">
-      <div className="flex flex-col gap-2 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back. Here's an overview of your learning management system.
-        </p>
+    <div className="space-y-6 w-full">
+      <BreadcrumbNav items={[
+        { label: 'Dashboard', link: '/dashboard' }
+      ]} />
+
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
       </div>
 
       <DashboardMetrics 
-        data={dashboardMetricsQuery.data?.data}
-        isLoading={dashboardMetricsQuery.isLoading}
-        isError={dashboardMetricsQuery.isError}
+        data={dashboardData} 
+        isLoading={isLoading} 
+        isError={isError} 
       />
-      
-      {hasRole([Role.admin]) && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-          {/* Admin-specific dashboards can be added here */}
-        </div>
-      )}
     </div>
   );
 };

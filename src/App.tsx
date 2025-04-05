@@ -1,3 +1,4 @@
+
 import {
   Routes,
   Route,
@@ -37,7 +38,7 @@ function App() {
       <Route path="/courses" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
       <Route path="/courses/add" element={<ProtectedRoute><AddCourse /></ProtectedRoute>} />
       <Route path="/courses/:courseId" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
-      <Route path="/courses/:courseId/edit" element={<ProtectedRoute><EditCourse /></ProtectedRoute>} />
+      <Route path="/courses/edit/:courseId" element={<ProtectedRoute><EditCourse /></ProtectedRoute>} />
       
       {/* Batch routes */}
       <Route path="/batches" element={<ProtectedRoute><Batches /></ProtectedRoute>} />

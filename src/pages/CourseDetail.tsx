@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -6,19 +7,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { getCourseById } from '@/lib/api/courses';
+import { getCourseById, deleteCourse } from '@/lib/api/courses';
 import { Course, Level } from '@/lib/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ArrowLeft, Calendar, Edit, Trash, Users, Book, Star } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import CourseForm from '@/components/courses/CourseForm';
+import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 const CourseDetail = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const courseQuery = useQuery({
     queryKey: ['course', courseId],
@@ -26,32 +25,40 @@ const CourseDetail = () => {
     enabled: !!courseId,
   });
 
-  const handleEditSubmit = async (formData: any) => {
-    setIsSubmitting(true);
+  const handleEditCourse = () => {
+    navigate(`/courses/edit/${courseId}`);
+  };
+
+  const handleDeleteCourse = async () => {
+    if (!courseId) return;
+    
+    setIsDeleting(true);
     try {
-      // This would be handled in the future
-      toast({
-        title: 'Not Implemented',
-        description: 'Course editing will be implemented in a future update',
-      });
-      setIsEditDialogOpen(false);
+      const response = await deleteCourse(Number(courseId));
+      
+      if (response.success) {
+        toast({
+          title: 'Success',
+          description: 'Course deleted successfully',
+        });
+        navigate('/courses');
+      } else {
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to delete course',
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
-      console.error('Error updating course:', error);
+      console.error('Error deleting course:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update course',
+        description: 'An unexpected error occurred',
         variant: 'destructive',
       });
     } finally {
-      setIsSubmitting(false);
+      setIsDeleting(false);
     }
-  };
-
-  const handleDeleteSubmit = async () => {
-    toast({
-      title: 'Not Implemented',
-      description: 'Course deletion will be implemented in a future update',
-    });
   };
 
   const isLoading = courseQuery.isLoading;
@@ -78,6 +85,11 @@ const CourseDetail = () => {
 
   return (
     <div className="p-0">
+      <BreadcrumbNav items={[
+        { label: 'Courses', link: '/courses' },
+        { label: course?.courseName || 'Course Details', link: `/courses/${courseId}` }
+      ]} />
+      
       <div className="flex flex-col gap-2 mb-6">
         <div className="flex items-center justify-between">
           <Button 
@@ -93,7 +105,7 @@ const CourseDetail = () => {
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
-                onClick={() => setIsEditDialogOpen(true)}
+                onClick={handleEditCourse}
                 className="flex items-center gap-1"
               >
                 <Edit className="h-4 w-4" />
@@ -119,8 +131,11 @@ const CourseDetail = () => {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteSubmit}>
-                      Delete
+                    <AlertDialogAction 
+                      onClick={handleDeleteCourse}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? 'Deleting...' : 'Delete'}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -231,25 +246,6 @@ const CourseDetail = () => {
           </Card>
         </div>
       )}
-
-      {/* Edit Course Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Course</DialogTitle>
-            <DialogDescription>
-              Update the course information below.
-            </DialogDescription>
-          </DialogHeader>
-          {course && (
-            <CourseForm 
-              course={course}
-              onSubmit={handleEditSubmit}
-              isSubmitting={isSubmitting}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

@@ -1,58 +1,70 @@
 
 import express from 'express';
 import cors from 'cors';
-import { PrismaClient } from '@prisma/client';
-import apiRoutes from './routes/index.js';
+import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Import routes
+import authRoutes from './routes/auth.js';
+import userRoutes from './routes/users.js';
+import courseRoutes from './routes/courses.js';
+import batchRoutes from './routes/batches.js';
+import categoryRoutes from './routes/categories.js';
+import scheduleRoutes from './routes/schedules.js';
+import dashboardRoutes from './routes/dashboard.js';
+import studentRoutes from './routes/students.js';
+import instructorRoutes from './routes/instructors.js';
+import resourceRoutes from './routes/resources.js';
+
+// Get directory name (equivalent to __dirname in CommonJS)
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
-const prisma = new PrismaClient();
+const PORT = process.env.PORT || 4000;
 
 // Middleware
+app.use(cors());
 app.use(express.json());
-app.use(cors({
-  origin: '*', // In production, you should restrict this to your frontend URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
 
-// Database connection check
-app.get('/api/health', async (req, res) => {
-  try {
-    await prisma.$connect();
-    res.status(200).json({ 
-      status: 'ok',
-      message: 'Database connection successful',
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Database connection error:', error);
-    res.status(500).json({ 
-      status: 'error',
-      message: 'Could not connect to database',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    });
-  }
+// Static files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/batches', batchRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/schedules', scheduleRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/students', studentRoutes.router);
+app.use('/api/student-batches', studentRoutes.batchRoutes);
+app.use('/api/student-courses', studentRoutes.courseRoutes);
+app.use('/api/instructors', instructorRoutes);
+app.use('/api/resources', resourceRoutes);
+
+// Add a simple root route
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to the Learning Management System API!' });
 });
 
-// Use API routes
-app.use('/api', apiRoutes);
-
-// Error handling middleware
-app.use((req, res) => {
-  console.error(`Route not found: ${req.method} ${req.url}`);
-  res.status(404).json({
-    success: false,
-    error: `Route not found: ${req.method} ${req.url}`
-  });
-});
-
-// Start the server
-const PORT = process.env.PORT || 3001;
+// Start server
 app.listen(PORT, () => {
-  console.log(`\n🚀 Backend API running on http://localhost:${PORT}`);
-  console.log(`📚 API endpoint at http://localhost:${PORT}/api`);
-  console.log(`❤️  Health check endpoint at http://localhost:${PORT}/api/health`);
-  console.log(`\n💻 Run this in a new terminal to setup the database:`);
-  console.log(`npx ts-node backend/setup-database.js\n`);
+  console.log(`Server is running on port ${PORT}`);
+});
+
+// Error handling
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    error: 'Something went wrong on the server',
+  });
 });

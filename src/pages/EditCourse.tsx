@@ -1,16 +1,19 @@
+
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { getCourseById, updateCourse } from '@/lib/api/courses';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import CourseForm from '@/components/courses/CourseForm';
+import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 const EditCourse = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const courseQuery = useQuery({
@@ -31,6 +34,12 @@ const EditCourse = () => {
           title: 'Success',
           description: 'Course updated successfully',
         });
+        
+        // Invalidate queries to refetch updated data
+        queryClient.invalidateQueries(['course', courseId]);
+        queryClient.invalidateQueries(['courses']);
+        
+        // Navigate back to course details
         navigate(`/courses/${courseId}`);
       } else {
         toast({
@@ -57,6 +66,12 @@ const EditCourse = () => {
 
   return (
     <div className="p-0">
+      <BreadcrumbNav items={[
+        { label: 'Courses', link: '/courses' },
+        { label: course?.courseName || 'Course', link: `/courses/${courseId}` },
+        { label: 'Edit', link: `/courses/edit/${courseId}` }
+      ]} />
+      
       <div className="flex flex-col gap-2 mb-6">
         <div className="flex items-center justify-between">
           <Button 

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -5,6 +6,7 @@ import { createCourse } from '@/lib/api/courses';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import CourseForm from '@/components/courses/CourseForm';
+import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 const AddCourse = () => {
   const navigate = useNavigate();
@@ -43,6 +45,11 @@ const AddCourse = () => {
 
   return (
     <div className="p-0">
+      <BreadcrumbNav items={[
+        { label: 'Courses', link: '/courses' },
+        { label: 'Add Course', link: '/courses/add' }
+      ]} />
+      
       <div className="flex flex-col gap-2 mb-6">
         <div className="flex items-center justify-between">
           <Button 

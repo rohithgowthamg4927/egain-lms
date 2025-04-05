@@ -1,20 +1,22 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoginForm from '@/components/auth/LoginForm';
 import { useAuth } from '@/hooks/use-auth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Terminal, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [serverStatus, setServerStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
   // Check if the backend server is running
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
+        console.log('Checking server status...');
         const response = await fetch('http://localhost:3001/api/health');
         if (response.ok) {
           setServerStatus('online');
@@ -26,6 +28,9 @@ const Index = () => {
       } catch (error) {
         setServerStatus('offline');
         console.error('Cannot connect to backend server:', error);
+      } finally {
+        // Always set page as loaded after checking server status
+        setIsPageLoading(false);
       }
     };
     
@@ -33,40 +38,32 @@ const Index = () => {
   }, []);
 
   // Add logging to help debug
-  console.log("Index Page - Auth State:", { isAuthenticated, isLoading });
+  console.log("Index Page - Auth State:", { 
+    isAuthenticated, 
+    authLoading,
+    serverStatus,
+    isPageLoading
+  });
 
   useEffect(() => {
-    // Check for existing auth on page load
-    const checkExistingAuth = () => {
-      const userJson = localStorage.getItem('currentUser');
-      const token = localStorage.getItem('authToken');
-      
-      console.log("Checking existing auth:", { 
-        userExists: !!userJson, 
-        tokenExists: !!token,
-        userData: userJson ? JSON.parse(userJson) : null
-      });
-      
-      if (userJson && token) {
-        console.log("Found existing user in storage, redirecting to dashboard");
-        setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 100);
-      }
-    };
-    
-    checkExistingAuth();
-  }, [navigate]);
-
-  useEffect(() => {
-    // If user is authenticated, redirect to dashboard
-    if (!isLoading && isAuthenticated) {
+    // If user is authenticated and not loading, redirect to dashboard
+    if (!authLoading && isAuthenticated) {
       console.log("User is authenticated, redirecting to dashboard");
-      setTimeout(() => {
-        navigate('/dashboard', { replace: true });
-      }, 100);
+      navigate('/dashboard', { replace: true });
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
+
+  // Show loading state while checking auth and server status
+  if (authLoading || isPageLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin mb-4" />
+        <p className="text-gray-600">Loading application...</p>
+        {authLoading && <p className="text-sm text-gray-500">Checking authentication...</p>}
+        {isPageLoading && <p className="text-sm text-gray-500">Checking server status...</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="container flex flex-col items-center justify-center min-h-screen px-4">
@@ -80,11 +77,13 @@ const Index = () => {
         
         <div className="mt-6">
           <Alert variant={serverStatus === 'online' ? 'default' : 'destructive'} className="text-center">
-            {serverStatus === 'checking' && <AlertCircle className="h-4 w-4 mr-2" />}
-            {serverStatus === 'online' && <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />}
-            {serverStatus === 'offline' && <XCircle className="h-4 w-4 mr-2" />}
-            <AlertTitle>Backend Server Status: {serverStatus}</AlertTitle>
-            <AlertDescription className="text-sm">
+            <div className="flex items-center justify-center gap-2">
+              {serverStatus === 'checking' && <AlertCircle className="h-4 w-4" />}
+              {serverStatus === 'online' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+              {serverStatus === 'offline' && <XCircle className="h-4 w-4" />}
+              <AlertTitle>Backend Server Status: {serverStatus}</AlertTitle>
+            </div>
+            <AlertDescription className="text-sm mt-2">
               {serverStatus === 'online' ? 
                 "Server is running at http://localhost:3001" : 
                 "Please ensure the backend server is running at http://localhost:3001"}
@@ -92,15 +91,17 @@ const Index = () => {
           </Alert>
         </div>
         
-        <div className="mt-4">
-          <Alert className="bg-slate-950 text-slate-50 border-slate-800">
-            <Terminal className="h-4 w-4 mr-2" />
-            <AlertDescription className="text-xs font-mono">
-              # Run in a new terminal:<br />
-              npx ts-node backend/server.js
-            </AlertDescription>
-          </Alert>
-        </div>
+        {serverStatus === 'offline' && (
+          <div className="mt-4">
+            <Alert className="bg-slate-950 text-slate-50 border-slate-800">
+              <Terminal className="h-4 w-4 mr-2" />
+              <AlertDescription className="text-xs font-mono">
+                # Run in a new terminal:<br />
+                npx ts-node backend/server.js
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
         
         <div className="mt-4 text-center text-xs text-gray-500">
           <p>Default login credentials:</p>

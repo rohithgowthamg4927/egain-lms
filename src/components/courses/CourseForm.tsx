@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -50,7 +49,9 @@ const CourseForm = ({ course, onSubmit, isSubmitting }: CourseFormProps) => {
     queryFn: getCategories
   });
 
+  console.log('Categories Response:', categoriesResponse);
   const categories = categoriesResponse?.data || [];
+  console.log('Processed Categories:', categories);
 
   // Setup form with default values
   const form = useForm<CourseFormValues>({

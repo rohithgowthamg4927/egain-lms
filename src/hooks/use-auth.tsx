@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -22,22 +21,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Clear potentially corrupted auth data
+  const clearAuthData = () => {
+    console.log('Clearing auth data due to corruption or invalid state');
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('authToken');
+    setUser(null);
+  };
+
   useEffect(() => {
     const loadUser = async () => {
       setIsLoading(true);
       
       try {
         const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) {
-          console.log("Found stored user in localStorage");
-          setUser(JSON.parse(storedUser));
-        } else {
-          console.log("No stored user found in localStorage");
-          setUser(null);
+        const authToken = localStorage.getItem('authToken');
+        
+        console.log('Loading stored user data:', { 
+          hasStoredUser: !!storedUser, 
+          hasAuthToken: !!authToken 
+        });
+
+        if (!storedUser || !authToken) {
+          console.log('No complete auth data found');
+          clearAuthData();
+          return;
+        }
+
+        try {
+          const userData = JSON.parse(storedUser);
+          if (!userData || typeof userData !== 'object') {
+            console.error('Invalid user data format');
+            clearAuthData();
+            return;
+          }
+          setUser(userData);
+          console.log('Successfully loaded user data');
+        } catch (parseError) {
+          console.error('Failed to parse stored user data:', parseError);
+          clearAuthData();
         }
       } catch (error) {
-        console.error('Error loading user from localStorage', error);
-        setUser(null);
+        console.error('Error loading user from localStorage:', error);
+        clearAuthData();
       } finally {
         setIsLoading(false);
       }
@@ -59,27 +85,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userData = response.data.user;
         console.log("Login successful, user data:", userData);
         
-        // Store user in state and localStorage
-        setUser(userData);
-        localStorage.setItem('currentUser', JSON.stringify(userData));
-        
-        // Store the token
-        if (response.data.token) {
-          localStorage.setItem('authToken', response.data.token);
-        }
-        
-        toast({
-          title: 'Login Successful',
-          description: `Welcome, ${userData.fullName}!`,
-        });
-        
-        // Force navigation to dashboard after a brief delay
-        setTimeout(() => {
-          console.log("Redirecting to dashboard after successful login");
+        try {
+          // Validate user data before storing
+          if (!userData || typeof userData !== 'object') {
+            throw new Error('Invalid user data received from server');
+          }
+          
+          // Store user in state and localStorage
+          setUser(userData);
+          localStorage.setItem('currentUser', JSON.stringify(userData));
+          
+          // Store the token
+          if (response.data.token) {
+            localStorage.setItem('authToken', response.data.token);
+          }
+          
+          toast({
+            title: 'Login Successful',
+            description: `Welcome, ${userData.fullName}!`,
+          });
+          
+          // Navigate to dashboard
           navigate('/dashboard', { replace: true });
-        }, 100);
-        
-        return true;
+          return true;
+        } catch (storageError) {
+          console.error('Failed to store auth data:', storageError);
+          clearAuthData();
+          toast({
+            title: 'Login Error',
+            description: 'Failed to save login information',
+            variant: 'destructive',
+          });
+          return false;
+        }
       } else {
         console.error("Login failed:", response.error);
         toast({
@@ -104,9 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('authToken');
-    setUser(null);
+    clearAuthData();
     navigate('/', { replace: true });
     toast({
       title: 'Logged out',

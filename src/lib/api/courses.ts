@@ -1,15 +1,30 @@
-
 import { Course } from '@/lib/types';
 import { apiFetch } from './core';
 
 // Courses API
 export const getCourses = async (): Promise<{ success: boolean; data?: Course[]; error?: string }> => {
-  return apiFetch<Course[]>('/courses');
+  try {
+    console.log('Fetching courses...');
+    const response = await apiFetch<Course[]>('/courses');
+    console.log('Courses API Response:', response);
+    return response;
+  } catch (error) {
+    console.error('Error fetching courses:', error);
+    throw error;
+  }
 };
 
 // Fetch a single course by ID
 export const getCourseById = async (courseId: number): Promise<{ success: boolean; data?: Course; error?: string }> => {
-  return apiFetch<Course>(`/courses/${courseId}`);
+  try {
+    console.log(`Fetching course ${courseId}...`);
+    const response = await apiFetch<Course>(`/courses/${courseId}`);
+    console.log('Course API Response:', response);
+    return response;
+  } catch (error) {
+    console.error(`Error fetching course ${courseId}:`, error);
+    throw error;
+  }
 };
 
 // Course creation API

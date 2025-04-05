@@ -1,4 +1,3 @@
-
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
@@ -8,6 +7,18 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '@/components/ui/theme-provider'
 import { Toaster } from '@/components/ui/toaster'
 import { AuthProvider } from '@/hooks/use-auth'
+import ErrorBoundary from '@/components/ErrorBoundary'
+
+// Add global error handler
+window.onerror = function(message, source, lineno, colno, error) {
+  console.error('Global error:', { message, source, lineno, colno, error });
+  return false;
+};
+
+// Add unhandled promise rejection handler
+window.onunhandledrejection = function(event) {
+  console.error('Unhandled promise rejection:', event.reason);
+};
 
 console.log("==== STARTING APPLICATION ====");
 console.log("Environment:", import.meta.env.MODE);
@@ -16,9 +27,10 @@ console.log("Environment:", import.meta.env.MODE);
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
       retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 0, // Always fetch fresh data
+      refetchInterval: 3000, // Refetch every 3 seconds
     },
   },
 });
@@ -37,16 +49,18 @@ console.log("Initial auth state:", {
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="light" storageKey="lms-theme">
-          <AuthProvider>
-            <App />
-            <Toaster />
-          </AuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="light" storageKey="lms-theme">
+            <AuthProvider>
+              <App />
+              <Toaster />
+            </AuthProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   </React.StrictMode>,
 )
 

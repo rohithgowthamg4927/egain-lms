@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -33,36 +32,78 @@ const Courses = () => {
   // Use React Query for data fetching
   const coursesQuery = useQuery({
     queryKey: ['courses'],
-    queryFn: getCourses
+    queryFn: getCourses,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchInterval: 3000
   });
 
   const categoriesQuery = useQuery({
     queryKey: ['categories'],
-    queryFn: getCategories
+    queryFn: getCategories,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchInterval: 3000
   });
 
   const courses = coursesQuery.data?.data || [];
   const categories = categoriesQuery.data?.data || [];
   const isLoading = coursesQuery.isLoading || categoriesQuery.isLoading;
+  const isError = coursesQuery.isError || categoriesQuery.isError;
 
   useEffect(() => {
     // Show errors if data fetching fails
     if (coursesQuery.isError) {
+      console.error('Courses query error:', coursesQuery.error);
       toast({
         title: 'Error',
-        description: 'Failed to fetch courses',
+        description: 'Failed to fetch courses. Please try refreshing the page.',
         variant: 'destructive',
       });
     }
 
     if (categoriesQuery.isError) {
+      console.error('Categories query error:', categoriesQuery.error);
       toast({
         title: 'Error',
-        description: 'Failed to fetch categories',
+        description: 'Failed to fetch categories. Please try refreshing the page.',
         variant: 'destructive',
       });
     }
   }, [coursesQuery.isError, categoriesQuery.isError, toast]);
+
+  // Add a refetch function
+  const refetchData = () => {
+    coursesQuery.refetch();
+    categoriesQuery.refetch();
+  };
+
+  // Automatically refetch when the component mounts
+  useEffect(() => {
+    refetchData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading courses...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Failed to load courses</p>
+          <Button onClick={refetchData}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
 
   const filteredCourses = courses.filter((course) => {
     const matchesSearch =

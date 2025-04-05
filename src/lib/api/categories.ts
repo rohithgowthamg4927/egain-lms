@@ -1,4 +1,3 @@
-
 import { Category } from '@/lib/types';
 import { apiFetch } from './core';
 
@@ -10,7 +9,9 @@ interface CategoryData {
 // Get all categories
 export const getCategories = async (): Promise<{ success: boolean; data?: Category[]; error?: string }> => {
   try {
+    console.log('Fetching categories...');
     const response = await apiFetch<Category[]>('/categories');
+    console.log('Categories API Response:', response);
     return response;
   } catch (error) {
     console.error('Error fetching categories:', error);

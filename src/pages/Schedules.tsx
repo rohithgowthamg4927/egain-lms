@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -13,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Schedule, Batch } from '@/lib/types';
 import ScheduleForm from '@/components/schedules/ScheduleForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import type { ReactNode } from 'react';
 
 const Schedules = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -22,19 +22,16 @@ const Schedules = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Query to fetch schedules
   const { data: schedulesData, isLoading: isLoadingSchedules, error: schedulesError } = useQuery({
     queryKey: ['schedules'],
     queryFn: () => getAllSchedules(),
   });
-  
-  // Query to fetch batches for the form
+
   const { data: batchesData, isLoading: isLoadingBatches } = useQuery({
     queryKey: ['batches'],
     queryFn: getBatches,
   });
 
-  // Mutation to create a new schedule
   const createMutation = useMutation({
     mutationFn: (newSchedule: ScheduleInput) => createSchedule(newSchedule),
     onSuccess: () => {
@@ -54,7 +51,6 @@ const Schedules = () => {
     },
   });
 
-  // Mutation to update a schedule
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<ScheduleInput> }) => 
       updateSchedule(id, data),
@@ -76,7 +72,6 @@ const Schedules = () => {
     },
   });
 
-  // Mutation to delete a schedule
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteSchedule(id),
     onSuccess: () => {
@@ -97,49 +92,40 @@ const Schedules = () => {
     },
   });
 
-  // Handle add schedule
   const handleAddSubmit = (data: ScheduleInput) => {
     createMutation.mutate(data);
   };
 
-  // Handle edit schedule
   const handleEditSubmit = (data: ScheduleInput) => {
     if (selectedSchedule) {
       updateMutation.mutate({ id: selectedSchedule.scheduleId, data });
     }
   };
 
-  // Handle delete schedule
   const handleDeleteConfirm = () => {
     if (selectedSchedule) {
       deleteMutation.mutate(selectedSchedule.scheduleId);
     }
   };
 
-  // Open edit dialog
   const openEditDialog = (schedule: Schedule) => {
     setSelectedSchedule(schedule);
     setShowEditDialog(true);
   };
 
-  // Open delete dialog
   const openDeleteDialog = (schedule: Schedule) => {
     setSelectedSchedule(schedule);
     setShowDeleteDialog(true);
   };
 
-  // Format time string for display
   const formatTime = (timeString: string) => {
     if (!timeString) return '';
-    // If timeString is just a time (HH:MM:SS), convert to a display format
     if (timeString.length <= 8) {
-      return timeString.substring(0, 5); // Just take HH:MM
+      return timeString.substring(0, 5);
     }
-    // Otherwise assume it's a full ISO date string
     return format(new Date(timeString), 'HH:mm');
   };
 
-  // Table columns definition with properly typed accessorKey
   const columns = [
     {
       accessorKey: 'topic' as keyof Schedule,
@@ -192,7 +178,6 @@ const Schedules = () => {
     }
   ];
 
-  // Table actions
   const actions = [
     {
       label: 'Edit',
@@ -206,7 +191,6 @@ const Schedules = () => {
     },
   ];
 
-  // Loading or error states
   if (isLoadingSchedules || isLoadingBatches) {
     return <div className="p-4">Loading schedules...</div>;
   }
@@ -240,7 +224,6 @@ const Schedules = () => {
         pagination
       />
 
-      {/* Add Schedule Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -254,7 +237,6 @@ const Schedules = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Schedule Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -271,7 +253,6 @@ const Schedules = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

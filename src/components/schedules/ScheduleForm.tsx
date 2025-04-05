@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Clock } from 'lucide-react';
@@ -28,6 +27,14 @@ const ScheduleForm = ({
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     defaultValues?.scheduleDate ? new Date(defaultValues.scheduleDate) : new Date()
   );
+  const [selectedBatch, setSelectedBatch] = useState<Batch | undefined>(
+    defaultValues?.batchId 
+      ? batches.find(b => b.batchId === defaultValues.batchId)
+      : undefined
+  );
+  
+  const [minDate, setMinDate] = useState<Date | undefined>(undefined);
+  const [maxDate, setMaxDate] = useState<Date | undefined>(undefined);
 
   const form = useForm({
     defaultValues: {
@@ -42,8 +49,34 @@ const ScheduleForm = ({
     },
   });
 
+  useEffect(() => {
+    const batchId = form.watch('batchId');
+    if (batchId) {
+      const batch = batches.find(b => b.batchId === parseInt(batchId));
+      setSelectedBatch(batch);
+      
+      if (batch?.startDate && batch?.endDate) {
+        setMinDate(new Date(batch.startDate));
+        setMaxDate(new Date(batch.endDate));
+        
+        if (selectedDate) {
+          const currentDate = new Date(selectedDate);
+          const startDate = new Date(batch.startDate);
+          const endDate = new Date(batch.endDate);
+          
+          if (currentDate < startDate || currentDate > endDate) {
+            setSelectedDate(startDate);
+            form.setValue('scheduleDate', format(startDate, 'yyyy-MM-dd'));
+          }
+        }
+      }
+    } else {
+      setMinDate(undefined);
+      setMaxDate(undefined);
+    }
+  }, [form.watch('batchId'), batches]);
+
   const handleFormSubmit = (data: any) => {
-    // Convert string IDs to numbers for API submission
     const formattedData = {
       ...data,
       batchId: parseInt(data.batchId, 10),
@@ -57,6 +90,12 @@ const ScheduleForm = ({
     if (date) {
       form.setValue('scheduleDate', format(date, 'yyyy-MM-dd'));
     }
+  };
+
+  const isDateDisabled = (date: Date) => {
+    if (!minDate || !maxDate) return false;
+    
+    return date < minDate || date > maxDate;
   };
 
   return (
@@ -135,11 +174,17 @@ const ScheduleForm = ({
                       mode="single"
                       selected={selectedDate}
                       onSelect={handleDateSelect}
+                      disabled={isDateDisabled}
                       initialFocus
                       className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
+                {selectedBatch && minDate && maxDate && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Batch period: {format(minDate, 'MMM d, yyyy')} - {format(maxDate, 'MMM d, yyyy')}
+                  </p>
+                )}
                 <FormMessage />
               </FormItem>
             )}

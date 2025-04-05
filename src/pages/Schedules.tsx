@@ -178,9 +178,18 @@ const Schedules = () => {
       ),
     },
     {
-      accessorKey: 'platform' as keyof Schedule,
-      header: 'Platform',
-    },
+      accessorKey: 'meetingLink' as keyof Schedule,
+      header: 'Meeting Link',
+      cell: ({ row }: { row: { original: Schedule } }) =>
+      <a
+        href={row.original.meetingLink || '#'}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-green-800 hover:underline"
+      >
+      {row.original.meetingLink ? 'Join Meeting' : 'No Link'} 
+      </a>
+    }
   ];
 
   // Table actions

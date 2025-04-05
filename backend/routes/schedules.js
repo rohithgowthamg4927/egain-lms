@@ -84,9 +84,9 @@ router.get('/:id', async (req, res) => {
 // Create a new schedule
 router.post('/', async (req, res) => {
   try {
-    const { batchId, topic, startTime, endTime, meetingLink, platform, description, scheduleDate } = req.body;
+    const { batchId, topic, startTime, endTime, meetingLink, platform, scheduleDate } = req.body;
 
-    console.log('Creating schedule with data:', { batchId, topic, startTime, endTime, meetingLink, platform, description, scheduleDate });
+    console.log('Creating schedule with data:', { batchId, topic, startTime, endTime, meetingLink, platform, scheduleDate });
 
     const batch = await prisma.Batch.findUnique({
       where: { batchId: parseInt(batchId) }
@@ -123,8 +123,7 @@ router.post('/', async (req, res) => {
         endTime: parsedEndTime,
         scheduleDate: parsedScheduleDate,
         meetingLink: meetingLink || null,
-        platform: platform || null,
-        description: description || null
+        platform: platform || null
       }
     });
 
@@ -146,7 +145,6 @@ router.put('/:id', async (req, res) => {
     if (topic !== undefined) updateData.topic = topic;
     if (platform !== undefined) updateData.platform = platform;
     if (meetingLink !== undefined) updateData.meetingLink = meetingLink;
-    if (description !== undefined) updateData.description = description;
     
     if (startTime !== undefined) {
       const parsedStartTime = new Date(startTime);

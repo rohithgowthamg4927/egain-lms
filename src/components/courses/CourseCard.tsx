@@ -73,7 +73,7 @@ const CourseCard = ({
           </div>
         </div>
         <img
-          src={course.thumbnailUrl || `https://source.unsplash.com/random/600x400?${course.courseName}`}
+          src={course.thumbnailUrl || '/thumbnail.jpeg'}
           alt={course.courseName}
           className="absolute inset-0 w-full h-full object-cover"
         />

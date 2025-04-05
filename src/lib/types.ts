@@ -1,3 +1,4 @@
+
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -104,9 +105,8 @@ export interface Schedule {
   createdAt: string;
   updatedAt: string;
   meetingLink?: string; // Meeting link field
-  // Additional fields needed by components
-  topic?: string;
-  platform?: string;
+  topic?: string; // Topic for the session
+  platform?: string; // Platform used for the session
   description?: string;
   batch?: Batch;
 }

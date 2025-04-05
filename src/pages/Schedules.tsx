@@ -1,7 +1,8 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw } from 'lucide-react';
 import { getBatches } from '@/lib/api/batches';
 import { getAllSchedules, createSchedule, updateSchedule, deleteSchedule, ScheduleInput } from '@/lib/api/schedules';
 import { DataTable } from '@/components/ui/data-table';
@@ -12,17 +13,17 @@ import { useToast } from '@/hooks/use-toast';
 import { Schedule, Batch } from '@/lib/types';
 import ScheduleForm from '@/components/schedules/ScheduleForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import type { ReactNode } from 'react';
 
 const Schedules = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const { data: schedulesData, isLoading: isLoadingSchedules, error: schedulesError } = useQuery({
+  const { data: schedulesData, isLoading: isLoadingSchedules, error: schedulesError, refetch } = useQuery({
     queryKey: ['schedules'],
     queryFn: () => getAllSchedules(),
   });
@@ -36,7 +37,6 @@ const Schedules = () => {
     mutationFn: (newSchedule: ScheduleInput) => createSchedule(newSchedule),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedules'] });
-      setShowAddDialog(false);
       toast({
         title: "Success",
         description: "Schedule created successfully",
@@ -46,6 +46,32 @@ const Schedules = () => {
       toast({
         title: "Error",
         description: `Failed to create schedule: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createMultipleMutation = useMutation({
+    mutationFn: async (schedules: ScheduleInput[]) => {
+      const results = [];
+      for (const schedule of schedules) {
+        const result = await createSchedule(schedule);
+        results.push(result);
+      }
+      return results;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['schedules'] });
+      setShowAddDialog(false);
+      toast({
+        title: "Success",
+        description: `Created ${data.length} schedule sessions successfully`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to create schedules: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
     },
@@ -94,6 +120,11 @@ const Schedules = () => {
 
   const handleAddSubmit = (data: ScheduleInput) => {
     createMutation.mutate(data);
+    setShowAddDialog(false);
+  };
+
+  const handleAddMultipleSubmit = (data: ScheduleInput[]) => {
+    createMultipleMutation.mutate(data);
   };
 
   const handleEditSubmit = (data: ScheduleInput) => {
@@ -116,6 +147,16 @@ const Schedules = () => {
   const openDeleteDialog = (schedule: Schedule) => {
     setSelectedSchedule(schedule);
     setShowDeleteDialog(true);
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+    toast({
+      title: "Refreshed",
+      description: "Schedule list has been refreshed",
+    });
   };
 
   const formatTime = (timeString: string) => {
@@ -212,9 +253,24 @@ const Schedules = () => {
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Schedules</h1>
-        <Button onClick={() => setShowAddDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Add Schedule
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleRefresh} 
+            variant="outline"
+            disabled={isRefreshing}
+            className="gap-2 transition-all hover:shadow-md"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+          <Button 
+            onClick={() => setShowAddDialog(true)}
+            className="gap-2 transition-all hover:shadow-md"
+          >
+            <Plus className="h-4 w-4" />
+            Add Schedule
+          </Button>
+        </div>
       </div>
 
       <DataTable
@@ -225,14 +281,16 @@ const Schedules = () => {
       />
 
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[650px]">
           <DialogHeader>
             <DialogTitle>Add New Schedule</DialogTitle>
           </DialogHeader>
           <ScheduleForm
             batches={batches as Batch[]}
             onSubmit={handleAddSubmit}
-            isSubmitting={createMutation.isPending}
+            onSubmitMultiple={handleAddMultipleSubmit}
+            isSubmitting={createMutation.isPending || createMultipleMutation.isPending}
+            supportMultiple={true}
           />
         </DialogContent>
       </Dialog>

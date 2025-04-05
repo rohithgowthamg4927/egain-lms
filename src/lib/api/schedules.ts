@@ -98,6 +98,36 @@ export const createSchedule = async (data: ScheduleInput): Promise<{ success: bo
   }
 };
 
+// Create multiple schedules (for batch creation)
+export const createMultipleSchedules = async (data: ScheduleInput[]): Promise<{ success: boolean; data?: Schedule[]; error?: string }> => {
+  try {
+    const results = [];
+    
+    for (const schedule of data) {
+      const response = await createSchedule(schedule);
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to create one of the schedules');
+      }
+      
+      if (response.data) {
+        results.push(response.data);
+      }
+    }
+    
+    return {
+      success: true,
+      data: results
+    };
+  } catch (error) {
+    console.error('Error creating multiple schedules:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create multiple schedules',
+    };
+  }
+};
+
 // Update a schedule
 export const updateSchedule = async (scheduleId: number, data: Partial<ScheduleInput>): Promise<{ success: boolean; data?: Schedule; error?: string }> => {
   try {

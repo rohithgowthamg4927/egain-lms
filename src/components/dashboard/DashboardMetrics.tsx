@@ -267,7 +267,7 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5" />
-              <span>Upcoming Schedule</span>
+              <span>Upcoming Schedules</span>
             </CardTitle>
             <CardDescription>Next classes and events</CardDescription>
           </CardHeader>

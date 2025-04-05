@@ -41,9 +41,7 @@ router.get('/', async (req, res) => {
       },
       orderBy: { startTime: 'asc' }
     });
-
-    console.log('Schedules:', schedules);
-
+    
     res.json({ success: true, data: schedules });
   } catch (error) {
     handleApiError(res, error);

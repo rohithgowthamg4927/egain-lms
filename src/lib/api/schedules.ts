@@ -72,6 +72,7 @@ export interface ScheduleInput {
   topic: string;
   startTime: string;
   endTime: string;
+  scheduleDate: string;
   meetingLink?: string | null;
   platform?: string | null;
   description?: string | null;
@@ -82,11 +83,10 @@ export const createSchedule = async (data: ScheduleInput): Promise<{ success: bo
   try {
     console.log('Creating schedule with data:', data);
     
-    // Ensure we have valid ISO strings for startTime and endTime
+    // Ensure we have valid date strings
     const cleanedData = {
       ...data,
-      startTime: typeof data.startTime === 'object' ? (data.startTime as Date).toISOString() : data.startTime,
-      endTime: typeof data.endTime === 'object' ? (data.endTime as Date).toISOString() : data.endTime,
+      scheduleDate: data.scheduleDate,
     };
     
     console.log('Sending cleaned data to API:', cleanedData);
@@ -110,16 +110,6 @@ export const updateSchedule = async (scheduleId: number, data: Partial<ScheduleI
   try {
     // If we have date properties, ensure they're properly formatted
     const cleanedData = { ...data };
-    
-    if (data.startTime) {
-      cleanedData.startTime = typeof data.startTime === 'object' ? 
-        (data.startTime as Date).toISOString() : data.startTime;
-    }
-    
-    if (data.endTime) {
-      cleanedData.endTime = typeof data.endTime === 'object' ? 
-        (data.endTime as Date).toISOString() : data.endTime;
-    }
     
     const response = await apiFetch<Schedule>(`/schedules/${scheduleId}`, {
       method: 'PUT',

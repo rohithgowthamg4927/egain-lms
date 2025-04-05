@@ -1,1384 +1,287 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { Plus, Edit, Trash2 } from 'lucide-react';
+import { getBatches } from '@/lib/api/batches';
+import { getAllSchedules, createSchedule, updateSchedule, deleteSchedule, ScheduleInput } from '@/lib/api/schedules';
+import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
-import { toZonedTime } from 'date-fns-tz';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from '@/components/ui/command';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { getBatches } from '@/lib/api';
-import { getAllSchedules, createSchedule, updateSchedule, deleteSchedule, getSchedule } from '@/lib/api/schedules';
-import { Schedule, Batch, User } from '@/lib/types';
-import { cn, formatDate, formatTime } from '@/lib/utils';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { 
-  CalendarIcon, 
-  Check, 
-  ChevronDown, 
-  Clock, 
-  Edit, 
-  Plus, 
-  RefreshCw, 
-  Save, 
-  Trash2, 
-  X 
-} from 'lucide-react';
-import { format, addHours, isWithinInterval, parseISO, isSameDay } from 'date-fns';
-import { useForm, useFieldArray } from 'react-hook-form';
-import * as z from 'zod';
-
-const PLATFORM_OPTIONS = [
-  { value: 'zoom', label: 'Zoom' },
-  { value: 'google-meet', label: 'Google Meet' },
-  { value: 'microsoft-teams', label: 'Microsoft Teams' },
-  { value: 'other', label: 'Other' },
-];
-
-const TIME_SLOTS = Array.from({ length: 24 * 4 }).map((_, i) => {
-  const hour = Math.floor(i / 4);
-  const minute = (i % 4) * 15;
-  return {
-    value: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
-    label: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-  };
-});
-
-const filterSchema = z.object({
-  batch: z.number().optional(),
-  date: z.date().optional(),
-});
-
-const scheduleItemSchema = z.object({
-  date: z.date({
-    required_error: "Please select a date",
-  }),
-  startTime: z.string({
-    required_error: "Please select a start time",
-  }),
-  endTime: z.string({
-    required_error: "Please select an end time",
-  }),
-});
-
-const scheduleFormSchema = z.object({
-  batchId: z.number({
-    required_error: "Please select a batch",
-  }),
-  topic: z.string().min(2, { 
-    message: "Topic must be at least 2 characters long" 
-  }),
-  meetingLink: z.string().optional(),
-  platform: z.string({
-    required_error: "Please select a platform",
-  }),
-  description: z.string().optional(),
-  schedules: z.array(scheduleItemSchema).min(1, {
-    message: "Add at least one schedule"
-  }),
-});
-
-const editScheduleFormSchema = z.object({
-  batchId: z.number({
-    required_error: "Please select a batch",
-  }),
-  topic: z.string().min(2, { 
-    message: "Topic must be at least 2 characters long" 
-  }),
-  meetingLink: z.string().optional(),
-  platform: z.string({
-    required_error: "Please select a platform",
-  }),
-  description: z.string().optional(),
-  date: z.date({
-    required_error: "Please select a date",
-  }),
-  startTime: z.string({
-    required_error: "Please select a start time",
-  }),
-  endTime: z.string({
-    required_error: "Please select an end time",
-  }),
-});
-
-type FilterFormValues = z.infer<typeof filterSchema>;
-type ScheduleFormValues = z.infer<typeof scheduleFormSchema>;
-type EditScheduleFormValues = z.infer<typeof editScheduleFormSchema>;
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import { Schedule, Batch } from '@/lib/types';
+import ScheduleForm from '@/components/schedules/ScheduleForm';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const Schedules = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [batches, setBatches] = useState<Batch[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [batchInstructors, setBatchInstructors] = useState<Record<number, User>>({});
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [selectedBatchForAdd, setSelectedBatchForAdd] = useState<Batch | null>(null);
-  const { toast } = useToast();
-
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [currentSchedule, setCurrentSchedule] = useState<Schedule | null>(null);
-  const [selectedBatchForEdit, setSelectedBatchForEdit] = useState<Batch | null>(null);
-
-  const defaultValues: FilterFormValues = {
-    batch: Number(searchParams.get('batch')) || undefined,
-    date: searchParams.get('date') ? new Date(searchParams.get('date') as string) : undefined,
-  };
-
-  const [filters, setFilters] = useState(defaultValues);
-
-  const filterForm = useForm<FilterFormValues>({
-    resolver: zodResolver(filterSchema),
-    defaultValues: filters,
-    mode: 'onChange',
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Query to fetch schedules
+  const { data: schedulesData, isLoading: isLoadingSchedules, error: schedulesError } = useQuery({
+    queryKey: ['schedules'],
+    queryFn: () => getAllSchedules(),
+  });
+  
+  // Query to fetch batches for the form
+  const { data: batchesData, isLoading: isLoadingBatches } = useQuery({
+    queryKey: ['batches'],
+    queryFn: getBatches,
   });
 
-  const form = useForm<ScheduleFormValues>({
-    resolver: zodResolver(scheduleFormSchema),
-    defaultValues: {
-      batchId: 0,
-      topic: '',
-      meetingLink: '',
-      platform: '',
-      description: '',
-      schedules: [
-        { 
-          date: new Date(),
-          startTime: '09:00',
-          endTime: '10:30',
-        }
-      ]
+  // Mutation to create a new schedule
+  const createMutation = useMutation({
+    mutationFn: (newSchedule: ScheduleInput) => createSchedule(newSchedule),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedules'] });
+      setShowAddDialog(false);
+      toast({
+        title: "Success",
+        description: "Schedule created successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to create schedule: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive",
+      });
     },
   });
 
-  const editForm = useForm<EditScheduleFormValues>({
-    resolver: zodResolver(editScheduleFormSchema),
-    defaultValues: {
-      batchId: 0,
-      topic: '',
-      meetingLink: '',
-      platform: '',
-      description: '',
-      date: new Date(),
-      startTime: '09:00',
-      endTime: '10:30',
+  // Mutation to update a schedule
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<ScheduleInput> }) => 
+      updateSchedule(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedules'] });
+      setShowEditDialog(false);
+      setSelectedSchedule(null);
+      toast({
+        title: "Success",
+        description: "Schedule updated successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update schedule: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive",
+      });
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "schedules"
+  // Mutation to delete a schedule
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteSchedule(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedules'] });
+      setShowDeleteDialog(false);
+      setSelectedSchedule(null);
+      toast({
+        title: "Success",
+        description: "Schedule deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete schedule: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive",
+      });
+    },
   });
 
-  const watchBatchId = form.watch("batchId");
-  const watchEditBatchId = editForm.watch("batchId");
-
-  useEffect(() => {
-    if (watchBatchId) {
-      const selectedBatch = batches.find(batch => batch.batchId === watchBatchId);
-      setSelectedBatchForAdd(selectedBatch || null);
-    }
-  }, [watchBatchId, batches]);
-
-  useEffect(() => {
-    if (watchEditBatchId) {
-      const selectedBatch = batches.find(batch => batch.batchId === watchEditBatchId);
-      setSelectedBatchForEdit(selectedBatch || null);
-    }
-  }, [watchEditBatchId, batches]);
-
-  const getBatchDateConstraints = (batchId: number) => {
-    const batch = batches.find(b => b.batchId === batchId);
-    if (!batch) return { minDate: new Date(), maxDate: addHours(new Date(), 24) };
-
-    return {
-      minDate: new Date(batch.startDate),
-      maxDate: new Date(batch.endDate)
-    };
+  // Handle add schedule
+  const handleAddSubmit = (data: ScheduleInput) => {
+    createMutation.mutate(data);
   };
 
-  const isDateInBatchPeriod = (date: Date, batchId: number) => {
-    const { minDate, maxDate } = getBatchDateConstraints(batchId);
-    return isWithinInterval(date, { start: minDate, end: maxDate });
-  };
-
-  const handleFilterChange = (values: FilterFormValues): void => {
-    setFilters(values);
-
-    const params = new URLSearchParams();
-
-    if (values.batch) {
-      params.set('batch', String(values.batch));
-    } else {
-      params.delete('batch');
-    }
-
-    if (values.date) {
-      params.set('date', format(values.date, 'yyyy-MM-dd'));
-    } else {
-      params.delete('date');
-    }
-
-    setSearchParams(params);
-  };
-
-  const fetchSchedules = async () => {
-    setIsLoading(true);
-
-    const queryParams: {
-      batchId?: number;
-      date?: string;
-    } = {};
-
-    if (filters.batch) {
-      queryParams.batchId = filters.batch;
-    }
-
-    if (filters.date) {
-      queryParams.date = format(filters.date, 'yyyy-MM-dd');
-    }
-
-    try {
-      const response = await getAllSchedules(queryParams);
-
-      if (response.success && response.data) {
-        setSchedules(response.data);
-      } else {
-        toast({
-          title: 'Error',
-          description: response.error || 'Failed to fetch schedules',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch schedules',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
+  // Handle edit schedule
+  const handleEditSubmit = (data: ScheduleInput) => {
+    if (selectedSchedule) {
+      updateMutation.mutate({ id: selectedSchedule.scheduleId, data });
     }
   };
 
-  const fetchBatches = async () => {
-    try {
-      const response = await getBatches();
-
-      if (response.success && response.data) {
-        setBatches(response.data);
-        
-        const instructorsMap: Record<number, User> = {};
-        response.data.forEach(batch => {
-          if (batch.instructor && batch.batchId) {
-            instructorsMap[batch.batchId] = batch.instructor;
-          }
-        });
-        setBatchInstructors(instructorsMap);
-      } else {
-        toast({
-          title: 'Error',
-          description: response.error || 'Failed to fetch batches',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch batches',
-        variant: 'destructive',
-      });
+  // Handle delete schedule
+  const handleDeleteConfirm = () => {
+    if (selectedSchedule) {
+      deleteMutation.mutate(selectedSchedule.scheduleId);
     }
   };
 
-  useEffect(() => {
-    fetchSchedules();
-    fetchBatches();
-  }, []);
-
-  useEffect(() => {
-    fetchSchedules();
-  }, [filters]);
-
-  useEffect(() => {
-    filterForm.setValue('batch', Number(searchParams.get('batch')) || undefined);
-    filterForm.setValue('date', searchParams.get('date') ? new Date(searchParams.get('date') as string) : undefined);
-  }, [searchParams, filterForm]);
-
-  const filteredSchedules = schedules.filter((schedule) => {
-    if (filters.batch && schedule.batchId !== filters.batch) {
-      return false;
-    }
-
-    if (filters.date && schedule.startTime) {
-      try {
-        const scheduleDate = new Date(schedule.startTime);
-        return isSameDay(scheduleDate, filters.date);
-      } catch (error) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-
-  const handleAddSchedule = () => {
-    append({ date: new Date(), startTime: '09:00', endTime: '10:30' });
+  // Open edit dialog
+  const openEditDialog = (schedule: Schedule) => {
+    setSelectedSchedule(schedule);
+    setShowEditDialog(true);
   };
 
-  const onSubmit = async (values: ScheduleFormValues) => {
-    setIsSubmitting(true);
-    let successCount = 0;
-    const totalSchedules = values.schedules.length;
-    
-    try {
-      for (const scheduleItem of values.schedules) {
-        const scheduleDate = scheduleItem.date;
-        
-        const startParts = scheduleItem.startTime.split(':');
-        const startDate = new Date(scheduleDate);
-        startDate.setHours(parseInt(startParts[0]), parseInt(startParts[1]), 0, 0);
-        
-        const endParts = scheduleItem.endTime.split(':');
-        const endDate = new Date(scheduleDate);
-        endDate.setHours(parseInt(endParts[0]), parseInt(endParts[1]), 0, 0);
-        
-        const scheduleInput = {
-          batchId: values.batchId,
-          topic: values.topic,
-          startTime: startDate.toISOString(),
-          endTime: endDate.toISOString(),
-          meetingLink: values.meetingLink || null,
-          platform: values.platform || null,
-          description: values.description || null
-        };
+  // Open delete dialog
+  const openDeleteDialog = (schedule: Schedule) => {
+    setSelectedSchedule(schedule);
+    setShowDeleteDialog(true);
+  };
 
-        console.log('Creating schedule with input:', scheduleInput);
-
-        const response = await createSchedule(scheduleInput);
-
-        if (response.success) {
-          successCount++;
-        } else {
-          toast({
-            title: 'Error',
-            description: response.error || `Failed to create schedule ${successCount + 1}`,
-            variant: 'destructive',
-          });
-        }
-      }
-      
-      if (successCount > 0) {
-        toast({
-          title: 'Success',
-          description: `Created ${successCount}/${totalSchedules} schedules successfully`,
-        });
-        
-        if (successCount === totalSchedules) {
-          setShowAddDialog(false);
-          form.reset({
-            batchId: 0,
-            topic: '',
-            meetingLink: '',
-            platform: '',
-            description: '',
-            schedules: [
-              { 
-                date: new Date(),
-                startTime: '09:00',
-                endTime: '10:30',
-              }
-            ]
-          });
-        }
-        
-        fetchSchedules();
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred while creating schedules',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
+  // Format time string for display
+  const formatTime = (timeString: string) => {
+    if (!timeString) return '';
+    // If timeString is just a time (HH:MM:SS), convert to a display format
+    if (timeString.length <= 8) {
+      return timeString.substring(0, 5); // Just take HH:MM
     }
+    // Otherwise assume it's a full ISO date string
+    return format(new Date(timeString), 'HH:mm');
   };
 
-  const handleEditClick = async (scheduleId: number) => {
-    try {
-      const response = await getSchedule(scheduleId);
-      
-      if (response.success && response.data) {
-        const schedule = response.data;
-        setCurrentSchedule(schedule);
-        
-        const startTime = new Date(schedule.startTime);
-        const endTime = new Date(schedule.endTime);
-        
-        const formattedStartTime = format(startTime, 'HH:mm');
-        const formattedEndTime = format(endTime, 'HH:mm');
-        
-        editForm.reset({
-          batchId: schedule.batchId || 0,
-          topic: schedule.topic || '',
-          meetingLink: schedule.meetingLink || '',
-          platform: schedule.platform || '',
-          description: schedule.description || '',
-          date: startTime,
-          startTime: formattedStartTime,
-          endTime: formattedEndTime,
-        });
-        
-        setShowEditDialog(true);
-      } else {
-        toast({
-          title: 'Error',
-          description: response.error || 'Failed to fetch schedule details',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred while fetching schedule details',
-        variant: 'destructive',
-      });
-    }
-  };
+  // Table columns definition
+  const columns = [
+    {
+      accessorKey: 'topic',
+      header: 'Topic',
+    },
+    {
+      accessorKey: 'scheduleDate',
+      header: 'Date',
+      cell: ({ row }: { row: { original: Schedule } }) => (
+        <span>
+          {row.original.scheduleDate ? 
+            format(new Date(row.original.scheduleDate), 'PPP') : 
+            'Not set'}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'startTime',
+      header: 'Start Time',
+      cell: ({ row }: { row: { original: Schedule } }) => (
+        <span>{formatTime(row.original.startTime)}</span>
+      ),
+    },
+    {
+      accessorKey: 'endTime',
+      header: 'End Time',
+      cell: ({ row }: { row: { original: Schedule } }) => (
+        <span>{formatTime(row.original.endTime)}</span>
+      ),
+    },
+    {
+      accessorKey: 'batch',
+      header: 'Batch',
+      cell: ({ row }: { row: { original: Schedule } }) => (
+        <span>{row.original.batch?.batchName || 'N/A'}</span>
+      ),
+    },
+    {
+      accessorKey: 'platform',
+      header: 'Platform',
+    },
+  ];
 
-  const handleEditSubmit = async (values: EditScheduleFormValues) => {
-    if (!currentSchedule) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      const scheduleDate = values.date;
-      
-      const startParts = values.startTime.split(':');
-      const startDate = new Date(scheduleDate);
-      startDate.setHours(parseInt(startParts[0]), parseInt(startParts[1]), 0, 0);
-      
-      const endParts = values.endTime.split(':');
-      const endDate = new Date(scheduleDate);
-      endDate.setHours(parseInt(endParts[0]), parseInt(endParts[1]), 0, 0);
-      
-      const updateInput = {
-        batchId: values.batchId,
-        topic: values.topic,
-        startTime: startDate.toISOString(),
-        endTime: endDate.toISOString(),
-        meetingLink: values.meetingLink || null,
-        platform: values.platform || null,
-        description: values.description || null
-      };
-      
-      const response = await updateSchedule(currentSchedule.scheduleId, updateInput);
-      
-      if (response.success) {
-        toast({
-          title: 'Success',
-          description: 'Schedule updated successfully',
-        });
-        setShowEditDialog(false);
-        fetchSchedules();
-      } else {
-        toast({
-          title: 'Error',
-          description: response.error || 'Failed to update schedule',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred while updating the schedule',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  // Table actions
+  const actions = [
+    {
+      label: 'Edit',
+      onClick: openEditDialog,
+      icon: <Edit className="mr-2 h-4 w-4" />,
+    },
+    {
+      label: 'Delete',
+      onClick: openDeleteDialog,
+      icon: <Trash2 className="mr-2 h-4 w-4" />,
+    },
+  ];
 
-  const handleDeleteSchedule = async (scheduleId: number) => {
-    try {
-      const response = await deleteSchedule(scheduleId);
-      
-      if (response.success) {
-        toast({
-          title: 'Success',
-          description: 'Schedule deleted successfully',
-        });
-        fetchSchedules();
-      } else {
-        toast({
-          title: 'Error',
-          description: response.error || 'Failed to delete schedule',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred while deleting the schedule',
-        variant: 'destructive',
-      });
-    }
-  };
+  // Loading or error states
+  if (isLoadingSchedules || isLoadingBatches) {
+    return <div className="p-4">Loading schedules...</div>;
+  }
 
-  const isSelected = (batchId: number) => {
-    return filters.batch === batchId;
-  };
+  if (schedulesError) {
+    return (
+      <Alert variant="destructive" className="m-4">
+        <AlertDescription>
+          Error loading schedules: {schedulesError instanceof Error ? schedulesError.message : 'Unknown error'}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  const schedules = schedulesData?.data || [];
+  const batches = batchesData?.data || [];
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Schedules</h1>
-          <p className="text-muted-foreground">Manage your class schedules</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Button 
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => setShowAddDialog(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Schedule
-          </Button>
-          <Button 
-            onClick={fetchSchedules} 
-            disabled={isLoading}
-            variant="outline"
-          >
-            {isLoading ? (
-              <RefreshCw className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            <span className="sr-only">Refresh</span>
-          </Button>
-        </div>
+    <div className="container mx-auto p-4 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Schedules</h1>
+        <Button onClick={() => setShowAddDialog(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Add Schedule
+        </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-          <CardDescription>Filter schedules by batch and date</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...filterForm}>
-            <form className="space-y-4" onSubmit={filterForm.handleSubmit(handleFilterChange)}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={filterForm.control}
-                  name="batch"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Batch</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className={cn(
-                                'w-full justify-between',
-                                !field.value && 'text-muted-foreground'
-                              )}
-                            >
-                              {field.value
-                                ? batches.find((batch) => batch.batchId === field.value)?.batchName
-                                : 'Select batch'}
-                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[200px] p-0">
-                          <Command>
-                            <CommandList>
-                              <CommandEmpty>No batches found.</CommandEmpty>
-                              <CommandGroup>
-                                {batches.map((batch) => (
-                                  <CommandItem
-                                    key={batch.batchId}
-                                    onSelect={() => {
-                                      filterForm.setValue('batch', batch.batchId);
-                                      filterForm.handleSubmit(handleFilterChange)();
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        'mr-2 h-4 w-4',
-                                        isSelected(batch.batchId) ? 'opacity-100' : 'opacity-0'
-                                      )}
-                                    />
-                                    {batch.batchName}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                              {filters.batch && (
-                                <>
-                                  <CommandSeparator />
-                                  <CommandItem
-                                    onSelect={() => {
-                                      filterForm.setValue('batch', undefined);
-                                      filterForm.handleSubmit(handleFilterChange)();
-                                    }}
-                                    className="justify-center text-sm"
-                                  >
-                                    <X className="mr-2 h-4 w-4" />
-                                    Clear
-                                  </CommandItem>
-                                </>
-                              )}
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={filterForm.control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={'outline'}
-                              className={cn(
-                                'w-full pl-3 text-left font-normal',
-                                !field.value && 'text-muted-foreground'
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, 'PPP')
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={(date) => {
-                              field.onChange(date);
-                              filterForm.handleSubmit(handleFilterChange)();
-                            }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+      <DataTable
+        data={schedules}
+        columns={columns}
+        actions={actions}
+        pagination
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Schedule List</CardTitle>
-          <CardDescription>View and manage all class schedules</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center h-48">
-              <RefreshCw className="mr-2 h-6 w-6 animate-spin" />
-              <span>Loading schedules...</span>
-            </div>
-          ) : filteredSchedules.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 gap-4 text-center">
-              <div className="text-muted-foreground">No schedules found</div>
-              <Button 
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={() => setShowAddDialog(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add New Schedule
-              </Button>
-            </div>
-          ) : (
-            <ScrollArea className="h-[500px]">
-              <Table>
-                <TableCaption>A list of all class schedules.</TableCaption>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Batch</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Topic</TableHead>
-                    <TableHead>Instructor</TableHead>
-                    <TableHead>Platform</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredSchedules.map((schedule) => {
-                    const scheduleBatch = batches.find(b => b.batchId === schedule.batchId);
-                    const startDateTime = schedule.startTime ? new Date(schedule.startTime) : null;
-                    const isValidDate = startDateTime && !isNaN(startDateTime.getTime());
-                    
-                    return (
-                      <TableRow key={schedule.scheduleId}>
-                        <TableCell>
-                          {scheduleBatch?.batchName || 'Unknown Batch'}
-                        </TableCell>
-                        <TableCell>
-                          {isValidDate ? format(startDateTime as Date, 'MMM d, yyyy') : 'Invalid Date'}
-                        </TableCell>
-                        <TableCell>
-                          {`${formatTime(schedule.startTime)} - ${formatTime(schedule.endTime)}`}
-                        </TableCell>
-                        <TableCell>
-                          {schedule.topic || 'No Topic'}
-                        </TableCell>
-                        <TableCell>
-                          {batchInstructors[schedule.batchId || 0]?.fullName || 'Unknown Instructor'}
-                        </TableCell>
-                        <TableCell>
-                          {schedule.platform ? (
-                            <Badge variant="outline">
-                              {schedule.platform}
-                            </Badge>
-                          ) : 'N/A'}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditClick(schedule.scheduleId)}
-                            >
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteSchedule(schedule.scheduleId)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Delete</span>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          )}
-        </CardContent>
-      </Card>
-
+      {/* Add Schedule Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="max-w-3xl overflow-y-auto max-h-[90vh]">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Add Schedule</DialogTitle>
-            <DialogDescription>
-              Create one or multiple schedule entries for classes.
-            </DialogDescription>
+            <DialogTitle>Add New Schedule</DialogTitle>
           </DialogHeader>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="batchId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Select Batch</FormLabel>
-                      <Select 
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                        defaultValue={field.value.toString()}
-                        value={field.value.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a batch" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {batches.map((batch) => (
-                            <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
-                              {batch.batchName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormItem>
-                  <FormLabel>Instructor</FormLabel>
-                  <Input 
-                    value={selectedBatchForAdd?.instructor?.fullName || "No instructor assigned"}
-                    disabled
-                    className="bg-gray-100"
-                  />
-                </FormItem>
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="topic"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Topic</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter topic for the class" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="platform"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Platform</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select platform" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {PLATFORM_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="meetingLink"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Meeting Link</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter meeting link" {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Enter class description or agenda" 
-                        className="min-h-[100px]" 
-                        {...field} 
-                        value={field.value || ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium text-lg">Schedule Sessions</h3>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddSchedule}
-                    disabled={!watchBatchId}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add More Sessions
-                  </Button>
-                </div>
-                
-                <Card>
-                  <CardContent className="pt-6">
-                    {fields.map((item, index) => (
-                      <div key={item.id} className="flex flex-col space-y-4 mb-6 pb-6 border-b last:border-0">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium">Session {index + 1}</h4>
-                          {index > 0 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => remove(index)}
-                            >
-                              <X className="h-4 w-4 mr-1" />
-                              Remove
-                            </Button>
-                          )}
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <FormField
-                            control={form.control}
-                            name={`schedules.${index}.date`}
-                            render={({ field }) => (
-                              <FormItem className="flex flex-col">
-                                <FormLabel>Date</FormLabel>
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <FormControl>
-                                      <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                          "w-full pl-3 text-left font-normal",
-                                          !field.value && "text-muted-foreground"
-                                        )}
-                                        disabled={!watchBatchId}
-                                      >
-                                        {field.value ? (
-                                          format(field.value, "PPP")
-                                        ) : (
-                                          <span>Pick a date</span>
-                                        )}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                      </Button>
-                                    </FormControl>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-                                    <Calendar
-                                      mode="single"
-                                      selected={field.value}
-                                      onSelect={field.onChange}
-                                      disabled={(date) => watchBatchId && !isDateInBatchPeriod(date, watchBatchId)}
-                                      initialFocus
-                                    />
-                                  </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name={`schedules.${index}.startTime`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Start Time</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select start time" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {TIME_SLOTS.map((slot) => (
-                                      <SelectItem key={`start-${index}-${slot.value}`} value={slot.value}>
-                                        {slot.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name={`schedules.${index}.endTime`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>End Time</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select end time" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {TIME_SLOTS.map((slot) => (
-                                      <SelectItem key={`end-${index}-${slot.value}`} value={slot.value}>
-                                        {slot.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setShowAddDialog(false)}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={isSubmitting || !watchBatchId}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Create Schedules
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          <ScheduleForm
+            batches={batches as Batch[]}
+            onSubmit={handleAddSubmit}
+            isSubmitting={createMutation.isPending}
+          />
         </DialogContent>
       </Dialog>
 
+      {/* Edit Schedule Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-3xl overflow-y-auto max-h-[90vh]">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Edit Schedule</DialogTitle>
-            <DialogDescription>
-              Update the schedule details.
-            </DialogDescription>
           </DialogHeader>
-          
-          <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={editForm.control}
-                  name="batchId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Select Batch</FormLabel>
-                      <Select 
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                        defaultValue={field.value.toString()}
-                        value={field.value.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a batch" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {batches.map((batch) => (
-                            <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
-                              {batch.batchName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormItem>
-                  <FormLabel>Instructor</FormLabel>
-                  <Input 
-                    value={selectedBatchForEdit?.instructor?.fullName || "No instructor assigned"}
-                    disabled
-                    className="bg-gray-100"
-                  />
-                </FormItem>
-              </div>
-              
-              <FormField
-                control={editForm.control}
-                name="topic"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Topic</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter topic for the class" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={editForm.control}
-                  name="platform"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Platform</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange}
-                        defaultValue={field.value || ''}
-                        value={field.value || ''}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select platform" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {PLATFORM_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={editForm.control}
-                  name="meetingLink"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Meeting Link</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter meeting link" {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <FormField
-                control={editForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Enter class description or agenda" 
-                        className="min-h-[100px]" 
-                        {...field}
-                        value={field.value || ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={editForm.control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                              disabled={!watchEditBatchId}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => watchEditBatchId && !isDateInBatchPeriod(date, watchEditBatchId)}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={editForm.control}
-                  name="startTime"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Start Time</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select start time" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {TIME_SLOTS.map((slot) => (
-                            <SelectItem key={`edit-start-${slot.value}`} value={slot.value}>
-                              {slot.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={editForm.control}
-                  name="endTime"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>End Time</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select end time" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {TIME_SLOTS.map((slot) => (
-                            <SelectItem key={`edit-end-${slot.value}`} value={slot.value}>
-                              {slot.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setShowEditDialog(false)}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={isSubmitting || !watchEditBatchId}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Update Schedule
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          {selectedSchedule && (
+            <ScheduleForm
+              batches={batches as Batch[]}
+              onSubmit={handleEditSubmit}
+              isSubmitting={updateMutation.isPending}
+              defaultValues={selectedSchedule}
+            />
+          )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the schedule
+              {selectedSchedule?.topic && ` for "${selectedSchedule.topic}"`}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

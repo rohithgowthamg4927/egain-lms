@@ -18,6 +18,9 @@ const queryClient = new QueryClient({
   },
 });
 
+// Add console log to check if the app is being rendered
+console.log("Rendering React application...");
+
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <BrowserRouter>

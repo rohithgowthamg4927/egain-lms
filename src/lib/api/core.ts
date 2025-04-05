@@ -1,59 +1,90 @@
 
-import { Role } from '@/lib/types';
+import { toast } from "@/hooks/use-toast";
 
-// Base API URL - Use environment variable with fallback to localhost
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// Your API base URL - updated to match the server port (4000)
+export const API_URL = "http://localhost:4000";
 
-// Generic fetch wrapper with improved error handling
+/**
+ * Core API fetch function with authentication and error handling
+ */
 export async function apiFetch<T>(
-  endpoint: string, 
+  endpoint: string,
   options: RequestInit = {}
-): Promise<{ success: boolean; data?: T; error?: string }> {
+): Promise<{
+  success: boolean;
+  data?: T;
+  error?: string;
+  status?: number;
+}> {
   try {
-    const url = `${API_BASE_URL}${endpoint}`;
-    console.log(`Fetching from: ${url}`, options);
+    console.log(`API Request: ${API_URL}${endpoint}`);
     
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
+    // Get auth token from local storage
+    const token = localStorage.getItem("authToken");
     
-    // Check if response is OK before trying to parse JSON
-    if (!response.ok) {
-      const contentType = response.headers.get('content-type');
-      
-      if (contentType && contentType.includes('application/json')) {
-        // JSON error response
-        const errorData = await response.json();
-        console.error(`API error: ${response.status} ${response.statusText}`, errorData);
-        return { 
-          success: false, 
-          error: errorData.error || `API error: ${response.status} ${response.statusText}`
-        };
-      } else {
-        // Non-JSON error response (like HTML)
-        const errorText = await response.text();
-        console.error(`API error: ${response.status} ${response.statusText}`, errorText);
-        return {
-          success: false,
-          error: `API error: ${response.status} ${response.statusText}`
-        };
-      }
+    // Set default headers
+    const headers = new Headers(options.headers);
+    
+    // Add content type if not already set
+    if (!headers.has("Content-Type") && !options.body instanceof FormData) {
+      headers.append("Content-Type", "application/json");
     }
     
-    // Parse JSON response
-    const data = await response.json();
-    console.log(`Response from ${url}:`, data);
-    
-    return data;
+    // Add auth token if available
+    if (token) {
+      headers.append("Authorization", `Bearer ${token}`);
+    }
+
+    // Make the API request
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+
+    // Get response data
+    let data;
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
+
+    // Handle errors
+    if (!response.ok) {
+      console.error(`API Error (${response.status}):`, data);
+      
+      // For authentication errors, clear token and reload
+      if (response.status === 401) {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("currentUser");
+        window.location.href = "/login";
+        return { success: false, error: "Authentication failed", status: 401 };
+      }
+      
+      return {
+        success: false,
+        error: data.message || "An error occurred",
+        status: response.status,
+      };
+    }
+
+    // Return successful response
+    return {
+      success: true,
+      data: data as T,
+      status: response.status,
+    };
   } catch (error) {
-    console.error('API fetch error:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to fetch data from API' 
+    console.error("API Request Error:", error);
+    toast({
+      title: "Network Error",
+      description: "Failed to connect to the server. Please check your connection.",
+      variant: "destructive",
+    });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Network error",
     };
   }
 }

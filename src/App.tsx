@@ -2,6 +2,7 @@
 import {
   Routes,
   Route,
+  Navigate
 } from "react-router-dom";
 
 import Login from "./pages/Login";
@@ -18,6 +19,7 @@ import AddCourse from "./pages/AddCourse";
 import EditCourse from "./pages/EditCourse";
 import AddUser from "./pages/AddUser";
 import UserProfile from "./pages/UserProfile";
+import Index from "./pages/Index";
 
 // Import batch-related routes
 import AddBatch from './pages/AddBatch';
@@ -28,10 +30,12 @@ import BatchDetail from "./pages/BatchDetail";
 import Schedules from "./pages/Schedules";
 
 function App() {
+  console.log("App component rendering");
   return (
     <Routes>
+      {/* Default route redirects to Index page */}
+      <Route path="/" element={<Index />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
       {/* Course routes */}
@@ -66,7 +70,6 @@ function App() {
       <Route path="/instructors" element={<ProtectedRoute><Instructors /></ProtectedRoute>} />
       <Route path="/instructors/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
       <Route path="/instructors/:userId/edit" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-      <Route path="/add-user" element={<ProtectedRoute><AddUser /></ProtectedRoute>} />
 
       {/* Resources routes */}
       <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />

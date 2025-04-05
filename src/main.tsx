@@ -7,6 +7,7 @@ import './index.css'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '@/components/ui/theme-provider'
 import { Toaster } from '@/components/ui/toaster'
+import { AuthProvider } from '@/hooks/use-auth'
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient({
@@ -26,8 +27,10 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="light" storageKey="lms-theme">
-          <App />
-          <Toaster />
+          <AuthProvider>
+            <App />
+            <Toaster />
+          </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </BrowserRouter>

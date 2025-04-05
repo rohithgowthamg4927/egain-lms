@@ -1,8 +1,7 @@
-
 import { toast } from "@/hooks/use-toast";
 
 // Your API base URL - updated to match the server port (4000)
-export const API_URL = "http://localhost:4000";
+export const API_URL = "http://localhost:4000/api";
 
 /**
  * Core API fetch function with authentication and error handling

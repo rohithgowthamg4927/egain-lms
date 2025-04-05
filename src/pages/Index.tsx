@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoginForm from '@/components/auth/LoginForm';
@@ -56,7 +57,7 @@ const Index = () => {
             <AlertCircle className="h-4 w-4 mr-2" />
             <AlertTitle>Backend Server Required</AlertTitle>
             <AlertDescription className="text-sm">
-              Please ensure the backend server is running at http://localhost:3001
+              Please ensure the backend server is running at http://localhost:4000
             </AlertDescription>
           </Alert>
         </div>

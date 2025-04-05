@@ -36,43 +36,129 @@ function App() {
       {/* Default route redirects to Index page */}
       <Route path="/" element={<Index />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      
+      {/* Protected routes */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
 
       {/* Course routes */}
-      <Route path="/courses" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
-      <Route path="/courses/add" element={<ProtectedRoute><AddCourse /></ProtectedRoute>} />
-      <Route path="/courses/:courseId" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
-      <Route path="/courses/edit/:courseId" element={<ProtectedRoute><EditCourse /></ProtectedRoute>} />
+      <Route path="/courses" element={
+        <ProtectedRoute>
+          <Courses />
+        </ProtectedRoute>
+      } />
+      <Route path="/courses/add" element={
+        <ProtectedRoute>
+          <AddCourse />
+        </ProtectedRoute>
+      } />
+      <Route path="/courses/:courseId" element={
+        <ProtectedRoute>
+          <CourseDetail />
+        </ProtectedRoute>
+      } />
+      <Route path="/courses/edit/:courseId" element={
+        <ProtectedRoute>
+          <EditCourse />
+        </ProtectedRoute>
+      } />
       
       {/* Batch routes */}
-      <Route path="/batches" element={<ProtectedRoute><Batches /></ProtectedRoute>} />
-      <Route path="/batches/add" element={<ProtectedRoute><AddBatch /></ProtectedRoute>} />
-      <Route path="/batches/:batchId" element={<ProtectedRoute><BatchDetail /></ProtectedRoute>} />
-      <Route path="/batches/:batchId/edit" element={<ProtectedRoute><EditBatch /></ProtectedRoute>} />
-      <Route path="/batches/manage-students" element={<ProtectedRoute><ManageStudents /></ProtectedRoute>} />
+      <Route path="/batches" element={
+        <ProtectedRoute>
+          <Batches />
+        </ProtectedRoute>
+      } />
+      <Route path="/batches/add" element={
+        <ProtectedRoute>
+          <AddBatch />
+        </ProtectedRoute>
+      } />
+      <Route path="/batches/:batchId" element={
+        <ProtectedRoute>
+          <BatchDetail />
+        </ProtectedRoute>
+      } />
+      <Route path="/batches/:batchId/edit" element={
+        <ProtectedRoute>
+          <EditBatch />
+        </ProtectedRoute>
+      } />
+      <Route path="/batches/manage-students" element={
+        <ProtectedRoute>
+          <ManageStudents />
+        </ProtectedRoute>
+      } />
       
       {/* Schedule routes */}
-      <Route path="/schedules" element={<ProtectedRoute><Schedules /></ProtectedRoute>} />
+      <Route path="/schedules" element={
+        <ProtectedRoute>
+          <Schedules />
+        </ProtectedRoute>
+      } />
 
       {/* Categories routes */}
-      <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
+      <Route path="/categories" element={
+        <ProtectedRoute>
+          <Categories />
+        </ProtectedRoute>
+      } />
 
       {/* Settings routes */}
-      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <Settings />
+        </ProtectedRoute>
+      } />
 
       {/* Students routes */}
-      <Route path="/students" element={<ProtectedRoute><Students /></ProtectedRoute>} />
-      <Route path="/students/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-      <Route path="/students/:userId/edit" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-      <Route path="/add-user" element={<ProtectedRoute><AddUser /></ProtectedRoute>} />
+      <Route path="/students" element={
+        <ProtectedRoute>
+          <Students />
+        </ProtectedRoute>
+      } />
+      <Route path="/students/:userId" element={
+        <ProtectedRoute>
+          <UserProfile />
+        </ProtectedRoute>
+      } />
+      <Route path="/students/:userId/edit" element={
+        <ProtectedRoute>
+          <UserProfile />
+        </ProtectedRoute>
+      } />
+      <Route path="/add-user" element={
+        <ProtectedRoute>
+          <AddUser />
+        </ProtectedRoute>
+      } />
 
       {/* Instructors routes */}
-      <Route path="/instructors" element={<ProtectedRoute><Instructors /></ProtectedRoute>} />
-      <Route path="/instructors/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-      <Route path="/instructors/:userId/edit" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+      <Route path="/instructors" element={
+        <ProtectedRoute>
+          <Instructors />
+        </ProtectedRoute>
+      } />
+      <Route path="/instructors/:userId" element={
+        <ProtectedRoute>
+          <UserProfile />
+        </ProtectedRoute>
+      } />
+      <Route path="/instructors/:userId/edit" element={
+        <ProtectedRoute>
+          <UserProfile />
+        </ProtectedRoute>
+      } />
 
       {/* Resources routes */}
-      <Route path="/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
+      <Route path="/resources" element={
+        <ProtectedRoute>
+          <Resources />
+        </ProtectedRoute>
+      } />
     </Routes>
   );
 }

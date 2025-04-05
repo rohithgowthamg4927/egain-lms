@@ -19,6 +19,15 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     console.log("ProtectedRoute render - Auth State:", { 
       isAuthenticated, isLoading, path: location.pathname 
     });
+    
+    // Also check what's in localStorage
+    const token = localStorage.getItem('authToken');
+    const user = localStorage.getItem('currentUser');
+    console.log("Local storage check:", { 
+      hasToken: !!token, 
+      hasUser: !!user,
+      userDetails: user ? JSON.parse(user) : null
+    });
   }, [isAuthenticated, isLoading, location.pathname]);
 
   // While checking authentication, show a loading placeholder
@@ -37,7 +46,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   // If not authenticated, redirect to login
   if (!isAuthenticated) {
     console.log("Not authenticated, redirecting to login from Protected Route");
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return <Navigate to="/" replace state={{ from: location }} />;
   }
 
   // If authenticated, render the outlet inside Layout with Sidebar

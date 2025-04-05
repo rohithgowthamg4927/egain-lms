@@ -23,7 +23,7 @@ export const login = async (email: string, password: string, role: Role): Promis
   
   // First verify server is running
   try {
-    const healthCheck = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/health`);
+    const healthCheck = await fetch(`http://localhost:4000/api/auth/health`);
     if (!healthCheck.ok) {
       console.error("Server health check failed");
       return { success: false, error: "Backend server not responding" };
@@ -37,7 +37,7 @@ export const login = async (email: string, password: string, role: Role): Promis
   const payload = { email, password, role };
   console.log("Sending login payload:", payload);
   
-  const response = await apiFetch<{ user: User; token: string }>('/login', {
+  const response = await apiFetch<{ user: User; token: string }>('/auth/login', {
     method: 'POST',
     body: JSON.stringify(payload),
   });

@@ -12,12 +12,13 @@ router.get('/', async (req, res) => {
     const courses = await prisma.Course.findMany({
       include: {
         category: true,
-        reviews: {
-          include: {
-            user: true
-          }
-        }
-      }
+        _count: {
+          select: {
+            studentCourses: true,
+            batches: true,
+          },
+        },
+      },
     });
     
     res.json({ success: true, data: courses });

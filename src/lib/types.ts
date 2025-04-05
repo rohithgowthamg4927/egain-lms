@@ -43,7 +43,7 @@ export interface ProfilePicture {
 
 export interface Course {
   courseId: number;
-  id?: number; // Adding ID as optional for backward compatibility
+  id?: number;
   courseName: string;
   courseLevel: Level;
   categoryId: number;
@@ -53,11 +53,14 @@ export interface Course {
   createdAt: string;
   updatedAt: string;
   category?: Category;
-  // Additional fields needed by components
   students?: number;
   batches?: number;
   averageRating?: number;
   createdBy?: number;
+  _count?: {
+    studentCourses: number; 
+    batches: number;        
+  };
 }
 
 export interface Category {

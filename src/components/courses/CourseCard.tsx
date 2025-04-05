@@ -91,15 +91,11 @@ const CourseCard = ({
         <div className="grid grid-cols-2 gap-2">
           <div className="flex items-center text-sm text-muted-foreground">
             <Users className="h-4 w-4 mr-1" />
-            <span>{course.students || 0} students</span>
-          </div>
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Star className="h-4 w-4 mr-1 text-amber-500" />
-            <span>{course.averageRating?.toFixed(1) || "N/A"}</span>
+            <span>{course._count?.studentCourses || 0} students</span>
           </div>
           <div className="flex items-center text-sm text-muted-foreground">
             <Bookmark className="h-4 w-4 mr-1" />
-            <span>{course.batches || 0} batches</span>
+            <span>{course._count?.batches || 0} batches</span>
           </div>
         </div>
       </CardContent>

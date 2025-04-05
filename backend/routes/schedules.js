@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
@@ -99,19 +98,44 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Ensure we have valid dates by parsing startTime, endTime, and scheduleDate
-    const parsedStartTime = new Date(startTime);
-    const parsedEndTime = new Date(endTime);
-    const parsedScheduleDate = scheduleDate ? new Date(scheduleDate) : new Date();
-    
-    if (isNaN(parsedStartTime.getTime()) || isNaN(parsedEndTime.getTime()) || isNaN(parsedScheduleDate.getTime())) {
+    // Create a proper date object for scheduleDate
+    const scheduleDay = new Date(scheduleDate);
+    if (isNaN(scheduleDay.getTime())) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid date format for startTime, endTime, or scheduleDate'
+        error: 'Invalid date format for scheduleDate'
+      });
+    }
+    
+    // Convert time strings (HH:MM) to full datetime objects
+    let parsedStartTime, parsedEndTime;
+    
+    if (startTime && startTime.length <= 5) {
+      // If it's just a time string like "09:00"
+      const [startHours, startMinutes] = startTime.split(':').map(Number);
+      parsedStartTime = new Date(scheduleDay);
+      parsedStartTime.setHours(startHours, startMinutes, 0, 0);
+    } else {
+      parsedStartTime = new Date(startTime);
+    }
+    
+    if (endTime && endTime.length <= 5) {
+      // If it's just a time string like "10:00"
+      const [endHours, endMinutes] = endTime.split(':').map(Number);
+      parsedEndTime = new Date(scheduleDay);
+      parsedEndTime.setHours(endHours, endMinutes, 0, 0);
+    } else {
+      parsedEndTime = new Date(endTime);
+    }
+    
+    if (isNaN(parsedStartTime.getTime()) || isNaN(parsedEndTime.getTime())) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid date format for startTime or endTime'
       });
     }
 
-    console.log('Parsed dates:', { parsedStartTime, parsedEndTime, parsedScheduleDate });
+    console.log('Parsed dates:', { scheduleDay, parsedStartTime, parsedEndTime });
 
     const schedule = await prisma.Schedule.create({
       data: {
@@ -121,7 +145,7 @@ router.post('/', async (req, res) => {
         topic: topic || null,
         startTime: parsedStartTime,
         endTime: parsedEndTime,
-        scheduleDate: parsedScheduleDate,
+        scheduleDate: scheduleDay,
         meetingLink: meetingLink || null,
         platform: platform || null
       }
@@ -146,8 +170,32 @@ router.put('/:id', async (req, res) => {
     if (platform !== undefined) updateData.platform = platform;
     if (meetingLink !== undefined) updateData.meetingLink = meetingLink;
     
+    if (scheduleDate !== undefined) {
+      const parsedScheduleDate = new Date(scheduleDate);
+      if (isNaN(parsedScheduleDate.getTime())) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid date format for scheduleDate'
+        });
+      }
+      updateData.scheduleDate = parsedScheduleDate;
+    }
+    
     if (startTime !== undefined) {
-      const parsedStartTime = new Date(startTime);
+      let parsedStartTime;
+      if (startTime.length <= 5) {
+        // If it's just a time string like "09:00"
+        const [startHours, startMinutes] = startTime.split(':').map(Number);
+        const scheduleDay = updateData.scheduleDate || (await prisma.Schedule.findUnique({
+          where: { scheduleId }
+        }))?.scheduleDate;
+        
+        parsedStartTime = new Date(scheduleDay);
+        parsedStartTime.setHours(startHours, startMinutes, 0, 0);
+      } else {
+        parsedStartTime = new Date(startTime);
+      }
+      
       if (isNaN(parsedStartTime.getTime())) {
         return res.status(400).json({
           success: false,
@@ -158,7 +206,20 @@ router.put('/:id', async (req, res) => {
     }
     
     if (endTime !== undefined) {
-      const parsedEndTime = new Date(endTime);
+      let parsedEndTime;
+      if (endTime.length <= 5) {
+        // If it's just a time string like "10:00"
+        const [endHours, endMinutes] = endTime.split(':').map(Number);
+        const scheduleDay = updateData.scheduleDate || (await prisma.Schedule.findUnique({
+          where: { scheduleId }
+        }))?.scheduleDate;
+        
+        parsedEndTime = new Date(scheduleDay);
+        parsedEndTime.setHours(endHours, endMinutes, 0, 0);
+      } else {
+        parsedEndTime = new Date(endTime);
+      }
+      
       if (isNaN(parsedEndTime.getTime())) {
         return res.status(400).json({
           success: false,
@@ -166,17 +227,6 @@ router.put('/:id', async (req, res) => {
         });
       }
       updateData.endTime = parsedEndTime;
-    }
-    
-    if (scheduleDate !== undefined) {
-      const parsedScheduleDate = new Date(scheduleDate);
-      if (isNaN(parsedScheduleDate.getTime())) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid date format for scheduleDate'
-        });
-      }
-      updateData.scheduleDate = parsedScheduleDate;
     }
     
     if (batchId !== undefined) updateData.batchId = parseInt(batchId);

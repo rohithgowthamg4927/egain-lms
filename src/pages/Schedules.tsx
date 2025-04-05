@@ -123,7 +123,7 @@ const Schedules = () => {
     if (timeString.length <= 8) {
       return timeString.substring(0, 5);
     }
-    return format(new Date(timeString), 'HH:mm');
+    return format(new Date(timeString), 'hh:mm a');
   };
 
   const columns = [

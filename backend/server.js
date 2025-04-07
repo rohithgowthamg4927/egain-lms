@@ -28,7 +28,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: ['https://id-preview--7636328c-3448-4688-9eb1-ae052040b17c.lovable.app', 'http://localhost:8081', 'http://localhost:5173', 'https://7636328c-3448-4688-9eb1-ae052040b17c.lovableproject.com'],
+  origin: '*',
   credentials: true
 }));
 app.use(express.json());

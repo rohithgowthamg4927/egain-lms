@@ -1,9 +1,9 @@
 
 import { Outlet, useLocation } from 'react-router-dom';
-import { Sidebar } from '@/components/layout/Sidebar';
-import { Header } from '@/components/layout/Header';
+import Sidebar from '@/components/layout/Sidebar';
+import Header from '@/components/layout/Header';
 import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
-import { BreadcrumbNav } from '@/components/layout/BreadcrumbNav';
+import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 import { Toaster } from '@/components/ui/toaster';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState, useEffect } from 'react';

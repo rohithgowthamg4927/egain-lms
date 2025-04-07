@@ -14,17 +14,6 @@ const Layout = () => {
   const showBreadcrumbs = location.pathname !== '/';
   const isMobile = useIsMobile();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  
-  // Listen for window resize
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
   
   // Listen for sidebar collapse events from localStorage or a custom event
   useEffect(() => {
@@ -46,23 +35,12 @@ const Layout = () => {
     };
   }, []);
 
-  // Calculate the appropriate margin based on screen size and sidebar state
-  const getMainMargin = () => {
-    if (isMobile) return 'ml-0';
-    if (isSidebarCollapsed) return 'ml-[70px]';
-    
-    // Responsive margins based on screen width
-    if (windowWidth < 768) return 'ml-[180px]';
-    if (windowWidth < 1024) return 'ml-[200px]';
-    return 'ml-[240px]';
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="flex">
         <Sidebar />
-        <main className={`flex-1 p-4 sm:p-6 md:p-8 transition-all ${getMainMargin()}`}>
+        <main className={`flex-1 p-8 transition-all ${isMobile ? 'ml-0' : (isSidebarCollapsed ? 'ml-[70px]' : 'ml-64')}`}>
           {showBreadcrumbs && breadcrumbs.length > 0 && (
             <div className="mb-6">
               <BreadcrumbNav items={breadcrumbs} />

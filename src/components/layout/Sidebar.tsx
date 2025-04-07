@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -33,18 +34,6 @@ export default function Sidebar({ className }: SidebarProps) {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-
-  // Update window width on resize
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
 
   // Close the sidebar when navigating on mobile
   useEffect(() => {
@@ -57,36 +46,9 @@ export default function Sidebar({ className }: SidebarProps) {
   useEffect(() => {
     if (!isMobile) {
       setIsOpen(false);
-      // Only auto-expand if window is wide enough
-      if (windowWidth > 1200) {
-        setIsCollapsed(false);
-      }
+      setIsCollapsed(false);
     }
-  }, [isMobile, windowWidth]);
-
-  // Sync sidebar collapsed state with localStorage
-  useEffect(() => {
-    const savedState = localStorage.getItem('sidebarCollapsed');
-    if (savedState) {
-      setIsCollapsed(savedState === 'true');
-    }
-    
-    // Update localStorage when state changes
-    const updateStorage = () => {
-      localStorage.setItem('sidebarCollapsed', isCollapsed.toString());
-      // Dispatch an event for other tabs
-      const event = new Event('storage');
-      window.dispatchEvent(event);
-    };
-    
-    if (isCollapsed !== (savedState === 'true')) {
-      updateStorage();
-    }
-  }, [isCollapsed]);
-
-  const toggleCollapsed = () => {
-    setIsCollapsed(!isCollapsed);
-  };
+  }, [isMobile]);
 
   const NavItems = () => (
     <div className="group flex flex-col gap-1 py-2">
@@ -269,15 +231,12 @@ export default function Sidebar({ className }: SidebarProps) {
               <span className="sr-only">Toggle Menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-[80vw] max-w-[280px]">
+          <SheetContent side="left" className="p-0 w-64">
             <div className="flex h-16 items-center border-b px-4">
               <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
                 <div className="flex items-center">
-                  <img
-                    src="/egain-logo.jpeg"
-                    alt="e-Gain Logo"
-                    className="h-10 object-contain bg-white"
-                  />
+                  <div className="text-blue-600 text-2xl font-bold">e</div>
+                  <div className="text-blue-600 text-2xl font-bold">gain</div>
                 </div>
               </Link>
             </div>
@@ -292,19 +251,12 @@ export default function Sidebar({ className }: SidebarProps) {
     );
   }
 
-  // Calculate responsive width for desktop sidebar
-  const sidebarWidth = isCollapsed ? 
-    "w-[70px]" : 
-    windowWidth < 768 ? "w-[180px]" : 
-    windowWidth < 1024 ? "w-[200px]" : 
-    "w-[240px]";
-
-  // Desktop view with responsive sidebar
+  // Desktop view
   return (
     <div
       className={cn(
         "fixed top-0 left-0 h-screen flex flex-col border-r bg-sidebar shadow-sm transition-all duration-300 z-40",
-        sidebarWidth,
+        isCollapsed ? "w-[70px]" : "w-64",
         className
       )}
     >
@@ -336,7 +288,7 @@ export default function Sidebar({ className }: SidebarProps) {
             "absolute right-2 top-4 h-8 w-8 rounded-full border bg-background hover:bg-accent transition-all",
             "hover:scale-110 group"
           )}
-          onClick={toggleCollapsed}
+          onClick={() => setIsCollapsed(!isCollapsed)}
           title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         >
           {isCollapsed ? (

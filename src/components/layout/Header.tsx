@@ -1,3 +1,4 @@
+
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -9,24 +10,31 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, LucideIcon, User, Lock, LogOut } from 'lucide-react';
+import { Bell, Lock, LogOut } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import PasswordChangeForm from '@/components/users/PasswordChangeForm';
 
 const Header = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const [notifications] = useState<{ id: number; title: string; description: string }[]>([
     { id: 1, title: 'New course added', description: 'React Fundamentals course was added' },
     { id: 2, title: 'New batch starting', description: 'Flutter for Beginners batch starts next week' },
   ]);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
   };
 
-  const goToProfile = () => {
-    navigate('/profile');
+  const openPasswordDialog = () => {
+    setIsPasswordDialogOpen(true);
   };
 
   return (
@@ -85,11 +93,7 @@ const Header = () => {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={goToProfile} className="cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem onClick={openPasswordDialog} className="cursor-pointer">
                 <Lock className="mr-2 h-4 w-4" />
                 <span>Change Password</span>
               </DropdownMenuItem>
@@ -102,6 +106,19 @@ const Header = () => {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Password Change Dialog */}
+      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Enter your current password and a new password below.
+            </DialogDescription>
+          </DialogHeader>
+          <PasswordChangeForm userId={user?.userId || 0} onSuccess={() => setIsPasswordDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </header>
   );
 };

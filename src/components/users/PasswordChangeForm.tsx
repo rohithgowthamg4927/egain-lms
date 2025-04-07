@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { apiFetch } from '@/lib/api/core';
 
 interface PasswordChangeFormProps {
   userId: number;
+  onSuccess?: () => void;
 }
 
-const PasswordChangeForm = ({ userId }: PasswordChangeFormProps) => {
+const PasswordChangeForm = ({ userId, onSuccess }: PasswordChangeFormProps) => {
   const { toast } = useToast();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -18,6 +20,15 @@ const PasswordChangeForm = ({ userId }: PasswordChangeFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!userId) {
+      toast({
+        title: 'Error',
+        description: 'User ID is required',
+        variant: 'destructive'
+      });
+      return;
+    }
     
     if (newPassword !== confirmPassword) {
       toast({
@@ -39,22 +50,47 @@ const PasswordChangeForm = ({ userId }: PasswordChangeFormProps) => {
 
     setIsSubmitting(true);
     
-    // This would call the API endpoint for password change
-    // const response = await updateUserPassword(userId, currentPassword, newPassword);
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: 'Success',
-        description: 'Password has been updated successfully',
+    try {
+      const response = await apiFetch('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId,
+          currentPassword,
+          newPassword
+        })
       });
       
-      // Reset form
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      if (response.success) {
+        toast({
+          title: 'Success',
+          description: 'Password has been updated successfully',
+        });
+        
+        // Reset form
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        
+        // Call success callback if provided
+        if (onSuccess) {
+          onSuccess();
+        }
+      } else {
+        toast({
+          title: 'Error',
+          description: response.error || 'Failed to update password',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive'
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -94,7 +130,7 @@ const PasswordChangeForm = ({ userId }: PasswordChangeFormProps) => {
         </div>
       </div>
       
-      <Button type="submit" disabled={isSubmitting}>
+      <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting ? 'Updating...' : 'Update Password'}
       </Button>
     </form>

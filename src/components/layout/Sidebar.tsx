@@ -252,45 +252,32 @@ export default function Sidebar({ className }: SidebarProps) {
   }
 
   // Desktop view
-  return (
-    <div
-      className={cn(
-        "flex flex-col border-r bg-sidebar shadow-sm transition-all duration-300 min-h-screen flex-none",
-        isCollapsed ? "w-[70px]" : "w-64",
-        className
-      )}
-    >
-    <div className="flex h-16 items-center justify-center border-b px-4 transition-all">
-      {!isCollapsed ? (
-        <a href="https://e-gain.co.in" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-semibold">
-          <div className="flex items-center">
-            <img
-              src="/egain-logo.jpeg"
-              alt="e-Gain Logo"
-              className="h-10 object-contain bg-white"
-            />
-          </div>
-        </a>
-      ) : (
-        <a href="https://e-gain.co.in" target="_blank" rel="noopener noreferrer" className="flex justify-center w-full">
-          <img
-            src="/egain-logo.jpeg"
-            alt="e-Gain Logo"
-            className="h-8 object-contain bg-white"
-          />
-        </a>
-      )}
-    </div>
-
-      <ScrollArea className="flex-1">
-        <div className={cn("flex flex-col gap-2 p-2 transition-all")}>
-          <NavItems />
-        </div>
-      </ScrollArea>
+return (
+  <div
+    className={cn(
+      "flex flex-col border-r bg-sidebar shadow-sm transition-all duration-300 min-h-screen flex-none",
+      isCollapsed ? "w-[70px]" : "w-64",
+      className
+    )}
+  >
+    
+    <div className="flex h-16 items-center border-b px-4 transition-all justify-between">
+      <a
+        href="https://e-gain.co.in"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex-1 flex items-center justify-center"
+      >
+        <img
+          src="/egain-logo.jpeg"
+          alt="e-Gain Logo"
+          className={cn(isCollapsed ? "h-8" : "h-10", "object-contain bg-white")}
+        />
+      </a>
       <Button
         variant="ghost"
         size="icon"
-        className="absolute -right-3 top-20 h-6 w-6 rounded-full border shadow-sm bg-background"
+        className="h-8 w-8 rounded-full border shadow-sm bg-background"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         {isCollapsed ? (
@@ -301,5 +288,13 @@ export default function Sidebar({ className }: SidebarProps) {
         <span className="sr-only">Toggle Sidebar</span>
       </Button>
     </div>
-  );
+
+    {/* Scrollable Navigation Items */}
+    <ScrollArea className="flex-1">
+      <div className={cn("flex flex-col gap-2 p-2 transition-all")}>
+        <NavItems />
+      </div>
+    </ScrollArea>
+  </div>
+);
 }

@@ -255,51 +255,56 @@ export default function Sidebar({ className }: SidebarProps) {
   return (
     <div
       className={cn(
-        "flex flex-col border-r bg-sidebar shadow-sm transition-all duration-300 min-h-screen flex-none",
+        "fixed top-0 left-0 h-screen flex flex-col border-r bg-sidebar shadow-sm transition-all duration-300 z-40",
         isCollapsed ? "w-[70px]" : "w-64",
         className
       )}
     >
-    <div className="flex h-16 items-center justify-center border-b px-4 transition-all">
-      {!isCollapsed ? (
-        <a href="https://e-gain.co.in" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-semibold">
-          <div className="flex items-center">
+      <div className="relative flex h-16 items-center justify-center border-b px-4 transition-all">
+        {!isCollapsed ? (
+          <a href="https://e-gain.co.in" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 font-semibold">
+            <div className="flex items-center">
+              <img
+                src="/egain-logo.jpeg"
+                alt="e-Gain Logo"
+                className="h-10 object-contain bg-white"
+              />
+            </div>
+          </a>
+        ) : (
+          <a href="https://e-gain.co.in" target="_blank" rel="noopener noreferrer" className="flex justify-center w-full">
             <img
               src="/egain-logo.jpeg"
               alt="e-Gain Logo"
-              className="h-10 object-contain bg-white"
+              className="h-8 object-contain bg-white"
             />
-          </div>
-        </a>
-      ) : (
-        <a href="https://e-gain.co.in" target="_blank" rel="noopener noreferrer" className="flex justify-center w-full">
-          <img
-            src="/egain-logo.jpeg"
-            alt="e-Gain Logo"
-            className="h-8 object-contain bg-white"
-          />
-        </a>
-      )}
-    </div>
+          </a>
+        )}
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "absolute right-2 top-4 h-8 w-8 rounded-full border bg-background hover:bg-accent transition-all",
+            "hover:scale-110 group"
+          )}
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
+          {isCollapsed ? (
+            <ChevronRight className="h-4 w-4 group-hover:text-primary" />
+          ) : (
+            <ChevronLeft className="h-4 w-4 group-hover:text-primary" />
+          )}
+          <span className="sr-only">Toggle Sidebar</span>
+        </Button>
+      </div>
 
       <ScrollArea className="flex-1">
         <div className={cn("flex flex-col gap-2 p-2 transition-all")}>
           <NavItems />
         </div>
       </ScrollArea>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute -right-3 top-20 h-6 w-6 rounded-full border shadow-sm bg-background"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-      >
-        {isCollapsed ? (
-          <ChevronRight className="h-3 w-3" />
-        ) : (
-          <ChevronLeft className="h-3 w-3" />
-        )}
-        <span className="sr-only">Toggle Sidebar</span>
-      </Button>
     </div>
   );
 }

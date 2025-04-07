@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,17 +5,14 @@ import { useToast } from '@/hooks/use-toast';
 import { User } from '@/lib/types';
 import { Copy, Check, Download } from 'lucide-react';
 import { downloadCredentialsCSV } from '@/lib/utils';
-import PasswordChangeForm from './PasswordChangeForm';
 
 interface PasswordTabProps {
   user: User;
-  onUpdate?: () => void;
 }
 
-const PasswordTab = ({ user, onUpdate }: PasswordTabProps) => {
+const PasswordTab = ({ user }: PasswordTabProps) => {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
-  const [showChangeForm, setShowChangeForm] = useState(false);
 
   const handleCopyPassword = () => {
     navigator.clipboard.writeText(user.password || '');
@@ -29,13 +25,6 @@ const PasswordTab = ({ user, onUpdate }: PasswordTabProps) => {
     
     // Reset copy state after 2 seconds
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handlePasswordChangeSuccess = () => {
-    setShowChangeForm(false);
-    if (onUpdate) {
-      onUpdate();
-    }
   };
 
   return (
@@ -77,34 +66,9 @@ const PasswordTab = ({ user, onUpdate }: PasswordTabProps) => {
             You can also download the credentials as a CSV file.
           </p>
         </div>
-
-        {showChangeForm ? (
-          <div className="mt-6">
-            <h3 className="text-sm font-medium mb-4">Change Password</h3>
-            <PasswordChangeForm 
-              userId={user.userId} 
-              onSuccess={handlePasswordChangeSuccess} 
-            />
-            <Button 
-              variant="outline" 
-              className="w-full mt-4"
-              onClick={() => setShowChangeForm(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-        ) : (
-          <Button 
-            variant="outline" 
-            className="w-full mt-4"
-            onClick={() => setShowChangeForm(true)}
-          >
-            Change Password
-          </Button>
-        )}
       </CardContent>
     </Card>
   );
 };
 
-export default PasswordTab;
+export default PasswordTab; 

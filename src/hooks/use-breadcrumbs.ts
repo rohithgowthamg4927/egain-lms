@@ -14,11 +14,16 @@ export function useBreadcrumbs() {
     const breadcrumbs: BreadcrumbItem[] = [];
     let currentPath = '';
 
+    // Add Dashboard as the first breadcrumb for all pages except the root
+    if (pathSegments.length > 0) {
+      breadcrumbs.push({ label: 'Dashboard', link: '/dashboard' });
+    }
+
     pathSegments.forEach((segment, index) => {
       currentPath += `/${segment}`;
       
-      // Skip certain segments
-      if (['edit', 'add'].includes(segment)) {
+      // Skip certain segments that shouldn't appear in breadcrumbs
+      if (['add-user', 'edit'].includes(segment)) {
         return;
       }
 
@@ -53,6 +58,8 @@ export function useBreadcrumbs() {
       let label = '';
       switch (segment) {
         case 'dashboard':
+          // Skip adding dashboard again if it's already the first breadcrumb
+          if (index === 0) return;
           label = 'Dashboard';
           break;
         case 'courses':
@@ -73,6 +80,15 @@ export function useBreadcrumbs() {
         case 'categories':
           label = 'Categories';
           break;
+        case 'schedules':
+          label = 'Schedules';
+          break;
+        case 'resources':
+          label = 'Resources';
+          break;
+        case 'settings':
+          label = 'Settings';
+          break;
         case 'profile':
           label = 'My Profile';
           break;
@@ -84,16 +100,9 @@ export function useBreadcrumbs() {
             label = 'Add New';
           }
           break;
-        case 'edit':
-          const editParent = pathSegments[index - 1];
-          if (editParent) {
-            label = `Edit ${editParent.slice(0, -1)}`;
-          } else {
-            label = 'Edit';
-          }
-          break;
         default:
-          label = segment.charAt(0).toUpperCase() + segment.slice(1);
+          // Skip unknown segments
+          return;
       }
 
       breadcrumbs.push({ label, link: currentPath });

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -17,9 +16,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Role } from '@/lib/types';
-import { Upload, Loader2, User, Copy, Check } from 'lucide-react';
+import { Upload, Loader2, User, Copy, Check, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { generateRandomPassword } from '@/lib/utils';
+import { generateRandomPassword, downloadCredentialsCSV } from '@/lib/utils';
 
 const formSchema = z.object({
   fullName: z.string().min(2, {
@@ -215,13 +214,22 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
                   type="button" 
                   variant="outline" 
                   onClick={regeneratePassword}
-                  className="rounded-l-none px-2 text-xs"
+                  className="rounded-l-none border-r rounded-r-none px-2 text-xs"
                 >
                   Regenerate
                 </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => downloadCredentialsCSV(form.getValues('email'), generatedPassword, form.getValues('fullName'))}
+                  className="rounded-l-none px-2"
+                  title="Download Credentials"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
               </div>
               <FormDescription className="text-xs mt-1">
-                A random password is generated for the user. They will be required to change it on first login.
+                A random password is generated for the user. They will be required to change it on first login. You can download the credentials as a CSV file.
               </FormDescription>
             </div>
           </div>

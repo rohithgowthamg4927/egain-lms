@@ -143,3 +143,16 @@ export function generatePassword(length = 12): string {
   // Shuffle the password
   return password.split('').sort(() => Math.random() - 0.5).join('');
 }
+
+export function downloadCredentialsCSV(email: string, password: string, fullName: string) {
+  const csvContent = `email,password\n${email},${password}`;
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', `${fullName}_credentials.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}

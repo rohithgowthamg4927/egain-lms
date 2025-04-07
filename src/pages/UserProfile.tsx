@@ -83,7 +83,9 @@ const UserProfile = () => {
           title: 'Success',
           description: 'User details updated successfully',
         });
-        queryClient.invalidateQueries(['user', userId] as const);
+        queryClient.invalidateQueries({
+          queryKey: ['user', userId],
+        });
         setIsEditDialogOpen(false);
       } else {
         throw new Error(response.error || 'Failed to update user');
@@ -285,7 +287,7 @@ const UserProfile = () => {
                   </TabsContent>
 
                   <TabsContent value="password">
-                    <PasswordTab user={user} onUpdate={handlePasswordUpdate} />
+                    <PasswordTab user={user} />
                   </TabsContent>
                 </Tabs>
               </div>

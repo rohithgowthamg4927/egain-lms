@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { PrismaClient, Role } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
@@ -107,12 +106,12 @@ router.get('/', async (req, res) => {
     const upcomingSchedules = await prisma.Schedule.findMany({
       take: 5,
       where: {
-        startTime: {
+        scheduleDate: {
           gte: now,
         },
       },
       orderBy: {
-        startTime: 'asc',
+        scheduleDate: 'asc',
       },
       include: {
         batch: {

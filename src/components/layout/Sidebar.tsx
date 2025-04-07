@@ -233,12 +233,16 @@ export default function Sidebar({ className }: SidebarProps) {
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-64">
             <div className="flex h-16 items-center border-b px-4">
-              <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
-                <div className="flex items-center">
-                  <div className="text-blue-600 text-2xl font-bold">e</div>
-                  <div className="text-blue-600 text-2xl font-bold">gain</div>
-                </div>
-              </Link>
+              <div className="flex h-16 items-center border-b px-4 justify-center">
+                <Link to="/dashboard" className="flex items-center justify-center w-full">
+                  <img
+                    src="/egain-logo.jpeg"
+                    alt="e-Gain Logo"
+                    className="h-10 object-contain"
+                  />
+                </Link>
+              </div>
+
             </div>
             <ScrollArea className="h-[calc(100vh-4rem)] pb-10">
               <div className="px-2">
@@ -255,43 +259,73 @@ export default function Sidebar({ className }: SidebarProps) {
   return (
     <div
       className={cn(
-        "flex flex-col border-r bg-sidebar shadow-sm transition-all duration-300 min-h-screen flex-none",
+        "fixed top-0 left-0 z-40 flex flex-col border-r bg-sidebar shadow-sm transition-all duration-300 h-screen",
         isCollapsed ? "w-[70px]" : "w-64",
         className
       )}
     >
-      <div className="flex h-16 items-center border-b px-4 transition-all">
-        {!isCollapsed ? (
-          <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
-            <div className="flex items-center">
-              <div className="text-blue-600 text-2xl font-bold">e</div>
-              <div className="text-blue-600 text-2xl font-bold">gain</div>
+      <div className="flex h-16 items-center justify-center border-b px-4 transition-all">
+        <a
+          href="https://e-gain.co.in"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "flex items-center",
+            isCollapsed ? "justify-center w-full" : "gap-2 font-semibold"
+          )}
+        >
+          <img
+            src="/egain-logo.jpeg"
+            alt="e-Gain Logo"
+            className={cn(
+              "object-contain",
+              isCollapsed ? "h-8" : "h-10"
+            )}
+          />
+        </a>
+
+        {/* Chevron Toggle Button - only show when expanded */}
+        <div className={cn(isCollapsed ? "hidden" : "block")}>
+          <div className="group relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 rounded-full border shadow-sm bg-background"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+            >
+              <ChevronLeft className="h-3 w-3" />
+              <span className="sr-only">Toggle Sidebar</span>
+            </Button>
+            <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-black text-white text-xs rounded px-2 py-1">
+              Collapse
             </div>
-          </Link>
-        ) : (
-          <Link to="/dashboard" className="flex justify-center w-full">
-            <div className="text-blue-600 text-2xl font-bold">e</div>
-          </Link>
-        )}
+          </div>
+        </div>
+
+        {/* Chevron when sidebar is collapsed */}
+        <div className={cn(!isCollapsed ? "hidden" : "block")}>
+          <div className="group relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 rounded-full border shadow-sm bg-background"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+            >
+              <ChevronRight className="h-3 w-3" />
+              <span className="sr-only">Toggle Sidebar</span>
+            </Button>
+            <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-black text-white text-xs rounded px-2 py-1">
+              Expand
+            </div>
+          </div>
+        </div>
       </div>
+
       <ScrollArea className="flex-1">
-        <div className={cn("flex flex-col gap-2 p-2 transition-all")}>
+        <div className="flex flex-col gap-2 p-2 transition-all">
           <NavItems />
         </div>
       </ScrollArea>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute -right-3 top-20 h-6 w-6 rounded-full border shadow-sm bg-background"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-      >
-        {isCollapsed ? (
-          <ChevronRight className="h-3 w-3" />
-        ) : (
-          <ChevronLeft className="h-3 w-3" />
-        )}
-        <span className="sr-only">Toggle Sidebar</span>
-      </Button>
     </div>
   );
 }

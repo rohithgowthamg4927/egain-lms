@@ -173,12 +173,6 @@ const LoginForm = () => {
               "Sign In"
             )}
           </Button>
-          
-          <div className="text-center text-sm text-gray-500 mt-4">
-            <p>
-              Make sure your backend server is running at: http://localhost:3001
-            </p>
-          </div>
         </form>
       </div>
     </div>

@@ -34,7 +34,7 @@ const BreadcrumbNav = ({ items }: BreadcrumbNavProps) => {
         </BreadcrumbItem>
         {items.length > 0 && <BreadcrumbSeparator />}
         {items.map((item, index) => (
-          <React.Fragment key={item.link}>
+          <div key={item.link}>
             <BreadcrumbItem>
               {index === items.length - 1 ? (
                 <BreadcrumbPage>{item.label}</BreadcrumbPage>
@@ -45,7 +45,7 @@ const BreadcrumbNav = ({ items }: BreadcrumbNavProps) => {
               )}
             </BreadcrumbItem>
             {index < items.length - 1 && <BreadcrumbSeparator />}
-          </React.Fragment>
+          </div>
         ))}
       </BreadcrumbList>
     </Breadcrumb>

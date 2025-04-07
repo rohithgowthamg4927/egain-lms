@@ -73,7 +73,7 @@ const UserProfile = () => {
   };
 
   const handleEditSubmit = async (formData: any) => {
-    if (!user) return;
+    if (!user || userId) return;
     setIsSubmitting(true);
 
     try {
@@ -83,7 +83,7 @@ const UserProfile = () => {
           title: 'Success',
           description: 'User details updated successfully',
         });
-        queryClient.invalidateQueries(['user', userId]);
+        queryClient.invalidateQueries(['user', userId] as const);
         setIsEditDialogOpen(false);
       } else {
         throw new Error(response.error || 'Failed to update user');

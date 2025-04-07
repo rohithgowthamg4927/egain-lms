@@ -26,7 +26,7 @@ const Index = () => {
           console.log('Backend server responded but with an error');
         }
       } catch (error) {
-        setServerStatus('offline');
+        setServerStatus('offline');// No active server
         console.error('Cannot connect to backend server:', error);
       } finally {
         // Always set page as loaded after checking server status
@@ -91,7 +91,7 @@ const Index = () => {
           </Alert>
         </div>
         
-        {serverStatus === 'offline' && (
+        {/* {serverStatus === 'offline' && (
           <div className="mt-4">
             <Alert className="bg-slate-950 text-slate-50 border-slate-800">
               <Terminal className="h-4 w-4 mr-2" />
@@ -101,14 +101,7 @@ const Index = () => {
               </AlertDescription>
             </Alert>
           </div>
-        )}
-        
-        <div className="mt-4 text-center text-xs text-gray-500">
-          <p>Default login credentials:</p>
-          <p><strong>Email:</strong> admin@lms.com</p>
-          <p><strong>Password:</strong> Admin@123</p>
-          <p><strong>Role:</strong> admin</p>
-        </div>
+        )} */}
       </div>
     </div>
   );

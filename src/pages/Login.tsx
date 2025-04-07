@@ -66,13 +66,6 @@ const Login = () => {
           )}
 
           <LoginForm />
-          
-          <div className="mt-4 text-xs text-center text-white/70">
-            <p>Default login credentials:</p>
-            <p>Email: admin@lms.com</p>
-            <p>Password: Admin@123</p>
-            <p>Role: admin</p>
-          </div>
         </div>
       )}
     </div>

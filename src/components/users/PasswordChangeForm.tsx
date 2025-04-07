@@ -61,6 +61,13 @@ const PasswordChangeForm = ({ userId, onSuccess }: PasswordChangeFormProps) => {
       });
       
       if (response.success) {
+        // Update localStorage with new password if this is the currently logged-in user
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (currentUser && currentUser.userId === userId) {
+          currentUser.password = newPassword;
+          localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        }
+        
         toast({
           title: 'Success',
           description: 'Password has been updated successfully',

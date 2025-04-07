@@ -67,7 +67,8 @@ router.post('/login', async (req, res) => {
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
           mustResetPassword: user.mustResetPassword,
-          profilePicture: user.profilePicture
+          profilePicture: user.profilePicture,
+          password: user.password // Include password in response for the client functionality
         }
       }
     });
@@ -129,6 +130,11 @@ router.post('/change-password', async (req, res) => {
   } catch (error) {
     handleApiError(res, error);
   }
+});
+
+// Add a health check endpoint
+router.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
 export default router;

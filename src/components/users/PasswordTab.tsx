@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,10 +8,9 @@ import { downloadCredentialsCSV } from '@/lib/utils';
 
 interface PasswordTabProps {
   user: User;
-  onUpdate?: () => void;  // Making onUpdate optional
 }
 
-const PasswordTab = ({ user, onUpdate }: PasswordTabProps) => {
+const PasswordTab = ({ user }: PasswordTabProps) => {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
@@ -27,11 +25,6 @@ const PasswordTab = ({ user, onUpdate }: PasswordTabProps) => {
     
     // Reset copy state after 2 seconds
     setTimeout(() => setCopied(false), 2000);
-    
-    // Call onUpdate if provided
-    if (onUpdate) {
-      onUpdate();
-    }
   };
 
   return (
@@ -78,4 +71,4 @@ const PasswordTab = ({ user, onUpdate }: PasswordTabProps) => {
   );
 };
 
-export default PasswordTab;
+export default PasswordTab; 

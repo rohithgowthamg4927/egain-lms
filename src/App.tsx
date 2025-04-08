@@ -1,4 +1,3 @@
-
 import {
   Routes,
   Route,
@@ -13,7 +12,7 @@ import Categories from "./pages/Categories";
 import Settings from "./pages/Settings";
 import Students from "./pages/Students";
 import Instructors from "./pages/Instructors";
-import Resources from "./pages/Resources";
+import Resources from "./app/resources/page";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AddCourse from "./pages/AddCourse";
 import EditCourse from "./pages/EditCourse";

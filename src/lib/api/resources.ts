@@ -1,6 +1,10 @@
-
 import { Resource } from '@/lib/types';
 import { apiFetch } from './core';
+
+// Get all resources for a batch
+export const getResourcesByBatch = async (batchId: string): Promise<{ success: boolean; data?: Resource[]; error?: string }> => {
+  return apiFetch<Resource[]>(`/resources/batch/${batchId}`);
+};
 
 // Resources API
 export const getResources = async (courseId?: number): Promise<{ success: boolean; data?: Resource[]; error?: string }> => {

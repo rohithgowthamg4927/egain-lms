@@ -19,24 +19,32 @@ const ResourceMetrics = ({ resources }: ResourceMetricsProps) => {
     };
     
     resources.forEach(resource => {
-      switch (resource.type) {
-        case 'document':
-          counts.document++;
-          break;
-        case 'video':
-          counts.video++;
-          break;
-        case 'code':
-          counts.code++;
-          break;
-        case 'link':
-          counts.link++;
-          break;
-        case 'assignment':
-          counts.assignment++;
-          break;
-        default:
-          break;
+      // Only count if type exists
+      if (resource.type) {
+        switch (resource.type) {
+          case 'document':
+            counts.document++;
+            break;
+          case 'video':
+            counts.video++;
+            break;
+          case 'code':
+            counts.code++;
+            break;
+          case 'link':
+            counts.link++;
+            break;
+          case 'assignment':
+            counts.assignment++;
+            break;
+          default:
+            // Count unknown types as documents for simplicity
+            counts.document++;
+            break;
+        }
+      } else {
+        // Default to document if type is missing
+        counts.document++;
       }
     });
     

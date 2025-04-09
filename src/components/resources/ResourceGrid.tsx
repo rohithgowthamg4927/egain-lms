@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { Resource } from '@/lib/types';
 import ResourceCard from './ResourceCard';
 import {
@@ -20,10 +19,13 @@ const ResourceGrid = ({ resources, onDelete, userRole }: ResourceGridProps) => {
     const grouped: Record<string, Resource[]> = {};
     
     resources.forEach(resource => {
-      if (!grouped[resource.type]) {
-        grouped[resource.type] = [];
+      // Make sure resource.type exists before using it
+      const resourceType = resource.type || 'unknown';
+      
+      if (!grouped[resourceType]) {
+        grouped[resourceType] = [];
       }
-      grouped[resource.type].push(resource);
+      grouped[resourceType].push(resource);
     });
     
     return grouped;

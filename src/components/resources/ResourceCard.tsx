@@ -26,6 +26,13 @@ const ResourceCard = ({
 }: ResourceCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
+  // Safely access resource properties with default fallbacks
+  const resourceType = resource?.type || 'document';
+  const resourceTitle = resource?.title || 'Untitled Resource';
+  const resourceDescription = resource?.description || 'No description available for this resource.';
+  const resourceUrl = resource?.url || '#';
+  const resourceCreatedAt = resource?.createdAt || new Date().toISOString();
+
   const resourceTypeColors = {
     'document': 'bg-blue-100 hover:bg-blue-200 text-blue-800',
     'video': 'bg-red-100 hover:bg-red-200 text-red-800',
@@ -56,7 +63,11 @@ const ResourceCard = ({
   };
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'MMM d, yyyy');
+    try {
+      return format(new Date(dateString), 'MMM d, yyyy');
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
   
   const handleDelete = () => {
@@ -74,27 +85,26 @@ const ResourceCard = ({
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="p-6 flex items-center justify-between">
-        {getResourceIcon(resource.type)}
-        <Badge variant="outline" className={`font-normal ${getResourceTypeColor(resource.type)}`}>
-          {resource.type.charAt(0).toUpperCase() + resource.type.slice(1)}
+        {getResourceIcon(resourceType)}
+        <Badge variant="outline" className={`font-normal ${getResourceTypeColor(resourceType)}`}>
+          {resourceType.charAt(0).toUpperCase() + resourceType.slice(1)}
         </Badge>
       </div>
 
       <CardHeader className="pb-2 pt-0">
-        <CardTitle className="line-clamp-1 text-lg">{resource.title}</CardTitle>
+        <CardTitle className="line-clamp-1 text-lg">{resourceTitle}</CardTitle>
       </CardHeader>
 
       <CardContent className="pb-4 flex-grow">
         <p className="text-muted-foreground text-sm line-clamp-2 mb-4">
-          {resource.description || "No description available for this resource."}
+          {resourceDescription}
         </p>
 
         <div className="grid grid-cols-1 gap-2">
           <div className="flex items-center text-sm text-muted-foreground">
             <Calendar className="h-4 w-4 mr-1" />
-            <span>Added on {formatDate(resource.createdAt)}</span>
+            <span>Added on {formatDate(resourceCreatedAt)}</span>
           </div>
-          {/* Removed uploadedBy section since it's not available in the Resource type */}
         </div>
       </CardContent>
 
@@ -102,7 +112,7 @@ const ResourceCard = ({
         <Button
           variant="default"
           className="w-full gap-2 group"
-          onClick={() => window.open(resource.url, '_blank')}
+          onClick={() => window.open(resourceUrl, '_blank')}
         >
           <Download className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
           Download Resource

@@ -39,6 +39,7 @@ export default function ResourcesPage() {
       fetchResources(selectedBatch);
     } else {
       setResources([]);
+      setIsLoading(false);
     }
   }, [selectedBatch]);
 
@@ -109,19 +110,18 @@ export default function ResourcesPage() {
   };
 
   const filteredResources = resources.filter(resource =>
-    resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    resource.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     resource.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Learning Resources</h1>
-          <p className="text-muted-foreground">
-            Access and manage educational materials for your courses
-          </p>
-        </div>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">Learning Resources</h1>
+      
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <p className="text-muted-foreground">
+          Access and manage educational materials for your courses
+        </p>
         <Button onClick={() => setIsUploadDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Upload Resource

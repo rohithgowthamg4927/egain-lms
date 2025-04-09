@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -28,7 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, MoreVertical, Plus, Search } from 'lucide-react';
 import { UploadResourceDialog } from '@/components/resources/UploadResourceDialog';
 import { Batch, Resource } from '@/lib/types';
-import { getBatches, getResourcesByBatch } from '@/lib/api';
+import { getBatches, getResourcesByBatch, deleteResource } from '@/lib/api';
 
 export default function ResourcesPage() {
   const { user } = useAuth();
@@ -95,11 +96,9 @@ export default function ResourcesPage() {
     if (!confirm('Are you sure you want to delete this resource?')) return;
 
     try {
-      const response = await fetch(`/api/resources/${resourceId}`, {
-        method: 'DELETE',
-      });
+      const response = await deleteResource(resourceId);
 
-      if (!response.ok) throw new Error('Failed to delete resource');
+      if (!response.success) throw new Error(response.error || 'Failed to delete resource');
 
       toast({
         title: 'Success',
@@ -178,7 +177,6 @@ export default function ResourcesPage() {
               <TableHead>Title</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Description</TableHead>
-              <TableHead>Uploaded By</TableHead>
               <TableHead>Upload Date</TableHead>
               <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
@@ -186,13 +184,13 @@ export default function ResourcesPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={5} className="text-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                 </TableCell>
               </TableRow>
             ) : filteredResources.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   No resources found
                 </TableCell>
               </TableRow>
@@ -201,7 +199,7 @@ export default function ResourcesPage() {
                 <TableRow key={resource.resourceId}>
                   <TableCell className="font-medium">
                     <a
-                      href={resource.fileUrl}
+                      href={resource.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:underline"
@@ -210,14 +208,13 @@ export default function ResourcesPage() {
                     </a>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={resource.resourceType === 'assignment' ? 'default' : 'secondary'}>
-                      {resource.resourceType}
+                    <Badge variant={resource.type === 'assignment' ? 'default' : 'secondary'}>
+                      {resource.type}
                     </Badge>
                   </TableCell>
                   <TableCell className="max-w-[300px] truncate">
                     {resource.description}
                   </TableCell>
-                  <TableCell>{resource.uploadedBy.name}</TableCell>
                   <TableCell>{formatDate(resource.createdAt)}</TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -228,7 +225,7 @@ export default function ResourcesPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => window.open(resource.fileUrl, '_blank')}
+                          onClick={() => window.open(resource.url, '_blank')}
                         >
                           Download
                         </DropdownMenuItem>

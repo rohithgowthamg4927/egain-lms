@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
@@ -78,8 +77,18 @@ const LoginForm = () => {
       <div className="space-y-6">
         <div className="text-center">
           <div className="flex justify-center items-center">
-            <div className="text-indigo-600 text-2xl font-bold mb-1">e</div>
-            <div className="text-indigo-600 text-2xl font-bold">gain</div>
+            <a
+              href="https://e-gain.co.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center"
+            >
+              <img
+                src="/egain-logo.jpeg"
+                alt="e-Gain Logo"
+                className="h-10 object-contain bg-white"
+              />
+            </a>
           </div>
           <h2 className="text-3xl font-bold mt-4 text-gray-800">Welcome Back! 👋</h2>
           <p className="text-gray-600 mt-2">

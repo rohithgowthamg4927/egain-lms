@@ -13,8 +13,6 @@ const ResourceMetrics = ({ resources }: ResourceMetricsProps) => {
       total: resources.length,
       document: 0,
       video: 0,
-      code: 0,
-      link: 0,
       assignment: 0,
     };
     
@@ -27,12 +25,6 @@ const ResourceMetrics = ({ resources }: ResourceMetricsProps) => {
             break;
           case 'video':
             counts.video++;
-            break;
-          case 'code':
-            counts.code++;
-            break;
-          case 'link':
-            counts.link++;
             break;
           case 'assignment':
             counts.assignment++;
@@ -71,18 +63,6 @@ const ResourceMetrics = ({ resources }: ResourceMetricsProps) => {
       value: resourceCounts.video,
       icon: <Video className="h-5 w-5 text-red-600" />,
       bgColor: 'bg-red-100',
-    },
-    {
-      title: 'Code Samples',
-      value: resourceCounts.code,
-      icon: <Code className="h-5 w-5 text-purple-600" />,
-      bgColor: 'bg-purple-100',
-    },
-    {
-      title: 'Links',
-      value: resourceCounts.link,
-      icon: <Link className="h-5 w-5 text-green-600" />,
-      bgColor: 'bg-green-100',
     },
   ];
   

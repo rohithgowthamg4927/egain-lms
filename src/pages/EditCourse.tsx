@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getCourseById, updateCourse } from '@/lib/api/courses';
@@ -11,23 +11,37 @@ import { Skeleton } from '@/components/ui/skeleton';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 const EditCourse = () => {
-  const { courseId } = useParams();
+  const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Parse courseId to number
+  const parsedCourseId = courseId ? parseInt(courseId, 10) : undefined;
+
+  // Log for debugging
+  console.log('EditCourse - courseId:', courseId, 'parsedCourseId:', parsedCourseId);
+
   const courseQuery = useQuery({
-    queryKey: ['course', courseId],
-    queryFn: () => getCourseById(Number(courseId)),
+    queryKey: ['course', parsedCourseId],
+    queryFn: () => {
+      if (!parsedCourseId) {
+        throw new Error('Course ID is required');
+      }
+      console.log('Fetching course for edit with ID:', parsedCourseId);
+      return getCourseById(parsedCourseId);
+    },
+    enabled: !!parsedCourseId
   });
 
   const handleSubmit = async (formData: any) => {
-    if (!courseId) return;
+    if (!parsedCourseId) return;
     
+    console.log('Updating course with data:', formData);
     setIsSubmitting(true);
     try {
-      const response = await updateCourse(Number(courseId), formData);
+      const response = await updateCourse(parsedCourseId, formData);
       
       if (response.success) {
         toast({
@@ -37,14 +51,14 @@ const EditCourse = () => {
         
         // Invalidate and refetch relevant queries
         queryClient.invalidateQueries({
-          queryKey: ['course', courseId]
+          queryKey: ['course', parsedCourseId]
         });
         
         queryClient.invalidateQueries({
           queryKey: ['courses']
         });
         
-        navigate(`/courses/${courseId}`);
+        navigate(`/courses/${parsedCourseId}`);
       } else {
         toast({
           title: 'Error',
@@ -67,6 +81,13 @@ const EditCourse = () => {
   const isLoading = courseQuery.isLoading;
   const isError = courseQuery.isError;
   const course = courseQuery.data?.data;
+
+  console.log('EditCourse - courseQuery result:', {
+    isLoading,
+    isError,
+    course,
+    error: courseQuery.error
+  });
 
   if (isError) {
     return (

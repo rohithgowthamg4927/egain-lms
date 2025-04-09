@@ -4,7 +4,7 @@ import { Course, Level } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Users, Star, Bookmark, Edit, Trash } from 'lucide-react';
+import { Eye, Users, Bookmark, Edit, Trash } from 'lucide-react';
 
 interface CourseCardProps {
   course: Course;
@@ -21,6 +21,9 @@ const CourseCard = ({
 }: CourseCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
+  // For debugging purposes, log the course object
+  console.log('CourseCard - rendering course:', course);
+
   const levelColor = {
     'beginner': 'bg-green-100 hover:bg-green-200 text-green-800',
     'intermediate': 'bg-blue-100 hover:bg-blue-200 text-blue-800',
@@ -28,6 +31,7 @@ const CourseCard = ({
   };
 
   const handleViewClick = () => {
+    console.log('View button clicked for course:', course.courseId);
     if (onView) {
       onView(course);
     }
@@ -35,6 +39,7 @@ const CourseCard = ({
 
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('Edit button clicked for course:', course.courseId);
     if (onEdit) {
       onEdit(course);
     }
@@ -42,6 +47,7 @@ const CourseCard = ({
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('Delete button clicked for course:', course.courseId);
     if (onDelete) {
       onDelete(course);
     }

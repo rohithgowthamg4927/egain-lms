@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -20,10 +20,22 @@ const CourseDetail = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
 
+  // Ensure courseId is parsed as a number for the API call
+  const parsedCourseId = courseId ? parseInt(courseId, 10) : undefined;
+
+  // Log the courseId for debugging
+  console.log('CourseDetail - courseId:', courseId, 'parsedCourseId:', parsedCourseId);
+
   const courseQuery = useQuery({
-    queryKey: ['course', courseId],
-    queryFn: () => getCourseById(Number(courseId)),
-    enabled: !!courseId,
+    queryKey: ['course', parsedCourseId],
+    queryFn: () => {
+      if (!parsedCourseId) {
+        throw new Error('Course ID is required');
+      }
+      console.log('Fetching course with ID:', parsedCourseId);
+      return getCourseById(parsedCourseId);
+    },
+    enabled: !!parsedCourseId,
     refetchOnWindowFocus: true
   });
 
@@ -32,11 +44,11 @@ const CourseDetail = () => {
   };
 
   const handleDeleteCourse = async () => {
-    if (!courseId) return;
+    if (!parsedCourseId) return;
     
     setIsDeleting(true);
     try {
-      const response = await deleteCourse(Number(courseId));
+      const response = await deleteCourse(parsedCourseId);
       
       if (response.success) {
         toast({
@@ -67,6 +79,13 @@ const CourseDetail = () => {
   const isLoading = courseQuery.isLoading;
   const isError = courseQuery.isError;
   const course = courseQuery.data?.data;
+  
+  console.log('CourseDetail - courseQuery result:', {
+    isLoading,
+    isError,
+    course,
+    error: courseQuery.error
+  });
 
   const getLevelLabel = (level: Level): string => {
     const labels: Record<Level, string> = {

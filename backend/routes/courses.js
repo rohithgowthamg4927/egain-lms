@@ -1,3 +1,4 @@
+
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
@@ -31,6 +32,15 @@ router.get('/:id', async (req, res) => {
   try {
     const courseId = parseInt(req.params.id);
     
+    if (isNaN(courseId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid course ID format'
+      });
+    }
+    
+    console.log(`Fetching course details for ID: ${courseId}`);
+    
     const course = await prisma.Course.findUnique({
       where: { courseId },
       include: {
@@ -45,19 +55,28 @@ router.get('/:id', async (req, res) => {
             instructor: true,
             schedules: true
           }
-        }
+        },
+        _count: {
+          select: {
+            studentCourses: true,
+            batches: true,
+          },
+        },
       }
     });
     
     if (!course) {
+      console.log(`Course with ID ${courseId} not found`);
       return res.status(404).json({
         success: false,
         error: 'Course not found'
       });
     }
     
+    console.log(`Course found:`, { courseId: course.courseId, courseName: course.courseName });
     res.json({ success: true, data: course });
   } catch (error) {
+    console.error(`Error in GET /courses/:id:`, error);
     handleApiError(res, error);
   }
 });
@@ -107,6 +126,15 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const courseId = parseInt(req.params.id);
+    if (isNaN(courseId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid course ID format'
+      });
+    }
+    
+    console.log(`Updating course ${courseId} with data:`, req.body);
+    
     const { 
       courseName, 
       description, 
@@ -115,6 +143,18 @@ router.put('/:id', async (req, res) => {
       isPublished,
       thumbnailUrl
     } = req.body;
+    
+    // Check if course exists
+    const existingCourse = await prisma.Course.findUnique({
+      where: { courseId }
+    });
+    
+    if (!existingCourse) {
+      return res.status(404).json({
+        success: false,
+        error: 'Course not found'
+      });
+    }
     
     const course = await prisma.Course.update({
       where: { courseId },
@@ -130,6 +170,7 @@ router.put('/:id', async (req, res) => {
     
     res.json({ success: true, data: course });
   } catch (error) {
+    console.error(`Error updating course:`, error);
     handleApiError(res, error);
   }
 });
@@ -138,6 +179,26 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const courseId = parseInt(req.params.id);
+    if (isNaN(courseId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid course ID format'
+      });
+    }
+    
+    console.log(`Attempting to delete course ${courseId}`);
+    
+    // Check if course exists
+    const existingCourse = await prisma.Course.findUnique({
+      where: { courseId }
+    });
+    
+    if (!existingCourse) {
+      return res.status(404).json({
+        success: false,
+        error: 'Course not found'
+      });
+    }
     
     // Check if there are batches for this course
     const batchesCount = await prisma.Batch.count({
@@ -151,34 +212,47 @@ router.delete('/:id', async (req, res) => {
       });
     }
     
-    // Delete student enrollments
-    await prisma.StudentCourse.deleteMany({
+    // Delete student enrollments if they exist
+    const studentCoursesCount = await prisma.StudentCourse.count({
       where: { courseId }
     });
     
-    // Delete course reviews
-    await prisma.CourseReview.deleteMany({
+    if (studentCoursesCount > 0) {
+      console.log(`Deleting ${studentCoursesCount} student enrollments for course ${courseId}`);
+      await prisma.StudentCourse.deleteMany({
+        where: { courseId }
+      });
+    }
+    
+    // Delete course reviews if they exist
+    const reviewsCount = await prisma.CourseReview.count({
       where: { courseId }
     });
     
-    // Check if there are resources for this course before trying to delete them
-    const resourcesCount = await prisma.Resource.count({
-      where: { 
+    if (reviewsCount > 0) {
+      console.log(`Deleting ${reviewsCount} reviews for course ${courseId}`);
+      await prisma.CourseReview.deleteMany({
+        where: { courseId }
+      });
+    }
+    
+    // Check for resources related to this course
+    const resources = await prisma.Resource.findMany({
+      where: {
         batch: {
           courseId
         }
       }
     });
     
-    if (resourcesCount > 0) {
-      // Delete resources associated with the course's batches
-      await prisma.Resource.deleteMany({
-        where: {
-          batch: {
-            courseId
-          }
-        }
-      });
+    if (resources.length > 0) {
+      console.log(`Deleting ${resources.length} resources for course ${courseId}`);
+      // Delete resources one by one to avoid relation errors
+      for (const resource of resources) {
+        await prisma.Resource.delete({
+          where: { resourceId: resource.resourceId }
+        });
+      }
     }
     
     // Finally delete the course
@@ -186,8 +260,10 @@ router.delete('/:id', async (req, res) => {
       where: { courseId }
     });
     
+    console.log(`Course ${courseId} deleted successfully`);
     res.json({ success: true });
   } catch (error) {
+    console.error(`Error deleting course:`, error);
     handleApiError(res, error);
   }
 });

@@ -4,7 +4,7 @@ import { Resource } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, MoreVertical, Trash, Calendar, User } from 'lucide-react';
+import { Download, MoreVertical, Trash, Calendar } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -94,12 +94,7 @@ const ResourceCard = ({
             <Calendar className="h-4 w-4 mr-1" />
             <span>Added on {formatDate(resource.createdAt)}</span>
           </div>
-          {resource.uploadedBy && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <User className="h-4 w-4 mr-1" />
-              <span>By {resource.uploadedBy.fullName}</span>
-            </div>
-          )}
+          {/* Removed uploadedBy section since it's not available in the Resource type */}
         </div>
       </CardContent>
 

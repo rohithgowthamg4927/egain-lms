@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -7,9 +6,8 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbPage,
-  BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { Home } from 'lucide-react';
+import { Home, ChevronRight } from 'lucide-react';
 
 interface BreadcrumbItem {
   label: string;
@@ -22,30 +20,39 @@ interface BreadcrumbNavProps {
 
 const BreadcrumbNav = ({ items }: BreadcrumbNavProps) => {
   return (
-    <Breadcrumb className="mb-4">
-      <BreadcrumbList>
-        <BreadcrumbItem>
+    <Breadcrumb className="mb-6">
+      <BreadcrumbList className="flex items-center text-sm">
+        {/* Home Item */}
+        <BreadcrumbItem className="inline-flex items-center">
           <BreadcrumbLink asChild>
-            <Link to="/dashboard">
-              <Home className="h-4 w-4 mr-1" />
+            <Link to="/dashboard" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+              <Home className="h-4 w-4" />
               Home
             </Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
-        {items.length > 0 && <BreadcrumbSeparator />}
+
+        {/* Loop Through Breadcrumb Items */}
         {items.map((item, index) => (
-          <div key={item.link}>
-            <BreadcrumbItem>
+          <React.Fragment key={item.link}>
+            <ChevronRight className="mx-1 h-3.5 w-3.5 text-muted-foreground" />
+            <BreadcrumbItem className="inline-flex items-center">
               {index === items.length - 1 ? (
-                <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                <BreadcrumbPage className="font-medium text-foreground">
+                  {item.label}
+                </BreadcrumbPage>
               ) : (
                 <BreadcrumbLink asChild>
-                  <Link to={item.link}>{item.label}</Link>
+                  <Link
+                    to={item.link}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {item.label}
+                  </Link>
                 </BreadcrumbLink>
               )}
             </BreadcrumbItem>
-            {index < items.length - 1 && <BreadcrumbSeparator />}
-          </div>
+          </React.Fragment>
         ))}
       </BreadcrumbList>
     </Breadcrumb>

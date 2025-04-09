@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
@@ -46,8 +45,7 @@ router.get('/:id', async (req, res) => {
             instructor: true,
             schedules: true
           }
-        },
-        resources: true
+        }
       }
     });
     
@@ -159,14 +157,29 @@ router.delete('/:id', async (req, res) => {
     });
     
     // Delete course reviews
-    await prisma.courseReview.deleteMany({
+    await prisma.CourseReview.deleteMany({
       where: { courseId }
     });
     
-    // Delete course resources
-    await prisma.Resource.deleteMany({
-      where: { courseId }
+    // Check if there are resources for this course before trying to delete them
+    const resourcesCount = await prisma.Resource.count({
+      where: { 
+        batch: {
+          courseId
+        }
+      }
     });
+    
+    if (resourcesCount > 0) {
+      // Delete resources associated with the course's batches
+      await prisma.Resource.deleteMany({
+        where: {
+          batch: {
+            courseId
+          }
+        }
+      });
+    }
     
     // Finally delete the course
     await prisma.Course.delete({

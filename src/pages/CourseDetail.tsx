@@ -1,7 +1,7 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,11 +18,13 @@ const CourseDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
+  const queryClient = useQueryClient();
 
   const courseQuery = useQuery({
     queryKey: ['course', courseId],
     queryFn: () => getCourseById(Number(courseId)),
     enabled: !!courseId,
+    refetchOnWindowFocus: true
   });
 
   const handleEditCourse = () => {
@@ -41,6 +43,7 @@ const CourseDetail = () => {
           title: 'Success',
           description: 'Course deleted successfully',
         });
+        queryClient.invalidateQueries({ queryKey: ['courses'] });
         navigate('/courses');
       } else {
         toast({
@@ -188,7 +191,9 @@ const CourseDetail = () => {
                   <Users className="h-5 w-5 text-blue-500" />
                   <div>
                     <p className="text-sm text-gray-500">Students</p>
-                    <p className="font-medium">{course.students || 0}</p>
+                    <p className="font-medium">
+                      {course._count?.studentCourses || 0}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -196,9 +201,7 @@ const CourseDetail = () => {
                   <div>
                     <p className="text-sm text-gray-500">Batches</p>
                     <p className="font-medium">
-                      {Array.isArray(course.batches) 
-                        ? course.batches.length 
-                        : (typeof course.batches === 'number' ? course.batches : 0)}
+                      {course._count?.batches || 0}
                     </p>
                   </div>
                 </div>

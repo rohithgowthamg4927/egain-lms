@@ -1,3 +1,4 @@
+
 import { Course } from '@/lib/types';
 import { apiFetch } from './core';
 

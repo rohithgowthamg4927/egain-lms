@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -7,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getCourses, getCategories, createCategory, deleteCourse } from '@/lib/api';
+import { getDashboardCounts } from '@/lib/api/dashboard';
 import { Course, Category, Level } from '@/lib/types';
 import { Search, BookOpen, Users, Layers, Plus } from 'lucide-react';
 import CourseGrid from '@/components/courses/CourseGrid';
@@ -28,6 +30,13 @@ const Courses = () => {
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [studentsCount, setStudentsCount] = useState(0);
+
+  // Fetch dashboard counts for student metrics
+  const countsQuery = useQuery({
+    queryKey: ['dashboardCounts'],
+    queryFn: getDashboardCounts
+  });
 
   // Use React Query for data fetching
   const coursesQuery = useQuery({
@@ -35,7 +44,6 @@ const Courses = () => {
     queryFn: getCourses,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-    refetchInterval: 3000
   });
 
   const categoriesQuery = useQuery({
@@ -43,8 +51,14 @@ const Courses = () => {
     queryFn: getCategories,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-    refetchInterval: 3000
   });
+
+  // Set student count from dashboard counts
+  useEffect(() => {
+    if (countsQuery.data?.success && countsQuery.data?.data) {
+      setStudentsCount(countsQuery.data.data.studentsCount);
+    }
+  }, [countsQuery.data]);
 
   const courses = coursesQuery.data?.data || [];
   const categories = categoriesQuery.data?.data || [];
@@ -72,10 +86,11 @@ const Courses = () => {
     }
   }, [coursesQuery.isError, categoriesQuery.isError, toast]);
 
-  // Add a refetch function
+  // Refetch data function
   const refetchData = () => {
     coursesQuery.refetch();
     categoriesQuery.refetch();
+    countsQuery.refetch();
   };
 
   // Automatically refetch when the component mounts
@@ -249,9 +264,7 @@ const Courses = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <span className="text-3xl font-bold">
-                {courses.reduce((total, course) => total + (course.students || 0), 0)}
-              </span>
+              <span className="text-3xl font-bold">{studentsCount}</span>
               <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
                 <Users className="h-5 w-5 text-blue-600" />
               </div>
@@ -352,7 +365,6 @@ const Courses = () => {
         onDelete={handleDeleteCourse}
       />
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

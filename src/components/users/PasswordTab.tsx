@@ -1,9 +1,8 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { User } from '@/lib/types';
+import { User, Role } from '@/lib/types';
 import { Copy, Check, Download } from 'lucide-react';
 import { downloadCredentialsCSV } from '@/lib/utils';
 import PasswordChangeForm from './PasswordChangeForm';
@@ -17,6 +16,7 @@ const PasswordTab = ({ user, onUpdate }: PasswordTabProps) => {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [showChangeForm, setShowChangeForm] = useState(false);
+  const isAdmin = user.role === Role.admin;
 
   const handleCopyPassword = () => {
     navigator.clipboard.writeText(user.password || '');
@@ -73,34 +73,40 @@ const PasswordTab = ({ user, onUpdate }: PasswordTabProps) => {
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-            To regenerate the password, click the Edit button in the top-right corner of the page.
+            {isAdmin 
+              ? "You can change your password using the button below."
+              : "To regenerate the password, click the Edit button in the top-right corner of the page."}
             You can also download the credentials as a CSV file.
           </p>
         </div>
 
-        {showChangeForm ? (
-          <div className="mt-6">
-            <h3 className="text-sm font-medium mb-4">Change Password</h3>
-            <PasswordChangeForm 
-              userId={user.userId} 
-              onSuccess={handlePasswordChangeSuccess} 
-            />
-            <Button 
-              variant="outline" 
-              className="w-full mt-4"
-              onClick={() => setShowChangeForm(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-        ) : (
-          <Button 
-            variant="outline" 
-            className="w-full mt-4"
-            onClick={() => setShowChangeForm(true)}
-          >
-            Change Password
-          </Button>
+        {isAdmin && (
+          <>
+            {showChangeForm ? (
+              <div className="mt-6">
+                <h3 className="text-sm font-medium mb-4">Change Password</h3>
+                <PasswordChangeForm 
+                  userId={user.userId} 
+                  onSuccess={handlePasswordChangeSuccess} 
+                />
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-4"
+                  onClick={() => setShowChangeForm(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                className="w-full mt-4"
+                onClick={() => setShowChangeForm(true)}
+              >
+                Change Password
+              </Button>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

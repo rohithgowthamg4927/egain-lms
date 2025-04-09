@@ -11,23 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, MoreVertical, Plus, Search } from 'lucide-react';
+import { Loader2, Plus, Search, LayoutGrid, List } from 'lucide-react';
 import { UploadResourceDialog } from '@/components/resources/UploadResourceDialog';
+import ResourceMetrics from '@/components/resources/ResourceMetrics';
+import ResourceGrid from '@/components/resources/ResourceGrid';
+import ResourceList from '@/components/resources/ResourceList';
 import { Batch, Resource } from '@/lib/types';
 import { getBatches, getResourcesByBatch, deleteResource } from '@/lib/api';
 
@@ -40,6 +28,7 @@ export default function ResourcesPage() {
   const [selectedBatch, setSelectedBatch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
     fetchBatches();
@@ -92,11 +81,11 @@ export default function ResourcesPage() {
     }
   };
 
-  const handleDelete = async (resourceId: number) => {
+  const handleDelete = async (resource: Resource) => {
     if (!confirm('Are you sure you want to delete this resource?')) return;
 
     try {
-      const response = await deleteResource(resourceId);
+      const response = await deleteResource(resource.resourceId);
 
       if (!response.success) throw new Error(response.error || 'Failed to delete resource');
 
@@ -124,128 +113,119 @@ export default function ResourcesPage() {
     resource.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Resources</h1>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Learning Resources</h1>
+          <p className="text-muted-foreground">
+            Access and manage educational materials for your courses
+          </p>
+        </div>
         <Button onClick={() => setIsUploadDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Upload Resource
         </Button>
       </div>
 
-      <div className="flex gap-4">
-        <Select
-          value={selectedBatch}
-          onValueChange={setSelectedBatch}
-        >
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Select a batch" />
-          </SelectTrigger>
-          <SelectContent>
-            {batches.map((batch) => (
-              <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
-                {batch.batchName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {selectedBatch && resources.length > 0 && (
+        <ResourceMetrics resources={filteredResources} />
+      )}
 
-        <div className="relative flex-1">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search resources..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8"
-          />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="col-span-1 md:col-span-2">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Select
+              value={selectedBatch}
+              onValueChange={setSelectedBatch}
+            >
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Select a batch" />
+              </SelectTrigger>
+              <SelectContent>
+                {batches.map((batch) => (
+                  <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
+                    {batch.batchName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search resources..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="col-span-1 flex justify-end">
+          <div className="border rounded-md flex">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="icon"
+              onClick={() => setViewMode('grid')}
+              className="rounded-r-none"
+              title="Grid view"
+            >
+              <LayoutGrid className="h-4 w-4" />
+              <span className="sr-only">Grid view</span>
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="icon"
+              onClick={() => setViewMode('list')}
+              className="rounded-l-none"
+              title="List view"
+            >
+              <List className="h-4 w-4" />
+              <span className="sr-only">List view</span>
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Upload Date</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                </TableCell>
-              </TableRow>
-            ) : filteredResources.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  No resources found
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredResources.map((resource) => (
-                <TableRow key={resource.resourceId}>
-                  <TableCell className="font-medium">
-                    <a
-                      href={resource.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline"
-                    >
-                      {resource.title}
-                    </a>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={resource.type === 'assignment' ? 'default' : 'secondary'}>
-                      {resource.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="max-w-[300px] truncate">
-                    {resource.description}
-                  </TableCell>
-                  <TableCell>{formatDate(resource.createdAt)}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => window.open(resource.url, '_blank')}
-                        >
-                          Download
-                        </DropdownMenuItem>
-                        {user?.role === 'instructor' && (
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => handleDelete(resource.resourceId)}
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : selectedBatch === '' ? (
+        <div className="text-center py-12 bg-muted/30 rounded-lg border border-dashed">
+          <h3 className="text-lg font-medium">No batch selected</h3>
+          <p className="text-muted-foreground mt-1">Please select a batch to view resources</p>
+        </div>
+      ) : filteredResources.length === 0 ? (
+        <div className="text-center py-12 bg-muted/30 rounded-lg border border-dashed">
+          <h3 className="text-lg font-medium">No resources found</h3>
+          <p className="text-muted-foreground mt-1">
+            {searchQuery ? 'Try a different search term' : 'This batch has no resources yet'}
+          </p>
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={() => setIsUploadDialogOpen(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add your first resource
+          </Button>
+        </div>
+      ) : viewMode === 'grid' ? (
+        <ResourceGrid 
+          resources={filteredResources} 
+          onDelete={handleDelete} 
+          userRole={user?.role} 
+        />
+      ) : (
+        <ResourceList 
+          resources={filteredResources} 
+          onDelete={handleDelete} 
+          userRole={user?.role}
+        />
+      )}
 
       <UploadResourceDialog
         isOpen={isUploadDialogOpen}
@@ -259,4 +239,4 @@ export default function ResourcesPage() {
       />
     </div>
   );
-} 
+}

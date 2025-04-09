@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
 import { useToast } from '@/hooks/use-toast';
 import { getUsers, deleteUser } from '@/lib/api';
-import { getStudentCourses } from '@/lib/api/student-courses';
+import { getCourses } from '@/lib/api/courses';
+import { getBatches } from '@/lib/api/batches';
 import { User, Role, StudentCourse } from '@/lib/types';
 import { Plus, Search, GraduationCap, BookOpen, Calendar, Eye, Edit, Trash, FileText } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -65,10 +66,21 @@ const Students = () => {
   };
 
   const fetchStudentCoursesData = async () => {
-    // This would be implemented with real data in a production app
-    // For now we're just setting some placeholder stats
-    setCoursesCount(5);
-    setBatchesCount(3);
+    try {
+      const coursesResponse = await getCourses();
+      if (coursesResponse.success && coursesResponse.data) {
+        const coursesData = Array.isArray(coursesResponse.data) ? coursesResponse.data : [coursesResponse.data];
+        setCoursesCount(coursesData.length);
+      }
+
+      const batchesResponse = await getBatches();
+      if (batchesResponse.success && batchesResponse.data) {
+        const batchesData = Array.isArray(batchesResponse.data) ? batchesResponse.data : [batchesResponse.data];
+        setBatchesCount(batchesData.length);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
   };
 
   useEffect(() => {

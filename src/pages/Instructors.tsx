@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -8,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import { getUsers, deleteUser } from '@/lib/api';
 import { getCourses } from '@/lib/api/courses';
+import { getBatches } from '@/lib/api/batches';
 import { Role, User } from '@/lib/types';
-import { Plus, Search, Award, BookOpen, Users, Eye, Edit, Trash } from 'lucide-react';
+import { Plus, Search, Award, BookOpen, Users, Eye, Edit, Trash, Calendar } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { formatDate } from '@/lib/utils/date-helpers';
@@ -35,6 +35,7 @@ const Instructors = () => {
   const [instructorToDelete, setInstructorToDelete] = useState<User | null>(null);
   const [coursesCount, setCoursesCount] = useState(0);
   const [studentsCount, setStudentsCount] = useState(0);
+  const [batchesCount, setBatchesCount] = useState(0);
   const { toast } = useToast();
 
   const fetchInstructors = async () => {
@@ -70,14 +71,19 @@ const Instructors = () => {
 
   const fetchCoursesCount = async () => {
     try {
-      const response = await getCourses();
-      if (response.success && response.data) {
-        // Ensure we're setting the length of an array
-        const coursesData = Array.isArray(response.data) ? response.data : [response.data];
+      const coursesResponse = await getCourses();
+      if (coursesResponse.success && coursesResponse.data) {
+        const coursesData = Array.isArray(coursesResponse.data) ? coursesResponse.data : [coursesResponse.data];
         setCoursesCount(coursesData.length);
       }
+
+      const batchesResponse = await getBatches();
+      if (batchesResponse.success && batchesResponse.data) {
+        const batchesData = Array.isArray(batchesResponse.data) ? batchesResponse.data : [batchesResponse.data];
+        setBatchesCount(batchesData.length);
+      }
     } catch (error) {
-      console.error('Error fetching courses count:', error);
+      console.error('Error fetching data:', error);
     }
   };
 
@@ -272,6 +278,20 @@ const Instructors = () => {
               <span className="text-3xl font-bold">{studentsCount}</span>
               <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
                 <Users className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md border-blue-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Active Batches</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold">{batchesCount}</span>
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-blue-600" />
               </div>
             </div>
           </CardContent>

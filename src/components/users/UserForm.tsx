@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -15,8 +16,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Role } from '@/lib/types';
-import { Upload, Loader2, User, Copy, Check, Download } from 'lucide-react';
+import { Role, User } from '@/lib/types';
+import { Upload, Loader2, User as UserIcon, Copy, Check, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateRandomPassword, downloadCredentialsCSV } from '@/lib/utils';
 
@@ -30,20 +31,26 @@ const formSchema = z.object({
   role: z.enum(['admin', 'instructor', 'student']),
   phoneNumber: z.string().optional(),
   address: z.string().optional(),
+  shouldChangePassword: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 interface UserFormProps {
   onSubmit: (values: FormValues & { password: string; photoUrl?: string }) => void;
-  defaultValues?: Partial<FormValues>;
+  defaultValues?: Partial<FormValues & { password?: string }>;
   isSubmitting?: boolean;
+  isEditMode?: boolean;
+  existingUser?: User;
 }
 
-export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: UserFormProps) {
+export function UserForm({ onSubmit, defaultValues, isSubmitting = false, isEditMode = false, existingUser }: UserFormProps) {
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
-  const [generatedPassword, setGeneratedPassword] = useState(generateRandomPassword());
+  const [generatedPassword, setGeneratedPassword] = useState(() => 
+    defaultValues?.password || generateRandomPassword()
+  );
+  const [shouldChangePassword, setShouldChangePassword] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
@@ -55,6 +62,7 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
       role: Role.student,
       phoneNumber: '',
       address: '',
+      shouldChangePassword: false,
       ...defaultValues
     }
   });
@@ -93,14 +101,21 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
   };
 
   const handleSubmit = async (values: FormValues) => {
-    // For now, we're not uploading profile pictures to S3
-    // In a real app, we'd implement this feature properly
+    // Determine the password to use
+    const passwordToSubmit = isEditMode 
+      ? (values.shouldChangePassword ? generatedPassword : defaultValues?.password || '')
+      : generatedPassword;
     
     onSubmit({
       ...values,
-      password: generatedPassword,
+      password: passwordToSubmit,
       photoUrl: profilePictureUrl || undefined
     });
+  };
+
+  const handleShouldChangePasswordChange = (value: boolean) => {
+    setShouldChangePassword(value);
+    form.setValue('shouldChangePassword', value);
   };
 
   return (
@@ -128,7 +143,7 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
               </>
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                <User className="h-12 w-12 text-gray-400" />
+                <UserIcon className="h-12 w-12 text-gray-400" />
               </div>
             )}
           </div>
@@ -191,48 +206,154 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
             )}
           />
           
-          <div>
-            <FormLabel>Password</FormLabel>
-            <div className="mt-1">
-              <div className="flex">
-                <Input
-                  type="text"
-                  value={generatedPassword}
-                  readOnly
-                  className="rounded-r-none border-r-0"
-                />
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={copyPassword}
-                  className="rounded-none border-x-0"
-                >
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={regeneratePassword}
-                  className="rounded-l-none border-r rounded-r-none px-2 text-xs"
-                >
-                  Regenerate
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => downloadCredentialsCSV(form.getValues('email'), generatedPassword, form.getValues('fullName'))}
-                  className="rounded-l-none px-2"
-                  title="Download Credentials"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
+          {isEditMode ? (
+            <div>
+              <FormLabel>Password</FormLabel>
+              <div className="mt-1">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center mb-2">
+                    <input
+                      type="checkbox"
+                      id="should-change-password"
+                      checked={shouldChangePassword}
+                      onChange={(e) => handleShouldChangePasswordChange(e.target.checked)}
+                      className="mr-2 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="should-change-password" className="text-sm font-medium">
+                      Change password
+                    </label>
+                  </div>
+                  
+                  {shouldChangePassword ? (
+                    <div className="flex">
+                      <Input
+                        type="text"
+                        value={generatedPassword}
+                        readOnly
+                        className="rounded-r-none border-r-0"
+                      />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="icon" 
+                        onClick={copyPassword}
+                        className="rounded-none border-x-0"
+                      >
+                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={regeneratePassword}
+                        className="rounded-l-none border-r rounded-r-none px-2 text-xs"
+                      >
+                        Regenerate
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => downloadCredentialsCSV(form.getValues('email'), generatedPassword, form.getValues('fullName'))}
+                        className="rounded-l-none px-2"
+                        title="Download Credentials"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex">
+                      <Input
+                        type="text"
+                        value={defaultValues?.password || ''}
+                        readOnly
+                        className="rounded-r-none border-r-0"
+                      />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="icon" 
+                        onClick={() => {
+                          if (defaultValues?.password) {
+                            navigator.clipboard.writeText(defaultValues.password);
+                            setCopied(true);
+                            toast({
+                              title: 'Password copied',
+                              description: 'Password has been copied to clipboard'
+                            });
+                            setTimeout(() => setCopied(false), 2000);
+                          }
+                        }}
+                        className="rounded-none border-x-0"
+                      >
+                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          if (defaultValues?.password) {
+                            downloadCredentialsCSV(form.getValues('email'), defaultValues.password, form.getValues('fullName'));
+                          }
+                        }}
+                        className="rounded-l-none px-2"
+                        title="Download Credentials"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                
+                <FormDescription className="text-xs mt-1">
+                  {shouldChangePassword 
+                    ? "A new random password will be generated for the user. They will be required to change it on first login."
+                    : "Keep the existing password. Check the box above to generate a new password."}
+                </FormDescription>
               </div>
-              <FormDescription className="text-xs mt-1">
-                A random password is generated for the user. They will be required to change it on first login. You can download the credentials as a CSV file.
-              </FormDescription>
             </div>
-          </div>
+          ) : (
+            <div>
+              <FormLabel>Password</FormLabel>
+              <div className="mt-1">
+                <div className="flex">
+                  <Input
+                    type="text"
+                    value={generatedPassword}
+                    readOnly
+                    className="rounded-r-none border-r-0"
+                  />
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={copyPassword}
+                    className="rounded-none border-x-0"
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={regeneratePassword}
+                    className="rounded-l-none border-r rounded-r-none px-2 text-xs"
+                  >
+                    Regenerate
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => downloadCredentialsCSV(form.getValues('email'), generatedPassword, form.getValues('fullName'))}
+                    className="rounded-l-none px-2"
+                    title="Download Credentials"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </div>
+                <FormDescription className="text-xs mt-1">
+                  A random password is generated for the user. They will be required to change it on first login. You can download the credentials as a CSV file.
+                </FormDescription>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Add the address field here */}
@@ -299,7 +420,9 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false }: User
           {(isSubmitting) && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
-          {isSubmitting ? 'Saving...' : 'Add User'}
+          {isEditMode 
+            ? isSubmitting ? 'Saving...' : 'Update User' 
+            : isSubmitting ? 'Saving...' : 'Add User'}
         </Button>
       </form>
     </Form>

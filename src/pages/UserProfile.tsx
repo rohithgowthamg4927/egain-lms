@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -69,11 +70,11 @@ const UserProfile = () => {
   const userTypeLabel = isStudent ? 'Student' : isInstructor ? 'Instructor' : 'User';
 
   const handlePasswordUpdate = () => {
-    userQuery.refetch();
+    queryClient.invalidateQueries({ queryKey: ['user', userId] });
   };
 
   const handleEditSubmit = async (formData: any) => {
-    if (!user || userId) return;
+    if (!user || !userId) return;
     setIsSubmitting(true);
 
     try {
@@ -162,7 +163,10 @@ const UserProfile = () => {
                       phoneNumber: user.phoneNumber || '',
                       address: user.address || '',
                       role: user.role,
+                      password: user.password || '',
                     }}
+                    isEditMode={true}
+                    existingUser={user}
                   />
                 )}
               </DialogContent>
@@ -287,7 +291,7 @@ const UserProfile = () => {
                   </TabsContent>
 
                   <TabsContent value="password">
-                    <PasswordTab user={user} />
+                    <PasswordTab user={user} onUpdate={handlePasswordUpdate} />
                   </TabsContent>
                 </Tabs>
               </div>

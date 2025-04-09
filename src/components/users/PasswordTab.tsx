@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,16 +20,18 @@ const PasswordTab = ({ user, onUpdate }: PasswordTabProps) => {
   const isAdmin = user.role === Role.admin;
 
   const handleCopyPassword = () => {
-    navigator.clipboard.writeText(user.password || '');
-    setCopied(true);
-    
-    toast({
-      title: 'Success',
-      description: 'Password copied to clipboard'
-    });
-    
-    // Reset copy state after 2 seconds
-    setTimeout(() => setCopied(false), 2000);
+    if (user.password) {
+      navigator.clipboard.writeText(user.password);
+      setCopied(true);
+      
+      toast({
+        title: 'Success',
+        description: 'Password copied to clipboard'
+      });
+      
+      // Reset copy state after 2 seconds
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handlePasswordChangeSuccess = () => {

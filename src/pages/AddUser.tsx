@@ -22,6 +22,7 @@ interface FormData {
   phoneNumber?: string;
   address?: string;
   photoUrl?: string;
+  shouldChangePassword?: boolean;
 }
 
 const AddUser = () => {

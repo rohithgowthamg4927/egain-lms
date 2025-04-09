@@ -8,7 +8,6 @@ const prisma = new PrismaClient();
 // Get dashboard metrics
 router.get('/', async (req, res) => {
   try {
-    console.log("Fetching dashboard metrics");
     
     const studentsCount = await prisma.User.count({
       where: { role: Role.student }
@@ -163,8 +162,6 @@ router.get('/', async (req, res) => {
       upcomingSchedules: formattedSchedules,
       categoryDistribution
     };
-    
-    console.log("Dashboard metrics prepared successfully");
     
     res.json({ success: true, data: metrics });
   } catch (error) {

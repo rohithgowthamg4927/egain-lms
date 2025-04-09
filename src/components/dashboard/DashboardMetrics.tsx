@@ -270,7 +270,7 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
               <Bell className="h-5 w-5" />
               <span>Upcoming Schedules</span>
             </CardTitle>
-            <CardDescription>Next classes and events</CardDescription>
+            <CardDescription>Next classes with Dates</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -13,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Schedule, Batch } from '@/lib/types';
 import ScheduleForm from '@/components/schedules/ScheduleForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 const Schedules = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -250,87 +250,92 @@ const Schedules = () => {
   const batches = batchesData?.data || [];
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Schedules</h1>
-        <div className="flex gap-2">
-          <Button 
-            onClick={handleRefresh} 
-            variant="outline"
-            disabled={isRefreshing}
-            className="gap-2 transition-all hover:shadow-md"
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
-          <Button 
-            onClick={() => setShowAddDialog(true)}
-            className="gap-2 transition-all hover:shadow-md"
-          >
-            <Plus className="h-4 w-4" />
-            Add Schedule
-          </Button>
+    <div className="space-y-6">
+      <BreadcrumbNav items={[
+        { label: 'Schedules', link: '/schedules' }
+      ]} />
+      <div className="container mx-auto p-4 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Schedules</h1>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleRefresh} 
+              variant="outline"
+              disabled={isRefreshing}
+              className="gap-2 transition-all hover:shadow-md"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            </Button>
+            <Button 
+              onClick={() => setShowAddDialog(true)}
+              className="gap-2 transition-all hover:shadow-md"
+            >
+              <Plus className="h-4 w-4" />
+              Add Schedule
+            </Button>
+          </div>
         </div>
-      </div>
 
-      <DataTable
-        data={schedules}
-        columns={columns}
-        actions={actions}
-        pagination
-      />
+        <DataTable
+          data={schedules}
+          columns={columns}
+          actions={actions}
+          pagination
+        />
 
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="sm:max-w-[650px]">
-          <DialogHeader>
-            <DialogTitle>Add New Schedule</DialogTitle>
-          </DialogHeader>
-          <ScheduleForm
-            batches={batches as Batch[]}
-            onSubmit={handleAddSubmit}
-            onSubmitMultiple={handleAddMultipleSubmit}
-            isSubmitting={createMutation.isPending || createMultipleMutation.isPending}
-            supportMultiple={true}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Schedule</DialogTitle>
-          </DialogHeader>
-          {selectedSchedule && (
+        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+          <DialogContent className="sm:max-w-[650px]">
+            <DialogHeader>
+              <DialogTitle>Add New Schedule</DialogTitle>
+            </DialogHeader>
             <ScheduleForm
               batches={batches as Batch[]}
-              onSubmit={handleEditSubmit}
-              isSubmitting={updateMutation.isPending}
-              defaultValues={selectedSchedule}
+              onSubmit={handleAddSubmit}
+              onSubmitMultiple={handleAddMultipleSubmit}
+              isSubmitting={createMutation.isPending || createMultipleMutation.isPending}
+              supportMultiple={true}
             />
-          )}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the schedule
-              {selectedSchedule?.topic && ` for "${selectedSchedule.topic}"`}.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteConfirm}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Edit Schedule</DialogTitle>
+            </DialogHeader>
+            {selectedSchedule && (
+              <ScheduleForm
+                batches={batches as Batch[]}
+                onSubmit={handleEditSubmit}
+                isSubmitting={updateMutation.isPending}
+                defaultValues={selectedSchedule}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the schedule
+                {selectedSchedule?.topic && ` for "${selectedSchedule.topic}"`}.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeleteConfirm}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 };

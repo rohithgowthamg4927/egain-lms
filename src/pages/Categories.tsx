@@ -32,6 +32,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { getCategories, getCourses, createCategory, updateCategory, deleteCategory } from '@/lib/api';
 import { Category, Course } from '@/lib/types';
 import { Edit, Plus, Search, Tag, Trash, Book } from 'lucide-react';
+import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 const Categories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -278,6 +279,9 @@ const Categories = () => {
 
   return (
     <div className="space-y-6">
+      <BreadcrumbNav items={[
+        { label: 'Categories', link: '/categories' }
+      ]} />
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Categories</h1>

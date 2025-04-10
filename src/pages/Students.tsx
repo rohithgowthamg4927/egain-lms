@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
+import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 const Students = () => {
   const navigate = useNavigate();
@@ -198,108 +199,113 @@ const Students = () => {
   ];
 
   return (
-    <div className="animate-fade-in space-y-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Students</h1>
-        <Button onClick={handleAddStudent} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Student
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <Card className="shadow-md border-blue-100">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-3xl font-bold">{students.length}</span>
-              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
-                <GraduationCap className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-md border-blue-100">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-3xl font-bold">{coursesCount}</span>
-              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-md border-blue-100">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Active Batches</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <span className="text-3xl font-bold">{batchesCount}</span>
-              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="bg-white rounded-lg border shadow-sm p-4 mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-          <Input
-            placeholder="Search students..."
-            className="pl-10 border-gray-200"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+    <div className="space-y-6">
+      <BreadcrumbNav items={[
+        { label: 'Students', link: '/students' }
+      ]} />
+      <div className="animate-fade-in space-y-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Students</h1>
+          <Button onClick={handleAddStudent} className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Student
+          </Button>
         </div>
-      </div>
 
-      <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-        {isLoading ? (
-          <div className="p-8 text-center">
-            <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p>Loading students...</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <Card className="shadow-md border-blue-100">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-3xl font-bold">{students.length}</span>
+                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                  <GraduationCap className="h-5 w-5 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-md border-blue-100">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-3xl font-bold">{coursesCount}</span>
+                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                  <BookOpen className="h-5 w-5 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-md border-blue-100">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Active Batches</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-3xl font-bold">{batchesCount}</span>
+                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                  <Calendar className="h-5 w-5 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="bg-white rounded-lg border shadow-sm p-4 mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+            <Input
+              placeholder="Search students..."
+              className="pl-10 border-gray-200"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-        ) : (
-          <DataTable
-            data={filteredStudents}
-            columns={studentColumns}
-            actions={studentActions}
-            className="w-full"
-            searchKey="fullName"
-          />
-        )}
-      </div>
+        </div>
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Student</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this student? This action cannot be undone.
-              The student will be removed from all batches and courses.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteStudent}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+          {isLoading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p>Loading students...</p>
+            </div>
+          ) : (
+            <DataTable
+              data={filteredStudents}
+              columns={studentColumns}
+              actions={studentActions}
+              className="w-full"
+              searchKey="fullName"
+            />
+          )}
+        </div>
+
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Student</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this student? This action cannot be undone.
+                The student will be removed from all batches and courses.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeleteStudent}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 };

@@ -37,6 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 const Batches = () => {
   const navigate = useNavigate();
@@ -199,6 +200,9 @@ const Batches = () => {
 
   return (
     <div className="space-y-6">
+      <BreadcrumbNav items={[
+        { label: 'Batches', link: '/batches' }
+      ]} />
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h1 className="text-3xl font-bold">Batches</h1>
         <Button onClick={() => navigate('/batches/add')}>

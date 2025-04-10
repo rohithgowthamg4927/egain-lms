@@ -151,11 +151,13 @@ export const uploadFile = async (batchName, resourceType, fileName, fileBuffer) 
 };
 
 // Generate presigned URL for downloading/streaming
-export const getPresignedUrl = async (key, expiresIn = 3600) => {
+export const getPresignedUrl = async (key, expiresIn = 7200) => {  
   const command = new GetObjectCommand({
     Bucket: BUCKET_NAME,
     Key: key,
   });
+
+  //pre-signed url expires in 2 hours.
 
   try {
     return await getSignedUrl(s3Client, command, { expiresIn });
@@ -193,7 +195,6 @@ export const deleteFile = async (fileUrl) => {
     // Check if fileUrl is a full S3 URL or just the key
     if (fileUrl.startsWith('http')) {
       // Extract the key from the fileUrl
-      // The fileUrl format is: https://bucket-name.s3.region.amazonaws.com/key
       const urlParts = fileUrl.split(`https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`);
       if (urlParts.length !== 2) {
         console.log('Processing as direct key because URL format is not recognized');

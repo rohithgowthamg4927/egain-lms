@@ -17,6 +17,7 @@ import ResourceGrid from '@/components/resources/ResourceGrid';
 import ResourceList from '@/components/resources/ResourceList';
 import { Batch, Resource } from '@/lib/types';
 import { getBatches, getResourcesByBatch, deleteResource } from '@/lib/api';
+import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 export default function ResourcesPage() {
   const { user } = useAuth();
@@ -118,6 +119,9 @@ export default function ResourcesPage() {
 
   return (
     <div className="space-y-6">
+      <BreadcrumbNav items={[
+        { label: 'Resources', link: '/resources' }
+      ]} />
       <h1 className="text-3xl font-bold">Resources</h1>
       
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

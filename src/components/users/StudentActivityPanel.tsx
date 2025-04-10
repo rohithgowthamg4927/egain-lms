@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 interface StudentActivityPanelProps {
   userId: number;
@@ -30,6 +31,10 @@ const StudentActivityPanel = ({ userId, showSchedulesOnly = false }: StudentActi
   if (showSchedulesOnly) {
     return (
       <div className="space-y-4">
+        <BreadcrumbNav items={[
+          { label: 'Students', link: '/students' },
+          { label: 'Student Activity', link: `/students/${userId}` }
+        ]} />
         {schedulesQuery.isLoading ? (
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
@@ -79,7 +84,11 @@ const StudentActivityPanel = ({ userId, showSchedulesOnly = false }: StudentActi
 
   // Regular view with courses
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <BreadcrumbNav items={[
+        { label: 'Students', link: '/students' },
+        { label: 'Student Activity', link: `/students/${userId}` }
+      ]} />
       {coursesQuery.isLoading ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (

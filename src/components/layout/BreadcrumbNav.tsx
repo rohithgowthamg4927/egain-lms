@@ -9,13 +9,13 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Home, ChevronRight } from 'lucide-react';
 
-interface BreadcrumbItem {
+interface BreadcrumbDataItem {
   label: string;
   link: string;
 }
 
 interface BreadcrumbNavProps {
-  items: BreadcrumbItem[];
+  items: BreadcrumbDataItem[];
 }
 
 const BreadcrumbNav = ({ items }: BreadcrumbNavProps) => {
@@ -25,7 +25,10 @@ const BreadcrumbNav = ({ items }: BreadcrumbNavProps) => {
         {/* Home Item */}
         <BreadcrumbItem className="inline-flex items-center">
           <BreadcrumbLink asChild>
-            <Link to="/dashboard" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+            <Link
+              to="/dashboard"
+              className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+            >
               <Home className="h-4 w-4" />
               Home
             </Link>

@@ -1,4 +1,3 @@
-
 import { Resource } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +41,9 @@ const ResourceList = ({ resources, onDelete, userRole }: ResourceListProps) => {
       return 'Invalid date';
     }
   };
+
+  // Check if user is an instructor or admin
+  const canDelete = userRole === 'instructor' || userRole === 'admin';
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -94,7 +96,7 @@ const ResourceList = ({ resources, onDelete, userRole }: ResourceListProps) => {
                   >
                     <Download className="h-4 w-4" />
                   </Button>
-                  {userRole === 'instructor' && (
+                  {canDelete && (
                     <Button
                       variant="outline"
                       size="sm"

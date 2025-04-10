@@ -1,4 +1,3 @@
-
 import { Resource } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Video, Code, Link, FileCheck } from 'lucide-react';
@@ -17,25 +16,13 @@ const ResourceMetrics = ({ resources }: ResourceMetricsProps) => {
     };
     
     resources.forEach(resource => {
-      // Only count if type exists
-      if (resource.type) {
-        switch (resource.type) {
-          case 'document':
-            counts.document++;
-            break;
-          case 'video':
-            counts.video++;
-            break;
-          case 'assignment':
-            counts.assignment++;
-            break;
-          default:
-            // Count unknown types as documents for simplicity
-            counts.document++;
-            break;
-        }
+      // Simple classification based on resource type only
+      const type = resource.type?.toLowerCase() || '';
+      
+      if (type === 'recording') {
+        counts.video++;
       } else {
-        // Default to document if type is missing
+        // Default to document/assignment for all other types
         counts.document++;
       }
     });
@@ -53,13 +40,13 @@ const ResourceMetrics = ({ resources }: ResourceMetricsProps) => {
       bgColor: 'bg-primary/10',
     },
     {
-      title: 'Documents',
+      title: 'Assignments/Documents',
       value: resourceCounts.document,
       icon: <FileText className="h-5 w-5 text-blue-600" />,
       bgColor: 'bg-blue-100',
     },
     {
-      title: 'Videos',
+      title: 'Class Recordings',
       value: resourceCounts.video,
       icon: <Video className="h-5 w-5 text-red-600" />,
       bgColor: 'bg-red-100',

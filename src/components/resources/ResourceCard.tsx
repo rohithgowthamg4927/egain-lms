@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Resource } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -76,6 +75,8 @@ const ResourceCard = ({
     }
   };
 
+  const canDelete = userRole === 'instructor' || userRole === 'admin';
+
   return (
     <Card 
       className={`overflow-hidden transition-all duration-300 h-full flex flex-col ${
@@ -118,7 +119,7 @@ const ResourceCard = ({
           Download Resource
         </Button>
         
-        {userRole === 'instructor' && (
+        {canDelete && (
           <div className="flex justify-end w-full">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -114,18 +113,23 @@ export default function ResourcesPage() {
     resource.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Check if user is an instructor or admin
+  const canManageResources = user?.role === 'instructor' || user?.role === 'admin';
+
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Learning Resources</h1>
+      <h1 className="text-3xl font-bold">Resources</h1>
       
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <p className="text-muted-foreground">
-          Access and manage educational materials for your courses
+          Access and manage educational assignments, class recordings for your batches.
         </p>
-        <Button onClick={() => setIsUploadDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Upload Resource
-        </Button>
+        {canManageResources && (
+          <Button onClick={() => setIsUploadDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Upload Resource
+          </Button>
+        )}
       </div>
 
       {selectedBatch && resources.length > 0 && (
@@ -204,14 +208,16 @@ export default function ResourcesPage() {
           <p className="text-muted-foreground mt-1">
             {searchQuery ? 'Try a different search term' : 'This batch has no resources yet'}
           </p>
-          <Button 
-            variant="outline" 
-            className="mt-4"
-            onClick={() => setIsUploadDialogOpen(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add your first resource
-          </Button>
+          {canManageResources && (
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => setIsUploadDialogOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add your first resource
+            </Button>
+          )}
         </div>
       ) : viewMode === 'grid' ? (
         <ResourceGrid 

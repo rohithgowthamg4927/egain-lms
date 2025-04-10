@@ -5,7 +5,8 @@ import {
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
   PutObjectCommand,
-  GetObjectCommand
+  GetObjectCommand,
+  DeleteObjectCommand
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import dotenv from 'dotenv';
@@ -178,4 +179,35 @@ const getContentType = (fileName) => {
     'avi': 'video/x-msvideo',
   };
   return contentTypes[extension] || 'application/octet-stream';
+};
+
+// Delete a file from S3
+export const deleteFile = async (fileUrl) => {
+  if (!BUCKET_NAME) {
+    throw new Error('AWS S3 bucket name is not configured');
+  }
+
+  // Extract the key from the fileUrl
+  // The fileUrl format is: https://bucket-name.s3.region.amazonaws.com/key
+  const urlParts = fileUrl.split(`https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`);
+  if (urlParts.length !== 2) {
+    throw new Error('Invalid file URL format');
+  }
+  
+  const key = urlParts[1];
+  console.log('Deleting S3 object with key:', key);
+  
+  const command = new DeleteObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+  });
+
+  try {
+    await s3Client.send(command);
+    console.log('S3 object deleted successfully');
+    return true;
+  } catch (error) {
+    console.error('Error deleting S3 object:', error);
+    throw error;
+  }
 }; 

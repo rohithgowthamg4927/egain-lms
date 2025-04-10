@@ -11,6 +11,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
+import { getResourcePresignedUrl } from '@/lib/api/resources';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ResourceCardProps {
   resource: Resource;
@@ -24,12 +26,12 @@ const ResourceCard = ({
   userRole
 }: ResourceCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const { toast } = useToast();
 
   // Safely access resource properties with default fallbacks
   const resourceType = resource?.type || 'document';
   const resourceTitle = resource?.title || 'Untitled Resource';
   const resourceDescription = resource?.description || 'No description available for this resource.';
-  const resourceUrl = resource?.url || '#';
   const resourceCreatedAt = resource?.createdAt || new Date().toISOString();
 
   const resourceTypeColors = {
@@ -69,6 +71,27 @@ const ResourceCard = ({
     }
   };
   
+  const handleDownload = async () => {
+    try {
+      const response = await getResourcePresignedUrl(resource.resourceId);
+      if (response.success && response.data?.presignedUrl) {
+        window.open(response.data.presignedUrl, '_blank');
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to get download URL',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to download resource',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleDelete = () => {
     if (onDelete) {
       onDelete(resource);
@@ -113,10 +136,10 @@ const ResourceCard = ({
         <Button
           variant="default"
           className="w-full gap-2 group"
-          onClick={() => window.open(resourceUrl, '_blank')}
+          onClick={handleDownload}
         >
           <Download className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-          Download Resource
+          View/Download Resource
         </Button>
         
         {canDelete && (

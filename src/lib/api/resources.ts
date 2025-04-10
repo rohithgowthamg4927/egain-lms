@@ -1,4 +1,3 @@
-
 import { Resource } from '@/lib/types';
 import { apiFetch } from './core';
 
@@ -25,4 +24,9 @@ export const deleteResource = async (resourceId: number): Promise<{ success: boo
   return apiFetch(`/resources/${resourceId}`, {
     method: 'DELETE',
   });
+};
+
+// Get a presigned URL for a resource
+export const getResourcePresignedUrl = async (resourceId: number): Promise<{ success: boolean; data?: { presignedUrl: string }; error?: string }> => {
+  return apiFetch<{ presignedUrl: string }>(`/resources/${resourceId}`);
 };

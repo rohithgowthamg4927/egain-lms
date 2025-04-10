@@ -8,7 +8,8 @@ import {
   completeMultipartUpload, 
   abortMultipartUpload,
   uploadFile,
-  getPresignedUrl
+  getPresignedUrl,
+  deleteFile
 } from '../utils/s3.js';
 
 const router = express.Router();
@@ -317,6 +318,30 @@ router.delete('/:id', async (req, res) => {
   try {
     const resourceId = parseInt(req.params.id);
     
+    // First, get the resource to get the fileUrl
+    const resource = await prisma.Resource.findUnique({
+      where: { resourceId }
+    });
+    
+    if (!resource) {
+      return res.status(404).json({
+        success: false,
+        error: 'Resource not found'
+      });
+    }
+    
+    // Delete the file from S3 if it exists
+    if (resource.fileUrl) {
+      try {
+        await deleteFile(resource.fileUrl);
+        console.log(`S3 file deleted for resource ${resourceId}`);
+      } catch (s3Error) {
+        console.error(`Error deleting S3 file for resource ${resourceId}:`, s3Error);
+        // Continue with database deletion even if S3 deletion fails
+      }
+    }
+    
+    // Delete the resource from the database
     await prisma.Resource.delete({
       where: { resourceId }
     });

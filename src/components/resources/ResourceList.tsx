@@ -2,14 +2,17 @@ import { Resource } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, Trash } from 'lucide-react';
+import { getResourcePresignedUrl } from '@/lib/api/resources';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ResourceListProps {
   resources: Resource[];
-  onDelete: (resource: Resource) => void;
+  onDelete?: (resource: Resource) => void;
   userRole?: string;
 }
 
 const ResourceList = ({ resources, onDelete, userRole }: ResourceListProps) => {
+  const { toast } = useToast();
   const getResourceTypeColor = (type: string | undefined) => {
     // Use a default type if none provided
     const resourceType = type || 'document';
@@ -44,6 +47,27 @@ const ResourceList = ({ resources, onDelete, userRole }: ResourceListProps) => {
 
   // Check if user is an instructor or admin
   const canDelete = userRole === 'instructor' || userRole === 'admin';
+
+  const handleDownload = async (resource: Resource) => {
+    try {
+      const response = await getResourcePresignedUrl(resource.resourceId);
+      if (response.success && response.data?.presignedUrl) {
+        window.open(response.data.presignedUrl, '_blank');
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to get download URL',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to download resource',
+        variant: 'destructive',
+      });
+    }
+  };
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -91,7 +115,7 @@ const ResourceList = ({ resources, onDelete, userRole }: ResourceListProps) => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => window.open(resource.url || '#', '_blank')}
+                    onClick={() => handleDownload(resource)}
                     title="Download Resource"
                   >
                     <Download className="h-4 w-4" />
@@ -101,7 +125,7 @@ const ResourceList = ({ resources, onDelete, userRole }: ResourceListProps) => {
                       variant="outline"
                       size="sm"
                       className="text-destructive border-destructive hover:bg-destructive/10"
-                      onClick={() => onDelete(resource)}
+                      onClick={() => onDelete?.(resource)}
                       title="Delete Resource"
                     >
                       <Trash className="h-4 w-4" />

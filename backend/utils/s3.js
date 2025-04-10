@@ -187,22 +187,32 @@ export const deleteFile = async (fileUrl) => {
     throw new Error('AWS S3 bucket name is not configured');
   }
 
-  // Extract the key from the fileUrl
-  // The fileUrl format is: https://bucket-name.s3.region.amazonaws.com/key
-  const urlParts = fileUrl.split(`https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`);
-  if (urlParts.length !== 2) {
-    throw new Error('Invalid file URL format');
-  }
-  
-  const key = urlParts[1];
-  console.log('Deleting S3 object with key:', key);
-  
-  const command = new DeleteObjectCommand({
-    Bucket: BUCKET_NAME,
-    Key: key,
-  });
-
   try {
+    let key;
+    
+    // Check if fileUrl is a full S3 URL or just the key
+    if (fileUrl.startsWith('http')) {
+      // Extract the key from the fileUrl
+      // The fileUrl format is: https://bucket-name.s3.region.amazonaws.com/key
+      const urlParts = fileUrl.split(`https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`);
+      if (urlParts.length !== 2) {
+        console.log('Processing as direct key because URL format is not recognized');
+        key = fileUrl; // Use fileUrl as key directly if it's not in the expected format
+      } else {
+        key = urlParts[1];
+      }
+    } else {
+      // fileUrl is already the key
+      key = fileUrl;
+    }
+    
+    console.log('Deleting S3 object with key:', key);
+    
+    const command = new DeleteObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+    });
+
     await s3Client.send(command);
     console.log('S3 object deleted successfully');
     return true;
@@ -210,4 +220,4 @@ export const deleteFile = async (fileUrl) => {
     console.error('Error deleting S3 object:', error);
     throw error;
   }
-}; 
+};

@@ -1,3 +1,4 @@
+
 import { Resource } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Video, Code, Link, FileCheck } from 'lucide-react';
@@ -16,13 +17,19 @@ const ResourceMetrics = ({ resources }: ResourceMetricsProps) => {
     };
     
     resources.forEach(resource => {
-      // Simple classification based on resource type only
+      const fileName = resource.fileName?.toLowerCase() || '';
       const type = resource.type?.toLowerCase() || '';
       
-      if (type === 'recording') {
+      // Check if it's a video file by extension or type
+      if (fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi') || 
+          type === 'recording' || type === 'video') {
         counts.video++;
+      } else if (fileName.endsWith('.pdf') || fileName.endsWith('.doc') || fileName.endsWith('.docx') || 
+               fileName.endsWith('.ppt') || fileName.endsWith('.pptx') || fileName.endsWith('.txt') || 
+               type === 'assignment' || type === 'document') {
+        counts.document++;
       } else {
-        // Default to document/assignment for all other types
+        // Default to document for all other types
         counts.document++;
       }
     });

@@ -15,12 +15,34 @@ interface ResourceGridProps {
 }
 
 const ResourceGrid = ({ resources, onDelete, userRole }: ResourceGridProps) => {
+  // Helper function to determine resource type
+  const getResourceType = (resource: Resource): string => {
+    const type = resource.type?.toLowerCase();
+    const fileName = resource.fileName?.toLowerCase();
+    
+    if (!fileName) return type || 'document';
+    
+    const extension = fileName.split('.').pop();
+    
+    if (type === 'recording' || type === 'video' || 
+        extension === 'mp4' || extension === 'mov' || extension === 'avi') {
+      return 'video';
+    }
+    
+    if (type === 'assignment' || type === 'document' ||
+        ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'].includes(extension || '')) {
+      return type === 'assignment' ? 'assignment' : 'document';
+    }
+    
+    return type || 'document';
+  };
+
   const groupResourcesByType = () => {
     const grouped: Record<string, Resource[]> = {};
     
     resources.forEach(resource => {
-      // Make sure resource.type exists before using it
-      const resourceType = resource.type || 'unknown';
+      // Use our helper function to determine the resource type
+      const resourceType = getResourceType(resource);
       
       if (!grouped[resourceType]) {
         grouped[resourceType] = [];

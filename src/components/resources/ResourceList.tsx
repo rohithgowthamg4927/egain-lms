@@ -1,3 +1,4 @@
+
 import { Resource } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,9 +14,9 @@ interface ResourceListProps {
 
 const ResourceList = ({ resources, onDelete, userRole }: ResourceListProps) => {
   const { toast } = useToast();
-  const getResourceTypeColor = (type: string | undefined) => {
-    // Use a default type if none provided
-    const resourceType = type || 'document';
+  const getResourceTypeColor = (type: string | undefined, fileName: string | undefined) => {
+    // First determine the resource type based on file extension and type field
+    const resourceType = getResourceType(type, fileName);
     
     const resourceTypeColors = {
       'document': 'bg-blue-100 hover:bg-blue-200 text-blue-800',
@@ -26,6 +27,25 @@ const ResourceList = ({ resources, onDelete, userRole }: ResourceListProps) => {
     };
 
     return resourceTypeColors[resourceType as keyof typeof resourceTypeColors] || 'bg-gray-100 hover:bg-gray-200 text-gray-800';
+  };
+
+  // Helper to determine resource type based on file extension and type field
+  const getResourceType = (type: string | undefined, fileName: string | undefined): string => {
+    if (!fileName) return type || 'document';
+    
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    
+    if (type === 'recording' || type === 'video' || 
+        extension === 'mp4' || extension === 'mov' || extension === 'avi') {
+      return 'video';
+    }
+    
+    if (type === 'assignment' || type === 'document' ||
+        ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'].includes(extension || '')) {
+      return type === 'assignment' ? 'assignment' : 'document';
+    }
+    
+    return type || 'document';
   };
 
   const formatTitle = (title: string | undefined) => {
@@ -99,9 +119,10 @@ const ResourceList = ({ resources, onDelete, userRole }: ResourceListProps) => {
               <td className="py-3 px-4">
                 <Badge
                   variant="outline"
-                  className={getResourceTypeColor(resource.type)}
+                  className={getResourceTypeColor(resource.type, resource.fileName)}
                 >
-                  {(resource.type || 'Document').charAt(0).toUpperCase() + (resource.type || 'document').slice(1)}
+                  {getResourceType(resource.type, resource.fileName).charAt(0).toUpperCase() + 
+                   getResourceType(resource.type, resource.fileName).slice(1)}
                 </Badge>
               </td>
               <td className="py-3 px-4 max-w-[300px] truncate hidden md:table-cell">

@@ -70,7 +70,7 @@ export function UploadResourceDialog({
     // Validate file type
     const extension = file.name.split('.').pop()?.toLowerCase();
     const validExtensions = resourceType === 'assignment'
-      ? ['pdf', 'doc', 'docx', 'ppt', 'pptx']
+      ? ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt']
       : ['mp4', 'mov', 'avi'];
 
     if (!extension || !validExtensions.includes(extension)) {
@@ -375,7 +375,7 @@ export function UploadResourceDialog({
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {resourceType === 'assignment'
-                      ? 'Supported formats: PDF, DOC, DOCX, PPT, PPTX'
+                      ? 'Supported formats: PDF, DOC, DOCX, PPT, PPTX, TXT'
                       : 'Supported formats: MP4, MOV, AVI'}
                   </p>
                 </div>
@@ -423,4 +423,4 @@ export function UploadResourceDialog({
       </DialogContent>
     </Dialog>
   );
-} 
+}

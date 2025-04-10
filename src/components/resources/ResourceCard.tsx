@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Resource } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,10 +30,31 @@ const ResourceCard = ({
   const { toast } = useToast();
 
   // Safely access resource properties with default fallbacks
-  const resourceType = resource?.type || 'document';
   const resourceTitle = resource?.title || 'Untitled Resource';
   const resourceDescription = resource?.description || 'No description available for this resource.';
   const resourceCreatedAt = resource?.createdAt || new Date().toISOString();
+  const fileName = resource?.fileName || '';
+
+  // Determine resource type based on file extension and resource.type
+  const getResourceType = (type: string | undefined, fileName: string | undefined): string => {
+    if (!fileName) return type || 'document';
+    
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    
+    if (type === 'recording' || type === 'video' || 
+        extension === 'mp4' || extension === 'mov' || extension === 'avi') {
+      return 'video';
+    }
+    
+    if (type === 'assignment' || type === 'document' ||
+        ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'].includes(extension || '')) {
+      return type === 'assignment' ? 'assignment' : 'document';
+    }
+    
+    return type || 'document';
+  };
+
+  const resourceType = getResourceType(resource?.type, fileName);
 
   const resourceTypeColors = {
     'document': 'bg-blue-100 hover:bg-blue-200 text-blue-800',

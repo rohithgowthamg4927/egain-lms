@@ -1,4 +1,3 @@
-
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -129,6 +128,10 @@ export interface Resource {
   type: string;
   url: string;
   description?: string;
+  fileName?: string; // Adding fileName property
+  fileUrl?: string; // Adding fileUrl for clarity
+  batchId?: number; // Adding batchId as it appears in the backend
+  uploadedById?: number; // Adding uploadedById as it appears in the backend
   createdAt: string;
   updatedAt: string;
 }

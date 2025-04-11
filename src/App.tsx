@@ -1,4 +1,3 @@
-
 import {
   Routes,
   Route,
@@ -44,16 +43,16 @@ function App() {
       <Route path="/" element={<Index />} />
       <Route path="/login" element={<Login />} />
       
-      {/* Protected routes */}
+      {/* Protected routes for admin/instructor */}
       <Route path="/dashboard" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin, Role.instructor]}>
           <Dashboard />
         </ProtectedRoute>
       } />
 
       {/* Course routes */}
       <Route path="/courses" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin, Role.instructor]}>
           <Courses />
         </ProtectedRoute>
       } />
@@ -63,7 +62,7 @@ function App() {
         </ProtectedRoute>
       } />
       <Route path="/courses/:courseId" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin, Role.instructor]}>
           <CourseDetail />
         </ProtectedRoute>
       } />
@@ -167,28 +166,28 @@ function App() {
         </ProtectedRoute>
       } />
       
-      {/* Student dashboard */}
+      {/* Student dashboard - available only to students */}
       <Route path="/student/dashboard" element={
         <ProtectedRoute requiredRoles={Role.student}>
           <StudentDashboard />
         </ProtectedRoute>
       } />
       
-      {/* Student courses */}
+      {/* Student courses - available only to students */}
       <Route path="/student/courses" element={
         <ProtectedRoute requiredRoles={Role.student}>
           <StudentCourses />
         </ProtectedRoute>
       } />
       
-      {/* Student schedules */}
+      {/* Student schedules - available only to students */}
       <Route path="/student/schedules" element={
         <ProtectedRoute requiredRoles={Role.student}>
           <StudentSchedules />
         </ProtectedRoute>
       } />
       
-      {/* Student resources */}
+      {/* Student resources - available only to students */}
       <Route path="/student/resources" element={
         <ProtectedRoute requiredRoles={Role.student}>
           <StudentResources />

@@ -37,8 +37,11 @@ const ProtectedRoute = ({ children, requiredRoles }: ProtectedRouteProps) => {
       return <Navigate to="/student/dashboard" replace />;
     } else if (user?.role === Role.instructor) {
       return <Navigate to="/dashboard" replace />;
+    } else if (user?.role === Role.admin) {
+      return <Navigate to="/dashboard" replace />;
     }
     
+    // Default fallback
     return <Navigate to="/dashboard" replace />;
   }
   

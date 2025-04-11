@@ -7,7 +7,7 @@ import { getStudentCourses, getStudentSchedules } from '@/lib/api/students';
 import { useAuth } from '@/hooks/use-auth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Book, Clock } from 'lucide-react';
-import { format, isValid } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import StudentActivityPanel from '@/components/students/StudentActivityPanel';
 
@@ -42,10 +42,11 @@ const StudentDashboard = () => {
     if (!dateString) return 'No date';
     
     try {
-      const date = new Date(dateString);
+      // Ensure we have a valid date
+      const date = typeof dateString === 'string' ? parseISO(dateString) : new Date(dateString);
       return isValid(date) ? format(date, formatStr) : 'Invalid date';
     } catch (error) {
-      console.error('Error formatting date:', error);
+      console.error('Error formatting date:', error, 'Date string was:', dateString);
       return 'Invalid date';
     }
   };

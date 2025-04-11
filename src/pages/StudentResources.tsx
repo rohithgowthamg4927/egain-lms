@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ResourceGrid from '@/components/resources/ResourceGrid';
 import ResourceList from '@/components/resources/ResourceList';
-import { Search, Filter } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 const StudentResources = () => {
   const { user } = useAuth();
@@ -26,11 +26,13 @@ const StudentResources = () => {
     enabled: !!user?.userId,
   });
   
-  // Get all resources for the student's batches
+  // Fix the query function to ensure it always returns the same type
   const resourcesQuery = useQuery({
     queryKey: ['studentResources', user?.userId, selectedBatch],
     queryFn: () => {
-      if (!user?.userId) return Promise.resolve({ success: false, data: [] });
+      if (!user?.userId) {
+        return Promise.resolve({ success: false, data: [] });
+      }
       
       if (selectedBatch && selectedBatch !== 'all') {
         return getStudentResources(user.userId, parseInt(selectedBatch, 10));

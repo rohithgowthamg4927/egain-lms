@@ -93,8 +93,15 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
             <TableRow key={resource.resourceId}>
               <TableCell className="font-medium">{resource.title}</TableCell>
               <TableCell>
-                <Badge variant={resource.resourceType === 'assignment' ? 'default' : 'secondary'}>
-                  {resource.resourceType}
+                <Badge 
+                  variant="outline" 
+                  className={`capitalize ${
+                    resource.resourceType === 'assignment' 
+                      ? 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200' 
+                      : 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200'
+                  }`}
+                >
+                  {resource.resourceType === 'assignment' ? 'Assignment' : 'Class Recording'}
                 </Badge>
               </TableCell>
               <TableCell>{resource.fileName}</TableCell>

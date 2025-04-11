@@ -127,6 +127,8 @@ export interface Resource {
   title: string;
   type: string;
   url: string;
+  resourceType: "assignment" | "recording";
+  uploadedBy: { fullName: string };
   description?: string;
   fileName?: string; // Adding fileName property
   fileUrl?: string; // Adding fileUrl for clarity

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -29,7 +30,7 @@ export default function ResourcesPage() {
   const [selectedBatch, setSelectedBatch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
     fetchBatches();
@@ -243,7 +244,7 @@ export default function ResourcesPage() {
         onClose={() => setIsUploadDialogOpen(false)}
         onSuccess={() => {
           if (selectedBatch) {
-            fetchResources(selectedBatch);
+            fetchResources(parseInt(selectedBatch, 10));
           }
         }}
         batches={batches}

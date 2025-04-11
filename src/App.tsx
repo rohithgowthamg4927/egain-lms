@@ -24,15 +24,16 @@ import AddBatch from './pages/AddBatch';
 import EditBatch from './pages/EditBatch';
 import AddUser from './pages/AddUser';
 import UserProfile from './pages/UserProfile';
+import StudentCourseDetail from './pages/student/StudentCourseDetail';
 function App() {
   return (
     <>
       <Routes>
-        {/* Public Routes */}
+        {/*Global Routes*/}
         <Route path="/login" element={<Index />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* Admin/Instructor Routes */}
+        {/*Admin/Instructor Routes*/}
         <Route
           path="/dashboard"
           element={
@@ -169,7 +170,7 @@ function App() {
           }
         />
 
-        {/* Student Routes */}
+        {/*Student Routes*/}
         <Route
           path="/student/dashboard"
           element={
@@ -186,6 +187,11 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/student/courses/:courseId" element={
+          <ProtectedRoute allowedRoles={[Role.student]}>
+            <StudentCourseDetail />
+          </ProtectedRoute>
+        } />
         <Route
           path="/student/schedules"
           element={
@@ -203,7 +209,6 @@ function App() {
           }
         />
 
-        {/* Catch all route */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
       <Toaster />

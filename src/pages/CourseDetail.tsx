@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -230,11 +230,11 @@ const CourseDetail = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Star className="h-5 w-5 text-amber-500" />
+                    <div className="flex items-center gap-2 group">
+                      <Star className="h-5 w-5 text-yellow-400 group-hover:fill-yellow-400" />
                       <div>
                         <p className="text-sm text-gray-500">Average Rating</p>
-                        <p className="font-medium">{course.averageRating?.toFixed(1) || 'N/A'}</p>
+                        <p className="font-medium">{course.averageRating ? course.averageRating.toFixed(1) : 'N/A'}</p>
                       </div>
                     </div>
                   </div>
@@ -250,9 +250,17 @@ const CourseDetail = () => {
                             <div className="p-4">
                               <div className="flex justify-between items-start">
                                 <div>
-                                  <h4 className="font-semibold">{batch.batchName}</h4>
+                                  <h4 className="font-semibold">
+                                    <Link to={`/batches/${batch.batchId}`} className="hover:underline">
+                                      {batch.batchName}
+                                    </Link>
+                                  </h4>
                                   <p className="text-sm text-gray-500">
-                                    Instructor: {batch.instructor?.fullName || 'Not assigned'}
+                                    Instructor: {batch.instructor ? (
+                                      <Link to={`/instructors/${batch.instructor.userId}`} className="hover:underline">
+                                        {batch.instructor.fullName}
+                                      </Link>
+                                    ) : 'Not assigned'}
                                   </p>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm">

@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
@@ -64,7 +63,11 @@ router.get('/:id', async (req, res) => {
         },
       }
     });
-    
+
+    const averageRating = course.reviews.length > 0 
+    ? course.reviews.reduce((acc, review) => acc + review.rating, 0) / course.reviews.length 
+    : null;
+
     if (!course) {
       console.log(`Course with ID ${courseId} not found`);
       return res.status(404).json({
@@ -72,9 +75,18 @@ router.get('/:id', async (req, res) => {
         error: 'Course not found'
       });
     }
+
+    // Include the average rating in the response
+    res.json({ 
+      success: true, 
+      data: {
+        ...course,
+        averageRating
+      } 
+    });
     
     console.log(`Course found:`, { courseId: course.courseId, courseName: course.courseName });
-    res.json({ success: true, data: course });
+    
   } catch (error) {
     console.error(`Error in GET /courses/:id:`, error);
     handleApiError(res, error);
@@ -272,7 +284,7 @@ router.delete('/:id', async (req, res) => {
 router.post('/:id/reviews', async (req, res) => {
   try {
     const courseId = parseInt(req.params.id);
-    const { userId, rating, comment } = req.body;
+    const { userId, rating, review } = req.body;
     
     // Check if course exists
     const course = await prisma.Course.findUnique({
@@ -287,7 +299,7 @@ router.post('/:id/reviews', async (req, res) => {
     }
     
     // Check if user has already reviewed this course
-    const existingReview = await prisma.courseReview.findFirst({
+    const existingReview = await prisma.CourseReview.findFirst({
       where: {
         courseId,
         userId: parseInt(userId)
@@ -302,12 +314,12 @@ router.post('/:id/reviews', async (req, res) => {
     }
     
     // Create the review
-    const review = await prisma.courseReview.create({
+    const createdReview = await prisma.CourseReview.create({
       data: {
-        courseId,
-        userId: parseInt(userId),
+        course: { connect: { courseId } },
+        user: { connect: { userId: parseInt(userId) } },
         rating: parseInt(rating),
-        comment,
+        review,
         createdAt: new Date()
       },
       include: {
@@ -315,7 +327,7 @@ router.post('/:id/reviews', async (req, res) => {
       }
     });
     
-    res.status(201).json({ success: true, data: review });
+    res.status(201).json({ success: true, data: createdReview });
   } catch (error) {
     handleApiError(res, error);
   }

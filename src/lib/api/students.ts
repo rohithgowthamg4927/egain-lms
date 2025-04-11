@@ -124,7 +124,7 @@ export const submitCourseReview = async (
       `/courses/${courseId}/reviews`,
       {
         method: 'POST',
-        body: JSON.stringify({ userId: studentId, rating, comment: review }),
+        body: JSON.stringify({ userId: studentId, rating, review }),
       }
     );
     return response;

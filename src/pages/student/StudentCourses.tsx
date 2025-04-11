@@ -29,7 +29,7 @@ export default function StudentCourses() {
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [rating, setRating] = useState(5);
-  const [reviewText, setReviewText] = useState('');
+  const [review, setReview] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function StudentCourses() {
   const openReviewDialog = (course) => {
     setSelectedCourse(course);
     setRating(5);
-    setReviewText('');
+    setReview('');
     setIsReviewDialogOpen(true);
   };
 
@@ -78,7 +78,7 @@ export default function StudentCourses() {
         user.userId,
         selectedCourse.course.courseId,
         rating,
-        reviewText
+        review
       );
       
       if (response.success) {
@@ -218,8 +218,8 @@ export default function StudentCourses() {
               <Textarea
                 id="review"
                 placeholder="Write your review here..."
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
+                value={review}
+                onChange={(e) => setReview(e.target.value)}
                 rows={4}
               />
             </div>

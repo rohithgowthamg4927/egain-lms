@@ -11,6 +11,7 @@ export const getStudentCourses = async (studentId: number): Promise<{ success: b
     console.error(`Error fetching courses for student ${studentId}:`, error);
     return {
       success: false,
+      data: [], // Return empty array instead of undefined
       error: error instanceof Error ? error.message : 'Failed to fetch student courses'
     };
   }
@@ -61,6 +62,7 @@ export const addCourseReview = async (courseId: number, userId: number, rating: 
     console.error('Error adding course review:', error);
     return {
       success: false,
+      data: [], // Return empty array instead of undefined
       error: error instanceof Error ? error.message : 'Failed to add course review'
     };
   }
@@ -69,12 +71,13 @@ export const addCourseReview = async (courseId: number, userId: number, rating: 
 // Get existing reviews for a course
 export const getCourseReviews = async (courseId: number): Promise<{ success: boolean; data?: any[]; error?: string }> => {
   try {
-    const response = await apiFetch(`/courses/${courseId}/reviews`);
+    const response = await apiFetch<any[]>(`/courses/${courseId}/reviews`);
     return response;
   } catch (error) {
     console.error('Error fetching course reviews:', error);
     return {
       success: false,
+      data: [], // Return empty array instead of undefined
       error: error instanceof Error ? error.message : 'Failed to fetch course reviews'
     };
   }

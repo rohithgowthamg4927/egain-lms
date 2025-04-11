@@ -134,3 +134,34 @@ export const getResourceDownloadUrl = async (resourceId: number): Promise<{ succ
     };
   }
 };
+
+// Add the missing getResourcePresignedUrl function
+export const getResourcePresignedUrl = async (resourceId: number): Promise<{ success: boolean; data?: { presignedUrl: string }; error?: string }> => {
+  try {
+    const response = await apiFetch<{ presignedUrl: string }>(`/resources/${resourceId}/presigned-url`);
+    return response;
+  } catch (error) {
+    console.error(`Error getting presigned URL for resource ${resourceId}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get presigned URL'
+    };
+  }
+};
+
+// Add createResource function for Resources.tsx
+export const createResource = async (resource: Partial<Resource>): Promise<{ success: boolean; data?: Resource; error?: string }> => {
+  try {
+    const response = await apiFetch<Resource>('/resources', {
+      method: 'POST',
+      body: JSON.stringify(resource)
+    });
+    return response;
+  } catch (error) {
+    console.error('Error creating resource:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create resource'
+    };
+  }
+};

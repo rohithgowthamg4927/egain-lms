@@ -1,3 +1,4 @@
+
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -61,6 +62,8 @@ export interface Course {
     studentCourses: number; 
     batches: number;        
   };
+  // Add reviews property to Course
+  reviews?: CourseReview[];
 }
 
 export interface Category {
@@ -134,6 +137,9 @@ export interface Resource {
   uploadedById?: number; // Adding uploadedById as it appears in the backend
   createdAt: string;
   updatedAt: string;
+  // Add these properties to fix ResourceCard and ResourceList errors
+  resourceName?: string;
+  resourceType?: string;
 }
 
 export interface CourseReview {
@@ -142,8 +148,10 @@ export interface CourseReview {
   userId: number;
   rating: number;
   review?: string;
+  comment?: string; // Add comment field for reviews
   createdAt: string;
   updatedAt: string;
+  user?: User;
 }
 
 export interface StudentCourse {

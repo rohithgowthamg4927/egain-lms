@@ -9,8 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ResourceGrid } from '@/components/resources/ResourceGrid';
-import { ResourceList } from '@/components/resources/ResourceList';
+import ResourceGrid from '@/components/resources/ResourceGrid';
+import ResourceList from '@/components/resources/ResourceList';
 import { Search, Filter } from 'lucide-react';
 
 const StudentResources = () => {
@@ -47,12 +47,12 @@ const StudentResources = () => {
   // Filter resources
   const filteredResources = resourcesQuery.data?.data?.filter(resource => {
     const matchesSearch = searchQuery
-      ? resource.resourceName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        resource.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      ? (resource.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         resource.description?.toLowerCase().includes(searchQuery.toLowerCase()))
       : true;
       
     const matchesType = selectedType
-      ? resource.resourceType === selectedType
+      ? resource.type === selectedType
       : true;
       
     return matchesSearch && matchesType;
@@ -127,16 +127,15 @@ const StudentResources = () => {
             <TabsContent value="grid">
               <ResourceGrid 
                 resources={filteredResources} 
-                isLoading={isLoading} 
-                readOnly={true}
+                onDelete={() => {}} 
+                userRole="student"
               />
             </TabsContent>
             
             <TabsContent value="list">
               <ResourceList 
                 resources={filteredResources} 
-                isLoading={isLoading} 
-                readOnly={true}
+                userRole="student"
               />
             </TabsContent>
           </Tabs>

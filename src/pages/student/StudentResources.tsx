@@ -1,12 +1,13 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Batch, Resource } from '@/lib/types';
-import { getBatches } from '@/lib/api';
-import { getResourcesByBatch } from '@/lib/api/resources';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Resource } from '@/lib/types';
+import { getStudentResources } from '@/lib/api/students';
 import { format } from 'date-fns';
 import { Download, FileText, FileVideo, FileImage, FileAudio, File } from 'lucide-react';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
@@ -14,57 +15,57 @@ import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 export default function StudentResources() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [batches, setBatches] = useState<Batch[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
+  const [filteredResources, setFilteredResources] = useState<Resource[]>([]);
   const [selectedBatch, setSelectedBatch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [batches, setBatches] = useState<{id: string, name: string}[]>([]);
 
   useEffect(() => {
-    fetchBatches();
-  }, []);
+    if (user?.userId) {
+      fetchResources();
+    }
+  }, [user?.userId]);
 
   useEffect(() => {
-    if (selectedBatch) {
-      fetchResources(selectedBatch);
-    } else {
-      setResources([]);
-      setIsLoading(false);
-    }
-  }, [selectedBatch]);
+    filterResources();
+  }, [selectedBatch, searchQuery, resources]);
 
-  const fetchBatches = async () => {
-    try {
-      const response = await getBatches();
-      if (response.success && response.data) {
-        setBatches(response.data);
-      } else {
-        throw new Error(response.error || 'Failed to fetch batches');
-      }
-    } catch (error) {
-      console.error('Error fetching batches:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch batches',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const fetchResources = async (batchId: string) => {
+  const fetchResources = async () => {
+    if (!user?.userId) return;
+    
     setIsLoading(true);
     try {
-      const response = await getResourcesByBatch(batchId);
-      if (response.success && response.data) {
-        setResources(response.data);
+      const resourcesData = await getStudentResources(user.userId);
+      
+      if (Array.isArray(resourcesData)) {
+        setResources(resourcesData);
+        
+        // Extract unique batches
+        const uniqueBatches = Array.from(
+          new Set(resourcesData.map(resource => resource.batch?.batchId.toString()))
+        ).map(batchId => {
+          const batchResource = resourcesData.find(r => r.batch?.batchId.toString() === batchId);
+          return {
+            id: batchId || '',
+            name: batchResource?.batch?.batchName || 'Unknown Batch'
+          };
+        });
+        
+        setBatches(uniqueBatches);
       } else {
-        throw new Error(response.error || 'Failed to fetch resources');
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch resources',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Error fetching resources:', error);
       toast({
         title: 'Error',
-        description: 'Failed to fetch resources',
+        description: 'An error occurred while fetching resources',
         variant: 'destructive',
       });
     } finally {
@@ -72,8 +73,33 @@ export default function StudentResources() {
     }
   };
 
-  const getFileIcon = (fileType: string) => {
-    switch (fileType.toLowerCase()) {
+  const filterResources = () => {
+    let filtered = [...resources];
+    
+    // Filter by batch
+    if (selectedBatch) {
+      filtered = filtered.filter(resource => 
+        resource.batch?.batchId.toString() === selectedBatch
+      );
+    }
+    
+    // Filter by search query
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(resource => 
+        resource.title?.toLowerCase().includes(query) || 
+        resource.description?.toLowerCase().includes(query) ||
+        resource.fileName.toLowerCase().includes(query)
+      );
+    }
+    
+    setFilteredResources(filtered);
+  };
+
+  const getFileIcon = (fileName: string) => {
+    const extension = fileName.split('.').pop()?.toLowerCase() || '';
+    
+    switch (extension) {
       case 'pdf':
         return <FileText className="h-6 w-6 text-red-500" />;
       case 'mp4':
@@ -96,7 +122,7 @@ export default function StudentResources() {
 
   const handleDownload = async (resource: Resource) => {
     try {
-      const response = await fetch(resource.presignedUrl);
+      const response = await fetch(resource.fileUrl);
       if (!response.ok) throw new Error('Failed to download resource');
       
       const blob = await response.blob();
@@ -118,12 +144,6 @@ export default function StudentResources() {
     }
   };
 
-  const filteredResources = resources.filter(resource => {
-    const matchesSearch = resource.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         resource.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
-
   return (
     <div className="space-y-6">
       <BreadcrumbNav items={[
@@ -140,18 +160,19 @@ export default function StudentResources() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="col-span-1 md:col-span-2">
           <div className="flex flex-col sm:flex-row gap-4">
-            <select
-              value={selectedBatch}
-              onChange={(e) => setSelectedBatch(e.target.value)}
-              className="w-full sm:w-[200px] p-2 border rounded-md"
-            >
-              <option value="">Select Batch</option>
-              {batches.map((batch) => (
-                <option key={batch.batchId} value={batch.batchId.toString()}>
-                  {batch.batchName}
-                </option>
-              ))}
-            </select>
+            <Select value={selectedBatch} onValueChange={setSelectedBatch}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="All Batches" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Batches</SelectItem>
+                {batches.map((batch) => (
+                  <SelectItem key={batch.id} value={batch.id}>
+                    {batch.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Input
               type="text"
               placeholder="Search resources..."
@@ -174,8 +195,8 @@ export default function StudentResources() {
               <Card key={resource.resourceId}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    {getFileIcon(resource.fileType)}
-                    <span>{resource.fileName}</span>
+                    {getFileIcon(resource.fileName)}
+                    <span>{resource.title || resource.fileName}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -184,9 +205,10 @@ export default function StudentResources() {
                       <p className="text-muted-foreground">{resource.description}</p>
                     )}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        Uploaded on {format(new Date(resource.createdAt), 'PPP')}
-                      </span>
+                      <div className="text-sm text-muted-foreground">
+                        <p>Batch: {resource.batch?.batchName}</p>
+                        <p>Uploaded: {format(new Date(resource.createdAt), 'PPP')}</p>
+                      </div>
                       <Button
                         variant="outline"
                         size="sm"
@@ -204,7 +226,9 @@ export default function StudentResources() {
             <div className="text-center py-12 bg-muted/30 rounded-lg border border-dashed">
               <h3 className="text-lg font-medium">No resources found</h3>
               <p className="text-muted-foreground mt-1">
-                {selectedBatch ? 'No resources available for this batch' : 'Please select a batch to view resources'}
+                {resources.length === 0 
+                  ? 'No resources are available for your enrolled batches' 
+                  : 'Try adjusting your filters'}
               </p>
             </div>
           )}
@@ -212,4 +236,4 @@ export default function StudentResources() {
       )}
     </div>
   );
-} 
+}

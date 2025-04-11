@@ -1,3 +1,4 @@
+
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
@@ -41,6 +42,51 @@ studentRouter.get('/:id/schedules', async (req, res) => {
     res.json({ success: true, data: schedules });
   } catch (error) {
     console.error('Error fetching student schedules:', error);
+    handleApiError(res, error);
+  }
+});
+
+// Get resources for a student's enrolled batches
+studentRouter.get('/:id/resources', async (req, res) => {
+  try {
+    const studentId = parseInt(req.params.id);
+
+    // Get all batches the student is enrolled in
+    const studentBatches = await prisma.StudentBatch.findMany({
+      where: { studentId },
+      select: { batchId: true }
+    });
+
+    const batchIds = studentBatches.map(sb => sb.batchId);
+
+    if (batchIds.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    // Get all resources for these batches
+    const resources = await prisma.Resource.findMany({
+      where: {
+        batchId: { in: batchIds }
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        batch: {
+          include: {
+            course: true
+          }
+        },
+        uploadedBy: {
+          select: {
+            userId: true,
+            fullName: true
+          }
+        }
+      }
+    });
+
+    res.json({ success: true, data: resources });
+  } catch (error) {
+    console.error('Error fetching student resources:', error);
     handleApiError(res, error);
   }
 });

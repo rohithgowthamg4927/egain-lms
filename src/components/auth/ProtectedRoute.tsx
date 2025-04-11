@@ -1,3 +1,4 @@
+
 import { ReactNode, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
@@ -52,22 +53,34 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // If user is a student and trying to access admin routes
-  if (user.role === Role.student && !allowedRoles?.includes(Role.student)) {
-    console.log("Student trying to access admin route, redirecting to student dashboard");
-    return <Navigate to="/student/dashboard" replace />;
-  }
-
-  // If user is an admin/instructor and trying to access student routes
-  if (user.role !== Role.student && allowedRoles?.includes(Role.student)) {
-    console.log("Admin/instructor trying to access student route, redirecting to admin dashboard");
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  // If specific roles are required and user doesn't have them
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    console.log("User role not allowed, redirecting to dashboard");
-    return <Navigate to="/dashboard" replace />;
+  // Specific role-based access control
+  if (allowedRoles && allowedRoles.length > 0) {
+    // If user role is not in allowed roles, handle accordingly
+    if (!allowedRoles.includes(user.role)) {
+      console.log(`User role ${user.role} not allowed, redirecting to appropriate dashboard`);
+      // If student trying to access admin/instructor route, redirect to student dashboard
+      if (user.role === Role.student) {
+        return <Navigate to="/student/dashboard" replace />;
+      }
+      // If admin/instructor trying to access student route, redirect to admin dashboard
+      else {
+        return <Navigate to="/dashboard" replace />;
+      }
+    }
+  } else {
+    // For routes without specific role restrictions, enforce separation
+    const isStudentRoute = location.pathname.startsWith('/student');
+    const isAdminRoute = !isStudentRoute;
+    
+    if (user.role === Role.student && isAdminRoute) {
+      console.log("Student trying to access admin route, redirecting to student dashboard");
+      return <Navigate to="/student/dashboard" replace />;
+    }
+    
+    if (user.role !== Role.student && isStudentRoute) {
+      console.log("Admin/instructor trying to access student route, redirecting to admin dashboard");
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   // If authenticated and authorized, render the layout

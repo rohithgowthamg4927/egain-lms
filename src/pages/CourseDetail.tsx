@@ -12,6 +12,7 @@ import { Course, Level } from '@/lib/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ArrowLeft, Calendar, Edit, Trash, Users, Book, Star } from 'lucide-react';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const CourseDetail = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -196,74 +197,128 @@ const CourseDetail = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="py-4">
-                <h3 className="text-lg font-semibold mb-2">Description</h3>
-                <p className="text-gray-700">
-                  {course.description || 'No description available.'}
-                </p>
-              </div>
-              
-              <Separator className="my-4" />
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-blue-500" />
+              <Tabs defaultValue="details" className="w-full">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                  <TabsTrigger value="batches">Batches</TabsTrigger>
+                  <TabsTrigger value="reviews">Reviews</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="details" className="space-y-4">
                   <div>
-                    <p className="text-sm text-gray-500">Students</p>
-                    <p className="font-medium">
-                      {course._count?.studentCourses || 0}
+                    <h3 className="text-lg font-semibold mb-2">Description</h3>
+                    <p className="text-gray-700">
+                      {course.description || 'No description available.'}
                     </p>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Book className="h-5 w-5 text-green-500" />
-                  <div>
-                    <p className="text-sm text-gray-500">Batches</p>
-                    <p className="font-medium">
-                      {course._count?.batches || 0}
-                    </p>
+                  
+                  <Separator className="my-4" />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-5 w-5 text-blue-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Students</p>
+                        <p className="font-medium">
+                          {course._count?.studentCourses || 0}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Book className="h-5 w-5 text-green-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Batches</p>
+                        <p className="font-medium">
+                          {course._count?.batches || 0}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Star className="h-5 w-5 text-amber-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Average Rating</p>
+                        <p className="font-medium">{course.averageRating?.toFixed(1) || 'N/A'}</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Star className="h-5 w-5 text-amber-500" />
-                  <div>
-                    <p className="text-sm text-gray-500">Average Rating</p>
-                    <p className="font-medium">{course.averageRating?.toFixed(1) || 'N/A'}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <Separator className="my-4" />
-              
-              <div className="pt-2">
-                <h3 className="text-lg font-semibold mb-4">Batches</h3>
-                {Array.isArray(course.batches) && course.batches.length > 0 ? (
-                  <div className="space-y-3">
-                    {course.batches.map((batch) => (
-                      <Card key={batch.batchId} className="relative overflow-hidden">
-                        <div className="p-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-semibold">{batch.batchName}</h4>
-                              <p className="text-sm text-gray-500">
-                                Instructor: {batch.instructor?.fullName || 'Not assigned'}
-                              </p>
+                </TabsContent>
+                
+                <TabsContent value="batches">
+                  <div className="pt-2">
+                    <h3 className="text-lg font-semibold mb-4">Batches</h3>
+                    {Array.isArray(course.batches) && course.batches.length > 0 ? (
+                      <div className="space-y-3">
+                        {course.batches.map((batch) => (
+                          <Card key={batch.batchId} className="relative overflow-hidden">
+                            <div className="p-4">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4 className="font-semibold">{batch.batchName}</h4>
+                                  <p className="text-sm text-gray-500">
+                                    Instructor: {batch.instructor?.fullName || 'Not assigned'}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Calendar className="h-4 w-4 text-gray-500" />
+                                  <span>
+                                    {new Date(batch.startDate).toLocaleDateString()} - {new Date(batch.endDate).toLocaleDateString()}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 text-sm">
-                              <Calendar className="h-4 w-4 text-gray-500" />
-                              <span>
-                                {new Date(batch.startDate).toLocaleDateString()} - {new Date(batch.endDate).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 italic">No batches have been created for this course yet.</p>
+                    )}
                   </div>
-                ) : (
-                  <p className="text-gray-500 italic">No batches have been created for this course yet.</p>
-                )}
-              </div>
+                </TabsContent>
+                
+                <TabsContent value="reviews">
+                  <div className="pt-2">
+                    <h3 className="text-lg font-semibold mb-4">Student Reviews</h3>
+                    {Array.isArray(course.reviews) && course.reviews.length > 0 ? (
+                      <div className="space-y-4">
+                        {course.reviews.map((review) => (
+                          <Card key={review.reviewId} className="overflow-hidden">
+                            <div className="p-4">
+                              <div className="flex justify-between items-start">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
+                                    {review.user?.fullName?.charAt(0) || 'U'}
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">{review.user?.fullName || 'Anonymous'}</p>
+                                    <div className="flex items-center">
+                                      {Array.from({ length: 5 }).map((_, i) => (
+                                        <Star 
+                                          key={i} 
+                                          className={`h-4 w-4 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {new Date(review.createdAt).toLocaleDateString()}
+                                </div>
+                              </div>
+                              {review.review && (
+                                <div className="mt-2 text-gray-700">
+                                  <p>{review.review}</p>
+                                </div>
+                              )}
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 italic">No reviews yet for this course.</p>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>

@@ -1,10 +1,11 @@
-import { Schedule } from '../types';
+
+import { Schedule, Resource } from '../types';
 import { apiFetch } from './core';
 
 export interface StudentCourse {
   studentCourseId: number;
-  courseId: number;
   studentId: number;
+  courseId: number;
   createdAt: string;
   course: {
     courseId: number;
@@ -102,9 +103,38 @@ export const getStudentSchedules = async (studentId: number): Promise<{ success:
   }
 };
 
-export const getStudentResources = async (studentId: number) => {
-  const response = await apiFetch<StudentResource[]>(`/students/${studentId}/resources`);
-  return response.data;
+export const getStudentResources = async (studentId: number): Promise<Resource[]> => {
+  try {
+    const response = await apiFetch<{ success: boolean; data: Resource[] }>(`/students/${studentId}/resources`);
+    return response.data || [];
+  } catch (error) {
+    console.error('Error fetching student resources:', error);
+    return [];
+  }
+};
+
+export const submitCourseReview = async (
+  studentId: number,
+  courseId: number,
+  rating: number,
+  review: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const response = await apiFetch<{ success: boolean }>(
+      `/courses/${courseId}/reviews`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ userId: studentId, rating, comment: review }),
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error('Error submitting course review:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to submit course review'
+    };
+  }
 };
 
 export const getStudentCourseAssignments = async (courseId: string) => {
@@ -119,40 +149,5 @@ export const getStudentAssignment = async (courseId: string, assignmentId: strin
 
 export const getStudentCourseDetail = async (courseId: string) => {
   const response = await apiFetch<StudentCourseDetail>(`/courses/${courseId}`);
-  return response.data;
-};
-
-export const submitAssignment = async ({
-  courseId,
-  assignmentId,
-  formData,
-}: {
-  courseId: string;
-  assignmentId: string;
-  formData: FormData;
-}) => {
-  const response = await apiFetch<StudentAssignment>(
-    `/courses/${courseId}/assignments/${assignmentId}/submit`,
-    {
-      method: 'POST',
-      body: formData,
-    }
-  );
-  return response.data;
-};
-
-export const submitCourseReview = async (
-  studentId: number,
-  courseId: number,
-  rating: number,
-  review: string
-) => {
-  const response = await apiFetch<{ success: boolean }>(
-    `/students/${studentId}/courses/${courseId}/reviews`,
-    {
-      method: 'POST',
-      body: JSON.stringify({ rating, review }),
-    }
-  );
   return response.data;
 };

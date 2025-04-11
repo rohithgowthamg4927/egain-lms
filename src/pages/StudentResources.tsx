@@ -29,16 +29,16 @@ const StudentResources = () => {
   // Fix the query function to ensure it always returns the same type
   const resourcesQuery = useQuery({
     queryKey: ['studentResources', user?.userId, selectedBatch],
-    queryFn: () => {
+    queryFn: async () => {
       if (!user?.userId) {
-        return Promise.resolve({ success: false, data: [] });
+        return { success: false, data: [] };
       }
       
       if (selectedBatch && selectedBatch !== 'all') {
-        return getStudentResources(user.userId, parseInt(selectedBatch, 10));
+        return await getStudentResources(user.userId, parseInt(selectedBatch, 10));
       }
       
-      return getStudentResources(user.userId);
+      return await getStudentResources(user.userId);
     },
     enabled: !!user?.userId,
   });

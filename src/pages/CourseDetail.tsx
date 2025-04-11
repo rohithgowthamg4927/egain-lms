@@ -1,7 +1,8 @@
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getCourse } from '@/lib/api/courses';
+import { getCourseById } from '@/lib/api/courses';
 import { format } from 'date-fns';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,7 +18,7 @@ const CourseDetail = () => {
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['course', courseId],
-    queryFn: () => getCourse(courseId),
+    queryFn: () => getCourseById(parseInt(courseId)),
     enabled: !!courseId,
   });
 
@@ -46,8 +47,8 @@ const CourseDetail = () => {
   const reviewsSection = () => {
     if (!course) return null;
     
-    // Check if reviews is an array before accessing length
-    const reviewsCount = Array.isArray(course.reviews) ? course.reviews.length : 0;
+    // Check if reviews exists and is an array before accessing length
+    const reviewsCount = course.reviews && Array.isArray(course.reviews) ? course.reviews.length : 0;
     
     return (
       <div className="mt-8">
@@ -55,7 +56,7 @@ const CourseDetail = () => {
         
         {reviewsCount > 0 ? (
           <div className="space-y-4">
-            {Array.isArray(course.reviews) && course.reviews.map((review: any) => (
+            {course.reviews && Array.isArray(course.reviews) && course.reviews.map((review: any) => (
               <div key={review.reviewId} className="p-4 border rounded-lg">
                 <div className="flex justify-between">
                   <div className="flex items-center gap-2">

@@ -1,3 +1,4 @@
+
 import {
   Routes,
   Route,
@@ -27,6 +28,12 @@ import ManageStudents from './pages/ManageStudents';
 import Batches from "./pages/Batches";
 import BatchDetail from "./pages/BatchDetail";
 import Schedules from "./pages/Schedules";
+
+// Import student interface routes
+import StudentDashboard from "./components/students/StudentDashboard";
+import StudentCourses from "./pages/StudentCourses";
+import StudentSchedules from "./pages/StudentSchedules";
+import StudentResources from "./pages/StudentResources";
 
 function App() {
   console.log("App component rendering");
@@ -156,6 +163,34 @@ function App() {
       <Route path="/resources" element={
         <ProtectedRoute>
           <Resources />
+        </ProtectedRoute>
+      } />
+      
+      {/* Student dashboard */}
+      <Route path="/student/dashboard" element={
+        <ProtectedRoute>
+          <StudentDashboard />
+        </ProtectedRoute>
+      } />
+      
+      {/* Student courses */}
+      <Route path="/student/courses" element={
+        <ProtectedRoute>
+          <StudentCourses />
+        </ProtectedRoute>
+      } />
+      
+      {/* Student schedules */}
+      <Route path="/student/schedules" element={
+        <ProtectedRoute>
+          <StudentSchedules />
+        </ProtectedRoute>
+      } />
+      
+      {/* Student resources */}
+      <Route path="/student/resources" element={
+        <ProtectedRoute>
+          <StudentResources />
         </ProtectedRoute>
       } />
     </Routes>

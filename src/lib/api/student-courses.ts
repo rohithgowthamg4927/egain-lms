@@ -48,3 +48,34 @@ export const removeStudentFromCourse = async (studentId: number, courseId: numbe
     };
   }
 };
+
+// Add a review to a course
+export const addCourseReview = async (courseId: number, userId: number, rating: number, comment: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const response = await apiFetch(`/courses/${courseId}/reviews`, {
+      method: 'POST',
+      body: JSON.stringify({ userId, rating, comment })
+    });
+    return response;
+  } catch (error) {
+    console.error('Error adding course review:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to add course review'
+    };
+  }
+};
+
+// Get existing reviews for a course
+export const getCourseReviews = async (courseId: number): Promise<{ success: boolean; data?: any[]; error?: string }> => {
+  try {
+    const response = await apiFetch(`/courses/${courseId}/reviews`);
+    return response;
+  } catch (error) {
+    console.error('Error fetching course reviews:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch course reviews'
+    };
+  }
+};

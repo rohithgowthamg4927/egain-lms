@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -8,6 +9,8 @@ import {
   BreadcrumbPage,
 } from '@/components/ui/breadcrumb';
 import { Home, ChevronRight } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { Role } from '@/lib/types';
 
 interface BreadcrumbDataItem {
   label: string;
@@ -19,6 +22,12 @@ interface BreadcrumbNavProps {
 }
 
 const BreadcrumbNav = ({ items }: BreadcrumbNavProps) => {
+  const { hasRole } = useAuth();
+  const isStudent = hasRole(Role.student);
+  
+  // Determine home path based on user role
+  const homePath = isStudent ? '/student/dashboard' : '/dashboard';
+  
   return (
     <Breadcrumb className="mb-6">
       <BreadcrumbList className="flex items-center text-sm">
@@ -26,7 +35,7 @@ const BreadcrumbNav = ({ items }: BreadcrumbNavProps) => {
         <BreadcrumbItem className="inline-flex items-center">
           <BreadcrumbLink asChild>
             <Link
-              to="/dashboard"
+              to={homePath}
               className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
             >
               <Home className="h-4 w-4" />

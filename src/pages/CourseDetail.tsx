@@ -8,10 +8,13 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { getCourseById, deleteCourse } from '@/lib/api/courses';
-import { Course, Level } from '@/lib/types';
+import { Course, Level, Role } from '@/lib/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ArrowLeft, Calendar, Edit, Trash, Users, Book, Star } from 'lucide-react';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
+import { useAuth } from '@/hooks/use-auth';
+import CourseReviewForm from '@/components/courses/CourseReviewForm';
+import { getStudentCourses } from '@/lib/api/student-courses';
 
 const CourseDetail = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -19,9 +22,21 @@ const CourseDetail = () => {
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
+  const { user, hasRole } = useAuth();
 
   // Ensure courseId is parsed as a number for the API call
   const parsedCourseId = courseId ? parseInt(courseId, 10) : undefined;
+
+  // Check if student is enrolled in this course
+  const enrollmentQuery = useQuery({
+    queryKey: ['studentCourses', user?.userId],
+    queryFn: () => user?.userId ? getStudentCourses(user.userId) : Promise.resolve({ success: false, data: [] }),
+    enabled: !!user?.userId && hasRole(Role.student),
+  });
+
+  const isEnrolled = enrollmentQuery.data?.data?.some(
+    enrollment => enrollment.courseId === parsedCourseId
+  );
 
   // Log the courseId for debugging
   console.log('CourseDetail - courseId:', courseId, 'parsedCourseId:', parsedCourseId);
@@ -105,6 +120,9 @@ const CourseDetail = () => {
     return colors[level] || '';
   };
 
+  const isAdmin = hasRole([Role.admin, Role.instructor]);
+  const isStudent = hasRole(Role.student);
+
   return (
     <div className="p-0">
       <BreadcrumbNav items={[
@@ -123,7 +141,7 @@ const CourseDetail = () => {
             <ArrowLeft className="h-4 w-4" />
             Back to Courses
           </Button>
-          {!isLoading && !isError && course && (
+          {!isLoading && !isError && course && isAdmin && (
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
@@ -235,9 +253,9 @@ const CourseDetail = () => {
               
               <Separator className="my-4" />
               
-              <div className="pt-2">
-                <h3 className="text-lg font-semibold mb-4">Batches</h3>
-                {Array.isArray(course.batches) && course.batches.length > 0 ? (
+              {course.batches && course.batches.length > 0 && (
+                <div className="pt-2">
+                  <h3 className="text-lg font-semibold mb-4">Batches</h3>
                   <div className="space-y-3">
                     {course.batches.map((batch) => (
                       <Card key={batch.batchId} className="relative overflow-hidden">
@@ -260,12 +278,48 @@ const CourseDetail = () => {
                       </Card>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-gray-500 italic">No batches have been created for this course yet.</p>
-                )}
-              </div>
+                </div>
+              )}
+              
+              {course.reviews && course.reviews.length > 0 && (
+                <>
+                  <Separator className="my-4" />
+                  <div className="pt-2">
+                    <h3 className="text-lg font-semibold mb-4">Reviews</h3>
+                    <div className="space-y-4">
+                      {course.reviews.map((review) => (
+                        <Card key={review.reviewId} className="overflow-hidden">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-semibold">{review.user?.fullName || 'Anonymous'}</div>
+                                <div className="flex items-center mt-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star 
+                                      key={i} 
+                                      className={`h-4 w-4 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {new Date(review.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                            <p className="mt-2 text-gray-700">{review.comment}</p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
+          
+          {isStudent && (
+            <CourseReviewForm />
+          )}
         </div>
       )}
     </div>

@@ -11,13 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ResourceGrid from '@/components/resources/ResourceGrid';
 import ResourceList from '@/components/resources/ResourceList';
-import { Search } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 
 const StudentResources = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedBatch, setSelectedBatch] = useState<string>('all');
-  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedBatch, setSelectedBatch] = useState<string>('');
+  const [selectedType, setSelectedType] = useState<string>('');
   
   // Get student's batches
   const batchesQuery = useQuery({
@@ -26,19 +26,17 @@ const StudentResources = () => {
     enabled: !!user?.userId,
   });
   
-  // Fix the query function to ensure it always returns the same type
+  // Get all resources for the student's batches
   const resourcesQuery = useQuery({
     queryKey: ['studentResources', user?.userId, selectedBatch],
-    queryFn: async () => {
-      if (!user?.userId) {
-        return { success: false, data: [] };
-      }
+    queryFn: () => {
+      if (!user?.userId) return Promise.resolve({ success: false, data: [] });
       
       if (selectedBatch && selectedBatch !== 'all') {
-        return await getStudentResources(user.userId, parseInt(selectedBatch, 10));
+        return getStudentResources(user.userId, parseInt(selectedBatch, 10));
       }
       
-      return await getStudentResources(user.userId);
+      return getStudentResources(user.userId);
     },
     enabled: !!user?.userId,
   });
@@ -53,7 +51,7 @@ const StudentResources = () => {
          resource.description?.toLowerCase().includes(searchQuery.toLowerCase()))
       : true;
       
-    const matchesType = selectedType && selectedType !== 'all'
+    const matchesType = selectedType
       ? resource.type === selectedType
       : true;
       
@@ -111,11 +109,9 @@ const StudentResources = () => {
                     <SelectValue placeholder="All Types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="">All Types</SelectItem>
                     <SelectItem value="document">Documents</SelectItem>
                     <SelectItem value="video">Videos</SelectItem>
-                    <SelectItem value="assignment">Assignments</SelectItem>
-                    <SelectItem value="code">Code</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

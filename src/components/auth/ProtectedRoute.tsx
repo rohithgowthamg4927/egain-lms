@@ -1,51 +1,72 @@
 
+import { ReactNode, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
-import { Role } from '@/lib/types';
+import Sidebar from '@/components/layout/Sidebar';
+import Header from '@/components/layout/Header';
+import { Loader2 } from 'lucide-react';
 
-type ProtectedRouteProps = {
-  children: React.ReactNode;
-  requiredRoles?: Role | Role[];
-};
+interface ProtectedRouteProps {
+  children: ReactNode;
+}
 
-const ProtectedRoute = ({ children, requiredRoles }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading, user, hasRole } = useAuth();
+const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
-  
+
+  // Add logging to help debug
+  useEffect(() => {
+    console.log("ProtectedRoute render - Auth State:", { 
+      isAuthenticated, isLoading, path: location.pathname 
+    });
+    
+    // Also check what's in localStorage
+    const token = localStorage.getItem('authToken');
+    const user = localStorage.getItem('currentUser');
+    console.log("Local storage check:", { 
+      hasToken: !!token, 
+      hasUser: !!user,
+      userDetails: user ? JSON.parse(user) : null
+    });
+  }, [isAuthenticated, isLoading, location.pathname]);
+
+  // While checking authentication, show a loading placeholder
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
+          <h2 className="mt-4 text-xl font-medium">Loading...</h2>
+          <p className="text-sm text-muted-foreground">Please wait while we load your data</p>
+        </div>
       </div>
     );
   }
+
+  // Check localStorage directly as a fallback
+  const hasStoredToken = !!localStorage.getItem('authToken');
+  const hasStoredUser = !!localStorage.getItem('currentUser');
   
-  if (!isAuthenticated) {
-    // Redirect to login with a return path
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  // If not authenticated by context or localStorage, redirect to login
+  if (!isAuthenticated && (!hasStoredToken || !hasStoredUser)) {
+    console.log("Not authenticated, redirecting to login from Protected Route");
+    return <Navigate to="/" replace state={{ from: location }} />;
   }
-  
-  // Check if the route requires specific roles and user doesn't have them
-  if (requiredRoles && !hasRole(requiredRoles)) {
-    console.log('Access denied: User does not have the required role(s)', { 
-      userRole: user?.role, 
-      requiredRoles
-    });
-    
-    // Redirect based on user's role
-    if (user?.role === Role.student) {
-      return <Navigate to="/student/dashboard" replace />;
-    } else if (user?.role === Role.instructor) {
-      return <Navigate to="/dashboard" replace />;
-    } else if (user?.role === Role.admin) {
-      return <Navigate to="/dashboard" replace />;
-    }
-    
-    // Default fallback
-    return <Navigate to="/dashboard" replace />;
-  }
-  
-  return <>{children}</>;
+
+  // If authenticated, render the outlet inside Layout with Sidebar
+  return (
+    <div className="min-h-screen bg-background flex">
+      <Sidebar />
+      <div className="flex-1 flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 p-6 overflow-auto">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
 };
 
 export default ProtectedRoute;

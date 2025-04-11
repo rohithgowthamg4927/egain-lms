@@ -37,7 +37,7 @@ const BreadcrumbNav = ({ items }: BreadcrumbNavProps) => {
 
         {/* Loop Through Breadcrumb Items */}
         {items.map((item, index) => (
-          <React.Fragment key={item.link}>
+          <div key={item.link} className="flex items-center gap-x-2">
             <ChevronRight className="mx-1 h-3.5 w-3.5 text-muted-foreground" />
             <BreadcrumbItem className="inline-flex items-center">
               {index === items.length - 1 ? (
@@ -55,7 +55,7 @@ const BreadcrumbNav = ({ items }: BreadcrumbNavProps) => {
                 </BreadcrumbLink>
               )}
             </BreadcrumbItem>
-          </React.Fragment>
+          </div>
         ))}
       </BreadcrumbList>
     </Breadcrumb>

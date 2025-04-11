@@ -140,3 +140,5 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
     </div>
   );
 }
+
+export default ResourceList;

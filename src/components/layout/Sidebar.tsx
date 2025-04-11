@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
 import { useAuth } from '@/hooks/use-auth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Role } from '@/lib/types';
@@ -232,6 +232,10 @@ export default function Sidebar({ className }: SidebarProps) {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-64">
+            <SheetHeader>
+              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+              <SheetDescription className="sr-only">Main navigation menu for the application</SheetDescription>
+            </SheetHeader>
             <div className="flex h-16 items-center border-b px-4">
               <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
                 <div className="flex items-center">

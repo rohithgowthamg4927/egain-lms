@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -15,16 +16,29 @@ import { UploadResourceDialog } from '@/components/resources/UploadResourceDialo
 import ResourceMetrics from '@/components/resources/ResourceMetrics';
 import ResourceGrid from '@/components/resources/ResourceGrid';
 import ResourceList from '@/components/resources/ResourceList';
-import { Batch, Resource } from '@/lib/types';
-import { getBatches, getResourcesByBatch, deleteResource } from '@/lib/api';
+import { Batch } from '@/lib/types';
+import { getBatches } from '@/lib/api/batches';
+import { getResourcesByBatch, deleteResource } from '@/lib/api/resources';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
+
+// Define compatible resource type
+interface ResourceCompatible {
+  resourceId: number;
+  title: string;
+  description?: string;
+  fileName: string;
+  fileUrl: string;
+  resourceType: "assignment" | "recording";
+  createdAt: string;
+  uploadedBy: { fullName: string };
+}
 
 export default function ResourcesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [batches, setBatches] = useState<Batch[]>([]);
-  const [resources, setResources] = useState<Resource[]>([]);
+  const [resources, setResources] = useState<ResourceCompatible[]>([]);
   const [selectedBatch, setSelectedBatch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -66,7 +80,17 @@ export default function ResourcesPage() {
     try {
       const response = await getResourcesByBatch(batchId);
       if (response.success && response.data) {
-        setResources(response.data);
+        const compatibleResources: ResourceCompatible[] = response.data.map(resource => ({
+          resourceId: resource.resourceId,
+          title: resource.title,
+          description: resource.description,
+          fileName: resource.fileName || 'unknown.file',
+          fileUrl: resource.fileUrl || '',
+          resourceType: resource.resourceType || 'assignment',
+          createdAt: resource.createdAt,
+          uploadedBy: resource.uploadedBy || { fullName: 'System' }
+        }));
+        setResources(compatibleResources);
       } else {
         throw new Error(response.error || 'Failed to fetch resources');
       }
@@ -82,11 +106,11 @@ export default function ResourcesPage() {
     }
   };
 
-  const handleDelete = async (resource: Resource) => {
+  const handleDelete = async (resourceId: number) => {
     if (!confirm('Are you sure you want to delete this resource?')) return;
 
     try {
-      const response = await deleteResource(resource.resourceId);
+      const response = await deleteResource(resourceId);
 
       if (!response.success) throw new Error(response.error || 'Failed to delete resource');
 

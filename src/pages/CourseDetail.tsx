@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -21,10 +20,8 @@ const CourseDetail = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
 
-  // Ensure courseId is parsed as a number for the API call
   const parsedCourseId = courseId ? parseInt(courseId, 10) : undefined;
 
-  // Log the courseId for debugging
   console.log('CourseDetail - courseId:', courseId, 'parsedCourseId:', parsedCourseId);
 
   const courseQuery = useQuery({
@@ -286,10 +283,10 @@ const CourseDetail = () => {
                               <div className="flex justify-between items-start">
                                 <div className="flex items-center gap-2">
                                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
-                                    {review.user?.fullName?.charAt(0) || 'U'}
+                                    {review.student?.fullName?.charAt(0) || 'S'}
                                   </div>
                                   <div>
-                                    <p className="font-medium">{review.user?.fullName || 'Anonymous'}</p>
+                                    <p className="font-medium">{review.student?.fullName || 'Anonymous Student'}</p>
                                     <div className="flex items-center">
                                       {Array.from({ length: 5 }).map((_, i) => (
                                         <Star 

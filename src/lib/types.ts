@@ -61,6 +61,7 @@ export interface Course {
     studentCourses: number; 
     batches: number;        
   };
+  reviews?: CourseReview[]; // Add reviews array
 }
 
 export interface Category {
@@ -125,17 +126,25 @@ export interface Resource {
   id?: number; // Adding ID as optional for backward compatibility
   courseId?: number; // Adding courseId as optional
   title: string;
-  type: string;
-  url: string;
+  type?: string;
+  url?: string;
   resourceType: "assignment" | "recording";
-  uploadedBy: { fullName: string };
+  uploadedBy: { fullName: string; userId?: number };
   description?: string;
-  fileName?: string; // Adding fileName property
-  fileUrl?: string; // Adding fileUrl for clarity
-  batchId?: number; // Adding batchId as it appears in the backend
-  uploadedById?: number; // Adding uploadedById as it appears in the backend
+  fileName: string; // Making fileName required
+  fileUrl: string; // Making fileUrl required
+  batchId?: number; // Adding batchId as optional
+  uploadedById?: number; // Adding uploadedById as optional
   createdAt: string;
   updatedAt: string;
+  batch?: { // Adding batch property
+    batchId: number;
+    batchName: string;
+    course: {
+      courseId: number;
+      courseName: string;
+    };
+  };
 }
 
 export interface CourseReview {

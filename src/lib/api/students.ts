@@ -1,4 +1,3 @@
-
 import { Schedule, Resource } from '../types';
 import { apiFetch } from './core';
 
@@ -106,7 +105,10 @@ export const getStudentSchedules = async (studentId: number): Promise<{ success:
 export const getStudentResources = async (studentId: number): Promise<Resource[]> => {
   try {
     const response = await apiFetch<{ success: boolean; data: Resource[] }>(`/students/${studentId}/resources`);
-    return response.data || [];
+    if (response.success && response.data) {
+      return response.data;
+    }
+    return [];
   } catch (error) {
     console.error('Error fetching student resources:', error);
     return [];

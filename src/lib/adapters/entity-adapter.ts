@@ -89,12 +89,19 @@ export class EntityAdapter {
     return {
       resourceId: apiResource.id || apiResource.resourceId,
       courseId: apiResource.courseId,
-      title: apiResource.title,
+      title: apiResource.title || 'Untitled Resource',
       type: apiResource.type,
       url: apiResource.url,
       description: apiResource.description,
+      fileName: apiResource.fileName || 'unknown.file',
+      fileUrl: apiResource.fileUrl || apiResource.url || '',
+      resourceType: apiResource.resourceType || 'assignment',
+      uploadedBy: apiResource.uploadedBy || { fullName: 'System' },
       createdAt: dateToString(apiResource.createdAt),
-      updatedAt: dateToString(apiResource.updatedAt)
+      updatedAt: dateToString(apiResource.updatedAt),
+      batchId: apiResource.batchId,
+      uploadedById: apiResource.uploadedById,
+      batch: apiResource.batch
     };
   }
 }

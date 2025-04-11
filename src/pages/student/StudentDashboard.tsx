@@ -1,80 +1,101 @@
 
-import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+// Import necessary components and hooks
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Clock, FileText, BookOpen, ChevronRight } from 'lucide-react';
+import { format } from 'date-fns';
 import { getStudentCourses, getStudentSchedules, getStudentResources } from '@/lib/api/students';
-import { Schedule, Resource } from '@/lib/types';
-import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, Calendar, Clock, FileText, Star } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
-  const [pendingReviews, setPendingReviews] = useState(0);
-
-  // Query for student courses
-  const coursesQuery = useQuery({
-    queryKey: ['studentCourses', user?.userId],
-    queryFn: () => {
-      if (!user?.userId) throw new Error('User ID required');
-      return getStudentCourses(user.userId);
-    },
-    enabled: !!user?.userId
-  });
-
-  // Query for student schedules
-  const schedulesQuery = useQuery({
-    queryKey: ['studentSchedules', user?.userId],
-    queryFn: () => {
-      if (!user?.userId) throw new Error('User ID required');
-      return getStudentSchedules(user.userId);
-    },
-    enabled: !!user?.userId
-  });
-
-  // Use the resource data directly from the API
-  const [resources, setResources] = useState<Resource[]>([]);
-  const [isLoadingResources, setIsLoadingResources] = useState(true);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [courses, setCourses] = useState([]);
+  const [schedules, setSchedules] = useState([]);
+  const [resources, setResources] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchResources = async () => {
-      if (!user?.userId) return;
-      
-      try {
-        setIsLoadingResources(true);
-        const response = await getStudentResources(user.userId);
-        if (response && Array.isArray(response)) {
-          setResources(response);
-        }
-      } catch (error) {
-        console.error('Error fetching resources:', error);
-      } finally {
-        setIsLoadingResources(false);
+    if (user?.userId) {
+      fetchData();
+    }
+  }, [user]);
+
+  const fetchData = async () => {
+    if (!user?.userId) return;
+    
+    setIsLoading(true);
+    try {
+      // Fetch courses
+      const coursesResponse = await getStudentCourses(user.userId);
+      if (coursesResponse.success && coursesResponse.data) {
+        setCourses(coursesResponse.data);
       }
-    };
 
-    fetchResources();
-  }, [user?.userId]);
+      // Fetch schedules
+      const schedulesResponse = await getStudentSchedules(user.userId);
+      if (schedulesResponse.success && schedulesResponse.data) {
+        setSchedules(schedulesResponse.data);
+      }
 
-  // Calculate metrics from query results
-  const coursesCount = coursesQuery.data?.data?.length || 0;
-  const schedules = schedulesQuery.data?.data || [];
-  const upcomingClassesCount = schedules.length;
-  const resourcesCount = resources.length;
+      // Fetch resources
+      const resourcesData = await getStudentResources(user.userId);
+      if (Array.isArray(resourcesData)) {
+        setResources(resourcesData);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load dashboard data',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // Order schedules by date
-  const sortedSchedules = [...schedules].sort((a, b) => 
-    new Date(a.scheduleDate).getTime() - new Date(b.scheduleDate).getTime()
-  );
+  // Format schedule time
+  const formatTime = (timeString) => {
+    try {
+      const date = new Date(`1970-01-01T${timeString}`);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (error) {
+      return timeString;
+    }
+  };
 
-  // Show only the next few schedules
-  const nextSchedules = sortedSchedules.slice(0, 3);
+  // Format schedule date
+  const formatScheduleDate = (dateString) => {
+    try {
+      return format(new Date(dateString), 'PPP');
+    } catch (error) {
+      return dateString;
+    }
+  };
 
-  const isLoading = coursesQuery.isLoading || schedulesQuery.isLoading || isLoadingResources;
+  // Calculate upcoming schedules (next 7 days)
+  const upcomingSchedules = schedules
+    .filter(schedule => {
+      const scheduleDate = new Date(schedule.scheduleDate);
+      const today = new Date();
+      const sevenDaysFromNow = new Date();
+      sevenDaysFromNow.setDate(today.getDate() + 7);
+      return scheduleDate >= today && scheduleDate <= sevenDaysFromNow;
+    })
+    .sort((a, b) => new Date(a.scheduleDate) - new Date(b.scheduleDate))
+    .slice(0, 5);
+
+  // Get recent resources (last 5)
+  const recentResources = [...resources]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -82,203 +103,167 @@ export default function StudentDashboard() {
         { label: 'Dashboard', link: '/student/dashboard' }
       ]} />
       
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <h1 className="text-3xl font-bold">Student Dashboard</h1>
-      </div>
+      <h1 className="text-3xl font-bold">Student Dashboard</h1>
+      <p className="text-muted-foreground">
+        Welcome back, {user?.fullName}. Here's an overview of your learning journey.
+      </p>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <Card key={index}>
-              <CardHeader className="pb-2">
-                <Skeleton className="h-4 w-24" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-12" />
-              </CardContent>
-            </Card>
-          ))}
+        <div className="flex items-center justify-center h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">My Courses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">{coursesCount}</span>
-                <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <BookOpen className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Enrolled Courses</CardTitle>
+                <BookOpen className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{courses.length}</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Upcoming Classes</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{upcomingSchedules.length}</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Recent Resources</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{recentResources.length}</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">0</div>
+              </CardContent>
+            </Card>
+          </div>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming Classes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">{upcomingClassesCount}</span>
-                <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
-                  <Calendar className="h-6 w-6 text-amber-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Resources</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">{resourcesCount}</span>
-                <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                  <FileText className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">{pendingReviews}</span>
-                <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
-                  <Star className="h-6 w-6 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming Schedule */}
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle>Upcoming Schedule</CardTitle>
-            <CardDescription>Your next classes</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {schedulesQuery.isLoading ? (
-              <div className="space-y-4">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="flex gap-4">
-                    <Skeleton className="h-12 w-12 rounded-full" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-[250px]" />
-                      <Skeleton className="h-4 w-[200px]" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : nextSchedules.length > 0 ? (
-              <div className="space-y-4">
-                {nextSchedules.map((schedule) => (
-                  <div key={schedule.scheduleId} className="flex items-start gap-4 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="h-12 w-12 rounded-full bg-blue-100 flex flex-shrink-0 items-center justify-center">
-                      <Clock className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="font-medium">{schedule.topic || schedule.batch.course.courseName}</p>
-                      <div className="text-sm text-muted-foreground">
-                        <p>{format(parseISO(schedule.scheduleDate), 'PPP')}</p>
-                        <p>{schedule.startTime.slice(0, 5)} - {schedule.endTime.slice(0, 5)}</p>
-                      </div>
-                      {schedule.meetingLink && (
-                        <div className="mt-2">
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={schedule.meetingLink} target="_blank" rel="noopener noreferrer">
-                              Join Meeting
-                            </a>
-                          </Button>
+          <Tabs defaultValue="schedule" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="schedule">Upcoming Schedule</TabsTrigger>
+              <TabsTrigger value="resources">Recent Resources</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="schedule" className="space-y-4">
+              <div className="grid gap-4 grid-cols-1">
+                {upcomingSchedules.length > 0 ? (
+                  upcomingSchedules.map((schedule) => (
+                    <Card key={schedule.scheduleId}>
+                      <CardContent className="p-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="flex items-start gap-4">
+                            <div className="bg-primary/10 p-2 rounded-full">
+                              <Calendar className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">{schedule.topic || 'Class Session'}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {schedule.batch?.course?.courseName} - {schedule.batch?.batchName}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col md:items-end gap-1">
+                            <div className="flex items-center gap-1 text-sm">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <span>{formatScheduleDate(schedule.scheduleDate)}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-sm">
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <span>
+                                {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <p className="text-muted-foreground">No upcoming classes scheduled.</p>
+                    </CardContent>
+                  </Card>
+                )}
                 
-                <div className="pt-2">
-                  <Button variant="ghost" size="sm" asChild className="gap-1">
-                    <Link to="/student/schedules">
-                      View all schedules
-                      <ArrowRight className="h-4 w-4 ml-1" />
-                    </Link>
-                  </Button>
-                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate('/student/schedules')}
+                >
+                  View All Schedules
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
               </div>
-            ) : (
-              <div className="text-center py-6">
-                <p className="text-muted-foreground">No upcoming classes scheduled</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recent Resources */}
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle>Recent Resources</CardTitle>
-            <CardDescription>Latest learning materials</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoadingResources ? (
-              <div className="space-y-4">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="flex gap-4">
-                    <Skeleton className="h-12 w-12 rounded-full" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-[250px]" />
-                      <Skeleton className="h-4 w-[200px]" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : resources.length > 0 ? (
-              <div className="space-y-4">
-                {resources.slice(0, 3).map((resource) => (
-                  <div key={resource.resourceId} className="flex items-start gap-4 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="h-12 w-12 rounded-full bg-green-100 flex flex-shrink-0 items-center justify-center">
-                      <FileText className="h-6 w-6 text-green-600" />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="font-medium">{resource.title || resource.fileName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {resource.batch?.batchName || 'Course material'}
-                      </p>
-                      <div className="mt-2">
-                        <Button variant="outline" size="sm">
-                          Download
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            </TabsContent>
+            
+            <TabsContent value="resources" className="space-y-4">
+              <div className="grid gap-4 grid-cols-1">
+                {recentResources.length > 0 ? (
+                  recentResources.map((resource) => (
+                    <Card key={resource.resourceId}>
+                      <CardContent className="p-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="flex items-start gap-4">
+                            <div className="bg-primary/10 p-2 rounded-full">
+                              <FileText className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">{resource.title}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {resource.batchId ? `Batch ID: ${resource.batchId}` : 'General Resource'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col md:items-end gap-1">
+                            <div className="flex items-center gap-1 text-sm">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <span>{format(new Date(resource.createdAt), 'PPP')}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <p className="text-muted-foreground">No resources available yet.</p>
+                    </CardContent>
+                  </Card>
+                )}
                 
-                <div className="pt-2">
-                  <Button variant="ghost" size="sm" asChild className="gap-1">
-                    <Link to="/student/resources">
-                      View all resources
-                      <ArrowRight className="h-4 w-4 ml-1" />
-                    </Link>
-                  </Button>
-                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate('/student/resources')}
+                >
+                  View All Resources
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
               </div>
-            ) : (
-              <div className="text-center py-6">
-                <p className="text-muted-foreground">No learning resources available</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            </TabsContent>
+          </Tabs>
+        </>
+      )}
     </div>
   );
 }

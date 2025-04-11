@@ -8,8 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Resource } from '@/lib/types';
 import { getStudentResources } from '@/lib/api/students';
+import { getResourcePresignedUrl } from '@/lib/api/resources';
 import { format } from 'date-fns';
-import { Download, FileText, FileVideo, FileImage, FileAudio, File } from 'lucide-react';
+import { Download, FileText, FileVideo, FileImage, FileAudio, File, Eye, Loader2 } from 'lucide-react';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 export default function StudentResources() {
@@ -21,6 +22,7 @@ export default function StudentResources() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [batches, setBatches] = useState<{id: string, name: string}[]>([]);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (user?.userId) {
@@ -40,6 +42,7 @@ export default function StudentResources() {
       const resourcesResponse = await getStudentResources(user.userId);
       
       if (resourcesResponse.success && resourcesResponse.data) {
+        console.log("Resources fetched:", resourcesResponse.data);
         setResources(resourcesResponse.data);
         
         // Extract unique batches
@@ -66,9 +69,10 @@ export default function StudentResources() {
         
         setBatches(uniqueBatches);
       } else {
+        console.error("Failed to fetch resources:", resourcesResponse.error);
         toast({
           title: 'Error',
-          description: 'Failed to fetch resources',
+          description: resourcesResponse.error || 'Failed to fetch resources',
           variant: 'destructive',
         });
       }
@@ -101,58 +105,93 @@ export default function StudentResources() {
       filtered = filtered.filter(resource => 
         resource.title?.toLowerCase().includes(query) || 
         resource.description?.toLowerCase().includes(query) ||
-        resource.fileName.toLowerCase().includes(query)
+        (resource.fileName && resource.fileName.toLowerCase().includes(query))
       );
     }
     
     setFilteredResources(filtered);
   };
 
-  const getFileIcon = (fileName: string) => {
+  const getFileIcon = (resource: Resource) => {
+    const fileName = resource.fileName || '';
     const extension = fileName.split('.').pop()?.toLowerCase() || '';
+    const resourceType = resource.resourceType || 'document';
     
-    switch (extension) {
-      case 'pdf':
-        return <FileText className="h-6 w-6 text-red-500" />;
-      case 'mp4':
-      case 'mov':
-      case 'avi':
-        return <FileVideo className="h-6 w-6 text-blue-500" />;
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-        return <FileImage className="h-6 w-6 text-green-500" />;
-      case 'mp3':
-      case 'wav':
-      case 'ogg':
-        return <FileAudio className="h-6 w-6 text-purple-500" />;
-      default:
-        return <File className="h-6 w-6 text-gray-500" />;
+    if (resourceType === 'recording' || ['mp4', 'mov', 'avi', 'webm'].includes(extension)) {
+      return <FileVideo className="h-6 w-6 text-blue-500" />;
+    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
+      return <FileImage className="h-6 w-6 text-green-500" />;
+    } else if (['mp3', 'wav', 'ogg'].includes(extension)) {
+      return <FileAudio className="h-6 w-6 text-purple-500" />; 
+    } else if (['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'].includes(extension)) {
+      return <FileText className="h-6 w-6 text-red-500" />;
+    } else {
+      return <File className="h-6 w-6 text-gray-500" />;
+    }
+  };
+
+  const handleView = async (resource: Resource) => {
+    try {
+      setDownloadingId(resource.resourceId);
+      toast({
+        title: 'Loading',
+        description: 'Preparing resource...',
+      });
+      
+      const response = await getResourcePresignedUrl(resource.resourceId);
+      
+      if (response.success && response.data.presignedUrl) {
+        window.open(response.data.presignedUrl, '_blank');
+      } else {
+        throw new Error(response.error || 'Failed to get resource URL');
+      }
+    } catch (error) {
+      console.error('Error viewing resource:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to view resource',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadingId(null);
     }
   };
 
   const handleDownload = async (resource: Resource) => {
     try {
-      const response = await fetch(resource.fileUrl);
-      if (!response.ok) throw new Error('Failed to download resource');
+      setDownloadingId(resource.resourceId);
+      toast({
+        title: 'Loading',
+        description: 'Preparing download...',
+      });
       
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = resource.fileName;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const response = await getResourcePresignedUrl(resource.resourceId);
+      
+      if (response.success && response.data.presignedUrl) {
+        // For direct download (files that can't be viewed in browser)
+        const a = document.createElement('a');
+        a.href = response.data.presignedUrl;
+        a.download = resource.fileName || `resource-${resource.resourceId}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        toast({
+          title: 'Success',
+          description: 'Download started',
+        });
+      } else {
+        throw new Error(response.error || 'Failed to get download URL');
+      }
     } catch (error) {
-      console.error('Error downloading resource:', error);
+      console.error('Download error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to download resource',
+        description: error instanceof Error ? error.message : 'Failed to download resource',
         variant: 'destructive',
       });
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -167,6 +206,15 @@ export default function StudentResources() {
     }
     
     return "Unknown Batch";
+  };
+
+  const isVideoResource = (resource: Resource): boolean => {
+    const fileName = resource.fileName || '';
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    const resourceType = resource.resourceType || '';
+    
+    return resourceType === 'recording' || 
+           ['mp4', 'mov', 'avi', 'webm'].includes(extension || '');
   };
 
   return (
@@ -220,8 +268,8 @@ export default function StudentResources() {
               <Card key={resource.resourceId}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    {getFileIcon(resource.fileName)}
-                    <span>{resource.title || resource.fileName}</span>
+                    {getFileIcon(resource)}
+                    <span>{resource.title || resource.fileName || `Resource ${resource.resourceId}`}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -232,16 +280,26 @@ export default function StudentResources() {
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-muted-foreground">
                         <p>Batch: {getBatchName(resource)}</p>
+                        <p>Type: {resource.resourceType === 'recording' ? 'Class Recording' : 'Assignment'}</p>
                         <p>Uploaded: {format(new Date(resource.createdAt), 'PPP')}</p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownload(resource)}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => isVideoResource(resource) ? handleView(resource) : handleDownload(resource)}
+                          disabled={downloadingId === resource.resourceId}
+                        >
+                          {downloadingId === resource.resourceId ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : isVideoResource(resource) ? (
+                            <Eye className="h-4 w-4 mr-2" />
+                          ) : (
+                            <Download className="h-4 w-4 mr-2" />
+                          )}
+                          {isVideoResource(resource) ? 'View' : 'Download'}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardContent>

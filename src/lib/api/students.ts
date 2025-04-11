@@ -1,3 +1,4 @@
+
 import { Schedule, Resource } from '../types';
 import { apiFetch } from './core';
 import { EntityAdapter } from '../adapters/entity-adapter';
@@ -105,11 +106,26 @@ export const getStudentSchedules = async (studentId: number): Promise<{ success:
 
 export const getStudentResources = async (studentId: number): Promise<{ success: boolean; data?: Resource[]; error?: string }> => {
   try {
-    const response = await apiFetch<Resource[]>(`/students/${studentId}/resources`);
-    return response;
+    const response = await apiFetch<{ success: boolean; data: Resource[] }>(`/students/${studentId}/resources`);
+    
+    // Extract the data array from the nested response
+    if (response.success && response.data) {
+      return {
+        success: true,
+        data: response.data.data || []
+      };
+    }
+    
+    return {
+      success: false,
+      error: 'Failed to fetch resources'
+    };
   } catch (error) {
     console.error('Error fetching student resources:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch resources' };
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to fetch resources' 
+    };
   }
 };
 

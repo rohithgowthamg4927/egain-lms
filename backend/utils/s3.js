@@ -143,7 +143,7 @@ export const uploadFile = async (batchName, resourceType, fileName, fileBuffer) 
 
   try {
     await s3Client.send(command);
-    return `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+    return key;
   } catch (error) {
     console.error('Error uploading file:', error);
     throw error;

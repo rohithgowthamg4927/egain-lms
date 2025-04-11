@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { Resource } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, MoreVertical, Trash, Calendar } from 'lucide-react';
+import { Download, MoreVertical, Trash, Calendar, Eye, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +27,7 @@ const ResourceCard = ({
 }: ResourceCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const { toast } = useToast();
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Safely access resource properties with default fallbacks
   const resourceTitle = resource?.title || 'Untitled Resource';
@@ -95,22 +95,45 @@ const ResourceCard = ({
   
   const handleDownload = async () => {
     try {
+      setIsDownloading(true);
       const response = await getResourcePresignedUrl(resource.resourceId);
-      if (response.success && response.data?.presignedUrl) {
+      
+      if (response.success && response.data.presignedUrl) {
         window.open(response.data.presignedUrl, '_blank');
       } else {
-        toast({
-          title: 'Error',
-          description: 'Failed to get download URL',
-          variant: 'destructive',
-        });
+        throw new Error(response.error || 'Failed to get download URL');
       }
     } catch (error) {
+      console.error('Download error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to download resource',
+        description: error instanceof Error ? error.message : 'Failed to download resource',
         variant: 'destructive',
       });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleView = async () => {
+    try {
+      setIsDownloading(true);
+      const response = await getResourcePresignedUrl(resource.resourceId);
+      
+      if (response.success && response.data.presignedUrl) {
+        window.open(response.data.presignedUrl, '_blank');
+      } else {
+        throw new Error(response.error || 'Failed to get view URL');
+      }
+    } catch (error) {
+      console.error('View error:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to view resource',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -155,14 +178,27 @@ const ResourceCard = ({
       </CardContent>
 
       <CardFooter className="pt-0 flex flex-col gap-2">
-        <Button
-          variant="default"
-          className="w-full gap-2 group"
-          onClick={handleDownload}
-        >
-          <Download className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-          View/Download Resource
-        </Button>
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isDownloading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <Eye className="mr-2 h-4 w-4" />
+                View/Download Resource
+              </>
+            )}
+          </Button>
+        </div>
         
         {canDelete && (
           <div className="flex justify-end w-full">

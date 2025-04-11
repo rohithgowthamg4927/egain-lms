@@ -70,7 +70,7 @@ export function UploadResourceDialog({
     // Validate file type
     const extension = file.name.split('.').pop()?.toLowerCase();
     const validExtensions = resourceType === 'assignment'
-      ? ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt']
+      ? ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt', 'rtf', 'odt']
       : ['mp4', 'mov', 'avi'];
 
     if (!extension || !validExtensions.includes(extension)) {
@@ -96,6 +96,11 @@ export function UploadResourceDialog({
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
           'application/vnd.ms-powerpoint': ['.ppt'],
           'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+          'text/plain': ['.txt'],
+          'application/rtf': ['.rtf'],
+          'application/vnd.oasis.opendocument.text': ['.odt'],
+          // Add more lenient MIME types
+          'application/octet-stream': ['.doc', '.docx', '.pdf', '.ppt', '.pptx', '.txt', '.rtf', '.odt'],
         }
       : {
           'video/mp4': ['.mp4'],
@@ -126,14 +131,17 @@ export function UploadResourceDialog({
         formData.append('title', title);
         formData.append('description', description);
         formData.append('resourceType', resourceType);
-        formData.append('uploadedById', user.fullName);
+        formData.append('uploadedById', user.userId.toString());
 
         const response = await fetch('/api/resources/upload', {
           method: 'POST',
           body: formData,
         });
 
-        if (!response.ok) throw new Error('Upload failed');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Upload failed');
+        }
 
         const result = await response.json();
         if (result.success) {
@@ -143,6 +151,8 @@ export function UploadResourceDialog({
           });
           onSuccess();
           onClose();
+        } else {
+          throw new Error(result.error || 'Upload failed');
         }
       } else {
         // For large files, use multipart upload
@@ -160,7 +170,11 @@ export function UploadResourceDialog({
           }),
         });
 
-        if (!initResponse.ok) throw new Error('Failed to initialize upload');
+        if (!initResponse.ok) {
+          const errorData = await initResponse.json();
+          throw new Error(errorData.error || 'Failed to initialize upload');
+        }
+
         const { data: { uploadId, key } } = await initResponse.json();
 
         // Upload parts
@@ -183,7 +197,11 @@ export function UploadResourceDialog({
             body: formData,
           });
 
-          if (!uploadResponse.ok) throw new Error('Failed to upload part');
+          if (!uploadResponse.ok) {
+            const errorData = await uploadResponse.json();
+            throw new Error(errorData.error || 'Failed to upload part');
+          }
+
           const { data: part } = await uploadResponse.json();
           parts.push(part);
 
@@ -218,12 +236,16 @@ export function UploadResourceDialog({
             title,
             description,
             uploadedById: user.userId,
+            resourceType,
           }),
         });
 
-        if (!completeResponse.ok) throw new Error('Failed to complete upload');
+        if (!completeResponse.ok) {
+          const errorData = await completeResponse.json();
+          throw new Error(errorData.error || 'Failed to complete upload');
+        }
+
         const result = await completeResponse.json();
-        
         if (result.success) {
           toast({
             title: 'Upload successful',
@@ -231,6 +253,8 @@ export function UploadResourceDialog({
           });
           onSuccess();
           onClose();
+        } else {
+          throw new Error(result.error || 'Upload failed');
         }
       }
     } catch (error) {
@@ -375,7 +399,7 @@ export function UploadResourceDialog({
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {resourceType === 'assignment'
-                      ? 'Supported formats: PDF, DOC, DOCX, PPT, PPTX, TXT'
+                      ? 'Supported formats: PDF, DOC, DOCX, PPT, PPTX, TXT, RTF, ODT'
                       : 'Supported formats: MP4, MOV, AVI'}
                   </p>
                 </div>

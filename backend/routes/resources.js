@@ -112,9 +112,9 @@ router.post('/upload-part', upload.single('file'), async (req, res) => {
 // Complete multipart upload
 router.post('/complete-upload', async (req, res) => {
   try {
-    const { key, uploadId, parts, batchId, title, description, uploadedById } = req.body;
+    const { key, uploadId, parts, batchId, title, description, uploadedById, resourceType } = req.body;
     
-    if (!key || !uploadId || !parts || !batchId || !title || !uploadedById) {
+    if (!key || !uploadId || !parts || !batchId || !title || !uploadedById || !resourceType) {
       return res.status(400).json({
         success: false,
         error: 'Missing required fields'
@@ -133,6 +133,7 @@ router.post('/complete-upload', async (req, res) => {
         fileUrl: key,
         batchId: parseInt(batchId),
         uploadedById: parseInt(uploadedById),
+        resourceType,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -205,8 +206,13 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       });
     }
     
-    // Upload to S3
-    const fileUrl = await uploadFile(batch.batchName, resourceType, file.originalname, file.buffer);
+    // Upload to S3 with correct path based on resource type
+    const fileUrl = await uploadFile(
+      batch.batchName, 
+      resourceType, 
+      file.originalname, 
+      file.buffer
+    );
     
     // Create resource record in database
     const resource = await prisma.Resource.create({
@@ -217,6 +223,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         fileUrl: fileUrl,
         batchId: parseInt(batchId),
         uploadedById: parseInt(uploadedById),
+        resourceType,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -237,6 +244,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       data: resource
     });
   } catch (error) {
+    console.error('Upload error:', error);
     handleApiError(res, error);
   }
 });

@@ -2,39 +2,33 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
 
-const router = express.Router();
 const prisma = new PrismaClient();
 
+// ----- /api/students -----
+const studentRouter = express.Router();
+
 // Get a student's schedules (all schedules for batches the student is enrolled in)
-router.get('/:id/schedules', async (req, res) => {
+studentRouter.get('/:id/schedules', async (req, res) => {
   try {
     const studentId = parseInt(req.params.id);
-    
-    // Get all batches that the student is enrolled in
+
     const studentBatches = await prisma.StudentBatch.findMany({
       where: { studentId },
       select: { batchId: true }
     });
-    
+
     const batchIds = studentBatches.map(sb => sb.batchId);
-    
+
     if (batchIds.length === 0) {
       return res.json({ success: true, data: [] });
     }
-    
-    // Get all schedules for these batches
+
     const schedules = await prisma.Schedule.findMany({
       where: {
-        batchId: {
-          in: batchIds
-        },
-        scheduleDate: {
-          gte: new Date()
-        }
+        batchId: { in: batchIds },
+        scheduleDate: { gte: new Date() }
       },
-      orderBy: {
-        scheduleDate: 'asc',
-      },
+      orderBy: { scheduleDate: 'asc' },
       include: {
         batch: {
           include: {
@@ -43,7 +37,7 @@ router.get('/:id/schedules', async (req, res) => {
         }
       }
     });
-    
+
     res.json({ success: true, data: schedules });
   } catch (error) {
     console.error('Error fetching student schedules:', error);
@@ -51,14 +45,46 @@ router.get('/:id/schedules', async (req, res) => {
   }
 });
 
-// Create student batch routes
+// Enroll student in a course
+studentRouter.post('/:studentId/courses', async (req, res) => {
+  try {
+    const { studentId, courseId } = req.body;
+
+    const existingEnrollment = await prisma.StudentCourse.findFirst({
+      where: {
+        studentId: parseInt(studentId),
+        courseId: parseInt(courseId)
+      }
+    });
+
+    if (existingEnrollment) {
+      return res.status(400).json({
+        success: false,
+        error: 'Student is already enrolled in this course'
+      });
+    }
+
+    const enrollment = await prisma.StudentCourse.create({
+      data: {
+        studentId: parseInt(studentId),
+        courseId: parseInt(courseId),
+        enrollmentDate: new Date()
+      }
+    });
+
+    res.status(201).json({ success: true, data: enrollment });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// ----- /api/student-batches -----
 const batchRoutes = express.Router();
 
-// Get all batches for a student
 batchRoutes.get('/:studentId', async (req, res) => {
   try {
     const studentId = parseInt(req.params.studentId);
-    
+
     const studentBatches = await prisma.StudentBatch.findMany({
       where: { studentId },
       include: {
@@ -70,18 +96,20 @@ batchRoutes.get('/:studentId', async (req, res) => {
         }
       }
     });
-    
+
     res.json({ success: true, data: studentBatches });
   } catch (error) {
     handleApiError(res, error);
   }
 });
 
-// Get all courses for a student
-router.get('/student-courses/:id', async (req, res) => {
+// ----- /api/student-courses -----
+const courseRoutes = express.Router();
+
+courseRoutes.get('/:id', async (req, res) => {
   try {
     const studentId = parseInt(req.params.id);
-    
+
     const studentCourses = await prisma.StudentCourse.findMany({
       where: { studentId },
       include: {
@@ -93,7 +121,14 @@ router.get('/student-courses/:id', async (req, res) => {
         }
       }
     });
-    
+
+    if (!studentCourses.length) {
+      return res.status(404).json({
+        success: false,
+        error: 'No courses found'
+      });
+    }
+
     res.json({ success: true, data: studentCourses });
   } catch (error) {
     console.error('Error fetching student courses:', error);
@@ -101,39 +136,9 @@ router.get('/student-courses/:id', async (req, res) => {
   }
 });
 
-// Enroll student in a course
-router.post('/:studentId/courses', async (req, res) => {
-  try {
-    const { studentId, courseId } = req.body;
-    
-    // Check if student is already enrolled
-    const existingEnrollment = await prisma.StudentCourse.findFirst({
-      where: {
-        studentId: parseInt(studentId),
-        courseId: parseInt(courseId)
-      }
-    });
-    
-    if (existingEnrollment) {
-      return res.status(400).json({
-        success: false,
-        error: 'Student is already enrolled in this course'
-      });
-    }
-    
-    // Create enrollment
-    const enrollment = await prisma.StudentCourse.create({
-      data: {
-        studentId: parseInt(studentId),
-        courseId: parseInt(courseId),
-        enrollmentDate: new Date()
-      }
-    });
-    
-    res.status(201).json({ success: true, data: enrollment });
-  } catch (error) {
-    handleApiError(res, error);
-  }
-});
-
-export default router;
+// Export everything
+export default {
+  router: studentRouter,
+  batchRoutes,
+  courseRoutes
+};

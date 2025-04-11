@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -6,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Import routes
+// Route Imports
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import courseRoutes from './routes/courses.js';
@@ -14,20 +13,21 @@ import batchRoutes from './routes/batches.js';
 import categoryRoutes from './routes/categories.js';
 import scheduleRoutes from './routes/schedules.js';
 import dashboardRoutes from './routes/dashboard.js';
-import studentRoutes from './routes/students.js';
+import studentRoutes from './routes/students.js'; // Contains router, batchRoutes, courseRoutes
 import instructorRoutes from './routes/instructors.js';
 import resourceRoutes from './routes/resources.js';
 
-// Get directory name (equivalent to __dirname in CommonJS)
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Setup __dirname for ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Load environment variables
+// Load env variables
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
+// Middlewares
 app.use(cors({
   origin: '*',
   credentials: true
@@ -36,7 +36,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
-// Static files
+// Static folder for file uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
@@ -53,26 +53,25 @@ app.use('/api/student-courses', studentRoutes.courseRoutes);
 app.use('/api/instructors', instructorRoutes);
 app.use('/api/resources', resourceRoutes);
 
-// Add a simple root route
+// Root and health check routes
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Learning Management System API!' });
 });
 
-// Add a health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}`);
-});
-
-// Error handling
+// Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
     success: false,
     error: 'Something went wrong on the server',
   });
+});
+
+// Start server
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
 });

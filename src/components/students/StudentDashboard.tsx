@@ -7,7 +7,7 @@ import { getStudentCourses, getStudentSchedules } from '@/lib/api/students';
 import { useAuth } from '@/hooks/use-auth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Book, Clock } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import StudentActivityPanel from '@/components/students/StudentActivityPanel';
 
@@ -15,7 +15,7 @@ const StudentDashboard = () => {
   const { user } = useAuth();
   const userId = user?.userId;
 
-  // Query for student metrics
+  // Query for student-specific metrics instead of admin metrics
   const metricsQuery = useQuery({
     queryKey: ['dashboardMetrics'],
     queryFn: getDashboardMetrics
@@ -36,6 +36,19 @@ const StudentDashboard = () => {
   });
 
   const isLoading = metricsQuery.isLoading || coursesQuery.isLoading || schedulesQuery.isLoading;
+
+  // Helper function to safely format dates
+  const safeFormatDate = (dateString: string | undefined, formatStr: string = 'MMM dd, yyyy') => {
+    if (!dateString) return 'No date';
+    
+    try {
+      const date = new Date(dateString);
+      return isValid(date) ? format(date, formatStr) : 'Invalid date';
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -84,7 +97,7 @@ const StudentDashboard = () => {
               <div>
                 <div className="text-sm text-muted-foreground">
                   {schedulesQuery.data.data[0].scheduleDate && 
-                    format(new Date(schedulesQuery.data.data[0].scheduleDate), 'MMM dd, yyyy')}
+                    safeFormatDate(schedulesQuery.data.data[0].scheduleDate)}
                 </div>
                 <div className="font-medium">
                   {schedulesQuery.data.data[0].batch?.course?.courseName?.slice(0, 18)}

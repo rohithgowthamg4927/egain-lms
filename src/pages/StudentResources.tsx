@@ -16,8 +16,8 @@ import { Search, Filter } from 'lucide-react';
 const StudentResources = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedBatch, setSelectedBatch] = useState<string>('');
-  const [selectedType, setSelectedType] = useState<string>('');
+  const [selectedBatch, setSelectedBatch] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<string>('all');
   
   // Get student's batches
   const batchesQuery = useQuery({
@@ -51,7 +51,7 @@ const StudentResources = () => {
          resource.description?.toLowerCase().includes(searchQuery.toLowerCase()))
       : true;
       
-    const matchesType = selectedType
+    const matchesType = selectedType && selectedType !== 'all'
       ? resource.type === selectedType
       : true;
       
@@ -109,9 +109,11 @@ const StudentResources = () => {
                     <SelectValue placeholder="All Types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="document">Documents</SelectItem>
                     <SelectItem value="video">Videos</SelectItem>
+                    <SelectItem value="assignment">Assignments</SelectItem>
+                    <SelectItem value="code">Code</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

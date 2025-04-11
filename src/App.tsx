@@ -34,6 +34,7 @@ import StudentDashboard from "./components/students/StudentDashboard";
 import StudentCourses from "./pages/StudentCourses";
 import StudentSchedules from "./pages/StudentSchedules";
 import StudentResources from "./pages/StudentResources";
+import { Role } from "./lib/types";
 
 function App() {
   console.log("App component rendering");
@@ -57,7 +58,7 @@ function App() {
         </ProtectedRoute>
       } />
       <Route path="/courses/add" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin, Role.instructor]}>
           <AddCourse />
         </ProtectedRoute>
       } />
@@ -67,7 +68,7 @@ function App() {
         </ProtectedRoute>
       } />
       <Route path="/courses/edit/:courseId" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin, Role.instructor]}>
           <EditCourse />
         </ProtectedRoute>
       } />
@@ -79,7 +80,7 @@ function App() {
         </ProtectedRoute>
       } />
       <Route path="/batches/add" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin, Role.instructor]}>
           <AddBatch />
         </ProtectedRoute>
       } />
@@ -89,12 +90,12 @@ function App() {
         </ProtectedRoute>
       } />
       <Route path="/batches/:batchId/edit" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin, Role.instructor]}>
           <EditBatch />
         </ProtectedRoute>
       } />
       <Route path="/batches/manage-students" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin, Role.instructor]}>
           <ManageStudents />
         </ProtectedRoute>
       } />
@@ -108,7 +109,7 @@ function App() {
 
       {/* Categories routes */}
       <Route path="/categories" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin, Role.instructor]}>
           <Categories />
         </ProtectedRoute>
       } />
@@ -122,39 +123,39 @@ function App() {
 
       {/* Students routes */}
       <Route path="/students" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin, Role.instructor]}>
           <Students />
         </ProtectedRoute>
       } />
       <Route path="/students/:userId" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin, Role.instructor]}>
           <UserProfile />
         </ProtectedRoute>
       } />
       <Route path="/students/:userId/edit" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin, Role.instructor]}>
           <UserProfile />
         </ProtectedRoute>
       } />
       <Route path="/add-user" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin]}>
           <AddUser />
         </ProtectedRoute>
       } />
 
       {/* Instructors routes */}
       <Route path="/instructors" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin]}>
           <Instructors />
         </ProtectedRoute>
       } />
       <Route path="/instructors/:userId" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin]}>
           <UserProfile />
         </ProtectedRoute>
       } />
       <Route path="/instructors/:userId/edit" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={[Role.admin]}>
           <UserProfile />
         </ProtectedRoute>
       } />
@@ -168,28 +169,28 @@ function App() {
       
       {/* Student dashboard */}
       <Route path="/student/dashboard" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={Role.student}>
           <StudentDashboard />
         </ProtectedRoute>
       } />
       
       {/* Student courses */}
       <Route path="/student/courses" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={Role.student}>
           <StudentCourses />
         </ProtectedRoute>
       } />
       
       {/* Student schedules */}
       <Route path="/student/schedules" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={Role.student}>
           <StudentSchedules />
         </ProtectedRoute>
       } />
       
       {/* Student resources */}
       <Route path="/student/resources" element={
-        <ProtectedRoute>
+        <ProtectedRoute requiredRoles={Role.student}>
           <StudentResources />
         </ProtectedRoute>
       } />

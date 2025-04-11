@@ -62,7 +62,6 @@ export const addCourseReview = async (courseId: number, userId: number, rating: 
     console.error('Error adding course review:', error);
     return {
       success: false,
-      data: [], // Return empty array instead of undefined
       error: error instanceof Error ? error.message : 'Failed to add course review'
     };
   }

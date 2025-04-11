@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -24,10 +23,8 @@ const CourseDetail = () => {
   const queryClient = useQueryClient();
   const { user, hasRole } = useAuth();
 
-  // Ensure courseId is parsed as a number for the API call
   const parsedCourseId = courseId ? parseInt(courseId, 10) : undefined;
 
-  // Check if student is enrolled in this course
   const enrollmentQuery = useQuery({
     queryKey: ['studentCourses', user?.userId],
     queryFn: () => user?.userId ? getStudentCourses(user.userId) : Promise.resolve({ success: false, data: [] }),
@@ -38,7 +35,6 @@ const CourseDetail = () => {
     enrollment => enrollment.courseId === parsedCourseId
   );
 
-  // Log the courseId for debugging
   console.log('CourseDetail - courseId:', courseId, 'parsedCourseId:', parsedCourseId);
 
   const courseQuery = useQuery({
@@ -281,7 +277,7 @@ const CourseDetail = () => {
                 </div>
               )}
               
-              {course.reviews && course.reviews.length > 0 && (
+              {course.reviews && Array.isArray(course.reviews) && course.reviews.length > 0 && (
                 <>
                   <Separator className="my-4" />
                   <div className="pt-2">

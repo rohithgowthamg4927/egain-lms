@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -21,17 +20,12 @@ import { getBatches } from '@/lib/api/batches';
 import { getResourcesByBatch, deleteResource } from '@/lib/api/resources';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
-// Define compatible resource type that matches Resource interface
-interface ResourceCompatible extends Resource {
-  // Any additional fields specific to this component can go here
-}
-
 export default function ResourcesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [batches, setBatches] = useState<Batch[]>([]);
-  const [resources, setResources] = useState<ResourceCompatible[]>([]);
+  const [resources, setResources] = useState<Resource[]>([]);
   const [selectedBatch, setSelectedBatch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -73,8 +67,7 @@ export default function ResourcesPage() {
     try {
       const response = await getResourcesByBatch(batchId);
       if (response.success && response.data) {
-        // Ensure all required fields are present
-        const compatibleResources: ResourceCompatible[] = response.data.map(resource => ({
+        const compatibleResources: Resource[] = response.data.map(resource => ({
           ...resource,
           resourceId: resource.resourceId,
           title: resource.title || 'Untitled Resource',
@@ -82,7 +75,7 @@ export default function ResourcesPage() {
           fileUrl: resource.fileUrl || '',
           resourceType: resource.resourceType || 'assignment',
           createdAt: resource.createdAt,
-          updatedAt: resource.updatedAt || resource.createdAt, // Ensure updatedAt is always defined
+          updatedAt: resource.updatedAt || resource.createdAt,
           uploadedBy: resource.uploadedBy || { fullName: 'System' }
         }));
         setResources(compatibleResources);
@@ -114,7 +107,6 @@ export default function ResourcesPage() {
         description: 'Resource deleted successfully',
       });
 
-      // Refresh resources list
       if (selectedBatch) {
         fetchResources(selectedBatch);
       }
@@ -133,10 +125,8 @@ export default function ResourcesPage() {
     resource.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Check if user is an instructor or admin
   const canManageResources = user?.role === 'instructor' || user?.role === 'admin';
 
-  // Create a prop-compatible handler for ResourceGrid/ResourceList
   const handleResourceDelete = (resource: Resource) => {
     if (resource.resourceId) {
       handleDelete(resource.resourceId);

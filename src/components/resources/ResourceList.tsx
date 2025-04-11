@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -5,21 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Download, Trash2, Eye, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getResourcePresignedUrl } from '@/lib/api/resources';
+import { Resource } from '@/lib/types';
 
 interface ResourceListProps {
-  resources: {
-    resourceId: number;
-    title: string;
-    description?: string;
-    fileName: string;
-    fileUrl: string;
-    resourceType: 'assignment' | 'recording';
-    createdAt: string;
-    uploadedBy: {
-      fullName: string;
-    };
-  }[];
-  onDelete: (resourceId: number) => void;
+  resources: Resource[];
+  onDelete: (resource: Resource) => void;
   userRole?: string;
 }
 
@@ -132,7 +123,7 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => onDelete(resource.resourceId)}
+                      onClick={() => onDelete(resource)}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete

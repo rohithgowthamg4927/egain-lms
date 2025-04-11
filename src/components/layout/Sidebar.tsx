@@ -188,6 +188,57 @@ export default function Sidebar({ className }: SidebarProps) {
         </Link>
       )}
 
+      {hasRole([Role.student]) && (
+        <Link to="/student/courses">
+          <Button
+            variant="ghost"
+            size={isCollapsed ? "icon" : "default"}
+            className={cn(
+              "w-full justify-start",
+              pathname === "/student/courses" && "bg-accent text-accent-foreground",
+              isCollapsed && "flex h-10 w-10 p-0 justify-center"
+            )}
+          >
+            <BookOpen className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
+            {!isCollapsed && <span>My Courses</span>}
+          </Button>
+        </Link>
+      )}
+
+      {hasRole([Role.student]) && (
+        <Link to="/student/schedules">
+          <Button
+            variant="ghost"
+            size={isCollapsed ? "icon" : "default"}
+            className={cn(
+              "w-full justify-start",
+              pathname === "/student/schedules" && "bg-accent text-accent-foreground",
+              isCollapsed && "flex h-10 w-10 p-0 justify-center"
+            )}
+          >
+            <Calendar className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
+            {!isCollapsed && <span>My Schedules</span>}
+          </Button>
+        </Link>
+      )}
+
+      {hasRole([Role.student]) && (
+        <Link to="/student/resources">
+          <Button
+            variant="ghost"
+            size={isCollapsed ? "icon" : "default"}
+            className={cn(
+              "w-full justify-start",
+              pathname === "/student/resources" && "bg-accent text-accent-foreground",
+              isCollapsed && "flex h-10 w-10 p-0 justify-center"
+            )}
+          >
+            <FileText className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
+            {!isCollapsed && <span>My Resources</span>}
+          </Button>
+        </Link>
+      )}
+
       {hasRole([Role.admin]) && (
         <Link to="/settings">
           <Button

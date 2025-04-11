@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 const LoginForm = () => {
   const [email, setEmail] = useState("admin@lms.com");
   const [password, setPassword] = useState("Admin@123");
-  const [role, setRole] = useState<Role>(Role.admin);
+  const [role, setRole] = useState<Role>(Role.student);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -43,12 +43,19 @@ const LoginForm = () => {
           description: "Welcome to the LMS system",
         });
         
-        // Force navigation to dashboard
-        setTimeout(() => {
-          const user = localStorage.getItem('currentUser');
-          console.log("User in localStorage after login:", user);
-          navigate('/dashboard', { replace: true });
-        }, 500);
+        // Get user from localStorage to check role
+        const userStr = localStorage.getItem('currentUser');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          console.log('User in localStorage after login:', user);
+          
+          // Redirect based on role
+          if (user.role === Role.student) {
+            navigate('/student/dashboard');
+          } else {
+            navigate('/dashboard');
+          }
+        }
       } else {
         console.log("Login failed");
         setErrorMessage("Invalid credentials. Please check your email, password, and role.");

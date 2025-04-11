@@ -133,7 +133,6 @@ router.post('/complete-upload', async (req, res) => {
         fileUrl: key,
         batchId: parseInt(batchId),
         uploadedById: parseInt(uploadedById),
-        resourceType,
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -223,7 +222,6 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         fileUrl: fileUrl,
         batchId: parseInt(batchId),
         uploadedById: parseInt(uploadedById),
-        resourceType,
         createdAt: new Date(),
         updatedAt: new Date()
       },

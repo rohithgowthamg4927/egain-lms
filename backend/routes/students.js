@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
@@ -78,13 +77,10 @@ batchRoutes.get('/:studentId', async (req, res) => {
   }
 });
 
-// Create student course routes
-const courseRoutes = express.Router();
-
 // Get all courses for a student
-courseRoutes.get('/:studentId', async (req, res) => {
+router.get('/student-courses/:id', async (req, res) => {
   try {
-    const studentId = parseInt(req.params.studentId);
+    const studentId = parseInt(req.params.id);
     
     const studentCourses = await prisma.StudentCourse.findMany({
       where: { studentId },
@@ -100,12 +96,13 @@ courseRoutes.get('/:studentId', async (req, res) => {
     
     res.json({ success: true, data: studentCourses });
   } catch (error) {
+    console.error('Error fetching student courses:', error);
     handleApiError(res, error);
   }
 });
 
 // Enroll student in a course
-courseRoutes.post('/', async (req, res) => {
+router.post('/:studentId/courses', async (req, res) => {
   try {
     const { studentId, courseId } = req.body;
     
@@ -139,8 +136,4 @@ courseRoutes.post('/', async (req, res) => {
   }
 });
 
-export default {
-  router,
-  batchRoutes,
-  courseRoutes
-};
+export default router;

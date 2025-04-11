@@ -105,8 +105,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             description: `Welcome, ${userData.fullName}!`,
           });
           
-          // Navigate to dashboard
-          navigate('/dashboard', { replace: true });
+          // Navigate to appropriate dashboard based on role
+          if (userData.role === Role.student) {
+            navigate('/student/dashboard', { replace: true });
+          } else {
+            navigate('/dashboard', { replace: true });
+          }
+          
           return true;
         } catch (storageError) {
           console.error('Failed to store auth data:', storageError);

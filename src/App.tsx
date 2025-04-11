@@ -1,164 +1,213 @@
-import {
-  Routes,
-  Route,
-  Navigate
-} from "react-router-dom";
-
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Courses from "./pages/Courses";
-import CourseDetail from "./pages/CourseDetail";
-import Categories from "./pages/Categories";
-import Settings from "./pages/Settings";
-import Students from "./pages/Students";
-import Instructors from "./pages/Instructors";
-import Resources from "./app/resources/page";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
-import AddCourse from "./pages/AddCourse";
-import EditCourse from "./pages/EditCourse";
-import AddUser from "./pages/AddUser";
-import UserProfile from "./pages/UserProfile";
-import Index from "./pages/Index";
-
-// Import batch-related routes
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from '@/components/ui/toaster';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { Role } from '@/lib/types';
+import Dashboard from '@/pages/Dashboard';
+import Batches from '@/pages/Batches';
+import Students from '@/pages/Students';
+import Instructors from '@/pages/Instructors';
+import Resources from '@/app/resources/page';
+import StudentDashboard from '@/pages/student/StudentDashboard';
+import StudentCourses from '@/pages/student/StudentCourses';
+import StudentSchedules from '@/pages/student/StudentSchedules';
+import StudentResources from '@/pages/student/StudentResources';
+import Courses from './pages/Courses';
+import Categories from './pages/Categories';
+import Schedules from './pages/Schedules';
+import AddCourse from './pages/AddCourse';
+import CourseDetail from './pages/CourseDetail';
+import EditCourse from './pages/EditCourse';
+import Index from './pages/Index';
+import BatchDetail from './pages/BatchDetail';
+import ManageStudents from './pages/ManageStudents';
 import AddBatch from './pages/AddBatch';
 import EditBatch from './pages/EditBatch';
-import ManageStudents from './pages/ManageStudents';
-import Batches from "./pages/Batches";
-import BatchDetail from "./pages/BatchDetail";
-import Schedules from "./pages/Schedules";
-
+import AddUser from './pages/AddUser';
+import UserProfile from './pages/UserProfile';
 function App() {
-  console.log("App component rendering");
   return (
-    <Routes>
-      {/* Default route redirects to Index page */}
-      <Route path="/" element={<Index />} />
-      <Route path="/login" element={<Login />} />
-      
-      {/* Protected routes */}
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      } />
+    <>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<Index />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
 
-      {/* Course routes */}
-      <Route path="/courses" element={
-        <ProtectedRoute>
-          <Courses />
-        </ProtectedRoute>
-      } />
-      <Route path="/courses/add" element={
-        <ProtectedRoute>
-          <AddCourse />
-        </ProtectedRoute>
-      } />
-      <Route path="/courses/:courseId" element={
-        <ProtectedRoute>
+        {/* Admin/Instructor Routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/courses"
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
+              <Courses />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="/courses/add" element={
+          <ProtectedRoute allowedRoles={[Role.admin]}>
+            <AddCourse />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/courses/:courseId" element={
+        <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
           <CourseDetail />
         </ProtectedRoute>
-      } />
-      <Route path="/courses/edit/:courseId" element={
-        <ProtectedRoute>
-          <EditCourse />
-        </ProtectedRoute>
-      } />
-      
-      {/* Batch routes */}
-      <Route path="/batches" element={
-        <ProtectedRoute>
-          <Batches />
-        </ProtectedRoute>
-      } />
-      <Route path="/batches/add" element={
-        <ProtectedRoute>
-          <AddBatch />
-        </ProtectedRoute>
-      } />
-      <Route path="/batches/:batchId" element={
-        <ProtectedRoute>
-          <BatchDetail />
-        </ProtectedRoute>
-      } />
-      <Route path="/batches/:batchId/edit" element={
-        <ProtectedRoute>
-          <EditBatch />
-        </ProtectedRoute>
-      } />
-      <Route path="/batches/manage-students" element={
-        <ProtectedRoute>
-          <ManageStudents />
-        </ProtectedRoute>
-      } />
-      
-      {/* Schedule routes */}
-      <Route path="/schedules" element={
-        <ProtectedRoute>
-          <Schedules />
-        </ProtectedRoute>
-      } />
+        } />
+        <Route path="/courses/edit/:courseId" element={
+          <ProtectedRoute allowedRoles={[Role.admin]}>
+            <EditCourse />
+          </ProtectedRoute>
+        } />
 
-      {/* Categories routes */}
-      <Route path="/categories" element={
-        <ProtectedRoute>
-          <Categories />
+        <Route
+          path="/categories"
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin]}>
+              <Categories />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/batches"
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
+              <Batches />
+            </ProtectedRoute>
+          }
+        />
+         <Route path="/batches/add" element={
+          <ProtectedRoute allowedRoles={[Role.admin]}>
+            <AddBatch />
+          </ProtectedRoute>
+        } />
+        <Route path="/batches/:batchId" element={
+          <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
+            <BatchDetail />
         </ProtectedRoute>
-      } />
+        } />
+        <Route path="/batches/:batchId/edit" element={
+          <ProtectedRoute allowedRoles={[Role.admin]}>
+            <EditBatch />
+          </ProtectedRoute>
+        } />
+        <Route path="/batches/manage-students" element={
+          <ProtectedRoute allowedRoles={[Role.admin]}>
+            <ManageStudents />
+          </ProtectedRoute>
+        } />
 
-      {/* Settings routes */}
-      <Route path="/settings" element={
-        <ProtectedRoute>
-          <Settings />
-        </ProtectedRoute>
-      } />
+        <Route
+          path="/schedules"
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
+              <Schedules/>
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Students routes */}
-      <Route path="/students" element={
-        <ProtectedRoute>
-          <Students />
-        </ProtectedRoute>
-      } />
-      <Route path="/students/:userId" element={
-        <ProtectedRoute>
-          <UserProfile />
-        </ProtectedRoute>
-      } />
-      <Route path="/students/:userId/edit" element={
-        <ProtectedRoute>
-          <UserProfile />
-        </ProtectedRoute>
-      } />
-      <Route path="/add-user" element={
-        <ProtectedRoute>
-          <AddUser />
-        </ProtectedRoute>
-      } />
+        <Route
+          path="/students"
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
+              <Students />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/students/:userId" element={
+          <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
+            <UserProfile />
+          </ProtectedRoute>
+        } />
+        <Route path="/students/:userId/edit" element={
+          <ProtectedRoute allowedRoles={[Role.admin]}>
+            <UserProfile />
+          </ProtectedRoute>
+        } />
+        <Route path="/add-user" element={
+          <ProtectedRoute allowedRoles={[Role.admin]}>
+            <AddUser />
+          </ProtectedRoute>
+        } />
 
-      {/* Instructors routes */}
-      <Route path="/instructors" element={
-        <ProtectedRoute>
-          <Instructors />
-        </ProtectedRoute>
-      } />
-      <Route path="/instructors/:userId" element={
-        <ProtectedRoute>
-          <UserProfile />
-        </ProtectedRoute>
-      } />
-      <Route path="/instructors/:userId/edit" element={
-        <ProtectedRoute>
-          <UserProfile />
-        </ProtectedRoute>
-      } />
 
-      {/* Resources routes */}
-      <Route path="/resources" element={
-        <ProtectedRoute>
-          <Resources />
-        </ProtectedRoute>
-      } />
-    </Routes>
+        <Route
+          path="/instructors"
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin]}>
+              <Instructors />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/instructors/:userId" element={
+          <ProtectedRoute>
+            <UserProfile />
+          </ProtectedRoute>
+        } />
+        <Route path="/instructors/:userId/edit" element={
+          <ProtectedRoute>
+            <UserProfile />
+          </ProtectedRoute>
+        } />
+
+
+        <Route
+          path="/resources"
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
+              <Resources />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Student Routes */}
+        <Route
+          path="/student/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={[Role.student]}>
+              <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/courses"
+          element={
+            <ProtectedRoute allowedRoles={[Role.student]}>
+              <StudentCourses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/schedules"
+          element={
+            <ProtectedRoute allowedRoles={[Role.student]}>
+              <StudentSchedules />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/resources"
+          element={
+            <ProtectedRoute allowedRoles={[Role.student]}>
+              <StudentResources />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Catch all route */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+      <Toaster />
+    </>
   );
 }
 

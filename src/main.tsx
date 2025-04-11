@@ -23,14 +23,12 @@ window.onunhandledrejection = function(event) {
 console.log("==== STARTING APPLICATION ====");
 console.log("Environment:", import.meta.env.MODE);
 
-// Create a new QueryClient instance with correct options structure
+// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: true,
       retry: 1,
-      staleTime: 0, // Always fetch fresh data
-      refetchInterval: 3000, // Refetch every 3 seconds
+      refetchOnWindowFocus: false,
     },
   },
 });

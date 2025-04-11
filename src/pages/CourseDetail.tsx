@@ -283,10 +283,10 @@ const CourseDetail = () => {
                               <div className="flex justify-between items-start">
                                 <div className="flex items-center gap-2">
                                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
-                                    {review.student?.fullName?.charAt(0) || 'S'}
+                                    {review.userId ? String(review.userId).charAt(0) : 'S'}
                                   </div>
                                   <div>
-                                    <p className="font-medium">{review.student?.fullName || 'Anonymous Student'}</p>
+                                    <p className="font-medium">Student {review.userId || 'Anonymous'}</p>
                                     <div className="flex items-center">
                                       {Array.from({ length: 5 }).map((_, i) => (
                                         <Star 

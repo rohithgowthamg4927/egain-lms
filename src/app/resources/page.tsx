@@ -16,21 +16,14 @@ import { UploadResourceDialog } from '@/components/resources/UploadResourceDialo
 import ResourceMetrics from '@/components/resources/ResourceMetrics';
 import ResourceGrid from '@/components/resources/ResourceGrid';
 import ResourceList from '@/components/resources/ResourceList';
-import { Batch } from '@/lib/types';
+import { Batch, Resource } from '@/lib/types';
 import { getBatches } from '@/lib/api/batches';
 import { getResourcesByBatch, deleteResource } from '@/lib/api/resources';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
-// Define compatible resource type
-interface ResourceCompatible {
-  resourceId: number;
-  title: string;
-  description?: string;
-  fileName: string;
-  fileUrl: string;
-  resourceType: "assignment" | "recording";
-  createdAt: string;
-  uploadedBy: { fullName: string };
+// Define compatible resource type that matches Resource interface
+interface ResourceCompatible extends Resource {
+  // Any additional fields specific to this component can go here
 }
 
 export default function ResourcesPage() {
@@ -80,14 +73,16 @@ export default function ResourcesPage() {
     try {
       const response = await getResourcesByBatch(batchId);
       if (response.success && response.data) {
+        // Ensure all required fields are present
         const compatibleResources: ResourceCompatible[] = response.data.map(resource => ({
+          ...resource,
           resourceId: resource.resourceId,
-          title: resource.title,
-          description: resource.description,
+          title: resource.title || 'Untitled Resource',
           fileName: resource.fileName || 'unknown.file',
           fileUrl: resource.fileUrl || '',
           resourceType: resource.resourceType || 'assignment',
           createdAt: resource.createdAt,
+          updatedAt: resource.updatedAt || resource.createdAt, // Ensure updatedAt is always defined
           uploadedBy: resource.uploadedBy || { fullName: 'System' }
         }));
         setResources(compatibleResources);
@@ -140,6 +135,13 @@ export default function ResourcesPage() {
 
   // Check if user is an instructor or admin
   const canManageResources = user?.role === 'instructor' || user?.role === 'admin';
+
+  // Create a prop-compatible handler for ResourceGrid/ResourceList
+  const handleResourceDelete = (resource: Resource) => {
+    if (resource.resourceId) {
+      handleDelete(resource.resourceId);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -250,13 +252,13 @@ export default function ResourcesPage() {
       ) : viewMode === 'grid' ? (
         <ResourceGrid 
           resources={filteredResources} 
-          onDelete={handleDelete} 
+          onDelete={handleResourceDelete} 
           userRole={user?.role} 
         />
       ) : (
         <ResourceList 
           resources={filteredResources} 
-          onDelete={handleDelete} 
+          onDelete={handleResourceDelete} 
           userRole={user?.role}
         />
       )}

@@ -102,16 +102,16 @@ export const getStudentSchedules = async (studentId: number): Promise<{ success:
   }
 };
 
-export const getStudentResources = async (studentId: number): Promise<Resource[]> => {
+export const getStudentResources = async (studentId: number): Promise<{ success: boolean; data?: Resource[]; error?: string }> => {
   try {
     const response = await apiFetch<{ success: boolean; data: Resource[] }>(`/students/${studentId}/resources`);
     if (response.success && response.data) {
-      return response.data;
+      return response;
     }
-    return [];
+    return { success: false, error: 'Failed to fetch resources' };
   } catch (error) {
     console.error('Error fetching student resources:', error);
-    return [];
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch resources' };
   }
 };
 

@@ -1,4 +1,3 @@
-
 // Import necessary components and hooks
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
@@ -45,9 +44,9 @@ export default function StudentDashboard() {
       }
 
       // Fetch resources
-      const resourcesData = await getStudentResources(user.userId);
-      if (Array.isArray(resourcesData)) {
-        setResources(resourcesData);
+      const resourcesResponse = await getStudentResources(user.userId);
+      if (resourcesResponse.success && resourcesResponse.data) {
+        setResources(resourcesResponse.data || []);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -83,18 +82,28 @@ export default function StudentDashboard() {
   // Calculate upcoming schedules (next 7 days)
   const upcomingSchedules = schedules
     .filter(schedule => {
-      const scheduleDate = new Date(schedule.scheduleDate);
-      const today = new Date();
-      const sevenDaysFromNow = new Date();
-      sevenDaysFromNow.setDate(today.getDate() + 7);
-      return scheduleDate >= today && scheduleDate <= sevenDaysFromNow;
+      try {
+        const scheduleDate = new Date(schedule.scheduleDate);
+        const today = new Date();
+        const sevenDaysFromNow = new Date();
+        sevenDaysFromNow.setDate(today.getDate() + 7);
+        return scheduleDate >= today && scheduleDate <= sevenDaysFromNow;
+      } catch (error) {
+        return false; // Skip items with invalid dates
+      }
     })
-    .sort((a, b) => new Date(a.scheduleDate) - new Date(b.scheduleDate))
+    .sort((a, b) => new Date(a.scheduleDate).getTime() - new Date(b.scheduleDate).getTime())
     .slice(0, 5);
 
   // Get recent resources (last 5)
   const recentResources = [...resources]
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .sort((a, b) => {
+      try {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      } catch (error) {
+        return 0; // Keep original order if dates are invalid
+      }
+    })
     .slice(0, 5);
 
   return (
@@ -229,7 +238,8 @@ export default function StudentDashboard() {
                             <div>
                               <h3 className="font-semibold">{resource.title}</h3>
                               <p className="text-sm text-muted-foreground">
-                                {resource.batchId ? `Batch ID: ${resource.batchId}` : 'General Resource'}
+                                {resource.batch ? `${resource.batch.course.courseName} - ${resource.batch.batchName}` : 
+                                 (resource.batchId ? `Batch ID: ${resource.batchId}` : 'General Resource')}
                               </p>
                             </div>
                           </div>

@@ -1,5 +1,5 @@
 
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import Dashboard from '@/pages/Dashboard';
 import Courses from '@/pages/Courses';
@@ -14,10 +14,11 @@ import EditBatch from '@/pages/EditBatch';
 import AddBatch from '@/pages/AddBatch';
 import Students from '@/pages/Students';
 import Instructors from '@/pages/Instructors';
-import Resources from '@/app/resources/page';
+import ResourcesPage from '@/app/resources/page';
 import Login from '@/pages/Login';
 import NotFound from '@/pages/NotFound';
 import { studentRouter } from './student';
+import { Outlet } from 'react-router-dom';
 
 const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
@@ -92,7 +93,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'resources',
-        element: <Resources />,
+        element: <ResourcesPage />,
       },
       {
         path: '*',

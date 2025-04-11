@@ -37,21 +37,32 @@ export default function StudentResources() {
     
     setIsLoading(true);
     try {
-      const resourcesData = await getStudentResources(user.userId);
+      const resourcesResponse = await getStudentResources(user.userId);
       
-      if (Array.isArray(resourcesData)) {
-        setResources(resourcesData);
+      if (resourcesResponse.success && resourcesResponse.data) {
+        setResources(resourcesResponse.data);
         
         // Extract unique batches
-        const uniqueBatches = Array.from(
-          new Set(resourcesData.map(resource => resource.batch?.batchId.toString()))
-        ).map(batchId => {
-          const batchResource = resourcesData.find(r => r.batch?.batchId.toString() === batchId);
-          return {
-            id: batchId || '',
-            name: batchResource?.batch?.batchName || 'Unknown Batch'
-          };
+        const batchMap = new Map<string, string>();
+        
+        resourcesResponse.data.forEach(resource => {
+          if (resource.batch) {
+            batchMap.set(
+              resource.batch.batchId.toString(),
+              resource.batch.batchName
+            );
+          } else if (resource.batchId) {
+            batchMap.set(
+              resource.batchId.toString(),
+              `Batch ${resource.batchId}`
+            );
+          }
         });
+        
+        const uniqueBatches = Array.from(batchMap.entries()).map(([id, name]) => ({
+          id,
+          name
+        }));
         
         setBatches(uniqueBatches);
       } else {
@@ -79,7 +90,8 @@ export default function StudentResources() {
     // Filter by batch
     if (selectedBatch) {
       filtered = filtered.filter(resource => 
-        resource.batch?.batchId.toString() === selectedBatch
+        (resource.batch && resource.batch.batchId.toString() === selectedBatch) ||
+        resource.batchId?.toString() === selectedBatch
       );
     }
     
@@ -144,6 +156,19 @@ export default function StudentResources() {
     }
   };
 
+  const getBatchName = (resource: Resource): string => {
+    if (resource.batch) {
+      return resource.batch.batchName;
+    }
+    
+    if (resource.batchId) {
+      const batch = batches.find(b => b.id === resource.batchId?.toString());
+      return batch?.name || `Batch ${resource.batchId}`;
+    }
+    
+    return "Unknown Batch";
+  };
+
   return (
     <div className="space-y-6">
       <BreadcrumbNav items={[
@@ -206,7 +231,7 @@ export default function StudentResources() {
                     )}
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-muted-foreground">
-                        <p>Batch: {resource.batch?.batchName}</p>
+                        <p>Batch: {getBatchName(resource)}</p>
                         <p>Uploaded: {format(new Date(resource.createdAt), 'PPP')}</p>
                       </div>
                       <Button

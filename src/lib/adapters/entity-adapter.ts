@@ -98,7 +98,7 @@ export class EntityAdapter {
       resourceType: apiResource.resourceType || 'assignment',
       uploadedBy: apiResource.uploadedBy || { fullName: 'System' },
       createdAt: dateToString(apiResource.createdAt),
-      updatedAt: dateToString(apiResource.updatedAt),
+      updatedAt: dateToString(apiResource.updatedAt || apiResource.createdAt),
       batchId: apiResource.batchId,
       uploadedById: apiResource.uploadedById,
       batch: apiResource.batch

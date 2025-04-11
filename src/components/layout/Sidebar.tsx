@@ -21,10 +21,7 @@ import {
   Users,
   Award,
   GraduationCap,
-  Tag,
-  BookOpenCheck,
-  Clock,
-  Download
+  Tag
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -33,15 +30,10 @@ interface SidebarProps {
 
 export default function Sidebar({ className }: SidebarProps) {
   const { pathname } = useLocation();
-  const { logout, hasRole, user } = useAuth();
+  const { logout, hasRole } = useAuth();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-
-  // Determine user role
-  const isAdmin = hasRole(Role.admin);
-  const isInstructor = hasRole(Role.instructor);
-  const isStudent = hasRole(Role.student);
 
   // Close the sidebar when navigating on mobile
   useEffect(() => {
@@ -60,8 +52,7 @@ export default function Sidebar({ className }: SidebarProps) {
 
   const NavItems = () => (
     <div className="group flex flex-col gap-1 py-2">
-      {/* Admin/Instructor Dashboard */}
-      {hasRole([Role.admin, Role.instructor]) && (
+      {hasRole([Role.admin, Role.instructor, Role.student]) && (
         <Link to="/dashboard">
           <Button
             variant="ghost"
@@ -78,25 +69,6 @@ export default function Sidebar({ className }: SidebarProps) {
         </Link>
       )}
 
-      {/* Student Dashboard */}
-      {isStudent && (
-        <Link to="/student/dashboard">
-          <Button
-            variant="ghost"
-            size={isCollapsed ? "icon" : "default"}
-            className={cn(
-              "w-full justify-start",
-              pathname === "/student/dashboard" && "bg-accent text-accent-foreground",
-              isCollapsed && "flex h-10 w-10 p-0 justify-center"
-            )}
-          >
-            <LayoutDashboard className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
-            {!isCollapsed && <span>Dashboard</span>}
-          </Button>
-        </Link>
-      )}
-
-      {/* Admin/Instructor Courses */}
       {hasRole([Role.admin, Role.instructor]) && (
         <Link to="/courses">
           <Button
@@ -114,25 +86,6 @@ export default function Sidebar({ className }: SidebarProps) {
         </Link>
       )}
       
-      {/* Student Courses */}
-      {isStudent && (
-        <Link to="/student/courses">
-          <Button
-            variant="ghost"
-            size={isCollapsed ? "icon" : "default"}
-            className={cn(
-              "w-full justify-start",
-              pathname === "/student/courses" && "bg-accent text-accent-foreground",
-              isCollapsed && "flex h-10 w-10 p-0 justify-center"
-            )}
-          >
-            <BookOpenCheck className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
-            {!isCollapsed && <span>My Courses</span>}
-          </Button>
-        </Link>
-      )}
-      
-      {/* Admin-only Categories */}
       {hasRole([Role.admin]) && (
         <Link to="/categories">
           <Button
@@ -150,7 +103,6 @@ export default function Sidebar({ className }: SidebarProps) {
         </Link>
       )}
 
-      {/* Admin/Instructor Batches */}
       {hasRole([Role.admin, Role.instructor]) && (
         <Link to="/batches">
           <Button
@@ -168,7 +120,6 @@ export default function Sidebar({ className }: SidebarProps) {
         </Link>
       )}
 
-      {/* Admin/Instructor Schedules */}
       {hasRole([Role.admin, Role.instructor]) && (
         <Link to="/schedules">
           <Button
@@ -185,26 +136,7 @@ export default function Sidebar({ className }: SidebarProps) {
           </Button>
         </Link>
       )}
-      
-      {/* Student Schedules */}
-      {isStudent && (
-        <Link to="/student/schedules">
-          <Button
-            variant="ghost"
-            size={isCollapsed ? "icon" : "default"}
-            className={cn(
-              "w-full justify-start",
-              pathname === "/student/schedules" && "bg-accent text-accent-foreground",
-              isCollapsed && "flex h-10 w-10 p-0 justify-center"
-            )}
-          >
-            <Clock className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
-            {!isCollapsed && <span>My Schedule</span>}
-          </Button>
-        </Link>
-      )}
 
-      {/* Admin-only Students Management */}
       {hasRole([Role.admin]) && (
         <Link to="/students">
           <Button
@@ -222,7 +154,6 @@ export default function Sidebar({ className }: SidebarProps) {
         </Link>
       )}
 
-      {/* Admin-only Instructors Management */}
       {hasRole([Role.admin]) && (
         <Link to="/instructors">
           <Button
@@ -240,7 +171,6 @@ export default function Sidebar({ className }: SidebarProps) {
         </Link>
       )}
 
-      {/* Admin/Instructor Resources */}
       {hasRole([Role.admin, Role.instructor]) && (
         <Link to="/resources">
           <Button
@@ -257,26 +187,7 @@ export default function Sidebar({ className }: SidebarProps) {
           </Button>
         </Link>
       )}
-      
-      {/* Student Resources */}
-      {isStudent && (
-        <Link to="/student/resources">
-          <Button
-            variant="ghost"
-            size={isCollapsed ? "icon" : "default"}
-            className={cn(
-              "w-full justify-start",
-              pathname === "/student/resources" && "bg-accent text-accent-foreground",
-              isCollapsed && "flex h-10 w-10 p-0 justify-center"
-            )}
-          >
-            <Download className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
-            {!isCollapsed && <span>Resources</span>}
-          </Button>
-        </Link>
-      )}
 
-      {/* Admin-only Settings */}
       {hasRole([Role.admin]) && (
         <Link to="/settings">
           <Button
@@ -294,7 +205,6 @@ export default function Sidebar({ className }: SidebarProps) {
         </Link>
       )}
 
-      {/* Logout Button */}
       <Button
         variant="ghost"
         size={isCollapsed ? "icon" : "default"}
@@ -342,49 +252,49 @@ export default function Sidebar({ className }: SidebarProps) {
   }
 
   // Desktop view
-  return (
-    <div
-      className={cn(
-        "flex flex-col border-r bg-sidebar shadow-sm transition-all duration-300 min-h-screen flex-none",
-        isCollapsed ? "w-[70px]" : "w-64",
-        className
-      )}
-    >
-      
-      <div className="flex h-16 items-center border-b px-4 transition-all justify-between">
-        <a
-          href="https://e-gain.co.in"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center"
-        >
-          <img
-            src="/egain-logo.jpeg"
-            alt="e-Gain Logo"
-            className={cn(isCollapsed ? "h-8" : "h-10", "object-contain bg-white")}
-          />
-        </a>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 rounded-full border shadow-sm bg-background"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-        >
-          {isCollapsed ? (
-            <ChevronRight className="h-3 w-3" />
-          ) : (
-            <ChevronLeft className="h-3 w-3" />
-          )}
-          <span className="sr-only">Toggle Sidebar</span>
-        </Button>
-      </div>
-
-      {/* Scrollable Navigation Items */}
-      <ScrollArea className="flex-1">
-        <div className={cn("flex flex-col gap-2 p-2 transition-all")}>
-          <NavItems />
-        </div>
-      </ScrollArea>
+return (
+  <div
+    className={cn(
+      "flex flex-col border-r bg-sidebar shadow-sm transition-all duration-300 min-h-screen flex-none",
+      isCollapsed ? "w-[70px]" : "w-64",
+      className
+    )}
+  >
+    
+    <div className="flex h-16 items-center border-b px-4 transition-all justify-between">
+      <a
+        href="https://e-gain.co.in"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex-1 flex items-center justify-center"
+      >
+        <img
+          src="/egain-logo.jpeg"
+          alt="e-Gain Logo"
+          className={cn(isCollapsed ? "h-8" : "h-10", "object-contain bg-white")}
+        />
+      </a>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 rounded-full border shadow-sm bg-background"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        {isCollapsed ? (
+          <ChevronRight className="h-3 w-3" />
+        ) : (
+          <ChevronLeft className="h-3 w-3" />
+        )}
+        <span className="sr-only">Toggle Sidebar</span>
+      </Button>
     </div>
-  );
+
+    {/* Scrollable Navigation Items */}
+    <ScrollArea className="flex-1">
+      <div className={cn("flex flex-col gap-2 p-2 transition-all")}>
+        <NavItems />
+      </div>
+    </ScrollArea>
+  </div>
+);
 }

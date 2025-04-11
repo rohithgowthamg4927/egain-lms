@@ -32,9 +32,3 @@ export {
   enrollStudentInCourse,
   removeStudentFromCourse
 } from './student-courses';
-
-// Re-export resource functions that some components might be looking for
-export {
-  createResource,
-  getResourcePresignedUrl
-} from './resources';

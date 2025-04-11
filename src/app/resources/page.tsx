@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -17,8 +16,7 @@ import ResourceMetrics from '@/components/resources/ResourceMetrics';
 import ResourceGrid from '@/components/resources/ResourceGrid';
 import ResourceList from '@/components/resources/ResourceList';
 import { Batch, Resource } from '@/lib/types';
-import { getBatches } from '@/lib/api/batches';
-import { getResourcesByBatch, deleteResource, createResource } from '@/lib/api/resources';
+import { getBatches, getResourcesByBatch, deleteResource } from '@/lib/api';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 export default function ResourcesPage() {
@@ -38,7 +36,7 @@ export default function ResourcesPage() {
 
   useEffect(() => {
     if (selectedBatch) {
-      fetchResources(parseInt(selectedBatch, 10));
+      fetchResources(selectedBatch);
     } else {
       setResources([]);
       setIsLoading(false);
@@ -63,7 +61,7 @@ export default function ResourcesPage() {
     }
   };
 
-  const fetchResources = async (batchId: number) => {
+  const fetchResources = async (batchId: string) => {
     setIsLoading(true);
     try {
       const response = await getResourcesByBatch(batchId);
@@ -99,7 +97,7 @@ export default function ResourcesPage() {
 
       // Refresh resources list
       if (selectedBatch) {
-        fetchResources(parseInt(selectedBatch, 10));
+        fetchResources(selectedBatch);
       }
     } catch (error) {
       console.error('Error deleting resource:', error);
@@ -244,7 +242,7 @@ export default function ResourcesPage() {
         onClose={() => setIsUploadDialogOpen(false)}
         onSuccess={() => {
           if (selectedBatch) {
-            fetchResources(parseInt(selectedBatch, 10));
+            fetchResources(selectedBatch);
           }
         }}
         batches={batches}

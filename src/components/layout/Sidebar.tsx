@@ -360,7 +360,7 @@ export default function Sidebar({ className }: SidebarProps) {
           <span className="sr-only">Toggle Sidebar</span>
         </Button>
       </div>
-      <div className={cn("flex flex-col gap-2 p-2 transition-all")}>
+      <div className={cn("flex-1 overflow-y-auto p-2")}>
         <NavItems />
       </div>
     </div>

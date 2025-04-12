@@ -75,6 +75,7 @@ export type Course = {
   category?: CourseCategory;
   reviews?: CourseReview[];
   instructors?: InstructorCourseAssignment[];
+  createdBy?: User;  // Add the createdBy property to the Course type
 };
 
 export interface InstructorCourseAssignment {

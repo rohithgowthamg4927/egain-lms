@@ -57,8 +57,11 @@ export function mapApiCourse(course: any): Course {
     createdAt: dateToString(course.createdAt),
     updatedAt: dateToString(course.updatedAt || course.createdAt),
     category: course.category,
-    students: course.students || 0,
-    batches: course.batches || 0,
+    // Fix the student and batches count to match Course type
+    _count: course._count || { 
+      studentCourses: course.students || 0, 
+      batches: course.batches || 0 
+    },
     averageRating: course.averageRating || 0,
     createdBy: course.createdBy
   };

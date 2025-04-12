@@ -18,8 +18,8 @@ export class EntityAdapter {
       createdAt: dateToString(apiCourse.createdAt),
       updatedAt: dateToString(apiCourse.updatedAt),
       category: apiCourse.category ? this.adaptCategory(apiCourse.category) : undefined,
-      students: apiCourse.students || 0,
-      batches: apiCourse.batches || 0,
+      // Ensure these properties match the Course type definition
+      _count: apiCourse._count || { studentCourses: apiCourse.students || 0, batches: apiCourse.batches || 0 },
       averageRating: apiCourse.averageRating || 0,
       createdBy: apiCourse.createdBy
     };

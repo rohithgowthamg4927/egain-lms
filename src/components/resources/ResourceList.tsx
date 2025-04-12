@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -7,20 +8,35 @@ import { useToast } from '@/hooks/use-toast';
 import { getResourcePresignedUrl } from '@/lib/api/resources';
 import { Resource } from '@/lib/types';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
+import { useAuth } from '@/hooks/use-auth';
+import { Role } from '@/lib/types';
 
 interface ResourceListProps {
   resources: Resource[];
   onDelete: (resource: Resource) => void;
   userRole?: string;
+  instructorId?: number;
 }
 
-export function ResourceList({ resources, onDelete, userRole }: ResourceListProps) {
+export function ResourceList({ resources, onDelete, userRole, instructorId }: ResourceListProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [resourceToDelete, setResourceToDelete] = useState<Resource | null>(null);
   const canDelete = userRole === 'instructor' || userRole === 'admin';
   const [isDownloading, setIsDownloading] = useState(false);
+  const isInstructor = user?.role === Role.instructor;
+
+  // Filter resources for instructors to only show resources from their batches
+  const filteredResources = isInstructor && instructorId 
+    ? resources.filter(resource => 
+        // Check if resource belongs to instructor's batch
+        (resource.uploadedById === instructorId) || 
+        // Or check if instructor is assigned to the batch
+        (resource.batch?.instructorId === instructorId)
+      )
+    : resources;
 
   const getResourceType = (resource: Resource): string => {
     const fileName = resource.fileName?.toLowerCase() || '';
@@ -91,6 +107,22 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
   };
 
   const handleDeleteClick = (resource: Resource) => {
+    // For instructors, check if they can delete this resource
+    if (isInstructor && instructorId) {
+      const canInstructorDelete = 
+        resource.uploadedById === instructorId || 
+        resource.batch?.instructorId === instructorId;
+      
+      if (!canInstructorDelete) {
+        toast({
+          title: 'Permission Denied',
+          description: 'You can only delete resources for your own batches',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+    
     setResourceToDelete(resource);
     setShowDeleteDialog(true);
   };
@@ -125,7 +157,7 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
           </TableRow>
         </TableHeader>
         <TableBody>
-          {resources.map((resource) => (
+          {filteredResources.map((resource) => (
             <TableRow key={resource.resourceId}>
               <TableCell className="font-medium">
                 <div className="flex items-center gap-2">

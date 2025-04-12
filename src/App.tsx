@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -11,6 +12,7 @@ import StudentDashboard from '@/pages/student/StudentDashboard';
 import StudentCourses from '@/pages/student/StudentCourses';
 import StudentSchedules from '@/pages/student/StudentSchedules';
 import StudentResources from '@/pages/student/StudentResources';
+import InstructorDashboard from '@/pages/instructor/InstructorDashboard';
 import Courses from './pages/Courses';
 import Categories from './pages/Categories';
 import Schedules from './pages/Schedules';
@@ -25,6 +27,7 @@ import EditBatch from './pages/EditBatch';
 import AddUser from './pages/AddUser';
 import UserProfile from './pages/UserProfile';
 import StudentCourseDetail from './pages/student/StudentCourseDetail';
+
 function App() {
   return (
     <>
@@ -33,12 +36,22 @@ function App() {
         <Route path="/login" element={<Index />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/*Admin/Instructor Routes*/}
+        {/*Admin Routes*/}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
+            <ProtectedRoute allowedRoles={[Role.admin]}>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/*Instructor Routes*/}
+        <Route
+          path="/instructor/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={[Role.instructor]}>
+              <InstructorDashboard />
             </ProtectedRoute>
           }
         />

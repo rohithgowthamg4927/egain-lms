@@ -264,15 +264,18 @@ const UserProfile = () => {
                   </TabsList>
 
                   <TabsContent value="courses">
-                    {isStudent && <StudentActivityPanel userId={Number(userId)} />}
-                    {isInstructor && <InstructorActivityPanel userId={Number(userId)} />}
-                    {!isStudent && !isInstructor && (
-                      <Card>
-                        <CardContent className="pt-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Enrolled Courses</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {isStudent && <StudentActivityPanel userId={Number(userId)} />}
+                        {isInstructor && <InstructorActivityPanel userId={Number(userId)} />}
+                        {!isStudent && !isInstructor && (
                           <p>Course information is only available for students and instructors.</p>
-                        </CardContent>
-                      </Card>
-                    )}
+                        )}
+                      </CardContent>
+                    </Card>
                   </TabsContent>
 
                   <TabsContent value="schedules">

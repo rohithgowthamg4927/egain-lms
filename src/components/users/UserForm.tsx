@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -253,7 +252,7 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false, isEdit
                         type="button"
                         variant="outline"
                         onClick={() => downloadCredentialsCSV(form.getValues('email'), generatedPassword, form.getValues('fullName'))}
-                        className="rounded-l-none px-2"
+                        className="rounded-l-none px-2 text-blue-500 hover:text-blue-600 hover:border-blue-600"
                         title="Download Credentials"
                       >
                         <Download className="h-4 w-4" />
@@ -294,7 +293,7 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false, isEdit
                             downloadCredentialsCSV(form.getValues('email'), defaultValues.password, form.getValues('fullName'));
                           }
                         }}
-                        className="rounded-l-none px-2"
+                        className="rounded-l-none px-2 text-blue-500 hover:text-blue-600 hover:border-blue-600"
                         title="Download Credentials"
                       >
                         <Download className="h-4 w-4" />
@@ -342,7 +341,7 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false, isEdit
                     type="button"
                     variant="outline"
                     onClick={() => downloadCredentialsCSV(form.getValues('email'), generatedPassword, form.getValues('fullName'))}
-                    className="rounded-l-none px-2"
+                    className="rounded-l-none px-2 text-blue-500 hover:text-blue-600 hover:border-blue-600"
                     title="Download Credentials"
                   >
                     <Download className="h-4 w-4" />

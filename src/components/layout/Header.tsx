@@ -130,8 +130,11 @@ function getPageTitle(): string {
   if (path.includes('/courses')) return 'Courses';
   if (path.includes('/batches')) return 'Batches';
   if (path.includes('/students')) return 'Students';
+  if (path.includes('/schedules')) return 'Schedules';
+  if (path.includes('/resources')) return 'Resources';
   if (path.includes('/instructors')) return 'Instructors';
-  if (path.includes('/profile')) return 'My Profile';
+  if (path.includes('/categories')) return 'Course Categories';
+  // if (path.includes('/profile')) return 'My Profile';
   
   // Default title
   return 'LMS Admin';

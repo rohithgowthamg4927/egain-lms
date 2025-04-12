@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,7 +68,7 @@ const PasswordTab = ({ user, onUpdate }: PasswordTabProps) => {
               variant="outline"
               size="icon"
               onClick={() => downloadCredentialsCSV(user.email, user.password || '', user.fullName)}
-              className="flex-shrink-0"
+              className="flex-shrink-0 text-blue-500 hover:text-blue-600 hover:border-blue-600"
               title="Download Credentials"
             >
               <Download className="h-4 w-4" />

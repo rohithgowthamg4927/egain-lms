@@ -328,11 +328,10 @@ return (
     </div>
 
     {/* Scrollable Navigation Items */}
-    <ScrollArea className="flex-1">
+    {/* <ScrollArea className="flex-1"> */}
       <div className={cn("flex flex-col gap-2 p-2 transition-all")}>
         <NavItems />
       </div>
-    </ScrollArea>
   </div>
 );
 }

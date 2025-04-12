@@ -266,7 +266,7 @@ const UserProfile = () => {
                   <TabsContent value="courses">
                     <Card>
                       <CardHeader>
-                        <CardTitle>Enrolled Courses</CardTitle>
+                        <CardTitle>Courses</CardTitle>
                       </CardHeader>
                       <CardContent>
                         {isStudent && <StudentActivityPanel userId={Number(userId)} />}

@@ -1,10 +1,19 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from '@/hooks/use-auth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Role } from '@/lib/types';
@@ -34,6 +43,7 @@ export default function Sidebar({ className }: SidebarProps) {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   // Close the sidebar when navigating on mobile
   useEffect(() => {
@@ -49,6 +59,10 @@ export default function Sidebar({ className }: SidebarProps) {
       setIsCollapsed(false);
     }
   }, [isMobile]);
+
+  const handleLogout = () => {
+    logout();
+  };
 
   const NavItems = () => (
     <div className="group flex flex-col gap-1 py-2">
@@ -242,7 +256,7 @@ export default function Sidebar({ className }: SidebarProps) {
       <Button
         variant="ghost"
         size={isCollapsed ? "icon" : "default"}
-        onClick={() => logout()}
+        onClick={() => setIsLogoutDialogOpen(true)}
         className={cn(
           "w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-100/50",
           isCollapsed && "flex h-10 w-10 p-0 justify-center"
@@ -251,6 +265,27 @@ export default function Sidebar({ className }: SidebarProps) {
         <LogOut className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
         {!isCollapsed && <span>Logout</span>}
       </Button>
+
+      {/* Logout Confirmation Dialog */}
+      <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will be logged out of your account and redirected to the login page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleLogout}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Logout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 

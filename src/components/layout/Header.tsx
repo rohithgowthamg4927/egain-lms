@@ -1,4 +1,3 @@
-
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import PasswordChangeForm from '@/components/users/PasswordChangeForm';
 
 const Header = () => {
@@ -28,6 +37,7 @@ const Header = () => {
     { id: 2, title: 'New batch starting', description: 'Flutter for Beginners batch starts next week' },
   ]);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -98,7 +108,10 @@ const Header = () => {
                 <span>Change Password</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
+              <DropdownMenuItem 
+                onClick={() => setIsLogoutDialogOpen(true)} 
+                className="cursor-pointer text-destructive focus:text-destructive"
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Logout</span>
               </DropdownMenuItem>
@@ -119,6 +132,27 @@ const Header = () => {
           <PasswordChangeForm userId={user?.userId || 0} onSuccess={() => setIsPasswordDialogOpen(false)} />
         </DialogContent>
       </Dialog>
+
+      {/* Logout Confirmation Dialog */}
+      <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will be logged out of your account and redirected to the login page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleLogout}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Logout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 };

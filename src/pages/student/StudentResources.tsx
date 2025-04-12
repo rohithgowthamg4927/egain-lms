@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -7,26 +6,35 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Resource } from '@/lib/types';
-import { getStudentResources } from '@/lib/api/students';
-import { getResourcePresignedUrl } from '@/lib/api/resources';
+import { getResourcesByBatch, getResourcePresignedUrl } from '@/lib/api/resources';
+import { apiFetch } from '@/lib/api/core';
 import { format } from 'date-fns';
 import { Download, FileText, FileVideo, FileImage, FileAudio, File, Eye, Loader2 } from 'lucide-react';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
+
+interface Batch {
+  batchId: number;
+  batchName: string;
+  course: {
+    courseId: number;
+    courseName: string;
+  };
+}
 
 export default function StudentResources() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [resources, setResources] = useState<Resource[]>([]);
   const [filteredResources, setFilteredResources] = useState<Resource[]>([]);
-  const [selectedBatch, setSelectedBatch] = useState<string>('');
+  const [selectedBatch, setSelectedBatch] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [batches, setBatches] = useState<{id: string, name: string}[]>([]);
+  const [batches, setBatches] = useState<Batch[]>([]);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (user?.userId) {
-      fetchResources();
+      fetchBatchesAndResources();
     }
   }, [user?.userId]);
 
@@ -34,53 +42,54 @@ export default function StudentResources() {
     filterResources();
   }, [selectedBatch, searchQuery, resources]);
 
-  const fetchResources = async () => {
+  const fetchBatchesAndResources = async () => {
     if (!user?.userId) return;
     
     setIsLoading(true);
     try {
-      const resourcesResponse = await getStudentResources(user.userId);
-      
-      if (resourcesResponse.success && resourcesResponse.data) {
-        console.log("Resources fetched:", resourcesResponse.data);
-        setResources(resourcesResponse.data);
-        
-        // Extract unique batches
-        const batchMap = new Map<string, string>();
-        
-        resourcesResponse.data.forEach(resource => {
-          if (resource.batch) {
-            batchMap.set(
-              resource.batch.batchId.toString(),
-              resource.batch.batchName
-            );
-          } else if (resource.batchId) {
-            batchMap.set(
-              resource.batchId.toString(),
-              `Batch ${resource.batchId}`
-            );
+      // First fetch enrolled batches
+      const batchesResponse = await apiFetch<any[]>(`/student-batches/${user.userId}`);
+      if (batchesResponse.success && batchesResponse.data) {
+        // Transform the student batches data to match our Batch interface
+        const transformedBatches = batchesResponse.data.map(sb => ({
+          batchId: sb.batch.batchId,
+          batchName: sb.batch.batchName,
+          course: {
+            courseId: sb.batch.course.courseId,
+            courseName: sb.batch.course.courseName
           }
-        });
-        
-        const uniqueBatches = Array.from(batchMap.entries()).map(([id, name]) => ({
-          id,
-          name
         }));
+        setBatches(transformedBatches);
         
-        setBatches(uniqueBatches);
+        // Fetch resources for each batch
+        const allResources: Resource[] = [];
+        for (const batch of transformedBatches) {
+          const resourcesResponse = await getResourcesByBatch(batch.batchId.toString());
+          if (resourcesResponse.success && resourcesResponse.data) {
+            // Add batch information to each resource
+            const resourcesWithBatch = resourcesResponse.data.map(resource => ({
+              ...resource,
+              batch: {
+                batchId: batch.batchId,
+                batchName: batch.batchName,
+                course: {
+                  courseId: batch.course.courseId,
+                  courseName: batch.course.courseName
+                }
+              }
+            }));
+            allResources.push(...resourcesWithBatch);
+          }
+        }
+        setResources(allResources);
       } else {
-        console.error("Failed to fetch resources:", resourcesResponse.error);
-        toast({
-          title: 'Error',
-          description: resourcesResponse.error || 'Failed to fetch resources',
-          variant: 'destructive',
-        });
+        throw new Error('Failed to fetch enrolled batches');
       }
     } catch (error) {
-      console.error('Error fetching resources:', error);
+      console.error('Error fetching data:', error);
       toast({
         title: 'Error',
-        description: 'An error occurred while fetching resources',
+        description: 'Failed to fetch your enrolled batches and resources',
         variant: 'destructive',
       });
     } finally {
@@ -92,10 +101,9 @@ export default function StudentResources() {
     let filtered = [...resources];
     
     // Filter by batch
-    if (selectedBatch) {
+    if (selectedBatch && selectedBatch !== "all") {
       filtered = filtered.filter(resource => 
-        (resource.batch && resource.batch.batchId.toString() === selectedBatch) ||
-        resource.batchId?.toString() === selectedBatch
+        resource.batch?.batchId.toString() === selectedBatch
       );
     }
     
@@ -105,7 +113,7 @@ export default function StudentResources() {
       filtered = filtered.filter(resource => 
         resource.title?.toLowerCase().includes(query) || 
         resource.description?.toLowerCase().includes(query) ||
-        (resource.fileName && resource.fileName.toLowerCase().includes(query))
+        resource.batch?.course?.courseName.toLowerCase().includes(query)
       );
     }
     
@@ -118,13 +126,13 @@ export default function StudentResources() {
     const resourceType = resource.resourceType || 'document';
     
     if (resourceType === 'recording' || ['mp4', 'mov', 'avi', 'webm'].includes(extension)) {
-      return <FileVideo className="h-6 w-6 text-blue-500" />;
+      return <FileVideo className="h-6 w-6 text-red-500" />;
     } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
       return <FileImage className="h-6 w-6 text-green-500" />;
     } else if (['mp3', 'wav', 'ogg'].includes(extension)) {
       return <FileAudio className="h-6 w-6 text-purple-500" />; 
     } else if (['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'].includes(extension)) {
-      return <FileText className="h-6 w-6 text-red-500" />;
+      return <FileText className="h-6 w-6 text-blue-500" />;
     } else {
       return <File className="h-6 w-6 text-gray-500" />;
     }
@@ -168,17 +176,11 @@ export default function StudentResources() {
       const response = await getResourcePresignedUrl(resource.resourceId);
       
       if (response.success && response.data.presignedUrl) {
-        // For direct download (files that can't be viewed in browser)
-        const a = document.createElement('a');
-        a.href = response.data.presignedUrl;
-        a.download = resource.fileName || `resource-${resource.resourceId}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        window.open(response.data.presignedUrl, '_blank');
         
         toast({
           title: 'Success',
-          description: 'Download started',
+          description: 'Opened resource in new tab',
         });
       } else {
         throw new Error(response.error || 'Failed to get download URL');
@@ -187,7 +189,7 @@ export default function StudentResources() {
       console.error('Download error:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to download resource',
+        description: error instanceof Error ? error.message : 'Failed to open resource',
         variant: 'destructive',
       });
     } finally {
@@ -201,11 +203,29 @@ export default function StudentResources() {
     }
     
     if (resource.batchId) {
-      const batch = batches.find(b => b.id === resource.batchId?.toString());
-      return batch?.name || `Batch ${resource.batchId}`;
+      const batch = batches.find(b => b.batchId === resource.batchId);
+      return batch?.batchName || `Batch ${resource.batchId}`;
     }
     
     return "Unknown Batch";
+  };
+
+  const getResourceType = (resource: Resource): string => {
+    const fileName = resource.fileName?.toLowerCase() || '';
+    const type = resource.type?.toLowerCase() || '';
+    
+    // Check if it's a video file by extension or type
+    if (fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi') || 
+        type === 'recording' || type === 'video') {
+      return 'Class Recording';
+    } else if (fileName.endsWith('.pdf') || fileName.endsWith('.doc') || fileName.endsWith('.docx') || 
+             fileName.endsWith('.ppt') || fileName.endsWith('.pptx') || fileName.endsWith('.txt') || 
+             type === 'assignment' || type === 'document') {
+      return 'Assignment';
+    } else {
+      // Default to document for all other types
+      return 'Assignment';
+    }
   };
 
   const isVideoResource = (resource: Resource): boolean => {
@@ -226,7 +246,7 @@ export default function StudentResources() {
       
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <p className="text-muted-foreground">
-          Access learning materials and resources for your enrolled batches.
+          Access assignments, documents, and class recordings for your enrolled batches.
         </p>
       </div>
 
@@ -238,10 +258,10 @@ export default function StudentResources() {
                 <SelectValue placeholder="All Batches" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Batches</SelectItem>
+                <SelectItem value="all">All Batches</SelectItem>
                 {batches.map((batch) => (
-                  <SelectItem key={batch.id} value={batch.id}>
-                    {batch.name}
+                  <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
+                    {batch.batchName} {batch.course ? `- ${batch.course.courseName}` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -280,24 +300,23 @@ export default function StudentResources() {
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-muted-foreground">
                         <p>Batch: {getBatchName(resource)}</p>
-                        <p>Type: {resource.resourceType === 'recording' ? 'Class Recording' : 'Assignment'}</p>
+                        <p>Type: {getResourceType(resource)}</p>
                         <p>Uploaded: {format(new Date(resource.createdAt), 'PPP')}</p>
                       </div>
                       <div className="flex gap-2">
                         <Button
-                          variant="outline"
                           size="sm"
                           onClick={() => isVideoResource(resource) ? handleView(resource) : handleDownload(resource)}
                           disabled={downloadingId === resource.resourceId}
+                          className="flex items-center gap-2 bg-blue-500 text-white hover:bg-blue-600"
                         >
                           {downloadingId === resource.resourceId ? (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          ) : isVideoResource(resource) ? (
-                            <Eye className="h-4 w-4 mr-2" />
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                           ) : (
-                            <Download className="h-4 w-4 mr-2" />
+                            <Eye className="h-4 w-4 mr-2" />
                           )}
-                          {isVideoResource(resource) ? 'View' : 'Download'}
+                          {/* {isVideoResource(resource) ? 'View' : 'Download'} */}
+                          View/Download
                         </Button>
                       </div>
                     </div>

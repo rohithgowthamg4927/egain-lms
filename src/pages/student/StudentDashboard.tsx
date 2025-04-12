@@ -5,11 +5,15 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, FileText, BookOpen, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, FileText, BookOpen, ChevronRight, Video } from 'lucide-react';
 import { format } from 'date-fns';
-import { getStudentCourses, getStudentSchedules, getStudentResources } from '@/lib/api/students';
+import { getStudentCourses, getStudentSchedules } from '@/lib/api/students';
+import { getResourcesByBatch } from '@/lib/api/resources';
+import { apiFetch } from '@/lib/api/core';
 import { useNavigate } from 'react-router-dom';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
+import { Resource } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -19,6 +23,7 @@ export default function StudentDashboard() {
   const [schedules, setSchedules] = useState([]);
   const [resources, setResources] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'all' | 'assignments' | 'recordings'>('all');
 
   useEffect(() => {
     if (user?.userId) {
@@ -43,10 +48,40 @@ export default function StudentDashboard() {
         setSchedules(schedulesResponse.data);
       }
 
-      // Fetch resources
-      const resourcesResponse = await getStudentResources(user.userId);
-      if (resourcesResponse.success && resourcesResponse.data) {
-        setResources(resourcesResponse.data || []);
+      // Fetch enrolled batches first
+      const batchesResponse = await apiFetch<any[]>(`/student-batches/${user.userId}`);
+      if (batchesResponse.success && batchesResponse.data) {
+        // Transform the student batches data
+        const transformedBatches = batchesResponse.data.map(sb => ({
+          batchId: sb.batch.batchId,
+          batchName: sb.batch.batchName,
+          course: {
+            courseId: sb.batch.course.courseId,
+            courseName: sb.batch.course.courseName
+          }
+        }));
+        
+        // Fetch resources for each batch
+        const allResources: Resource[] = [];
+        for (const batch of transformedBatches) {
+          const resourcesResponse = await getResourcesByBatch(batch.batchId.toString());
+          if (resourcesResponse.success && resourcesResponse.data) {
+            // Add batch information to each resource
+            const resourcesWithBatch = resourcesResponse.data.map(resource => ({
+              ...resource,
+              batch: {
+                batchId: batch.batchId,
+                batchName: batch.batchName,
+                course: {
+                  courseId: batch.course.courseId,
+                  courseName: batch.course.courseName
+                }
+              }
+            }));
+            allResources.push(...resourcesWithBatch);
+          }
+        }
+        setResources(allResources);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -95,15 +130,17 @@ export default function StudentDashboard() {
     .sort((a, b) => new Date(a.scheduleDate).getTime() - new Date(b.scheduleDate).getTime())
     .slice(0, 5);
 
+  // Filter resources based on type
+  const filteredResources = resources.filter(resource => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'assignments') return resource.resourceType === 'assignment';
+    if (activeTab === 'recordings') return resource.resourceType === 'recording';
+    return true;
+  });
+
   // Get recent resources (last 5)
-  const recentResources = [...resources]
-    .sort((a, b) => {
-      try {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      } catch (error) {
-        return 0; // Keep original order if dates are invalid
-      }
-    })
+  const recentResources = [...filteredResources]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
   return (
@@ -154,7 +191,7 @@ export default function StudentDashboard() {
               </CardContent>
             </Card>
             
-            <Card>
+            {/* <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
@@ -162,12 +199,12 @@ export default function StudentDashboard() {
               <CardContent>
                 <div className="text-2xl font-bold">0</div>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
 
           <Tabs defaultValue="schedule" className="space-y-4">
             <TabsList>
-              <TabsTrigger value="schedule">Upcoming Schedule</TabsTrigger>
+              <TabsTrigger value="schedule">Upcoming Schedules</TabsTrigger>
               <TabsTrigger value="resources">Recent Resources</TabsTrigger>
             </TabsList>
             
@@ -197,7 +234,7 @@ export default function StudentDashboard() {
                             <div className="flex items-center gap-1 text-sm">
                               <Clock className="h-4 w-4 text-muted-foreground" />
                               <span>
-                                {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
+                                {format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
                               </span>
                             </div>
                           </div>
@@ -225,6 +262,20 @@ export default function StudentDashboard() {
             </TabsContent>
             
             <TabsContent value="resources" className="space-y-4">
+              <div className="flex justify-between items-center">
+                <TabsList>
+                  <TabsTrigger value="all" onClick={() => setActiveTab('all')}>All</TabsTrigger>
+                  <TabsTrigger value="assignments" onClick={() => setActiveTab('assignments')}>Assignments</TabsTrigger>
+                  <TabsTrigger value="recordings" onClick={() => setActiveTab('recordings')}>Class Recordings</TabsTrigger>
+                </TabsList>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/student/resources')}
+                >
+                  View All Resources
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
               <div className="grid gap-4 grid-cols-1">
                 {recentResources.length > 0 ? (
                   recentResources.map((resource) => (
@@ -233,7 +284,11 @@ export default function StudentDashboard() {
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div className="flex items-start gap-4">
                             <div className="bg-primary/10 p-2 rounded-full">
-                              <FileText className="h-5 w-5 text-primary" />
+                              {resource.resourceType === 'recording' ? (
+                                <Video className="h-5 w-5 text-primary" />
+                              ) : (
+                                <FileText className="h-5 w-5 text-primary" />
+                              )}
                             </div>
                             <div>
                               <h3 className="font-semibold">{resource.title}</h3>
@@ -248,6 +303,9 @@ export default function StudentDashboard() {
                               <Calendar className="h-4 w-4 text-muted-foreground" />
                               <span>{format(new Date(resource.createdAt), 'PPP')}</span>
                             </div>
+                            <Badge variant={resource.resourceType === 'recording' ? 'destructive' : 'default'}>
+                              {resource.resourceType === 'recording' ? 'Class Recording' : 'Assignment'}
+                            </Badge>
                           </div>
                         </div>
                       </CardContent>
@@ -260,15 +318,6 @@ export default function StudentDashboard() {
                     </CardContent>
                   </Card>
                 )}
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => navigate('/student/resources')}
-                >
-                  View All Resources
-                  <ChevronRight className="ml-2 h-4 w-4" />
-                </Button>
               </div>
             </TabsContent>
           </Tabs>

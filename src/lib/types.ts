@@ -39,6 +39,7 @@ export interface ProfilePicture {
   fileSize: number;
   createdAt: string;
   updatedAt: string;
+  user      User?     @relation(fields: [userId], references: [userId])
 }
 
 export type Course = {
@@ -156,6 +157,7 @@ export interface Resource {
   fileUrl: string; // Making fileUrl required
   batchId?: number; // Adding batchId as optional
   uploadedById?: number; // Adding uploadedById as optional
+  presignedUrl?: string; // Adding presignedUrl as optional
   createdAt: string;
   updatedAt: string;
   batch?: { // Adding batch property with instructorId
@@ -177,6 +179,7 @@ export interface CourseReview {
   review?: string;
   createdAt: string;
   updatedAt: string;
+  user?: User;  // Add user as optional
 }
 
 export interface StudentCourse {

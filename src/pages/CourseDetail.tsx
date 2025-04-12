@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { getCourseById, deleteCourse } from '@/lib/api/courses';
 import { Course, Level } from '@/lib/types';
@@ -221,15 +222,39 @@ const CourseDetail = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Book className="h-5 w-5 text-green-500" />
-                      <div>
-                        <p className="text-sm text-gray-500">Batches</p>
-                        <p className="font-medium">
-                          {course._count?.batches || 0}
-                        </p>
-                      </div>
-                    </div>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 cursor-help">
+                            <Book className="h-5 w-5 text-green-500" />
+                            <div>
+                              <p className="text-sm text-gray-500">Batches</p>
+                              <p className="font-medium">
+                                {course._count?.batches || 0}
+                              </p>
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-[300px] p-2">
+                          <div className="space-y-1">
+                            <h4 className="font-medium">Active Batches</h4>
+                            {course.batches && course.batches.length > 0 ? (
+                              <ul className="list-disc list-inside text-sm">
+                                {course.batches.map((batch) => (
+                                  <li key={batch.batchId}>
+                                    {batch.batchName}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-sm text-gray-500">No active batches</p>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
                     <div className="flex items-center gap-2 group">
                       <Star className="h-5 w-5 text-yellow-400 group-hover:fill-yellow-400" />
                       <div>

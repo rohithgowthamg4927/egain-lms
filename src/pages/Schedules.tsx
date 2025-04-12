@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { Plus, Edit, Trash2, RefreshCw } from 'lucide-react';
+import { format, isAfter, isBefore, parseISO } from 'date-fns';
+import { Plus, Edit, Trash2, RefreshCw, Calendar, Clock, Users, Video, ChevronDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { getBatches } from '@/lib/api/batches';
 import { getAllSchedules, createSchedule, updateSchedule, deleteSchedule, ScheduleInput } from '@/lib/api/schedules';
 import { DataTable } from '@/components/ui/data-table';
@@ -12,14 +13,19 @@ import { useToast } from '@/hooks/use-toast';
 import { Schedule, Batch } from '@/lib/types';
 import ScheduleForm from '@/components/schedules/ScheduleForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
 const Schedules = () => {
+  const navigate = useNavigate();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -169,10 +175,6 @@ const Schedules = () => {
 
   const columns = [
     {
-      accessorKey: 'topic' as keyof Schedule,
-      header: 'Topic',
-    },
-    {
       accessorKey: 'scheduleDate' as keyof Schedule,
       header: 'Date',
       cell: ({ row }: { row: { original: Schedule } }) => (
@@ -181,6 +183,13 @@ const Schedules = () => {
             format(new Date(row.original.scheduleDate), 'PPP') : 
             'Not set'}
         </span>
+      ),
+    },
+    {
+      accessorKey: 'batch' as keyof Schedule,
+      header: 'Instructor',
+      cell: ({ row }: { row: { original: Schedule } }) => (
+        <span>{row.original.batch?.instructor?.fullName || 'N/A'}</span>
       ),
     },
     {
@@ -232,6 +241,111 @@ const Schedules = () => {
     },
   ];
 
+  const schedules = schedulesData?.data || [];
+  const batches = batchesData?.data || [];
+
+  const now = new Date();
+
+  const upcomingSchedules = useMemo(() => {
+    return schedules
+      .filter(schedule => 
+        isAfter(parseISO(schedule.scheduleDate), now) &&
+        (!selectedBatch || schedule.batchId === selectedBatch)
+      )
+      .sort((a, b) => parseISO(a.scheduleDate).getTime() - parseISO(b.scheduleDate).getTime());
+  }, [schedules, selectedBatch]);
+
+  const pastSchedules = useMemo(() => {
+    return schedules
+      .filter(schedule => 
+        isBefore(parseISO(schedule.scheduleDate), now) &&
+        (!selectedBatch || schedule.batchId === selectedBatch)
+      )
+      .sort((a, b) => parseISO(b.scheduleDate).getTime() - parseISO(a.scheduleDate).getTime());
+  }, [schedules, selectedBatch]);
+
+  const handleBatchSelect = (batchId: string) => {
+    setSelectedBatch(batchId === "all" ? null : parseInt(batchId));
+  };
+
+  const handleInstructorClick = (instructorId: number) => {
+    navigate(`/instructors/${instructorId}`);
+  };
+
+  const ScheduleCard = ({ schedule, isPast = false }: { schedule: Schedule; isPast?: boolean }) => (
+    <Card className="mb-2 hover:shadow-md transition-shadow">
+      <CardHeader className="pb-3 pt-2 px-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-base">{schedule.topic}</CardTitle>
+            <p 
+              className="text-xs text-gray-500 mt-0.5 cursor-pointer hover:text-blue-600 transition-colors"
+              onClick={() => schedule.batch?.instructor?.userId && handleInstructorClick(schedule.batch.instructor.userId)}
+            >
+              {schedule.batch?.instructor?.fullName || 'No Instructor'}
+            </p>
+          </div>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => openEditDialog(schedule)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => openDeleteDialog(schedule)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pb-4 px-4">
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="h-3.5 w-3.5 text-gray-500" />
+            <span>{format(new Date(schedule.scheduleDate), 'PPP')}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5 text-gray-500" />
+            <span>{formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5 text-gray-500" />
+            <span 
+              className="cursor-pointer hover:text-blue-600 transition-colors"
+              onClick={() => schedule.batch?.batchId && navigate(`/batches/${schedule.batch.batchId}`)}
+            >
+              {schedule.batch?.batchName || 'No Batch'}
+            </span>
+          </div>
+          {!isPast && (
+            <div className="flex items-center gap-1.5">
+              <Video className="h-3.5 w-3.5 text-gray-500" />
+              {schedule.meetingLink ? (
+                <a
+                  href={schedule.meetingLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  Join Meeting
+                </a>
+              ) : (
+                <span className="text-gray-500">No Link</span>
+              )}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   if (isLoadingSchedules || isLoadingBatches) {
     return <div className="p-4">Loading schedules...</div>;
   }
@@ -246,17 +360,14 @@ const Schedules = () => {
     );
   }
 
-  const schedules = schedulesData?.data || [];
-  const batches = batchesData?.data || [];
-
   return (
     <div className="space-y-6">
       <BreadcrumbNav items={[
         { label: 'Schedules', link: '/schedules' }
       ]} />
-      <div className="container mx-auto p-4 space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Schedules</h1>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Schedules</h1>
           <div className="flex gap-2">
             <Button 
               onClick={handleRefresh} 
@@ -277,12 +388,60 @@ const Schedules = () => {
           </div>
         </div>
 
-        <DataTable
-          data={schedules}
-          columns={columns}
-          actions={actions}
-          pagination
-        />
+        <div className="flex items-center gap-4 mb-6">
+          <Select onValueChange={handleBatchSelect} value={selectedBatch?.toString() || "all"}>
+            <SelectTrigger className="w-[250px]">
+              <SelectValue placeholder="Select a batch" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Batches</SelectItem>
+              {batches.map((batch) => (
+                <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
+                  {batch.batchName} ({batch.instructor?.fullName || 'No Instructor'})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedBatch && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedBatch(null)}
+              className="text-gray-500"
+            >
+              Clear Filter
+            </Button>
+          )}
+        </div>
+
+        <Tabs defaultValue="upcoming" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="upcoming">Upcoming Schedules</TabsTrigger>
+            <TabsTrigger value="past">Past Schedules</TabsTrigger>
+          </TabsList>
+          <TabsContent value="upcoming" className="space-y-4">
+            {upcomingSchedules.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No upcoming schedules found
+              </div>
+            ) : (
+              upcomingSchedules.map((schedule) => (
+                <ScheduleCard key={schedule.scheduleId} schedule={schedule} />
+              ))
+            )}
+          </TabsContent>
+          <TabsContent value="past" className="space-y-4">
+            {pastSchedules.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No past schedules found
+              </div>
+            ) : (
+              pastSchedules.map((schedule) => (
+                <ScheduleCard key={schedule.scheduleId} schedule={schedule} isPast={true} />
+              ))
+            )}
+          </TabsContent>
+        </Tabs>
 
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogContent className="sm:max-w-[650px]">

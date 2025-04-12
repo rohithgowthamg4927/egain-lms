@@ -325,48 +325,44 @@ export default function Sidebar({ className }: SidebarProps) {
   }
 
   // Desktop view
-return (
-  <div
-    className={cn(
-      "flex flex-col border-r bg-sidebar shadow-sm transition-all duration-300 min-h-screen flex-none",
-      isCollapsed ? "w-[70px]" : "w-64",
-      className
-    )}
-  >
-    
-    <div className="flex h-16 items-center border-b px-4 transition-all justify-between">
-      <a
-        href="https://e-gain.co.in"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex-1 flex items-center justify-center"
-      >
-        <img
-          src="/egain-logo.jpeg"
-          alt="e-Gain Logo"
-          className={cn(isCollapsed ? "h-8" : "h-10", "object-contain bg-white")}
-        />
-      </a>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 rounded-full border shadow-sm bg-background"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-      >
-        {isCollapsed ? (
-          <ChevronRight className="h-3 w-3" />
-        ) : (
-          <ChevronLeft className="h-3 w-3" />
-        )}
-        <span className="sr-only">Toggle Sidebar</span>
-      </Button>
-    </div>
-
-    {/* Scrollable Navigation Items */}
-    {/* <ScrollArea className="flex-1"> */}
+  return (
+    <div
+      className={cn(
+        "flex flex-col border-r bg-sidebar shadow-sm transition-all duration-300 sticky top-0 h-screen",
+        isCollapsed ? "w-[70px]" : "w-64",
+        className
+      )}
+    >
+      <div className="flex h-16 items-center border-b px-4 transition-all justify-between">
+        <a
+          href="https://e-gain.co.in"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center"
+        >
+          <img
+            src="/egain-logo.jpeg"
+            alt="e-Gain Logo"
+            className={cn(isCollapsed ? "h-8" : "h-10", "object-contain bg-white")}
+          />
+        </a>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-full border shadow-sm bg-background"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
+          {isCollapsed ? (
+            <ChevronRight className="h-3 w-3" />
+          ) : (
+            <ChevronLeft className="h-3 w-3" />
+          )}
+          <span className="sr-only">Toggle Sidebar</span>
+        </Button>
+      </div>
       <div className={cn("flex flex-col gap-2 p-2 transition-all")}>
         <NavItems />
       </div>
-  </div>
-);
+    </div>
+  );
 }

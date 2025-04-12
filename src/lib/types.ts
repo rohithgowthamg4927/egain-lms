@@ -41,28 +41,41 @@ export interface ProfilePicture {
   updatedAt: string;
 }
 
-export interface Course {
+export type Course = {
   courseId: number;
-  id?: number;
   courseName: string;
   courseLevel: Level;
-  categoryId: number;
+  categoryId?: number;
   description?: string;
   thumbnailUrl?: string;
-  isPublished: boolean;
-  createdAt: string;
-  updatedAt: string;
-  category?: Category;
-  students?: number;
-  batches?: number;
+  isPublished?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
   averageRating?: number;
-  createdBy?: number;
   _count?: {
-    studentCourses: number; 
-    batches: number;        
+    studentCourses: number;
+    batches: number;
   };
-  reviews?: CourseReview[]; // Add reviews array
-}
+  studentCourses?: Array<{
+    studentCourseId: number;
+    studentId?: number;
+    courseId?: number;
+    student?: User;  // Using the User type directly
+  }>;
+  batches?: Array<{
+    batchId: number;
+    batchName: string;
+    startDate: Date;
+    endDate: Date;
+    instructor?: {
+      userId: number;
+      fullName: string;
+    };
+  }>;
+  category?: CourseCategory;
+  reviews?: CourseReview[];
+  instructorCourses?: InstructorCourse[];
+};
 
 export interface Category {
   categoryId: number;

@@ -274,7 +274,7 @@ const Instructors = () => {
             </CardContent>
           </Card>
 
-          <Card className="shadow-md border-blue-100">
+          {/* <Card className="shadow-md border-blue-100">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">Total Students</CardTitle>
             </CardHeader>
@@ -286,7 +286,7 @@ const Instructors = () => {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Card className="shadow-md border-blue-100">
             <CardHeader className="pb-2">

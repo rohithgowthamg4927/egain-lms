@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -306,6 +306,7 @@ const Batches = () => {
         onEdit={handleEditBatch}
         onDelete={handleDeleteConfirmation}
         onManageStudents={handleManageStudents}
+        onInstructorClick={(instructorId) => navigate(`/instructors/${instructorId}`)}
       />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

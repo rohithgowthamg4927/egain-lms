@@ -15,7 +15,7 @@ const Layout = () => {
       <Header />
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-8 lg:ml-64 transition-all duration-300">
           {showBreadcrumbs && breadcrumbs.length > 0 && (
             <div className="mb-6">
               <BreadcrumbNav items={breadcrumbs} />

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getBatch, getBatchStudents, deleteBatch, unenrollStudentFromBatch } from '@/lib/api/batches';
@@ -271,7 +270,16 @@ const BatchDetail = () => {
               </div>
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Instructor</h3>
-                <p className="text-lg font-medium">{`${batch.instructor?.fullName || ''}`}</p>
+                {batch.instructor ? (
+                  <Link 
+                    to={`/instructors/${batch.instructor.userId}`}
+                    className="text-lg font-medium hover:underline"
+                  >
+                    {batch.instructor.fullName}
+                  </Link>
+                ) : (
+                  <p className="text-lg font-medium">N/A</p>
+                )}
               </div>
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground">Start Date</h3>
@@ -365,10 +373,12 @@ const BatchDetail = () => {
                         <TableRow key={student.userId}>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Avatar>
-                                <AvatarImage src={student.profilePicture?.fileUrl} alt={student.fullName} />
-                                <AvatarFallback>{getInitials(student.fullName)}</AvatarFallback>
-                              </Avatar>
+                              <Link to={`/students/${student.userId}`}>
+                                <Avatar className="cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+                                  <AvatarImage src={student.profilePicture?.fileUrl} alt={student.fullName} />
+                                  <AvatarFallback>{getInitials(student.fullName)}</AvatarFallback>
+                                </Avatar>
+                              </Link>
                               <div>
                                 <p className="font-medium">{`${student.fullName  || ''}`}</p>
                               </div>
@@ -378,7 +388,7 @@ const BatchDetail = () => {
                           <TableCell>{student.phoneNumber || 'N/A'}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Button asChild size="sm" variant="ghost">
+                              <Button asChild size="sm" className="bg-green-700 hover:bg-green-800 text-white">
                                 <Link to={`/students/${student.userId}`}>View Profile</Link>
                               </Button>
                               <Dialog>

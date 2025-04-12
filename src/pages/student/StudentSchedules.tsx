@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -152,7 +151,7 @@ export default function StudentSchedules() {
                                     <h4 className="font-medium">{schedule.topic || 'Class Session'}</h4>
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                       <Clock className="h-4 w-4" />
-                                      <span>{schedule.startTime.slice(0, 5)} - {schedule.endTime.slice(0, 5)}</span>
+                                      <span>{format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}</span>
                                     </div>
                                     <div className="text-sm text-muted-foreground mt-1">
                                       <span className="font-medium">Course:</span> {schedule.batch.course.courseName}
@@ -163,7 +162,7 @@ export default function StudentSchedules() {
                                   </div>
                                   
                                   {schedule.meetingLink && (
-                                    <Button asChild variant="outline" size="sm">
+                                    <Button asChild size="sm" className="bg-green-500 text-white hover:bg-green-600">
                                       <a href={schedule.meetingLink} target="_blank" rel="noopener noreferrer">
                                         <ExternalLink className="h-4 w-4 mr-2" />
                                         Join Meeting
@@ -213,12 +212,12 @@ export default function StudentSchedules() {
                         <div className="space-y-1">
                           <h4 className="font-medium">{schedule.topic || 'Class Session'}</h4>
                           <div className="flex items-center gap-2 text-sm">
-                            <Calendar className="h-4 w-4 text-primary" />
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
                             <span>{format(parseISO(schedule.scheduleDate), 'EEEE, MMMM d, yyyy')}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Clock className="h-4 w-4" />
-                            <span>{schedule.startTime.slice(0, 5)} - {schedule.endTime.slice(0, 5)}</span>
+                          <div className="flex items-center gap-2 text-sm text-primary">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span>{format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}</span>
                           </div>
                           <div className="flex flex-wrap gap-2 mt-2">
                             <Badge variant="outline" className="bg-muted/50">
@@ -231,7 +230,7 @@ export default function StudentSchedules() {
                         </div>
                         
                         {schedule.meetingLink && (
-                          <Button asChild variant="outline" size="sm">
+                          <Button asChild size="sm" className="bg-green-500 text-white hover:bg-green-600">
                             <a href={schedule.meetingLink} target="_blank" rel="noopener noreferrer">
                               <ExternalLink className="h-4 w-4 mr-2" />
                               Join Meeting

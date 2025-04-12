@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 const LoginForm = () => {
   const [email, setEmail] = useState("admin@lms.com");
   const [password, setPassword] = useState("Admin@123");
-  const [role, setRole] = useState<Role>(Role.student);
+  const [role, setRole] = useState<Role | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -26,6 +26,12 @@ const LoginForm = () => {
     setErrorMessage(null);
     
     try {
+      if (!role) {
+        setErrorMessage("Please select a role");
+        setIsSubmitting(false);
+        return;
+      }
+      
       console.log("Attempting login with:", { email, password, role });
       
       // Add some debugging output
@@ -149,7 +155,6 @@ const LoginForm = () => {
           <div className="space-y-2">
             <Label className="text-gray-700">Select Role</Label>
             <RadioGroup
-              defaultValue="admin"
               value={role}
               onValueChange={(value) => setRole(value as Role)}
               className="flex flex-col space-y-1"

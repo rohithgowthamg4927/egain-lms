@@ -1,9 +1,8 @@
-
 import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, Trash2, Eye, Loader2 } from 'lucide-react';
+import { Download, Trash2, Eye, Loader2, FileVideo, FileText, FileImage, FileAudio, File } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getResourcePresignedUrl } from '@/lib/api/resources';
 import { Resource } from '@/lib/types';
@@ -19,6 +18,50 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const canDelete = userRole === 'instructor' || userRole === 'admin';
   const [isDownloading, setIsDownloading] = useState(false);
+
+  const getResourceType = (resource: Resource): string => {
+    const fileName = resource.fileName?.toLowerCase() || '';
+    const type = resource.type?.toLowerCase() || '';
+    
+    // Check if it's a video file by extension or type
+    if (fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi') || 
+        type === 'recording' || type === 'video') {
+      return 'Class Recording';
+    } else if (fileName.endsWith('.pdf') || fileName.endsWith('.doc') || fileName.endsWith('.docx') || 
+             fileName.endsWith('.ppt') || fileName.endsWith('.pptx') || fileName.endsWith('.txt') || 
+             type === 'assignment' || type === 'document') {
+      return 'Assignment';
+    } else {
+      return 'Assignment';
+    }
+  };
+
+  const isVideoResource = (resource: Resource): boolean => {
+    const fileName = resource.fileName?.toLowerCase() || '';
+    const extension = fileName.split('.').pop();
+    const type = resource.type?.toLowerCase() || '';
+    
+    return type === 'recording' || 
+           ['mp4', 'mov', 'avi', 'webm'].includes(extension || '');
+  };
+
+  const getFileIcon = (resource: Resource) => {
+    const fileName = resource.fileName || '';
+    const extension = fileName.split('.').pop()?.toLowerCase() || '';
+    const resourceType = resource.resourceType || 'document';
+    
+    if (resourceType === 'recording' || ['mp4', 'mov', 'avi', 'webm'].includes(extension)) {
+      return <FileVideo className="h-6 w-6 text-red-500" />;
+    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
+      return <FileImage className="h-6 w-6 text-green-500" />;
+    } else if (['mp3', 'wav', 'ogg'].includes(extension)) {
+      return <FileAudio className="h-6 w-6 text-purple-500" />; 
+    } else if (['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'].includes(extension)) {
+      return <FileText className="h-6 w-6 text-blue-500" />;
+    } else {
+      return <File className="h-6 w-6 text-gray-500" />;
+    }
+  };
 
   const handleDownload = async (resourceId: number) => {
     try {
@@ -44,27 +87,27 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
     }
   };
 
-  const handleView = async (resourceId: number) => {
-    try {
-      setDownloadingId(resourceId);
-      const response = await getResourcePresignedUrl(resourceId);
+  // const handleView = async (resourceId: number) => {
+  //   try {
+  //     setDownloadingId(resourceId);
+  //     const response = await getResourcePresignedUrl(resourceId);
       
-      if (response.success && response.data.presignedUrl) {
-        window.open(response.data.presignedUrl, '_blank');
-      } else {
-        throw new Error(response.error || 'Failed to get view URL');
-      }
-    } catch (error) {
-      console.error('View error:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to view resource',
-        variant: 'destructive',
-      });
-    } finally {
-      setDownloadingId(null);
-    }
-  };
+  //     if (response.success && response.data.presignedUrl) {
+  //       window.open(response.data.presignedUrl, '_blank');
+  //     } else {
+  //       throw new Error(response.error || 'Failed to get view URL');
+  //     }
+  //   } catch (error) {
+  //     console.error('View error:', error);
+  //     toast({
+  //       title: 'Error',
+  //       description: error instanceof Error ? error.message : 'Failed to view resource',
+  //       variant: 'destructive',
+  //     });
+  //   } finally {
+  //     setDownloadingId(null);
+  //   }
+  // };
 
   return (
     <div className="rounded-md border">
@@ -73,7 +116,6 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
           <TableRow>
             <TableHead>Title</TableHead>
             <TableHead>Type</TableHead>
-            <TableHead>File</TableHead>
             <TableHead>Uploaded By</TableHead>
             <TableHead>Date</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -82,20 +124,20 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
         <TableBody>
           {resources.map((resource) => (
             <TableRow key={resource.resourceId}>
-              <TableCell className="font-medium">{resource.title}</TableCell>
+              <TableCell className="font-medium">
+                <div className="flex items-center gap-2">
+                  {getFileIcon(resource)}
+                  {resource.title}
+                </div>
+              </TableCell>
               <TableCell>
                 <Badge 
-                  variant="outline" 
-                  className={`capitalize ${
-                    resource.resourceType === 'assignment' 
-                      ? 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200' 
-                      : 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200'
-                  }`}
+                  variant={isVideoResource(resource) ? "destructive" : "default"}
+                  className="capitalize"
                 >
-                  {resource.resourceType === 'assignment' ? 'Assignment' : 'Class Recording'}
+                  {getResourceType(resource)}
                 </Badge>
               </TableCell>
-              <TableCell>{resource.fileName}</TableCell>
               <TableCell>{resource.uploadedBy.fullName}</TableCell>
               <TableCell>{new Date(resource.createdAt).toLocaleDateString()}</TableCell>
               <TableCell className="text-right">

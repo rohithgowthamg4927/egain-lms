@@ -5,10 +5,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, FileText, BookOpen, ChevronRight, Video } from 'lucide-react';
+import { Calendar, Clock, FileText, BookOpen, ChevronRight, FileVideo, FileImage, FileAudio, File, Eye, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { getStudentCourses, getStudentSchedules } from '@/lib/api/students';
-import { getResourcesByBatch } from '@/lib/api/resources';
+import { getResourcesByBatch, getResourcePresignedUrl } from '@/lib/api/resources';
 import { apiFetch } from '@/lib/api/core';
 import { useNavigate } from 'react-router-dom';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
@@ -23,7 +23,8 @@ export default function StudentDashboard() {
   const [schedules, setSchedules] = useState([]);
   const [resources, setResources] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'assignments' | 'recordings'>('all');
+  const [activeTab, setActiveTab] = useState('all');
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (user?.userId) {
@@ -130,11 +131,83 @@ export default function StudentDashboard() {
     .sort((a, b) => new Date(a.scheduleDate).getTime() - new Date(b.scheduleDate).getTime())
     .slice(0, 5);
 
+  const getFileIcon = (resource: Resource) => {
+    const fileName = resource.fileName || '';
+    const extension = fileName.split('.').pop()?.toLowerCase() || '';
+    const resourceType = resource.resourceType || 'document';
+    
+    if (resourceType === 'recording' || ['mp4', 'mov', 'avi', 'webm'].includes(extension)) {
+      return <FileVideo className="h-6 w-6 text-red-500" />;
+    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
+      return <FileImage className="h-6 w-6 text-green-500" />;
+    } else if (['mp3', 'wav', 'ogg'].includes(extension)) {
+      return <FileAudio className="h-6 w-6 text-purple-500" />; 
+    } else if (['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'].includes(extension)) {
+      return <FileText className="h-6 w-6 text-blue-500" />;
+    } else {
+      return <File className="h-6 w-6 text-gray-500" />;
+    }
+  };
+
+  const getResourceType = (resource: Resource): string => {
+    const fileName = resource.fileName?.toLowerCase() || '';
+    const type = resource.type?.toLowerCase() || '';
+    
+    // Check if it's a video file by extension or type
+    if (fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi') || 
+        type === 'recording' || type === 'video') {
+      return 'recording';
+    } else if (fileName.endsWith('.pdf') || fileName.endsWith('.doc') || fileName.endsWith('.docx') || 
+             fileName.endsWith('.ppt') || fileName.endsWith('.pptx') || fileName.endsWith('.txt') || 
+             type === 'assignment' || type === 'document') {
+      return 'assignment';
+    } else {
+      return 'assignment';
+    }
+  };
+
+  const isVideoResource = (resource: Resource): boolean => {
+    const fileName = resource.fileName?.toLowerCase() || '';
+    const extension = fileName.split('.').pop();
+    const resourceType = getResourceType(resource);
+    
+    return resourceType === 'recording' || 
+           ['mp4', 'mov', 'avi', 'webm'].includes(extension || '');
+  };
+
+  const handleView = async (resource: Resource) => {
+    try {
+      setDownloadingId(resource.resourceId);
+      toast({
+        title: 'Loading',
+        description: 'Preparing resource...',
+      });
+      
+      const response = await getResourcePresignedUrl(resource.resourceId);
+      
+      if (response.success && response.data.presignedUrl) {
+        window.open(response.data.presignedUrl, '_blank');
+      } else {
+        throw new Error(response.error || 'Failed to get resource URL');
+      }
+    } catch (error) {
+      console.error('Error viewing resource:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to view resource',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   // Filter resources based on type
   const filteredResources = resources.filter(resource => {
     if (activeTab === 'all') return true;
-    if (activeTab === 'assignments') return resource.resourceType === 'assignment';
-    if (activeTab === 'recordings') return resource.resourceType === 'recording';
+    const resourceType = getResourceType(resource);
+    if (activeTab === 'assignments') return resourceType === 'assignment';
+    if (activeTab === 'recordings') return resourceType === 'recording';
     return true;
   });
 
@@ -263,11 +336,13 @@ export default function StudentDashboard() {
             
             <TabsContent value="resources" className="space-y-4">
               <div className="flex justify-between items-center">
-                <TabsList>
-                  <TabsTrigger value="all" onClick={() => setActiveTab('all')}>All</TabsTrigger>
-                  <TabsTrigger value="assignments" onClick={() => setActiveTab('assignments')}>Assignments</TabsTrigger>
-                  <TabsTrigger value="recordings" onClick={() => setActiveTab('recordings')}>Class Recordings</TabsTrigger>
-                </TabsList>
+                <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue="all">
+                  <TabsList>
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="assignments">Assignments</TabsTrigger>
+                    <TabsTrigger value="recordings">Class Recordings</TabsTrigger>
+                  </TabsList>
+                </Tabs>
                 <Button 
                   variant="outline" 
                   onClick={() => navigate('/student/resources')}
@@ -284,28 +359,38 @@ export default function StudentDashboard() {
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div className="flex items-start gap-4">
                             <div className="bg-primary/10 p-2 rounded-full">
-                              {resource.resourceType === 'recording' ? (
-                                <Video className="h-5 w-5 text-primary" />
-                              ) : (
-                                <FileText className="h-5 w-5 text-primary" />
-                              )}
+                              {getFileIcon(resource)}
                             </div>
                             <div>
                               <h3 className="font-semibold">{resource.title}</h3>
                               <p className="text-sm text-muted-foreground">
-                                {resource.batch ? `${resource.batch.course.courseName} - ${resource.batch.batchName}` : 
-                                 (resource.batchId ? `Batch ID: ${resource.batchId}` : 'General Resource')}
+                                {resource.batch?.course?.courseName} - {resource.batch?.batchName}
                               </p>
                             </div>
                           </div>
-                          <div className="flex flex-col md:items-end gap-1">
-                            <div className="flex items-center gap-1 text-sm">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span>{format(new Date(resource.createdAt), 'PPP')}</span>
+                          <div className="flex items-center gap-4">
+                            <div className="flex flex-col items-end gap-1">
+                              <div className="flex items-center gap-1 text-sm">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <span>{format(new Date(resource.createdAt), 'PPP')}</span>
+                              </div>
+                              <Badge variant={isVideoResource(resource) ? 'destructive' : 'default'}>
+                                {isVideoResource(resource) ? 'Class Recording' : 'Assignment'}
+                              </Badge>
                             </div>
-                            <Badge variant={resource.resourceType === 'recording' ? 'destructive' : 'default'}>
-                              {resource.resourceType === 'recording' ? 'Class Recording' : 'Assignment'}
-                            </Badge>
+                            <Button
+                              size="sm"
+                              onClick={() => handleView(resource)}
+                              disabled={downloadingId === resource.resourceId}
+                              className="flex items-center gap-2 bg-blue-500 text-white hover:bg-blue-600"
+                            >
+                              {downloadingId === resource.resourceId ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Eye className="h-4 w-4 mr-2" />
+                              )}
+                              View
+                            </Button>
                           </div>
                         </div>
                       </CardContent>

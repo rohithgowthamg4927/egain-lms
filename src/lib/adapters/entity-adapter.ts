@@ -101,7 +101,10 @@ export class EntityAdapter {
       updatedAt: dateToString(apiResource.updatedAt || apiResource.createdAt),
       batchId: apiResource.batchId,
       uploadedById: apiResource.uploadedById,
-      batch: apiResource.batch
+      batch: apiResource.batch ? {
+        ...apiResource.batch,
+        instructorId: apiResource.batch.instructorId
+      } : undefined
     };
   }
 }

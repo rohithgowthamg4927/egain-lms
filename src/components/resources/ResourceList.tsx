@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -28,21 +27,25 @@ export function ResourceList({ resources, onDelete, userRole, instructorId }: Re
   const [isDownloading, setIsDownloading] = useState(false);
   const isInstructor = user?.role === Role.instructor;
 
-  // Filter resources for instructors to only show resources from their batches
   const filteredResources = isInstructor && instructorId 
     ? resources.filter(resource => 
-        // Check if resource belongs to instructor's batch
         (resource.uploadedById === instructorId) || 
-        // Or check if instructor is assigned to the batch
         (resource.batch?.instructorId === instructorId)
       )
     : resources;
+
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (error) {
+      return 'Invalid Date';
+    }
+  };
 
   const getResourceType = (resource: Resource): string => {
     const fileName = resource.fileName?.toLowerCase() || '';
     const type = resource.type?.toLowerCase() || '';
     
-    // Check if it's a video file by extension or type
     if (fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi') || 
         type === 'recording' || type === 'video') {
       return 'Class Recording';
@@ -107,7 +110,6 @@ export function ResourceList({ resources, onDelete, userRole, instructorId }: Re
   };
 
   const handleDeleteClick = (resource: Resource) => {
-    // For instructors, check if they can delete this resource
     if (isInstructor && instructorId) {
       const canInstructorDelete = 
         resource.uploadedById === instructorId || 
@@ -174,7 +176,7 @@ export function ResourceList({ resources, onDelete, userRole, instructorId }: Re
                 </Badge>
               </TableCell>
               <TableCell>{resource.uploadedBy.fullName}</TableCell>
-              <TableCell>{new Date(resource.createdAt).toLocaleDateString()}</TableCell>
+              <TableCell>{formatDate(resource.createdAt)}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button

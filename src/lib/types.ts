@@ -49,8 +49,8 @@ export type Course = {
   description?: string;
   thumbnailUrl?: string;
   isPublished?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: string;
+  updatedAt?: string;
   averageRating?: number;
   _count?: {
     studentCourses: number;
@@ -65,8 +65,8 @@ export type Course = {
   batches?: Array<{
     batchId: number;
     batchName: string;
-    startDate: Date;
-    endDate: Date;
+    startDate: string;
+    endDate: string;
     instructor?: {
       userId: number;
       fullName: string;
@@ -74,8 +74,15 @@ export type Course = {
   }>;
   category?: CourseCategory;
   reviews?: CourseReview[];
-  instructorCourses?: InstructorCourse[];
+  instructors?: InstructorCourseAssignment[];
 };
+
+export interface InstructorCourseAssignment {
+  instructorId: number;
+  courseId: number;
+  instructor?: User;
+  course?: Course;
+}
 
 export interface Category {
   categoryId: number;
@@ -150,9 +157,10 @@ export interface Resource {
   uploadedById?: number; // Adding uploadedById as optional
   createdAt: string;
   updatedAt: string;
-  batch?: { // Adding batch property
+  batch?: { // Adding batch property with instructorId
     batchId: number;
     batchName: string;
+    instructorId?: number;
     course: {
       courseId: number;
       courseName: string;

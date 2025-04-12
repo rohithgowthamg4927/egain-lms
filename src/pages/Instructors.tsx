@@ -197,20 +197,20 @@ const Instructors = () => {
         return formatDate(row.original.createdAt);
       },
     },
-    {
-      accessorKey: 'courses' as keyof User,
-      header: 'Courses',
-      cell: () => {
-        return "N/A"; // This will be improved in a future update
-      },
-    },
-    {
-      accessorKey: 'students' as keyof User,
-      header: 'Students',
-      cell: () => {
-        return "N/A"; // This will be improved in a future update
-      },
-    },
+    // {
+    //   accessorKey: 'courses' as keyof User,
+    //   header: 'Courses',
+    //   cell: () => {
+    //     return "N/A"; // This will be improved in a future update
+    //   },
+    // },
+    // {
+    //   accessorKey: 'students' as keyof User,
+    //   header: 'Students',
+    //   cell: () => {
+    //     return "N/A"; // This will be improved in a future update
+    //   },
+    // },
   ];
 
   const instructorActions = [

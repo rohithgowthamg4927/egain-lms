@@ -159,6 +159,11 @@ const Students = () => {
       ),
     },
     {
+      accessorKey: 'email' as keyof User,
+      header: 'Email',
+      cell: ({ row }: { row: { original: User } }) => row.original.email,
+    },
+    {
       accessorKey: 'phoneNumber' as keyof User,
       header: 'Phone',
       cell: ({ row }: { row: { original: User } }) => row.original.phoneNumber || 'N/A',
@@ -170,14 +175,14 @@ const Students = () => {
         return formatDate(row.original.createdAt);
       },
     },
-    {
-      accessorKey: 'userId' as keyof User,
-      header: 'Courses',
-      cell: ({ row }: { row: { original: User } }) => {
-        const courses = studentCourses[row.original.userId] || [];
-        return courses.length || 'N/A';
-      },
-    },
+    // {
+    //   accessorKey: 'userId' as keyof User,
+    //   header: 'Courses',
+    //   cell: ({ row }: { row: { original: User } }) => {
+    //     const courses = studentCourses[row.original.userId] || [];
+    //     return courses.length || 'N/A';
+    //   },
+    // },
   ];
 
   const studentActions = [

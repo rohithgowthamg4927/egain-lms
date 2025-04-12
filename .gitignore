@@ -40,3 +40,4 @@ RESOLVING_DATABASE_CONFLICTS.md
 SETUP_GUIDE.md
 make-scripts-executable.sh
 schema.txt
+start-app.sh

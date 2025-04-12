@@ -41,3 +41,4 @@ SETUP_GUIDE.md
 make-scripts-executable.sh
 schema.txt
 start-app.sh
+schema.prisma.backup

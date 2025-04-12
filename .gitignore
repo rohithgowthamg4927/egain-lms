@@ -27,3 +27,8 @@ git.txt
 
 # AWS credentials
 .env
+
+backend/docs
+
+migrations
+docs/

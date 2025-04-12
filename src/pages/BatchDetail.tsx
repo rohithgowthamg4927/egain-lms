@@ -1,133 +1,113 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getBatch, getBatchStudents, deleteBatch, unenrollStudentFromBatch } from '@/lib/api/batches';
-import { getSchedules } from '@/lib/api/schedules'; 
+
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tab } from '@headlessui/react';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Batch, User, Schedule } from '@/lib/types';
+  Calendar,
+  Clock,
+  Pencil,
+  Trash,
+  Users,
+  GraduationCap,
+  Files,
+} from 'lucide-react';
+import { Batch, Role, User } from '@/lib/types';
+import { getBatch, getBatchStudents, deleteBatch } from '@/lib/api';
+import { format } from 'date-fns';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
-import { formatDate, getInitials } from '@/lib/utils';
-import { Edit, Trash2, Calendar, Users, AlertTriangle, RefreshCw, UserMinus } from 'lucide-react';
 import {
   AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogCancel,
-  AlertDialogAction,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import BatchSchedules from '@/components/batches/BatchSchedules';
+import BatchResources from '@/components/batches/BatchResources';
+import { useAuth } from '@/hooks/use-auth';
 
 const BatchDetail = () => {
-  const { batchId } = useParams();
-  const navigate = useNavigate();
+  const { batchId } = useParams<{ batchId: string }>();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === Role.admin;
+  
   const [batch, setBatch] = useState<Batch | null>(null);
   const [students, setStudents] = useState<User[]>([]);
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isRemovingStudent, setIsRemovingStudent] = useState(false);
-  const [removingStudentId, setRemovingStudentId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
-  const fetchBatchDetails = async () => {
-    if (!batchId) return;
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const batchResponse = await getBatch(Number(batchId));
-      
-      if (!batchResponse.success || !batchResponse.data) {
-        setError(batchResponse.error || 'Failed to fetch batch details');
-        toast({
-          title: 'Error',
-          description: batchResponse.error || 'Failed to fetch batch details',
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      setBatch(batchResponse.data);
-      
-      // Fetch students
-      const studentsResponse = await getBatchStudents(Number(batchId));
-      
-      if (studentsResponse.success && studentsResponse.data) {
-        setStudents(studentsResponse.data);
-      }
-
-      // Fetch schedules
-      const schedulesResponse = await getSchedules({ batchId: Number(batchId) });
-      
-      if (schedulesResponse.success && schedulesResponse.data) {
-        setSchedules(schedulesResponse.data);
-      }
-    } catch (err) {
-      console.error('Error fetching batch details:', err);
-      setError('An error occurred while fetching batch details');
-      toast({
-        title: 'Error',
-        description: 'An error occurred while fetching batch details',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [selectedTab, setSelectedTab] = useState(0);
 
   useEffect(() => {
+    const fetchBatchDetails = async () => {
+      if (!batchId) return;
+      
+      setLoading(true);
+      try {
+        const batchResponse = await getBatch(parseInt(batchId));
+        
+        if (batchResponse.success && batchResponse.data) {
+          const batchData = batchResponse.data;
+          
+          // Check if instructor is authorized for this batch
+          if (user?.role === Role.instructor && batchData.instructorId !== user.userId) {
+            toast({
+              title: 'Access Denied',
+              description: 'You are not authorized to view this batch',
+              variant: 'destructive',
+            });
+            navigate('/batches');
+            return;
+          }
+          
+          setBatch(batchData);
+          
+          // Fetch enrolled students
+          const studentsResponse = await getBatchStudents(parseInt(batchId));
+          if (studentsResponse.success && studentsResponse.data) {
+            setStudents(studentsResponse.data);
+          }
+        } else {
+          toast({
+            title: 'Error',
+            description: batchResponse.error || 'Failed to fetch batch details',
+            variant: 'destructive',
+          });
+          navigate('/batches');
+        }
+      } catch (error) {
+        console.error('Error fetching batch details:', error);
+        toast({
+          title: 'Error',
+          description: 'An unexpected error occurred',
+          variant: 'destructive',
+        });
+        navigate('/batches');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
     fetchBatchDetails();
-  }, [batchId]);
+  }, [batchId, toast, navigate, user]);
 
   const handleDeleteBatch = async () => {
-    if (!batchId || !batch) return;
+    if (!batch || !isAdmin) return;
     
     try {
-      setIsDeleting(true);
-      
-      const response = await deleteBatch(Number(batchId));
+      const response = await deleteBatch(batch.batchId);
       
       if (response.success) {
         toast({
-          title: 'Success',
-          description: 'Batch deleted successfully',
+          title: 'Batch deleted',
+          description: 'Batch has been deleted successfully',
         });
         navigate('/batches');
       } else {
@@ -137,386 +117,317 @@ const BatchDetail = () => {
           variant: 'destructive',
         });
       }
-    } catch (err) {
-      console.error('Error deleting batch:', err);
+    } catch (error) {
+      console.error('Error deleting batch:', error);
       toast({
         title: 'Error',
-        description: 'An error occurred while deleting batch',
+        description: 'An unexpected error occurred while deleting the batch',
         variant: 'destructive',
       });
     } finally {
-      setIsDeleting(false);
-    }
-  };
-  
-  const handleRemoveStudent = async (studentId: number) => {
-    if (!batchId) return;
-    
-    try {
-      setIsRemovingStudent(true);
-      setRemovingStudentId(studentId);
-      
-      const response = await unenrollStudentFromBatch(studentId, Number(batchId));
-      
-      if (response.success) {
-        toast({
-          title: 'Success',
-          description: 'Student removed from batch successfully',
-        });
-        // Refresh the students list
-        setStudents(prevStudents => prevStudents.filter(student => student.userId !== studentId));
-      } else {
-        toast({
-          title: 'Error',
-          description: response.error || 'Failed to remove student from batch',
-          variant: 'destructive',
-        });
-      }
-    } catch (err) {
-      console.error('Error removing student from batch:', err);
-      toast({
-        title: 'Error',
-        description: 'An error occurred while removing student from batch',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsRemovingStudent(false);
-      setRemovingStudentId(null);
+      setShowDeleteDialog(false);
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
-        <RefreshCw className="animate-spin h-12 w-12 text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading batch details...</p>
+      <div className="flex items-center justify-center h-[50vh]">
+        <div className="w-16 h-16 border-4 border-t-blue-500 border-b-blue-700 rounded-full animate-spin"></div>
       </div>
     );
   }
 
-  if (error || !batch) {
+  if (!batch) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
-        <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Error</h2>
-        <p className="text-lg text-muted-foreground">{error || 'Batch not found'}</p>
-        <Button asChild className="mt-4">
-          <Link to="/batches">Go Back to Batches</Link>
+      <div className="text-center py-12">
+        <h2 className="text-xl font-bold text-red-600">Batch Not Found</h2>
+        <p className="text-gray-600 mt-2">The requested batch could not be found.</p>
+        <Button variant="outline" className="mt-4" onClick={() => navigate('/batches')}>
+          Back to Batches
         </Button>
       </div>
     );
   }
 
-  const breadcrumbItems = [
-    { label: 'Batches', link: '/batches' },
-    { label: batch.batchName, link: `/batches/${batchId}` },
-  ];
-
-  const handleManageStudents = () => {
-    navigate(`/batches/manage-students?batchId=${batchId}`);
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString), 'MMMM d, yyyy');
   };
+
+  const getBatchStatus = () => {
+    const now = new Date();
+    const startDate = new Date(batch.startDate);
+    const endDate = new Date(batch.endDate);
+
+    if (now < startDate) {
+      return {
+        label: 'Upcoming',
+        class: 'bg-yellow-100 text-yellow-800',
+      };
+    } else if (now > endDate) {
+      return {
+        label: 'Completed',
+        class: 'bg-gray-100 text-gray-800',
+      };
+    } else {
+      return {
+        label: 'In Progress',
+        class: 'bg-green-100 text-green-800',
+      };
+    }
+  };
+
+  const status = getBatchStatus();
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <BreadcrumbNav
+        items={[
+          { label: 'Batches', link: '/batches' },
+          { label: batch.batchName, link: `/batches/${batch.batchId}` },
+        ]}
+      />
+
+      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
         <div>
-          <BreadcrumbNav items={breadcrumbItems} />
-          <h1 className="text-3xl font-bold mt-2">{batch.batchName}</h1>
-          <p className="text-muted-foreground">{`Batch ID: ${batch.batchId}`}</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold">{batch.batchName}</h1>
+            <span
+              className={`inline-block px-3 py-1 text-sm font-medium rounded-full ${status.class}`}
+            >
+              {status.label}
+            </span>
+          </div>
+          <p className="text-muted-foreground mt-1">
+            Course: {batch.course?.courseName || 'Unknown Course'}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button asChild size="sm" variant="outline">
-            <Link to={`/batches/${batchId}/edit`}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Batch
-            </Link>
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button size="sm" variant="destructive">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Batch
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Batch</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete this batch? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteBatch}
-                  className="bg-red-600 hover:bg-red-700"
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? (
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4 mr-2" />
-                  )}
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+        
+        {isAdmin && (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/batches/${batch.batchId}/edit`)}
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button
+              variant="outline"
+              className="text-red-600 hover:bg-red-50"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              <Trash className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Batch Details</CardTitle>
-            <CardDescription>Information about this batch</CardDescription>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card className="shadow-md">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Duration</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Course</h3>
-                <p className="text-lg font-medium">{batch.course?.courseName || 'N/A'}</p>
+            <div className="flex items-center space-x-4">
+              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Instructor</h3>
-                {batch.instructor ? (
-                  <Link 
-                    to={`/instructors/${batch.instructor.userId}`}
-                    className="text-lg font-medium hover:underline"
-                  >
-                    {batch.instructor.fullName}
-                  </Link>
-                ) : (
-                  <p className="text-lg font-medium">N/A</p>
-                )}
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Start Date</h3>
-                <p className="text-lg font-medium">{formatDate(batch.startDate)}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">End Date</h3>
-                <p className="text-lg font-medium">{formatDate(batch.endDate)}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Students Enrolled</h3>
-                <p className="text-lg font-medium">{students.length}</p>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Schedule Count</h3>
-                <p className="text-lg font-medium">{schedules.length}</p>
+                <div className="text-sm font-medium">{formatDate(batch.startDate)}</div>
+                <div className="text-sm text-muted-foreground">to {formatDate(batch.endDate)}</div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Manage this batch</CardDescription>
+        <Card className="shadow-md">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Instructor</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            <Button asChild className="justify-start">
-              <Link to={`/batches/${batchId}/edit`}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Batch Details
-              </Link>
-            </Button>
-            <Button asChild variant="secondary" className="justify-start">
-              <Link to="/schedules">
-                <Calendar className="h-4 w-4 mr-2" />
-                Manage Schedules
-              </Link>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="justify-start" 
-              onClick={handleManageStudents}
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Manage Students
-            </Button>
+          <CardContent>
+            <div className="flex items-center space-x-4">
+              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <GraduationCap className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <div className="text-sm font-medium">
+                  {batch.instructor?.fullName || 'Unassigned'}
+                </div>
+                <div className="text-sm text-muted-foreground">Instructor</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Students</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-4">
+              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <Users className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <div className="text-sm font-medium">{students.length}</div>
+                <div className="text-sm text-muted-foreground">
+                  Enrolled Student{students.length !== 1 ? 's' : ''}
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="students">
-        <TabsList>
-          <TabsTrigger value="students">
-            <Users className="h-4 w-4 mr-2" />
-            Students ({students.length})
-          </TabsTrigger>
-          <TabsTrigger value="schedules">
-            <Calendar className="h-4 w-4 mr-2" />
-            Schedules ({schedules.length})
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="students" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Enrolled Students</CardTitle>
-              <CardDescription>List of students in this batch</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {students.length === 0 ? (
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground">No students enrolled in this batch yet.</p>
-                  <Button onClick={handleManageStudents} className="mt-4">
-                    <Users className="h-4 w-4 mr-2" />
-                    Manage Students
-                  </Button>
-                </div>
-              ) : (
-                <ScrollArea className="h-[400px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Student</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+      <div className="bg-white rounded-lg border shadow-sm p-6">
+        <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
+          <Tab.List className="flex space-x-1 border-b">
+            <Tab
+              className={({ selected }) =>
+                `px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+                  selected
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
+                }`
+              }
+            >
+              Schedules
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+                  selected
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
+                }`
+              }
+            >
+              Resources
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+                  selected
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
+                }`
+              }
+            >
+              Students
+            </Tab>
+          </Tab.List>
+          <Tab.Panels className="mt-4">
+            <Tab.Panel>
+              <BatchSchedules 
+                batchId={batch.batchId} 
+                isInstructor={user?.role === Role.instructor && batch.instructorId === user.userId}
+                isAdmin={isAdmin}
+              />
+            </Tab.Panel>
+            <Tab.Panel>
+              <BatchResources 
+                batchId={batch.batchId} 
+                isInstructor={user?.role === Role.instructor && batch.instructorId === user.userId}
+                isAdmin={isAdmin}
+              />
+            </Tab.Panel>
+            <Tab.Panel>
+              <div className="space-y-4">
+                {students.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No students enrolled in this batch yet.</p>
+                    {isAdmin && (
+                      <Button
+                        variant="outline"
+                        className="mt-4"
+                        onClick={() => navigate(`/batches/manage-students?batchId=${batch.batchId}`)}
+                      >
+                        <Users className="h-4 w-4 mr-2" />
+                        Manage Students
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    {isAdmin && (
+                      <div className="mb-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => navigate(`/batches/manage-students?batchId=${batch.batchId}`)}
+                        >
+                          <Users className="h-4 w-4 mr-2" />
+                          Manage Students
+                        </Button>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {students.map((student) => (
-                        <TableRow key={student.userId}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Link to={`/students/${student.userId}`}>
-                                <Avatar className="cursor-pointer hover:ring-2 hover:ring-primary transition-all">
-                                  <AvatarImage src={student.profilePicture?.fileUrl} alt={student.fullName} />
-                                  <AvatarFallback>{getInitials(student.fullName)}</AvatarFallback>
-                                </Avatar>
-                              </Link>
-                              <div>
-                                <p className="font-medium">{`${student.fullName  || ''}`}</p>
+                        <Card key={student.userId} className="overflow-hidden border-gray-200">
+                          <CardContent className="p-4">
+                            <div className="flex items-center space-x-4">
+                              <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                                {student.photoUrl ? (
+                                  <img
+                                    src={student.photoUrl}
+                                    alt={student.fullName}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <Users className="h-6 w-6 text-gray-600" />
+                                )}
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{student.email}</TableCell>
-                          <TableCell>{student.phoneNumber || 'N/A'}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Button asChild size="sm" className="bg-green-700 hover:bg-green-800 text-white">
-                                <Link to={`/students/${student.userId}`}>View Profile</Link>
+                              <div className="flex-1">
+                                <div className="font-medium">{student.fullName}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {student.email}
+                                </div>
+                                {student.enrollmentDate && (
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    Enrolled: {formatDate(student.enrollmentDate)}
+                                  </div>
+                                )}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate(`/students/${student.userId}`)}
+                              >
+                                View
                               </Button>
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button 
-                                    size="sm" 
-                                    variant="destructive" 
-                                    className="flex items-center gap-1"
-                                    disabled={isRemovingStudent && removingStudentId === student.userId}
-                                  >
-                                    {isRemovingStudent && removingStudentId === student.userId ? (
-                                      <RefreshCw className="h-3 w-3 animate-spin" />
-                                    ) : (
-                                      <UserMinus className="h-3 w-3" />
-                                    )}
-                                    Remove
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Remove Student</DialogTitle>
-                                    <DialogDescription>
-                                      Are you sure you want to remove {student.fullName} from this batch? They will lose access to this batch's resources.
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  <DialogFooter>
-                                    <Button type="button" variant="outline" onClick={() => {}}>
-                                      Cancel
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="destructive"
-                                      onClick={() => handleRemoveStudent(student.userId)}
-                                      disabled={isRemovingStudent}
-                                    >
-                                      {isRemovingStudent && removingStudentId === student.userId ? (
-                                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                                      ) : (
-                                        <UserMinus className="h-4 w-4 mr-2" />
-                                      )}
-                                      Remove Student
-                                    </Button>
-                                  </DialogFooter>
-                                </DialogContent>
-                              </Dialog>
                             </div>
-                          </TableCell>
-                        </TableRow>
+                          </CardContent>
+                        </Card>
                       ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="schedules" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Class Schedules</CardTitle>
-              <CardDescription>List of scheduled classes for this batch</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {schedules.length === 0 ? (
-                <div className="text-center py-6">
-                  <p className="text-muted-foreground">No schedules for this batch yet.</p>
-                  <Button asChild className="mt-4">
-                    <Link to="/schedules">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Manage Schedules
-                    </Link>
-                  </Button>
-                </div>
-              ) : (
-                <ScrollArea className="h-[400px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Topic</TableHead>
-                        <TableHead>Start Time</TableHead>
-                        <TableHead>End Time</TableHead>
-                        <TableHead>Meeting Link</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {schedules.map((schedule) => (
-                        <TableRow key={schedule.scheduleId}>
-                          <TableCell>{schedule.topic}</TableCell>
-                          <TableCell>{formatDate(schedule.startTime)}</TableCell>
-                          <TableCell>{formatDate(schedule.endTime)}</TableCell>
-                          <TableCell>
-                            {schedule.meetingLink ? (
-                              <Button asChild size="sm" variant="link">
-                                <a href={schedule.meetingLink} target="_blank" rel="noopener noreferrer">
-                                  Join Meeting
-                                </a>
-                              </Button>
-                            ) : (
-                              'N/A'
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
-              )}
-            </CardContent>
-            <CardFooter>
-              <Button asChild size="sm">
-                <Link to="/schedules">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Manage Schedules
-                </Link>
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                    </div>
+                  </>
+                )}
+              </div>
+            </Tab.Panel>
+          </Tab.Panels>
+        </Tab.Group>
+      </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Batch</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this batch? This action cannot be undone.
+              All schedules and student enrollments for this batch will also be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteBatch}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -56,6 +56,7 @@ function App() {
           }
         />
 
+        {/* Courses Routes - access varies */}
         <Route
           path="/courses"
           element={
@@ -65,22 +66,32 @@ function App() {
           }
         />
 
-        <Route path="/courses/add" element={
-          <ProtectedRoute allowedRoles={[Role.admin]}>
-            <AddCourse />
-          </ProtectedRoute>
-        } />
+        <Route 
+          path="/courses/add" 
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin]}>
+              <AddCourse />
+            </ProtectedRoute>
+          } 
+        />
 
-        <Route path="/courses/:courseId" element={
-        <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
-          <CourseDetail />
-        </ProtectedRoute>
-        } />
-        <Route path="/courses/edit/:courseId" element={
-          <ProtectedRoute allowedRoles={[Role.admin]}>
-            <EditCourse />
-          </ProtectedRoute>
-        } />
+        <Route 
+          path="/courses/:courseId" 
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
+              <CourseDetail />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/courses/edit/:courseId" 
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin]}>
+              <EditCourse />
+            </ProtectedRoute>
+          } 
+        />
 
         <Route
           path="/categories"
@@ -91,6 +102,7 @@ function App() {
           }
         />
         
+        {/* Batches Routes - access varies */}
         <Route
           path="/batches"
           element={
@@ -99,26 +111,42 @@ function App() {
             </ProtectedRoute>
           }
         />
-         <Route path="/batches/add" element={
-          <ProtectedRoute allowedRoles={[Role.admin]}>
-            <AddBatch />
-          </ProtectedRoute>
-        } />
-        <Route path="/batches/:batchId" element={
-          <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
-            <BatchDetail />
-        </ProtectedRoute>
-        } />
-        <Route path="/batches/:batchId/edit" element={
-          <ProtectedRoute allowedRoles={[Role.admin]}>
-            <EditBatch />
-          </ProtectedRoute>
-        } />
-        <Route path="/batches/manage-students" element={
-          <ProtectedRoute allowedRoles={[Role.admin]}>
-            <ManageStudents />
-          </ProtectedRoute>
-        } />
+        
+        <Route 
+          path="/batches/add" 
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin]}>
+              <AddBatch />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/batches/:batchId" 
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
+              <BatchDetail />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/batches/:batchId/edit" 
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin]}>
+              <EditBatch />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/batches/manage-students" 
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin]}>
+              <ManageStudents />
+            </ProtectedRoute>
+          } 
+        />
 
         <Route
           path="/schedules"
@@ -137,22 +165,33 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/students/:userId" element={
-          <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
-            <UserProfile />
-          </ProtectedRoute>
-        } />
-        <Route path="/students/:userId/edit" element={
-          <ProtectedRoute allowedRoles={[Role.admin]}>
-            <UserProfile />
-          </ProtectedRoute>
-        } />
-        <Route path="/add-user" element={
-          <ProtectedRoute allowedRoles={[Role.admin]}>
-            <AddUser />
-          </ProtectedRoute>
-        } />
-
+        
+        <Route 
+          path="/students/:userId" 
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
+              <UserProfile />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/students/:userId/edit" 
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin]}>
+              <UserProfile />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/add-user" 
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin]}>
+              <AddUser />
+            </ProtectedRoute>
+          } 
+        />
 
         <Route
           path="/instructors"
@@ -162,17 +201,24 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/instructors/:userId" element={
-          <ProtectedRoute>
-            <UserProfile />
-          </ProtectedRoute>
-        } />
-        <Route path="/instructors/:userId/edit" element={
-          <ProtectedRoute>
-            <UserProfile />
-          </ProtectedRoute>
-        } />
-
+        
+        <Route 
+          path="/instructors/:userId" 
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin]}>
+              <UserProfile />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/instructors/:userId/edit" 
+          element={
+            <ProtectedRoute allowedRoles={[Role.admin]}>
+              <UserProfile />
+            </ProtectedRoute>
+          } 
+        />
 
         <Route
           path="/resources"
@@ -200,11 +246,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/student/courses/:courseId" element={
-          <ProtectedRoute allowedRoles={[Role.student]}>
-            <StudentCourseDetail />
-          </ProtectedRoute>
-        } />
+        <Route 
+          path="/student/courses/:courseId" 
+          element={
+            <ProtectedRoute allowedRoles={[Role.student]}>
+              <StudentCourseDetail />
+            </ProtectedRoute>
+          } 
+        />
         <Route
           path="/student/schedules"
           element={

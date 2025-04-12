@@ -1,6 +1,6 @@
 
 import { apiFetch } from './core';
-import { Course, Schedule, Resource } from '@/lib/types';
+import { Course, Schedule, Resource, Batch } from '@/lib/types';
 
 // Get courses taught by an instructor
 export const getInstructorCourses = async (instructorId: number): Promise<{ success: boolean; data?: Course[]; error?: string }> => {
@@ -45,9 +45,9 @@ export const getInstructorResources = async (instructorId: number): Promise<{ su
 };
 
 // Get batches assigned to an instructor
-export const getInstructorBatches = async (instructorId: number): Promise<{ success: boolean; data?: any[]; error?: string }> => {
+export const getInstructorBatches = async (instructorId: number): Promise<{ success: boolean; data?: Batch[]; error?: string }> => {
   try {
-    const response = await apiFetch<any[]>(`/instructors/${instructorId}/batches`);
+    const response = await apiFetch<Batch[]>(`/instructors/${instructorId}/batches`);
     return response;
   } catch (error) {
     console.error('Error fetching instructor batches:', error);

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -15,7 +16,7 @@ import BatchGrid from '@/components/batches/BatchGrid';
 import { 
   getBatches, 
   getCourses, 
-  getUsers, 
+  getInstructorBatches,
   deleteBatch,
 } from '@/lib/api';
 import { Batch, Course, User, Role } from '@/lib/types';
@@ -38,11 +39,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
+import { useAuth } from '@/hooks/use-auth';
 
 const Batches = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === Role.admin;
   
   const [batches, setBatches] = useState<Batch[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -57,7 +61,7 @@ const Batches = () => {
     const action = searchParams.get('action');
     const batchId = searchParams.get('batchId');
     
-    if (action && batchId) {
+    if (action && batchId && isAdmin) {
       switch (action) {
         case 'edit':
           navigate(`/batches/${batchId}/edit`);
@@ -67,42 +71,24 @@ const Batches = () => {
           break;
       }
     }
-  }, [searchParams, navigate]);
-
-  const fetchBatches = async () => {
-    try {
-      setIsLoading(true);
-      const batchesResponse = await getBatches();
-      if (batchesResponse.success && batchesResponse.data) {
-        setBatches(batchesResponse.data);
-      } else {
-        toast({
-          title: 'Error',
-          description: batchesResponse.error || 'Failed to fetch batches',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching batches:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch batches',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [searchParams, navigate, isAdmin]);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       
       try {
-        const [batchesResponse, coursesResponse] = await Promise.all([
-          getBatches(),
-          getCourses(),
-        ]);
+        // Different API calls based on user role
+        let batchesResponse;
+        if (isAdmin) {
+          batchesResponse = await getBatches();
+        } else if (user?.role === Role.instructor && user.userId) {
+          batchesResponse = await getInstructorBatches(user.userId);
+        } else {
+          batchesResponse = { success: true, data: [] };
+        }
+        
+        const coursesResponse = await getCourses();
         
         if (batchesResponse.success && batchesResponse.data) {
           setBatches(batchesResponse.data);
@@ -136,7 +122,7 @@ const Batches = () => {
     };
     
     fetchData();
-  }, [toast]);
+  }, [toast, user, isAdmin]);
 
   const filteredBatches = batches.filter((batch) => {
     const matchesSearch = batch.batchName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -153,16 +139,18 @@ const Batches = () => {
   };
 
   const handleEditBatch = (batch: Batch) => {
+    if (!isAdmin) return;
     navigate(`/batches/${batch.batchId}/edit`);
   };
 
   const handleDeleteConfirmation = (batch: Batch) => {
+    if (!isAdmin) return;
     setBatchToDelete(batch);
     setShowDeleteDialog(true);
   };
 
   const handleDeleteBatch = async () => {
-    if (!batchToDelete) return;
+    if (!batchToDelete || !isAdmin) return;
     
     try {
       const response = await deleteBatch(batchToDelete.batchId);
@@ -173,7 +161,18 @@ const Batches = () => {
           description: `Batch "${batchToDelete.batchName}" has been deleted successfully.`,
         });
         
-        fetchBatches();
+        // Refresh batches list
+        if (isAdmin) {
+          const batchesResponse = await getBatches();
+          if (batchesResponse.success && batchesResponse.data) {
+            setBatches(batchesResponse.data);
+          }
+        } else if (user?.role === Role.instructor && user.userId) {
+          const batchesResponse = await getInstructorBatches(user.userId);
+          if (batchesResponse.success && batchesResponse.data) {
+            setBatches(batchesResponse.data);
+          }
+        }
       } else {
         toast({
           title: 'Error',
@@ -195,6 +194,7 @@ const Batches = () => {
   };
 
   const handleManageStudents = (batch: Batch) => {
+    if (!isAdmin) return;
     navigate(`/batches/manage-students?batchId=${batch.batchId}`);
   };
 
@@ -205,10 +205,12 @@ const Batches = () => {
       ]} />
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h1 className="text-3xl font-bold">Batches</h1>
-        <Button onClick={() => navigate('/batches/add')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Batch
-        </Button>
+        {isAdmin && (
+          <Button onClick={() => navigate('/batches/add')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Batch
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -303,9 +305,9 @@ const Batches = () => {
         batches={filteredBatches}
         loading={isLoading}
         onView={handleViewBatch}
-        onEdit={handleEditBatch}
-        onDelete={handleDeleteConfirmation}
-        onManageStudents={handleManageStudents}
+        onEdit={isAdmin ? handleEditBatch : undefined}
+        onDelete={isAdmin ? handleDeleteConfirmation : undefined}
+        onManageStudents={isAdmin ? handleManageStudents : undefined}
         onInstructorClick={(instructorId) => navigate(`/instructors/${instructorId}`)}
       />
 

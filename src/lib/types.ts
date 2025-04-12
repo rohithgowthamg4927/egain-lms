@@ -39,7 +39,7 @@ export interface ProfilePicture {
   fileSize: number;
   createdAt: string;
   updatedAt: string;
-  user      User?     @relation(fields: [userId], references: [userId])
+  user?: User;  // Corrected the relation syntax to proper TypeScript
 }
 
 export type Course = {

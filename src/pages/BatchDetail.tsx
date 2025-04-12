@@ -39,6 +39,17 @@ import { Batch, User, Schedule } from '@/lib/types';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 import { formatDate, getInitials } from '@/lib/utils';
 import { Edit, Trash2, Calendar, Users, AlertTriangle, RefreshCw, UserMinus } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogCancel,
+  AlertDialogAction,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const BatchDetail = () => {
   const { batchId } = useParams();
@@ -52,6 +63,7 @@ const BatchDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const [isRemovingStudent, setIsRemovingStudent] = useState(false);
   const [removingStudentId, setRemovingStudentId] = useState<number | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const fetchBatchDetails = async () => {
     if (!batchId) return;
@@ -219,28 +231,25 @@ const BatchDetail = () => {
               Edit Batch
             </Link>
           </Button>
-          <Dialog>
-            <DialogTrigger asChild>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
               <Button size="sm" variant="destructive">
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Batch
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Delete Batch</DialogTitle>
-                <DialogDescription>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Batch</AlertDialogTitle>
+                <AlertDialogDescription>
                   Are you sure you want to delete this batch? This action cannot be undone.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => {}}>
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
                   onClick={handleDeleteBatch}
+                  className="bg-red-600 hover:bg-red-700"
                   disabled={isDeleting}
                 >
                   {isDeleting ? (
@@ -249,10 +258,10 @@ const BatchDetail = () => {
                     <Trash2 className="h-4 w-4 mr-2" />
                   )}
                   Delete
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 

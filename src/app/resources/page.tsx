@@ -95,8 +95,6 @@ export default function ResourcesPage() {
   };
 
   const handleDelete = async (resourceId: number) => {
-    if (!confirm('Are you sure you want to delete this resource?')) return;
-
     try {
       const response = await deleteResource(resourceId);
 

@@ -68,7 +68,7 @@ const ResourceGrid = ({ resources, onDelete, userRole }: ResourceGridProps) => {
       </TabsList>
       
       <TabsContent value="all" className="mt-0">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
           {resources.map((resource) => (
             <ResourceCard 
               key={resource.resourceId} 

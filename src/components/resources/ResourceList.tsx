@@ -6,6 +6,7 @@ import { Download, Trash2, Eye, Loader2, FileVideo, FileText, FileImage, FileAud
 import { useToast } from '@/hooks/use-toast';
 import { getResourcePresignedUrl } from '@/lib/api/resources';
 import { Resource } from '@/lib/types';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 
 interface ResourceListProps {
   resources: Resource[];
@@ -16,6 +17,8 @@ interface ResourceListProps {
 export function ResourceList({ resources, onDelete, userRole }: ResourceListProps) {
   const { toast } = useToast();
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [resourceToDelete, setResourceToDelete] = useState<Resource | null>(null);
   const canDelete = userRole === 'instructor' || userRole === 'admin';
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -87,27 +90,27 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
     }
   };
 
-  // const handleView = async (resourceId: number) => {
-  //   try {
-  //     setDownloadingId(resourceId);
-  //     const response = await getResourcePresignedUrl(resourceId);
-      
-  //     if (response.success && response.data.presignedUrl) {
-  //       window.open(response.data.presignedUrl, '_blank');
-  //     } else {
-  //       throw new Error(response.error || 'Failed to get view URL');
-  //     }
-  //   } catch (error) {
-  //     console.error('View error:', error);
-  //     toast({
-  //       title: 'Error',
-  //       description: error instanceof Error ? error.message : 'Failed to view resource',
-  //       variant: 'destructive',
-  //     });
-  //   } finally {
-  //     setDownloadingId(null);
-  //   }
-  // };
+  const handleDeleteClick = (resource: Resource) => {
+    setResourceToDelete(resource);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (resourceToDelete && onDelete) {
+      try {
+        await Promise.resolve(onDelete(resourceToDelete));
+        setShowDeleteDialog(false);
+        setResourceToDelete(null);
+      } catch (error) {
+        console.error('Delete error:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to delete resource',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
 
   return (
     <div className="rounded-md border">
@@ -165,7 +168,7 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => onDelete(resource)}
+                      onClick={() => handleDeleteClick(resource)}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete
@@ -177,6 +180,26 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
           ))}
         </TableBody>
       </Table>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Resource</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the resource "{resourceToDelete?.title}". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

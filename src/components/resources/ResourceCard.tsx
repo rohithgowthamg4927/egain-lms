@@ -13,6 +13,17 @@ import {
 import { format } from 'date-fns';
 import { getResourcePresignedUrl } from '@/lib/api/resources';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface ResourceCardProps {
   resource: Resource;
@@ -28,6 +39,7 @@ const ResourceCard = ({
   const [isHovered, setIsHovered] = useState(false);
   const { toast } = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Safely access resource properties with default fallbacks
   const resourceTitle = resource?.title || 'Untitled Resource';
@@ -137,9 +149,19 @@ const ResourceCard = ({
     }
   };
 
-  const handleDelete = () => {
+  const handleDeleteConfirm = async () => {
     if (onDelete) {
-      onDelete(resource);
+      try {
+        await Promise.resolve(onDelete(resource));
+        setShowDeleteDialog(false);
+      } catch (error) {
+        console.error('Delete error:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to delete resource',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
@@ -147,79 +169,100 @@ const ResourceCard = ({
 
   return (
     <Card
-      className={`overflow-hidden transition-all duration-300 h-full flex flex-col ${isHovered ? 'shadow-lg translate-y-[-4px]' : 'shadow'
-        }`}
+      className={`overflow-hidden transition-all duration-300 h-full flex flex-col relative ${
+        isHovered ? 'shadow-lg translate-y-[-4px]' : 'shadow'
+      }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="p-6 flex items-center justify-between">
+      <div className="p-4 flex items-center justify-between">
         {getResourceIcon(resourceType)}
         <Badge variant="outline" className={`font-normal ${getResourceTypeColor(resourceType)}`}>
           {resourceType.charAt(0).toUpperCase() + resourceType.slice(1)}
         </Badge>
       </div>
 
-      <CardHeader className="pb-2 pt-0">
-        <CardTitle className="line-clamp-1 text-lg">{resourceTitle}</CardTitle>
+      <CardHeader className="pt-0 pb-1 px-4">
+        <CardTitle className="text-sm font-semibold line-clamp-1">{resourceTitle}</CardTitle>
       </CardHeader>
 
-      <CardContent className="pb-4 flex-grow">
-        <p className="text-muted-foreground text-sm line-clamp-2 mb-4">
-          {resourceDescription}
-        </p>
-
-        <div className="grid grid-cols-1 gap-2">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Calendar className="h-4 w-4 mr-1" />
-            <span>Added on {formatDate(resourceCreatedAt)}</span>
-          </div>
+      <CardContent className="px-4 pb-2">
+        <p className="text-muted-foreground text-xs mb-2 line-clamp-3">{resourceDescription}</p>
+        <div className="flex items-center text-xs text-muted-foreground">
+          <Calendar className="h-3 w-3 mr-1" />
+          <span>Added on {formatDate(resourceCreatedAt)}</span>
         </div>
       </CardContent>
 
-      <CardFooter className="pt-0 flex flex-col gap-2">
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="default"
-            size="sm"
-            onClick={handleDownload}
-            disabled={isDownloading}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {isDownloading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Loading...
-              </>
-            ) : (
-              <>
-                <Eye className="mr-2 h-4 w-4" />
-                View/Download Resource
-              </>
-            )}
-          </Button>
-        </div>
-
-        {canDelete && (
-          <div className="flex justify-end w-full">
+      <CardFooter className="px-4 pt-3 pb-4 flex items-center">
+        <div className="flex-1" />
+        <Button
+          variant="default"
+          size="sm"
+          onClick={handleDownload}
+          disabled={isDownloading}
+          className="bg-blue-600 hover:bg-blue-700 transition-all duration-300 h-8 px-4 text-xs"
+        >
+          {isDownloading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Loading...
+            </>
+          ) : (
+            <>
+              <Eye className="mr-2 h-4 w-4" />
+              View/Download Resource
+            </>
+          )}
+        </Button>
+        <div className="flex-1 flex justify-end">
+          {canDelete && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 hover:bg-muted transition-colors duration-300 ml-2"
+                >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  className="text-destructive"
-                  onClick={handleDelete}
+              <DropdownMenuContent align="end" className="animate-in fade-in zoom-in-75 duration-200">
+                <DropdownMenuItem 
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    setShowDeleteDialog(true);
+                  }}
+                  className="text-red-500 hover:text-red-600 focus:text-red-600 cursor-pointer"
                 >
                   <Trash className="h-4 w-4 mr-2" />
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-        )}
+          )}
+        </div>
       </CardFooter>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Resource</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the resource "{resourceTitle}". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };

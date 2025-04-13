@@ -303,9 +303,9 @@ export default function StudentDashboard() {
             </Card>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="md:col-span-2 overflow-hidden border-purple-100">
-              <CardHeader className="bg-white pb-2">
+          <div className="grid gap-6">
+            <Card className="w-full overflow-hidden border-purple-100">
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-white">
                 <div className="flex items-center justify-between">
                   <CardTitle>Class Schedule</CardTitle>
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
@@ -329,26 +329,25 @@ export default function StudentDashboard() {
                                   <Clock className="h-6 w-6 text-purple-700" />
                                 </div>
                                 <div className="flex-1">
-                                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div>
-                                      <h3 className="font-semibold text-purple-900">
+                                      <h3 className="font-semibold text-gray-900">
                                         {schedule.topic || 'Class Session'}
                                       </h3>
-                                      <p className="text-sm text-purple-800">
+                                      <p className="text-sm text-gray-600">
                                         {schedule.batch?.course?.courseName} - {schedule.batch?.batchName}
                                       </p>
                                     </div>
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-6">
                                       <div className="flex flex-col text-sm">
                                         <span className="text-muted-foreground text-xs">Time</span>
-                                        <span className="font-medium">
+                                        <span className="font-medium text-gray-900">
                                           {format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
                                         </span>
                                       </div>
                                       {schedule.meetingLink && (
                                         <Button 
                                           size="sm" 
-                                          variant="secondary"
                                           className="bg-purple-600 text-white hover:bg-purple-700"
                                           onClick={() => window.open(schedule.meetingLink, '_blank')}
                                         >
@@ -383,26 +382,26 @@ export default function StudentDashboard() {
                                   <Calendar className="h-6 w-6 text-purple-700" />
                                 </div>
                                 <div className="flex-1">
-                                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div>
-                                      <h3 className="font-semibold text-purple-900">
+                                      <h3 className="font-semibold text-gray-900">
                                         {schedule.topic || 'Class Session'}
                                       </h3>
-                                      <p className="text-sm text-purple-800">
+                                      <p className="text-sm text-gray-600">
                                         {schedule.batch?.course?.courseName} - {schedule.batch?.batchName}
                                       </p>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                      <div className="flex flex-col text-sm">
-                                        <div className="flex items-center gap-1">
-                                          <CalendarDays className="h-3 w-3 text-muted-foreground" />
-                                          <span className="text-muted-foreground text-xs">
+                                    <div className="flex items-center gap-6">
+                                      <div className="flex flex-col text-sm space-y-1">
+                                        <div className="flex items-center gap-2">
+                                          <CalendarDays className="h-3.5 w-3.5 text-gray-500" />
+                                          <span className="text-gray-600">
                                             {formatScheduleDate(schedule.scheduleDate)}
                                           </span>
                                         </div>
-                                        <div className="flex items-center gap-1">
-                                          <Clock className="h-3 w-3 text-muted-foreground" />
-                                          <span className="font-medium">
+                                        <div className="flex items-center gap-2">
+                                          <Clock className="h-3.5 w-3.5 text-gray-500" />
+                                          <span className="font-medium text-gray-900">
                                             {format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
                                           </span>
                                         </div>
@@ -410,7 +409,7 @@ export default function StudentDashboard() {
                                       {schedule.meetingLink && (
                                         <Button 
                                           size="sm" 
-                                          variant="outline"
+                                          className="bg-purple-600 text-white hover:bg-purple-700"
                                           onClick={() => window.open(schedule.meetingLink, '_blank')}
                                         >
                                           Join
@@ -448,7 +447,7 @@ export default function StudentDashboard() {
             </Card>
           </div>
 
-          <Card className="border-green-100 overflow-hidden">
+          <Card className="w-full overflow-hidden border-green-100">
             <CardHeader className="bg-gradient-to-r from-green-50 to-white">
               <div className="flex justify-between items-center">
                 <CardTitle>Learning Resources</CardTitle>
@@ -495,10 +494,9 @@ export default function StudentDashboard() {
                               <div className="bg-gray-50 px-4 py-2 border-t border-green-100 flex justify-end">
                                 <Button
                                   size="sm"
-                                  variant="outline"
                                   onClick={() => handleView(resource)}
                                   disabled={downloadingId === resource.resourceId}
-                                  className="bg-white hover:bg-green-50"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white"
                                 >
                                   {downloadingId === resource.resourceId ? (
                                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />

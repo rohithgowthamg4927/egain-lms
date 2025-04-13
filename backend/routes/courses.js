@@ -53,6 +53,11 @@ router.get('/:id', async (req, res) => {
             schedules: true
           }
         },
+        instructorCourses: {
+          include: {
+            instructor: true
+          }
+        },
         _count: {
           select: {
             studentCourses: true,

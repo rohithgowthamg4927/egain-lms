@@ -98,7 +98,6 @@ export default function StudentSchedules() {
         <TabsList className="mb-4">
           <TabsTrigger value="weekly">Weekly</TabsTrigger>
           <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-          <TabsTrigger value="past">Past</TabsTrigger>
         </TabsList>
         
         <TabsContent value="weekly" className="space-y-4">
@@ -162,7 +161,7 @@ export default function StudentSchedules() {
                                   </div>
                                   
                                   {schedule.meetingLink && (
-                                    <Button asChild size="sm" className="bg-green-500 text-white hover:bg-green-600">
+                                    <Button asChild size="sm" className="bg-green-600 text-white hover:bg-green-700">
                                       <a href={schedule.meetingLink} target="_blank" rel="noopener noreferrer">
                                         <ExternalLink className="h-4 w-4 mr-2" />
                                         Join Meeting
@@ -230,7 +229,7 @@ export default function StudentSchedules() {
                         </div>
                         
                         {schedule.meetingLink && (
-                          <Button asChild size="sm" className="bg-green-500 text-white hover:bg-green-600">
+                          <Button asChild size="sm" className="bg-green-600 text-white hover:bg-green-700">
                             <a href={schedule.meetingLink} target="_blank" rel="noopener noreferrer">
                               <ExternalLink className="h-4 w-4 mr-2" />
                               Join Meeting
@@ -246,56 +245,6 @@ export default function StudentSchedules() {
                   <h3 className="text-lg font-medium">No upcoming classes</h3>
                   <p className="text-muted-foreground mt-1">
                     You don't have any upcoming classes scheduled
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="past" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Past Classes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : pastSchedules.length > 0 ? (
-                <div className="space-y-4">
-                  {pastSchedules.map(schedule => (
-                    <div key={schedule.scheduleId} className="border rounded-md p-4 hover:bg-muted/50">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <h4 className="font-medium">{schedule.topic || 'Class Session'}</h4>
-                          <div className="flex items-center gap-2 text-sm">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span>{format(parseISO(schedule.scheduleDate), 'EEEE, MMMM d, yyyy')}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Clock className="h-4 w-4" />
-                            <span>{schedule.startTime.slice(0, 5)} - {schedule.endTime.slice(0, 5)}</span>
-                          </div>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            <Badge variant="outline" className="bg-muted/50">
-                              {schedule.batch.course.courseName}
-                            </Badge>
-                            <Badge variant="outline" className="bg-muted/50">
-                              {schedule.batch.batchName}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 bg-muted/30 rounded-lg border border-dashed">
-                  <h3 className="text-lg font-medium">No past classes</h3>
-                  <p className="text-muted-foreground mt-1">
-                    You don't have any past classes
                   </p>
                 </div>
               )}

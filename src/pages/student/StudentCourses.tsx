@@ -359,14 +359,12 @@ export default function StudentCourses() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredEnrolledCourses.map((studentCourse) => (
                 <Card key={studentCourse.studentCourseId} className="overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="relative w-full h-32 bg-gradient-to-r from-blue-500 to-purple-500">
-                    {studentCourse.course.thumbnailUrl && (
-                      <img 
-                        src={studentCourse.course.thumbnailUrl} 
-                        alt={studentCourse.course.courseName}
-                        className="w-full h-full object-cover opacity-75"
-                      />
-                    )}
+                  <div className="relative w-full h-48 bg-gradient-to-r from-blue-500 to-purple-500">
+                    <img 
+                      src="/thumbnail.jpeg" 
+                      alt={studentCourse.course.courseName}
+                      className="w-full h-full object-cover opacity-75"
+                    />
                     <div className="absolute top-2 right-2">
                       <Badge className={getLevelColor(studentCourse.course.courseLevel)}>
                         {getLevelLabel(studentCourse.course.courseLevel)}
@@ -492,14 +490,12 @@ export default function StudentCourses() {
                 
                 return (
                   <Card key={course.courseId} className="overflow-hidden hover:shadow-md transition-shadow">
-                    <div className="relative w-full h-32 bg-gradient-to-r from-blue-500 to-purple-500">
-                      {course.thumbnailUrl && (
-                        <img 
-                          src={course.thumbnailUrl} 
-                          alt={course.courseName}
-                          className="w-full h-full object-cover opacity-75"
-                        />
-                      )}
+                    <div className="relative w-full h-48 bg-gradient-to-r from-blue-500 to-purple-500">
+                      <img 
+                        src="/thumbnail.jpeg" 
+                        alt={course.courseName}
+                        className="w-full h-full object-cover opacity-75"
+                      />
                       <div className="absolute top-2 right-2">
                         <Badge className={getLevelColor(course.courseLevel)}>
                           {getLevelLabel(course.courseLevel)}

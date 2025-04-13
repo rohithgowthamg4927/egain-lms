@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, Lock, LogOut } from 'lucide-react';
+import { Lock, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import {
   Dialog,
@@ -32,10 +32,6 @@ import PasswordChangeForm from '@/components/users/PasswordChangeForm';
 
 const Header = () => {
   const { user, logout } = useAuth();
-  const [notifications] = useState<{ id: number; title: string; description: string }[]>([
-    { id: 1, title: 'New course added', description: 'React Fundamentals course was added' },
-    { id: 2, title: 'New batch starting', description: 'Flutter for Beginners batch starts next week' },
-  ]);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
@@ -57,35 +53,6 @@ const Header = () => {
         </div>
 
         <div className="flex items-center space-x-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                {notifications.length > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {notifications.length === 0 ? (
-                <div className="py-4 text-center text-muted-foreground">
-                  No notifications yet
-                </div>
-              ) : (
-                notifications.map((notification) => (
-                  <DropdownMenuItem key={notification.id} className="p-3 cursor-pointer">
-                    <div>
-                      <p className="font-medium">{notification.title}</p>
-                      <p className="text-sm text-muted-foreground">{notification.description}</p>
-                    </div>
-                  </DropdownMenuItem>
-                ))
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">

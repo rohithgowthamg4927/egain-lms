@@ -22,11 +22,6 @@ export default function StudentCourseDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [isEnrolling, setIsEnrolling] = useState(false);
-  const [isUnenrolling, setIsUnenrolling] = useState(false);
-  const [isEnrolled, setIsEnrolled] = useState(false);
-  const [showUnenrollDialog, setShowUnenrollDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
 
   const { data: course, isLoading: isCourseLoading, error: courseError } = useQuery({
     queryKey: ['course', courseId],
@@ -45,64 +40,8 @@ export default function StudentCourseDetail() {
       const enrolled = studentCoursesData.data.some(
         sc => sc.course.courseId === Number(courseId)
       );
-      setIsEnrolled(enrolled);
     }
   }, [studentCoursesData, courseId]);
-
-  const handleEnroll = async () => {
-    if (!user?.userId || !courseId) return;
-    
-    setIsEnrolling(true);
-    try {
-      const response = await enrollStudentInCourse(user.userId, Number(courseId));
-      
-      if (response.success) {
-        toast({
-          title: 'Success',
-          description: 'You have successfully enrolled in this course',
-        });
-        setIsEnrolled(true);
-      } else {
-        throw new Error(response.error || 'Failed to enroll in course');
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to enroll in course',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsEnrolling(false);
-    }
-  };
-
-  const handleUnenroll = async () => {
-    if (!user?.userId || !courseId) return;
-    
-    setIsUnenrolling(true);
-    try {
-      const response = await removeStudentFromCourse(user.userId, Number(courseId));
-      
-      if (response.success) {
-        toast({
-          title: 'Success',
-          description: 'You have been unenrolled from this course',
-        });
-        setIsEnrolled(false);
-        setShowUnenrollDialog(false);
-      } else {
-        throw new Error(response.error || 'Failed to unenroll from course');
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to unenroll from course',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsUnenrolling(false);
-    }
-  };
 
   const getLevelLabel = (level: Level) => {
     const levelMap = {
@@ -186,225 +125,83 @@ export default function StudentCourseDetail() {
           </div>
           <p className="text-muted-foreground mt-2">{courseData.category?.categoryName || 'Uncategorized'}</p>
         </div>
-        
-        {isEnrolled ? (
-          <Button 
-            variant="outline" 
-            className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-            onClick={() => setShowUnenrollDialog(true)}
-            disabled={isUnenrolling}
-          >
-            {isUnenrolling ? 'Unenrolling...' : 'Unenroll from Course'}
-          </Button>
-        ) : (
-          <Button 
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={handleEnroll}
-            disabled={isEnrolling}
-          >
-            {isEnrolling ? 'Enrolling...' : 'Enroll in Course'}
-          </Button>
-        )}
       </div>
 
-      <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full md:w-auto grid-cols-2 md:grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="content">Content</TabsTrigger>
-          {isEnrolled && (
-            <TabsTrigger value="materials">Materials</TabsTrigger>
-          )}
-        </TabsList>
-        
-        <TabsContent value="overview" className="mt-6">
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="md:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Course Description</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{courseData.description || 'No description available.'}</p>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Course Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Level: {getLevelLabel(courseData.courseLevel)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Students: {courseData._count?.studentCourses || 0}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Resources: {courseData._count?.resources || 0}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Schedules: {courseData._count?.schedules || 0}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="content" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Course Curriculum</CardTitle>
+      <div className="grid gap-6 md:grid-cols-1">
+        <div>
+          <Card className="border-blue-100 overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-white">
+              <CardTitle>Course Description</CardTitle>
             </CardHeader>
             <CardContent>
-              {courseData.batches && courseData.batches.length > 0 ? (
-                <div className="space-y-4">
-                  {courseData.batches.map((batch, index) => (
-                    <div key={batch.batchId} className="border rounded-md p-4">
-                      <h3 className="font-medium text-lg">{batch.batchName || `Batch ${index + 1}`}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">{batch.description || 'No description available.'}</p>
-                      
-                      {batch.schedules && batch.schedules.length > 0 ? (
-                        <div className="mt-3 space-y-2">
-                          <h4 className="text-sm font-medium">Schedule:</h4>
-                          {batch.schedules.slice(0, 3).map(schedule => (
-                            <div key={schedule.scheduleId} className="flex items-center gap-2 text-sm">
-                              <CalendarIcon className="h-3 w-3 text-muted-foreground" />
-                              <span>{schedule.topic}: {format(new Date(schedule.scheduleDate), 'PPP')}</span>
-                            </div>
-                          ))}
-                          {batch.schedules.length > 3 && (
-                            <p className="text-xs text-muted-foreground">+ {batch.schedules.length - 3} more schedules</p>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground mt-3">No schedules available.</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">No curriculum information available yet.</p>
-              )}
+              <p className="text-muted-foreground">{courseData.description || 'No description available.'}</p>
             </CardContent>
           </Card>
-        </TabsContent>
-        
-        {isEnrolled && (
-          <TabsContent value="materials" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Course Materials</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {courseData.resources && courseData.resources.length > 0 ? (
-                  <div className="space-y-4">
-                    {courseData.resources.map(resource => (
-                      <div key={resource.resourceId} className="flex items-center justify-between border rounded-md p-4">
-                        <div className="flex items-center gap-3">
-                          <BookMarked className="h-5 w-5 text-blue-500" />
-                          <div>
-                            <h3 className="font-medium">{resource.title}</h3>
-                            <p className="text-sm text-muted-foreground">{resource.description || 'No description'}</p>
-                          </div>
-                        </div>
-                        <Button size="sm" variant="outline" asChild>
-                          <a href={resource.fileUrl} target="_blank" rel="noopener noreferrer">
-                            View
-                          </a>
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground">No course materials available yet.</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
-      </Tabs>
-
-      {activeTab === 'overview' && isEnrolled && courseData.reviews && (
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Student Reviews</h2>
-          
-          {courseData.reviews.length > 0 ? (
-            <div className="space-y-4">
-              {courseData.reviews.map(review => (
-                <Card key={review.reviewId}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-start gap-4">
-                      <Avatar>
-                        <AvatarFallback>{review.user?.fullName?.slice(0, 2) || 'ST'}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex justify-between">
-                          <h3 className="font-medium">{review.user?.fullName || 'Student'}</h3>
-                          <div className="flex">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {format(new Date(review.createdAt), 'PPP')}
-                        </p>
-                        {review.review && (
-                          <p className="mt-2">{review.review}</p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">No reviews yet. Be the first to review this course!</p>
-          )}
-          
-          <div className="mt-4">
-            <Button 
-              onClick={() => navigate('/student/courses')}
-              variant="outline"
-            >
-              Back to My Courses
-            </Button>
-          </div>
         </div>
-      )}
+        
+        <div>
+          <Card className="border-purple-100 overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-purple-50 to-white">
+              <CardTitle>Course Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="h-4 w-4 text-purple-500" />
+                <span className="text-sm">Level: {getLevelLabel(courseData.courseLevel)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-purple-500" />
+                <span className="text-sm">Category: {courseData.category?.categoryName || 'Uncategorized'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-purple-500" />
+                <span className="text-sm">Students: {courseData._count?.studentCourses || 0}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-purple-500" />
+                <span className="text-sm">Batches: {courseData._count?.batches || 0}</span>
+              </div>
+              <div className="pt-4 border-t border-purple-100">
+                <h4 className="text-sm font-medium mb-2">Instructors</h4>
+                <div className="space-y-2">
+                  {courseData.instructorCourses && courseData.instructorCourses.length > 0 ? (
+                    courseData.instructorCourses.map((instructorCourse) => {
+                      const nameParts = instructorCourse.instructor.fullName.split(' ');
+                      const initials = nameParts.length >= 2 
+                        ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`
+                        : instructorCourse.instructor.fullName.slice(0, 2);
+                      
+                      return (
+                        <div key={instructorCourse.instructor.userId} className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8 border border-purple-100">
+                            <AvatarImage src={instructorCourse.instructor.photoUrl} />
+                            <AvatarFallback className="bg-purple-100 text-purple-700">{initials.toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{instructorCourse.instructor.fullName}</p>
+                            <p className="text-xs text-muted-foreground">{instructorCourse.instructor.bio || 'Course Instructor'}</p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No instructors assigned</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-      <AlertDialog open={showUnenrollDialog} onOpenChange={setShowUnenrollDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to unenroll?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You will lose access to all course materials and your progress may be lost.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleUnenroll}
-              className="bg-red-600 text-white hover:bg-red-700"
-              disabled={isUnenrolling}
-            >
-              {isUnenrolling ? 'Unenrolling...' : 'Unenroll'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <div className="mt-4">
+        <Button 
+          onClick={() => navigate('/student/courses')}
+          variant="outline"
+        >
+          Back to My Courses
+        </Button>
+      </div>
     </div>
   );
 }

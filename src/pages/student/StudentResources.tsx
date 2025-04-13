@@ -11,6 +11,8 @@ import { apiFetch } from '@/lib/api/core';
 import { format } from 'date-fns';
 import { Download, FileText, FileVideo, FileImage, FileAudio, File, Eye, Loader2 } from 'lucide-react';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 
 interface Batch {
   batchId: number;
@@ -247,90 +249,212 @@ export default function StudentResources() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="col-span-1 md:col-span-2">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Select value={selectedBatch} onValueChange={setSelectedBatch}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="All Batches" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Batches</SelectItem>
-                {batches.map((batch) => (
-                  <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
-                    {batch.batchName} {batch.course ? `- ${batch.course.courseName}` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              type="text"
-              placeholder="Search resources..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full sm:w-[300px]"
-            />
-          </div>
-        </div>
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Select value={selectedBatch} onValueChange={setSelectedBatch}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="All Batches" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Batches</SelectItem>
+            {batches.map((batch) => (
+              <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
+                {batch.batchName} {batch.course ? `- ${batch.course.courseName}` : ''}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input
+          type="text"
+          placeholder="Search resources..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full sm:w-[300px]"
+        />
       </div>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {filteredResources.length > 0 ? (
-            filteredResources.map((resource) => (
-              <Card key={resource.resourceId}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    {getFileIcon(resource)}
-                    <span>{resource.title || resource.fileName || `Resource ${resource.resourceId}`}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {resource.description && (
-                      <p className="text-muted-foreground">{resource.description}</p>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-muted-foreground">
-                        <p>Batch: {getBatchName(resource)}</p>
-                        <p>Type: {getResourceType(resource)}</p>
-                        <p>Uploaded: {format(new Date(resource.createdAt), 'PPP')}</p>
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="all">All Resources</TabsTrigger>
+          <TabsTrigger value="assignments">Assignments</TabsTrigger>
+          <TabsTrigger value="recordings">Class Recordings</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all" className="space-y-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredResources.map((resource) => (
+                <Card key={resource.resourceId} className="overflow-hidden hover:shadow-md transition-shadow">
+                  <CardContent className="p-0">
+                    <div className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className={`p-2 rounded-full ${
+                          isVideoResource(resource) ? 'bg-red-100' : 'bg-blue-100'
+                        }`}>
+                          {getFileIcon(resource)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 truncate">
+                            {resource.title || resource.fileName || `Resource ${resource.resourceId}`}
+                          </h3>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {resource.batch?.course?.courseName} - {resource.batch?.batchName}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant={isVideoResource(resource) ? 'destructive' : 'default'} className="text-[10px]">
+                              {isVideoResource(resource) ? 'Recording' : 'Assignment'}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(resource.createdAt), 'MMM d, yyyy')}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
+                    </div>
+                    <div className="bg-gray-50 px-4 py-2 border-t flex justify-end">
+                      <Button
+                        size="sm"
+                        onClick={() => isVideoResource(resource) ? handleView(resource) : handleDownload(resource)}
+                        disabled={downloadingId === resource.resourceId}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {downloadingId === resource.resourceId ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Eye className="h-4 w-4 mr-2" />
+                        )}
+                        View/Download
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="assignments" className="space-y-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredResources
+                .filter(resource => !isVideoResource(resource))
+                .map((resource) => (
+                  <Card key={resource.resourceId} className="overflow-hidden hover:shadow-md transition-shadow">
+                    <CardContent className="p-0">
+                      <div className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="bg-blue-100 p-2 rounded-full">
+                            {getFileIcon(resource)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-gray-900 truncate">
+                              {resource.title || resource.fileName || `Resource ${resource.resourceId}`}
+                            </h3>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {resource.batch?.course?.courseName} - {resource.batch?.batchName}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="default" className="text-[10px]">Assignment</Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(resource.createdAt), 'MMM d, yyyy')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 px-4 py-2 border-t flex justify-end">
                         <Button
                           size="sm"
-                          onClick={() => isVideoResource(resource) ? handleView(resource) : handleDownload(resource)}
+                          onClick={() => handleDownload(resource)}
                           disabled={downloadingId === resource.resourceId}
-                          className="flex items-center gap-2 bg-blue-500 text-white hover:bg-blue-600"
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
                         >
                           {downloadingId === resource.resourceId ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                           ) : (
                             <Eye className="h-4 w-4 mr-2" />
                           )}
-                          {/* {isVideoResource(resource) ? 'View' : 'Download'} */}
                           View/Download
                         </Button>
                       </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <div className="text-center py-12 bg-muted/30 rounded-lg border border-dashed">
-              <h3 className="text-lg font-medium">No resources found</h3>
-              <p className="text-muted-foreground mt-1">
-                {resources.length === 0 
-                  ? 'No resources are available for your enrolled batches' 
-                  : 'Try adjusting your filters'}
-              </p>
+                    </CardContent>
+                  </Card>
+                ))}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="recordings" className="space-y-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredResources
+                .filter(resource => isVideoResource(resource))
+                .map((resource) => (
+                  <Card key={resource.resourceId} className="overflow-hidden hover:shadow-md transition-shadow">
+                    <CardContent className="p-0">
+                      <div className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="bg-red-100 p-2 rounded-full">
+                            <FileVideo className="h-6 w-6 text-red-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-gray-900 truncate">
+                              {resource.title || resource.fileName || `Resource ${resource.resourceId}`}
+                            </h3>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {resource.batch?.course?.courseName} - {resource.batch?.batchName}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="destructive" className="text-[10px]">Recording</Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(resource.createdAt), 'MMM d, yyyy')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-gray-50 px-4 py-2 border-t flex justify-end">
+                        <Button
+                          size="sm"
+                          onClick={() => handleView(resource)}
+                          disabled={downloadingId === resource.resourceId}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          {downloadingId === resource.resourceId ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Eye className="h-4 w-4 mr-2" />
+                          )}
+                          View Recording
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {!isLoading && filteredResources.length === 0 && (
+        <div className="text-center py-12 bg-muted/30 rounded-lg border border-dashed">
+          <h3 className="text-lg font-medium">No resources found</h3>
+          <p className="text-muted-foreground mt-1">
+            {resources.length === 0 
+              ? 'No resources are available for your enrolled batches' 
+              : 'Try adjusting your filters'}
+          </p>
         </div>
       )}
     </div>

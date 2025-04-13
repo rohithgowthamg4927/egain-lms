@@ -1,4 +1,3 @@
-
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -57,6 +56,8 @@ export type Course = {
   _count?: {
     studentCourses: number;
     batches: number;
+    resources?: number;
+    schedules?: number;
   };
   studentCourses?: Array<{
     studentCourseId: number;
@@ -69,6 +70,8 @@ export type Course = {
     batchName: string;
     startDate: Date;
     endDate: Date;
+    description?: string;
+    schedules?: Schedule[];
     instructor?: {
       userId: number;
       fullName: string;
@@ -77,6 +80,7 @@ export type Course = {
   category?: CourseCategory;
   reviews?: CourseReview[];
   instructorCourses?: InstructorCourse[];
+  resources?: Resource[];
 };
 
 export interface Category {

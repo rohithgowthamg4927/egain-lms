@@ -1,5 +1,6 @@
 
 import { apiFetch } from './core';
+import { Course, CourseReview } from '@/lib/types';
 
 // Get student's course details
 export const getStudentCourseDetail = async (courseId: string): Promise<{ success: boolean; data?: any; error?: string }> => {
@@ -17,7 +18,7 @@ export const getStudentCourseDetail = async (courseId: string): Promise<{ succes
 // Get all courses for a student
 export const getStudentCourses = async (studentId: number): Promise<{ success: boolean; data?: any[]; error?: string }> => {
   try {
-    const response = await apiFetch(`/student-courses/${studentId}`);
+    const response = await apiFetch<any[]>(`/student-courses/${studentId}`);
     return response;
   } catch (error) {
     return {
@@ -30,7 +31,7 @@ export const getStudentCourses = async (studentId: number): Promise<{ success: b
 // Get all schedules for a student
 export const getStudentSchedules = async (studentId: number): Promise<{ success: boolean; data?: any[]; error?: string }> => {
   try {
-    const response = await apiFetch(`/students/${studentId}/schedules`);
+    const response = await apiFetch<any[]>(`/students/${studentId}/schedules`);
     return response;
   } catch (error) {
     return {
@@ -43,7 +44,7 @@ export const getStudentSchedules = async (studentId: number): Promise<{ success:
 // Get all resources for a student
 export const getStudentResources = async (studentId: number): Promise<{ success: boolean; data?: any[]; error?: string }> => {
   try {
-    const response = await apiFetch(`/students/${studentId}/resources`);
+    const response = await apiFetch<any[]>(`/students/${studentId}/resources`);
     return response;
   } catch (error) {
     return {
@@ -59,9 +60,9 @@ export const submitCourseReview = async (
   courseId: number,
   rating: number,
   review?: string
-): Promise<{ success: boolean; data?: any; error?: string }> => {
+): Promise<{ success: boolean; data?: CourseReview; error?: string }> => {
   try {
-    const response = await apiFetch('/course-reviews', {
+    const response = await apiFetch<CourseReview>('/course-reviews', {
       method: 'POST',
       body: JSON.stringify({
         userId: studentId,
@@ -86,9 +87,9 @@ export const updateCourseReview = async (
   reviewId: number,
   rating: number,
   review?: string
-): Promise<{ success: boolean; data?: any; error?: string }> => {
+): Promise<{ success: boolean; data?: CourseReview; error?: string }> => {
   try {
-    const response = await apiFetch(`/course-reviews/${reviewId}`, {
+    const response = await apiFetch<CourseReview>(`/course-reviews/${reviewId}`, {
       method: 'PUT',
       body: JSON.stringify({
         userId: studentId,

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
@@ -22,7 +21,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { getStudentCourses, submitCourseReview, updateCourseReview, deleteCourseReview } from '@/lib/api/students';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
-import { Book, Calendar, Clock, Star, Edit, Trash, Search, Filter, BookOpen } from 'lucide-react';
+import { Book, Calendar, Clock, Star, Edit, Trash, Search, Filter, BookOpen, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { Level } from '@/lib/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -46,13 +45,11 @@ export default function StudentCourses() {
   const [review, setReview] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch all courses
   const { data: allCoursesData, isLoading: isAllCoursesLoading } = useQuery({
     queryKey: ['courses'],
     queryFn: getCourses,
   });
 
-  // Fetch enrolled courses
   const { data: studentCoursesData, isLoading: isStudentCoursesLoading, refetch: refetchStudentCourses } = useQuery({
     queryKey: ['studentCourses', user?.userId],
     queryFn: () => getStudentCourses(user?.userId || 0),
@@ -213,7 +210,6 @@ export default function StudentCourses() {
     return colorMap[level] || 'bg-gray-100 text-gray-800';
   };
 
-  // Filter all courses based on search term, category, and level
   const filteredAllCourses = allCoursesData?.data?.filter(course => {
     const matchesSearch = 
       course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -230,7 +226,6 @@ export default function StudentCourses() {
     return matchesSearch && matchesCategory && matchesLevel;
   }) || [];
 
-  // Filter enrolled courses based on search term, category, and level
   const filteredEnrolledCourses = enrolledCourses.filter(studentCourse => {
     const course = studentCourse.course;
     
@@ -249,7 +244,6 @@ export default function StudentCourses() {
     return matchesSearch && matchesCategory && matchesLevel;
   });
 
-  // Get all categories from both enrolled and all courses
   const allCategories = allCoursesData?.data ? [...new Set(allCoursesData.data
     .filter(course => course.category)
     .map(course => ({ 
@@ -555,7 +549,6 @@ export default function StudentCourses() {
         </TabsContent>
       </Tabs>
       
-      {/* Review Dialog */}
       <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -609,7 +602,6 @@ export default function StudentCourses() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Review Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -663,7 +655,6 @@ export default function StudentCourses() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Review Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

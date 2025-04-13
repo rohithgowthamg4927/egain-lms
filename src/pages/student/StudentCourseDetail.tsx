@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { BookOpen, Calendar, Clock, Users, Star, GraduationCap, FileText, CheckCircle, Calendar as CalendarIcon, BookmarkedIcon } from 'lucide-react';
+import { BookOpen, Calendar, Clock, Users, Star, GraduationCap, FileText, CheckCircle, Calendar as CalendarIcon, BookMarked } from 'lucide-react';
 import { format } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
@@ -312,7 +312,7 @@ export default function StudentCourseDetail() {
                     {courseData.resources.map(resource => (
                       <div key={resource.resourceId} className="flex items-center justify-between border rounded-md p-4">
                         <div className="flex items-center gap-3">
-                          <BookmarkedIcon className="h-5 w-5 text-blue-500" />
+                          <BookMarked className="h-5 w-5 text-blue-500" />
                           <div>
                             <h3 className="font-medium">{resource.title}</h3>
                             <p className="text-sm text-muted-foreground">{resource.description || 'No description'}</p>

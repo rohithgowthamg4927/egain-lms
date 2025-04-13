@@ -10,6 +10,7 @@ export * from './resources';
 export * from './schedules';
 export * from './student-courses';
 export * from './dashboard';
+export * from './instructors';
 
 // Re-export getUser from users.ts for backward compatibility
 export { getUser, updateUser, deleteUser, regenerateUserPassword } from './users';
@@ -32,3 +33,10 @@ export {
   enrollStudentInCourse,
   removeStudentFromCourse
 } from './student-courses';
+
+// Re-export instructor functions
+export {
+  getInstructorCourses,
+  getInstructorSchedules,
+  getInstructorBatches
+} from './instructors';

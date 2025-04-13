@@ -62,7 +62,11 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
       if (user.role === Role.student) {
         return <Navigate to="/student/dashboard" replace />;
       }
-      // If admin/instructor trying to access student route, redirect to admin dashboard
+      // If instructor trying to access admin route, redirect to instructor dashboard
+      else if (user.role === Role.instructor) {
+        return <Navigate to="/instructor/dashboard" replace />;
+      }
+      // If admin trying to access student/instructor route, redirect to admin dashboard
       else {
         return <Navigate to="/dashboard" replace />;
       }
@@ -70,15 +74,21 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   } else {
     // For routes without specific role restrictions, enforce separation
     const isStudentRoute = location.pathname.startsWith('/student');
-    const isAdminRoute = !isStudentRoute;
+    const isInstructorRoute = location.pathname.startsWith('/instructor');
+    const isAdminRoute = !isStudentRoute && !isInstructorRoute;
     
-    if (user.role === Role.student && isAdminRoute) {
-      console.log("Student trying to access admin route, redirecting to student dashboard");
+    if (user.role === Role.student && (isAdminRoute || isInstructorRoute)) {
+      console.log("Student trying to access admin/instructor route, redirecting to student dashboard");
       return <Navigate to="/student/dashboard" replace />;
     }
     
-    if (user.role !== Role.student && isStudentRoute) {
-      console.log("Admin/instructor trying to access student route, redirecting to admin dashboard");
+    if (user.role === Role.instructor && (isAdminRoute || isStudentRoute)) {
+      console.log("Instructor trying to access admin/student route, redirecting to instructor dashboard");
+      return <Navigate to="/instructor/dashboard" replace />;
+    }
+    
+    if (user.role === Role.admin && (isStudentRoute || isInstructorRoute)) {
+      console.log("Admin trying to access student/instructor route, redirecting to admin dashboard");
       return <Navigate to="/dashboard" replace />;
     }
   }

@@ -1,3 +1,4 @@
+
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -49,8 +50,8 @@ export type Course = {
   description?: string;
   thumbnailUrl?: string;
   isPublished?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: string; // Changed from Date to string
+  updatedAt?: string; // Changed from Date to string
   averageRating?: number;
   _count?: {
     studentCourses: number;
@@ -150,6 +151,7 @@ export interface Resource {
   uploadedById?: number; // Adding uploadedById as optional
   createdAt: string;
   updatedAt: string;
+  presignedUrl?: string; // Added presignedUrl
   batch?: { // Adding batch property
     batchId: number;
     batchName: string;
@@ -168,6 +170,7 @@ export interface CourseReview {
   review?: string;
   createdAt: string;
   updatedAt: string;
+  user?: User; // Adding user property
 }
 
 export interface StudentCourse {
@@ -177,6 +180,17 @@ export interface StudentCourse {
   createdAt: string;
   updatedAt: string;
   student?: User;
+  course?: Course;
+}
+
+// Add missing InstructorCourse interface
+export interface InstructorCourse {
+  instructorCourseId: number; 
+  instructorId: number;
+  courseId: number;
+  createdAt: string;
+  updatedAt: string;
+  instructor?: User;
   course?: Course;
 }
 

@@ -120,7 +120,7 @@ const InstructorDashboard = () => {
 
   // Chart data for courses per category
   const categoryData = courses.reduce((acc, course) => {
-    const categoryName = course.category?.name || 'Uncategorized';
+    const categoryName = course.category?.categoryName || 'Uncategorized';
     const existingCategory = acc.find(cat => cat.name === categoryName);
     
     if (existingCategory) {
@@ -134,7 +134,7 @@ const InstructorDashboard = () => {
 
   // Chart data for student enrollment per course
   const enrollmentData = courses.map(course => ({
-    name: course.title.length > 20 ? course.title.substring(0, 20) + '...' : course.title,
+    name: course.courseName.length > 20 ? course.courseName.substring(0, 20) + '...' : course.courseName,
     students: course._count?.studentCourses || 0,
   })).sort((a, b) => b.students - a.students).slice(0, 5);
 
@@ -227,7 +227,7 @@ const InstructorDashboard = () => {
                             <Clock className="h-5 w-5 text-purple-700" />
                           </div>
                           <div className="flex-1">
-                            <div className="font-medium">{schedule.batch?.course?.title || 'Untitled Course'}</div>
+                            <div className="font-medium">{schedule.batch?.course?.courseName || 'Untitled Course'}</div>
                             <div className="text-sm text-gray-600">
                               {schedule.batch?.batchName || 'Unnamed Batch'} • {format(parseISO(schedule.scheduleDate), "h:mm a")}
                             </div>
@@ -256,7 +256,7 @@ const InstructorDashboard = () => {
                             <Clock className="h-5 w-5 text-blue-700" />
                           </div>
                           <div className="flex-1">
-                            <div className="font-medium">{schedule.batch?.course?.title || 'Untitled Course'}</div>
+                            <div className="font-medium">{schedule.batch?.course?.courseName || 'Untitled Course'}</div>
                             <div className="text-sm text-gray-600">
                               {schedule.batch?.batchName || 'Unnamed Batch'} • {format(parseISO(schedule.scheduleDate), "h:mm a")}
                             </div>
@@ -288,7 +288,7 @@ const InstructorDashboard = () => {
                               <Calendar className="h-5 w-5 text-indigo-700" />
                             </div>
                             <div className="flex-1">
-                              <div className="font-medium">{schedule.batch?.course?.title || 'Untitled Course'}</div>
+                              <div className="font-medium">{schedule.batch?.course?.courseName || 'Untitled Course'}</div>
                               <div className="text-sm text-gray-600">
                                 {format(parseISO(schedule.scheduleDate), "EEE, MMM d")} • {format(parseISO(schedule.scheduleDate), "h:mm a")}
                               </div>

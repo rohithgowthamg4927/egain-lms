@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -702,4 +703,49 @@ export default function StudentDashboard() {
                                       <p className="text-sm text-muted-foreground truncate">
                                         {resource.batch?.course?.courseName} - {resource.batch?.batchName}
                                       </p>
-                                      <div
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <Badge variant="destructive" className="text-[10px]">Recording</Badge>
+                                        <span className="text-xs text-muted-foreground">
+                                          {format(new Date(resource.createdAt), 'MMM d, yyyy')}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="bg-gray-50 px-4 py-2 border-t border-green-100 flex justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleView(resource)}
+                                    disabled={downloadingId === resource.resourceId}
+                                    className="bg-white hover:bg-green-50"
+                                  >
+                                    {downloadingId === resource.resourceId ? (
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <Eye className="h-4 w-4 mr-2" />
+                                    )}
+                                    View
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <FileVideo className="h-10 w-10 text-red-300 mx-auto mb-2" />
+                        <h3 className="text-lg font-medium text-gray-600">No recordings available</h3>
+                        <p className="text-sm text-gray-500 mt-1">Recordings will appear here when they're added</p>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}

@@ -360,131 +360,133 @@ export default function StudentDashboard() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <TabsContent value="today" className="m-0">
-                  <div className="bg-purple-50/50 p-4">
-                    {todaySchedules.length > 0 ? (
-                      <div className="space-y-3">
-                        {todaySchedules.map((schedule) => (
-                          <Card key={schedule.scheduleId} className="border-purple-100 overflow-hidden">
-                            <div className="flex flex-col md:flex-row gap-3 p-4">
-                              <div className="flex items-center justify-center bg-purple-100 h-12 w-12 rounded-full shrink-0">
-                                <Clock className="h-6 w-6 text-purple-700" />
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                                  <div>
-                                    <h3 className="font-semibold text-purple-900">
-                                      {schedule.topic || 'Class Session'}
-                                    </h3>
-                                    <p className="text-sm text-purple-800">
-                                      {schedule.batch?.course?.courseName} - {schedule.batch?.batchName}
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center gap-3">
-                                    <div className="flex flex-col text-sm">
-                                      <span className="text-muted-foreground text-xs">Time</span>
-                                      <span className="font-medium">
-                                        {format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
-                                      </span>
-                                    </div>
-                                    {schedule.meetingLink && (
-                                      <Button 
-                                        size="sm" 
-                                        variant="secondary"
-                                        className="bg-purple-600 text-white hover:bg-purple-700"
-                                        onClick={() => window.open(schedule.meetingLink, '_blank')}
-                                      >
-                                        Join
-                                        <ArrowUpRight className="ml-1 h-4 w-4" />
-                                      </Button>
-                                    )}
-                                  </div>
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsContent value="today" className="m-0">
+                    <div className="bg-purple-50/50 p-4">
+                      {todaySchedules.length > 0 ? (
+                        <div className="space-y-3">
+                          {todaySchedules.map((schedule) => (
+                            <Card key={schedule.scheduleId} className="border-purple-100 overflow-hidden">
+                              <div className="flex flex-col md:flex-row gap-3 p-4">
+                                <div className="flex items-center justify-center bg-purple-100 h-12 w-12 rounded-full shrink-0">
+                                  <Clock className="h-6 w-6 text-purple-700" />
                                 </div>
-                              </div>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <Calendar className="h-10 w-10 text-purple-300 mx-auto mb-2" />
-                        <h3 className="text-lg font-medium text-gray-600">No classes scheduled today</h3>
-                        <p className="text-sm text-gray-500 mt-1">Check your upcoming schedule</p>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-                <TabsContent value="upcoming" className="m-0">
-                  <div className="bg-purple-50/50 p-4">
-                    {upcomingSchedules.length > 0 ? (
-                      <div className="space-y-3">
-                        {upcomingSchedules.map((schedule) => (
-                          <Card key={schedule.scheduleId} className="border-purple-100 overflow-hidden">
-                            <div className="flex flex-col md:flex-row gap-3 p-4">
-                              <div className="flex items-center justify-center bg-purple-100 h-12 w-12 rounded-full shrink-0">
-                                <Calendar className="h-6 w-6 text-purple-700" />
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                                  <div>
-                                    <h3 className="font-semibold text-purple-900">
-                                      {schedule.topic || 'Class Session'}
-                                    </h3>
-                                    <p className="text-sm text-purple-800">
-                                      {schedule.batch?.course?.courseName} - {schedule.batch?.batchName}
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center gap-3">
-                                    <div className="flex flex-col text-sm">
-                                      <div className="flex items-center gap-1">
-                                        <CalendarDays className="h-3 w-3 text-muted-foreground" />
-                                        <span className="text-muted-foreground text-xs">
-                                          {formatScheduleDate(schedule.scheduleDate)}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-1">
-                                        <Clock className="h-3 w-3 text-muted-foreground" />
+                                <div className="flex-1">
+                                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                                    <div>
+                                      <h3 className="font-semibold text-purple-900">
+                                        {schedule.topic || 'Class Session'}
+                                      </h3>
+                                      <p className="text-sm text-purple-800">
+                                        {schedule.batch?.course?.courseName} - {schedule.batch?.batchName}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex flex-col text-sm">
+                                        <span className="text-muted-foreground text-xs">Time</span>
                                         <span className="font-medium">
                                           {format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
                                         </span>
                                       </div>
+                                      {schedule.meetingLink && (
+                                        <Button 
+                                          size="sm" 
+                                          variant="secondary"
+                                          className="bg-purple-600 text-white hover:bg-purple-700"
+                                          onClick={() => window.open(schedule.meetingLink, '_blank')}
+                                        >
+                                          Join
+                                          <ArrowUpRight className="ml-1 h-4 w-4" />
+                                        </Button>
+                                      )}
                                     </div>
-                                    {schedule.meetingLink && (
-                                      <Button 
-                                        size="sm" 
-                                        variant="outline"
-                                        onClick={() => window.open(schedule.meetingLink, '_blank')}
-                                      >
-                                        Join
-                                        <ArrowUpRight className="ml-1 h-4 w-4" />
-                                      </Button>
-                                    )}
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <Calendar className="h-10 w-10 text-purple-300 mx-auto mb-2" />
-                        <h3 className="text-lg font-medium text-gray-600">No upcoming classes</h3>
-                        <p className="text-sm text-gray-500 mt-1">Check back later</p>
-                      </div>
-                    )}
-                    <div className="mt-4 text-center">
-                      <Button 
-                        variant="outline" 
-                        className="w-full md:w-auto"
-                        onClick={() => navigate('/student/schedules')}
-                      >
-                        View Full Schedule
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Calendar className="h-10 w-10 text-purple-300 mx-auto mb-2" />
+                          <h3 className="text-lg font-medium text-gray-600">No classes scheduled today</h3>
+                          <p className="text-sm text-gray-500 mt-1">Check your upcoming schedule</p>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </TabsContent>
+                  </TabsContent>
+                  <TabsContent value="upcoming" className="m-0">
+                    <div className="bg-purple-50/50 p-4">
+                      {upcomingSchedules.length > 0 ? (
+                        <div className="space-y-3">
+                          {upcomingSchedules.map((schedule) => (
+                            <Card key={schedule.scheduleId} className="border-purple-100 overflow-hidden">
+                              <div className="flex flex-col md:flex-row gap-3 p-4">
+                                <div className="flex items-center justify-center bg-purple-100 h-12 w-12 rounded-full shrink-0">
+                                  <Calendar className="h-6 w-6 text-purple-700" />
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                                    <div>
+                                      <h3 className="font-semibold text-purple-900">
+                                        {schedule.topic || 'Class Session'}
+                                      </h3>
+                                      <p className="text-sm text-purple-800">
+                                        {schedule.batch?.course?.courseName} - {schedule.batch?.batchName}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex flex-col text-sm">
+                                        <div className="flex items-center gap-1">
+                                          <CalendarDays className="h-3 w-3 text-muted-foreground" />
+                                          <span className="text-muted-foreground text-xs">
+                                            {formatScheduleDate(schedule.scheduleDate)}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <Clock className="h-3 w-3 text-muted-foreground" />
+                                          <span className="font-medium">
+                                            {format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      {schedule.meetingLink && (
+                                        <Button 
+                                          size="sm" 
+                                          variant="outline"
+                                          onClick={() => window.open(schedule.meetingLink, '_blank')}
+                                        >
+                                          Join
+                                          <ArrowUpRight className="ml-1 h-4 w-4" />
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Calendar className="h-10 w-10 text-purple-300 mx-auto mb-2" />
+                          <h3 className="text-lg font-medium text-gray-600">No upcoming classes</h3>
+                          <p className="text-sm text-gray-500 mt-1">Check back later</p>
+                        </div>
+                      )}
+                      <div className="mt-4 text-center">
+                        <Button 
+                          variant="outline" 
+                          className="w-full md:w-auto"
+                          onClick={() => navigate('/student/schedules')}
+                        >
+                          View Full Schedule
+                          <ChevronRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
 
@@ -556,198 +558,148 @@ export default function StudentDashboard() {
               <CardDescription>Recently added learning materials</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="bg-green-50/50 p-4">
-                {recentResources.length > 0 ? (
-                  <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                    {recentResources.map((resource) => (
-                      <Card key={resource.resourceId} className="overflow-hidden border-green-100 hover:border-green-300 transition-colors">
-                        <CardContent className="p-0">
-                          <div className="p-4">
-                            <div className="flex items-start gap-3">
-                              <div className="bg-green-100 p-2 rounded-full">
-                                {getFileIcon(resource)}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-gray-900 truncate">{resource.title}</h3>
-                                <p className="text-sm text-muted-foreground truncate">
-                                  {resource.batch?.course?.courseName} - {resource.batch?.batchName}
-                                </p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Badge variant={isVideoResource(resource) ? 'destructive' : 'default'} className="text-[10px]">
-                                    {isVideoResource(resource) ? 'Recording' : 'Assignment'}
-                                  </Badge>
-                                  <span className="text-xs text-muted-foreground">
-                                    {format(new Date(resource.createdAt), 'MMM d, yyyy')}
-                                  </span>
+              <Tabs value={resourcesTab} onValueChange={setResourcesTab}>
+                <TabsContent value="all" className="m-0">
+                  <div className="bg-green-50/50 p-4">
+                    {recentResources.length > 0 ? (
+                      <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                        {recentResources.map((resource) => (
+                          <Card key={resource.resourceId} className="overflow-hidden border-green-100 hover:border-green-300 transition-colors">
+                            <CardContent className="p-0">
+                              <div className="p-4">
+                                <div className="flex items-start gap-3">
+                                  <div className="bg-green-100 p-2 rounded-full">
+                                    {getFileIcon(resource)}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-semibold text-gray-900 truncate">{resource.title}</h3>
+                                    <p className="text-sm text-muted-foreground truncate">
+                                      {resource.batch?.course?.courseName} - {resource.batch?.batchName}
+                                    </p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <Badge variant={isVideoResource(resource) ? 'destructive' : 'default'} className="text-[10px]">
+                                        {isVideoResource(resource) ? 'Recording' : 'Assignment'}
+                                      </Badge>
+                                      <span className="text-xs text-muted-foreground">
+                                        {format(new Date(resource.createdAt), 'MMM d, yyyy')}
+                                      </span>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-                          <div className="bg-gray-50 px-4 py-2 border-t border-green-100 flex justify-end">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleView(resource)}
-                              disabled={downloadingId === resource.resourceId}
-                              className="bg-white hover:bg-green-50"
-                            >
-                              {downloadingId === resource.resourceId ? (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              ) : (
-                                <Eye className="h-4 w-4 mr-2" />
-                              )}
-                              View
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <FileText className="h-10 w-10 text-green-300 mx-auto mb-2" />
-                    <h3 className="text-lg font-medium text-gray-600">No resources available</h3>
-                    <p className="text-sm text-gray-500 mt-1">Resources will appear here when they're added</p>
-                  </div>
-                )}
-                <div className="mt-4 text-center">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigate('/student/resources')}
-                    className="w-full md:w-auto"
-                  >
-                    View All Resources
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="overflow-hidden border-purple-100">
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-white">
-                <CardTitle>Enrolled Courses</CardTitle>
-                <CardDescription>Your active course enrollments</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                {courses.length > 0 ? (
-                  <div className="divide-y divide-purple-100">
-                    {courses.map((course) => (
-                      <div key={course.courseId} className="p-4 hover:bg-purple-50/50 transition-colors">
-                        <div className="flex justify-between">
-                          <div>
-                            <h3 className="font-medium">{course.course.courseName}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {course.course.category?.categoryName || 'Uncategorized'}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/student/courses/${course.courseId}`)}
-                            className="h-8 px-2 text-purple-600"
-                          >
-                            View Details
-                            <ChevronRight className="ml-1 h-4 w-4" />
-                          </Button>
-                        </div>
+                              <div className="bg-gray-50 px-4 py-2 border-t border-green-100 flex justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleView(resource)}
+                                  disabled={downloadingId === resource.resourceId}
+                                  className="bg-white hover:bg-green-50"
+                                >
+                                  {downloadingId === resource.resourceId ? (
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <Eye className="h-4 w-4 mr-2" />
+                                  )}
+                                  View
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <BookOpenCheck className="h-10 w-10 text-purple-300 mx-auto mb-2" />
-                    <h3 className="text-lg font-medium text-gray-600">No courses enrolled</h3>
-                    <p className="text-sm text-gray-500 mt-1">Enroll in courses to see them here</p>
-                  </div>
-                )}
-                <div className="p-4 bg-purple-50/50 border-t border-purple-100">
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => navigate('/student/courses')}
-                  >
-                    View All Courses
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="overflow-hidden border-blue-100">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-white">
-                <CardTitle>Student Activity</CardTitle>
-                <CardDescription>Your recent learning activity</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y divide-blue-100">
-                  <div className="p-4 hover:bg-blue-50/50 transition-colors">
-                    <div className="flex items-start gap-3">
-                      <div className="bg-blue-100 p-2 rounded-full">
-                        <BookOpen className="h-5 w-5 text-blue-600" />
+                    ) : (
+                      <div className="text-center py-8">
+                        <FileText className="h-10 w-10 text-green-300 mx-auto mb-2" />
+                        <h3 className="text-lg font-medium text-gray-600">No resources available</h3>
+                        <p className="text-sm text-gray-500 mt-1">Resources will appear here when they're added</p>
                       </div>
-                      <div>
-                        <h3 className="font-medium text-sm">Enrolled in new course</h3>
-                        <p className="text-xs text-muted-foreground">
-                          {courses[0]?.course.courseName || 'Course Name'}
-                        </p>
-                        <p className="text-xs text-blue-600 mt-1">
-                          {new Date().toLocaleDateString()}
-                        </p>
-                      </div>
+                    )}
+                    <div className="mt-4 text-center">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => navigate('/student/resources')}
+                        className="w-full md:w-auto"
+                      >
+                        View All Resources
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  
-                  <div className="p-4 hover:bg-blue-50/50 transition-colors">
-                    <div className="flex items-start gap-3">
-                      <div className="bg-green-100 p-2 rounded-full">
-                        <FileText className="h-5 w-5 text-green-600" />
+                </TabsContent>
+                <TabsContent value="assignments" className="m-0">
+                  <div className="bg-green-50/50 p-4">
+                    {recentResources.filter(r => getResourceType(r) === 'assignment').length > 0 ? (
+                      <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                        {recentResources
+                          .filter(r => getResourceType(r) === 'assignment')
+                          .map((resource) => (
+                            <Card key={resource.resourceId} className="overflow-hidden border-green-100 hover:border-green-300 transition-colors">
+                              <CardContent className="p-0">
+                                <div className="p-4">
+                                  <div className="flex items-start gap-3">
+                                    <div className="bg-green-100 p-2 rounded-full">
+                                      {getFileIcon(resource)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <h3 className="font-semibold text-gray-900 truncate">{resource.title}</h3>
+                                      <p className="text-sm text-muted-foreground truncate">
+                                        {resource.batch?.course?.courseName} - {resource.batch?.batchName}
+                                      </p>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <Badge variant="default" className="text-[10px]">Assignment</Badge>
+                                        <span className="text-xs text-muted-foreground">
+                                          {format(new Date(resource.createdAt), 'MMM d, yyyy')}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="bg-gray-50 px-4 py-2 border-t border-green-100 flex justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleView(resource)}
+                                    disabled={downloadingId === resource.resourceId}
+                                    className="bg-white hover:bg-green-50"
+                                  >
+                                    {downloadingId === resource.resourceId ? (
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <Eye className="h-4 w-4 mr-2" />
+                                    )}
+                                    View
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
                       </div>
-                      <div>
-                        <h3 className="font-medium text-sm">Downloaded assignment</h3>
-                        <p className="text-xs text-muted-foreground">
-                          {resources[0]?.title || 'Assignment Name'}
-                        </p>
-                        <p className="text-xs text-blue-600 mt-1">
-                          {new Date().toLocaleDateString()}
-                        </p>
+                    ) : (
+                      <div className="text-center py-8">
+                        <FileText className="h-10 w-10 text-green-300 mx-auto mb-2" />
+                        <h3 className="text-lg font-medium text-gray-600">No assignments available</h3>
+                        <p className="text-sm text-gray-500 mt-1">Assignments will appear here when they're added</p>
                       </div>
-                    </div>
+                    )}
                   </div>
-                  
-                  <div className="p-4 hover:bg-blue-50/50 transition-colors">
-                    <div className="flex items-start gap-3">
-                      <div className="bg-red-100 p-2 rounded-full">
-                        <Calendar className="h-5 w-5 text-red-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-sm">Attended class session</h3>
-                        <p className="text-xs text-muted-foreground">
-                          {schedules[0]?.topic || 'Class Session'}
-                        </p>
-                        <p className="text-xs text-blue-600 mt-1">
-                          {new Date().toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 bg-blue-50/50 border-t border-blue-100">
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => navigate('/student/profile')}
-                  >
-                    View Activity History
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
+                </TabsContent>
+                <TabsContent value="recordings" className="m-0">
+                  <div className="bg-green-50/50 p-4">
+                    {recentResources.filter(r => isVideoResource(r)).length > 0 ? (
+                      <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                        {recentResources
+                          .filter(r => isVideoResource(r))
+                          .map((resource) => (
+                            <Card key={resource.resourceId} className="overflow-hidden border-green-100 hover:border-green-300 transition-colors">
+                              <CardContent className="p-0">
+                                <div className="p-4">
+                                  <div className="flex items-start gap-3">
+                                    <div className="bg-red-100 p-2 rounded-full">
+                                      <FileVideo className="h-6 w-6 text-red-500" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <h3 className="font-semibold text-gray-900 truncate">{resource.title}</h3>
+                                      <p className="text-sm text-muted-foreground truncate">
+                                        {resource.batch?.course?.courseName} - {resource.batch?.batchName}
+                                      </p>
+                                      <div

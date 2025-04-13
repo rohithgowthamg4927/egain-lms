@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -29,21 +28,18 @@ export default function StudentCourseDetail() {
   const [showUnenrollDialog, setShowUnenrollDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Fetch course details
   const { data: course, isLoading: isCourseLoading, error: courseError } = useQuery({
     queryKey: ['course', courseId],
     queryFn: () => getCourseById(Number(courseId)),
     enabled: !!courseId,
   });
 
-  // Fetch student courses to check enrollment status
   const { data: studentCoursesData, isLoading: isStudentCoursesLoading } = useQuery({
     queryKey: ['studentCourses', user?.userId],
     queryFn: () => getStudentCourses(user?.userId || 0),
     enabled: !!user?.userId,
   });
 
-  // Check if student is enrolled in this course
   useEffect(() => {
     if (studentCoursesData?.success && studentCoursesData.data && courseId) {
       const enrolled = studentCoursesData.data.some(
@@ -280,7 +276,7 @@ export default function StudentCourseDetail() {
                           {batch.schedules.slice(0, 3).map(schedule => (
                             <div key={schedule.scheduleId} className="flex items-center gap-2 text-sm">
                               <CalendarIcon className="h-3 w-3 text-muted-foreground" />
-                              <span>{schedule.title}: {format(new Date(schedule.scheduleDate), 'PPP')}</span>
+                              <span>{schedule.topic}: {format(new Date(schedule.scheduleDate), 'PPP')}</span>
                             </div>
                           ))}
                           {batch.schedules.length > 3 && (
@@ -319,7 +315,7 @@ export default function StudentCourseDetail() {
                           </div>
                         </div>
                         <Button size="sm" variant="outline" asChild>
-                          <a href={resource.resourceUrl} target="_blank" rel="noopener noreferrer">
+                          <a href={resource.fileUrl} target="_blank" rel="noopener noreferrer">
                             View
                           </a>
                         </Button>
@@ -389,7 +385,6 @@ export default function StudentCourseDetail() {
         </div>
       )}
 
-      {/* Unenroll Confirmation Dialog */}
       <AlertDialog open={showUnenrollDialog} onOpenChange={setShowUnenrollDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

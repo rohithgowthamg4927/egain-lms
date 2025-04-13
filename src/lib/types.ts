@@ -1,3 +1,4 @@
+
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -109,6 +110,7 @@ export interface Batch {
   updatedAt: string;
   course?: Course;
   instructor?: User;
+  description?: string; // Adding description property
   // Additional fields needed by components
   students?: any[]; // Array of enrolled students
   studentsCount?: number; // Count of enrolled students

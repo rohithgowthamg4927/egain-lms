@@ -105,16 +105,22 @@ const BatchDetail = () => {
     enabled: !!batchId,
   });
 
-  // Fetch resources
+  // Fetch resources with proper access control
   const { data: resources = [] } = useQuery({
     queryKey: ['batchResources', batchId],
     queryFn: async () => {
       if (!batchId) throw new Error('No batch ID provided');
+      
+      // Check if instructor is assigned to this batch
+      if (isInstructor && user?.userId && batch?.instructor?.userId !== user.userId) {
+        throw new Error('Access denied: You are not assigned to this batch');
+      }
+      
       const response = await getResourcesByBatch(batchId.toString());
       if (!response.success) throw new Error(response.error || 'Failed to fetch resources');
       return response.data;
     },
-    enabled: !!batchId,
+    enabled: !!batchId && (isAdmin || (isInstructor && batch?.instructor?.userId === user?.userId)),
   });
 
   // Check instructor assignment
@@ -147,7 +153,7 @@ const BatchDetail = () => {
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
 
-  const canManageResources = isAdmin || (isInstructor && isBatchInstructor);
+  const canManageResources = isAdmin || (isInstructor && batch?.instructor?.userId === user?.userId);
 
   const queryClient = useQueryClient();
 

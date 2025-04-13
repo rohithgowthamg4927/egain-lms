@@ -25,11 +25,15 @@ export default function ResourcesPage() {
   const { toast } = useToast();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [filteredBatches, setFilteredBatches] = useState<Batch[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
   const [selectedBatch, setSelectedBatch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  const isAdmin = user?.role === 'admin';
+  const isInstructor = user?.role === 'instructor';
 
   useEffect(() => {
     fetchBatches();
@@ -48,7 +52,16 @@ export default function ResourcesPage() {
     try {
       const response = await getBatches();
       if (response.success && response.data) {
-        setBatches(response.data);
+        // Filter batches based on user role
+        const filtered = response.data.filter((batch: Batch) => {
+          if (isAdmin) return true;
+          if (isInstructor && user?.userId) {
+            return batch.instructor?.userId === user.userId;
+          }
+          return false;
+        });
+        setBatches(filtered);
+        setFilteredBatches(filtered);
       } else {
         throw new Error(response.error || 'Failed to fetch batches');
       }
@@ -123,7 +136,7 @@ export default function ResourcesPage() {
     resource.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const canManageResources = user?.role === 'instructor' || user?.role === 'admin';
+  const canManageResources = isAdmin || (isInstructor && filteredBatches.length > 0);
 
   const handleResourceDelete = (resource: Resource) => {
     if (resource.resourceId) {
@@ -140,7 +153,9 @@ export default function ResourcesPage() {
       
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <p className="text-muted-foreground">
-          Access and manage educational assignments, class recordings for your batches.
+          {isAdmin 
+            ? "Access and manage educational assignments, class recordings for all batches."
+            : "Access and manage educational assignments, class recordings for your assigned batches."}
         </p>
         {canManageResources && (
           <Button onClick={() => setIsUploadDialogOpen(true)}>
@@ -165,7 +180,7 @@ export default function ResourcesPage() {
                 <SelectValue placeholder="Select a batch" />
               </SelectTrigger>
               <SelectContent>
-                {batches.map((batch) => (
+                {filteredBatches.map((batch) => (
                   <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
                     {batch.batchName}
                   </SelectItem>
@@ -259,7 +274,7 @@ export default function ResourcesPage() {
             fetchResources(selectedBatch);
           }
         }}
-        batches={batches}
+        batches={filteredBatches}
       />
     </div>
   );

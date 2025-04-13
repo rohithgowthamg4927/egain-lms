@@ -1,6 +1,4 @@
-
-// Import necessary components and hooks
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -44,7 +42,6 @@ export default function StudentDashboard() {
   const [resourcesTab, setResourcesTab] = useState('all');
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
-  // Fetch courses with caching
   const { data: coursesData, isLoading: isCoursesLoading } = useQuery({
     queryKey: ['studentCourses', user?.userId],
     queryFn: () => user?.userId ? getStudentCourses(user.userId) : Promise.resolve({ success: false, data: [] }),
@@ -53,7 +50,6 @@ export default function StudentDashboard() {
     gcTime: 30 * 60 * 1000, // 30 minutes
   });
 
-  // Fetch schedules with caching
   const { data: schedulesData, isLoading: isSchedulesLoading } = useQuery({
     queryKey: ['studentSchedules', user?.userId],
     queryFn: () => user?.userId ? getStudentSchedules(user.userId) : Promise.resolve({ success: false, data: [] }),
@@ -62,7 +58,6 @@ export default function StudentDashboard() {
     gcTime: 30 * 60 * 1000, // 30 minutes
   });
 
-  // Fetch enrolled batches with caching
   const { data: batchesData, isLoading: isBatchesLoading } = useQuery({
     queryKey: ['studentBatches', user?.userId],
     queryFn: () => user?.userId ? apiFetch<any[]>(`/student-batches/${user.userId}`) : Promise.resolve({ success: false, data: [] }),
@@ -71,7 +66,6 @@ export default function StudentDashboard() {
     gcTime: 30 * 60 * 1000, // 30 minutes
   });
 
-  // Fetch resources for each batch with caching
   const { data: resourcesData, isLoading: isResourcesLoading } = useQuery({
     queryKey: ['studentResources', batchesData?.data],
     queryFn: async () => {
@@ -116,7 +110,6 @@ export default function StudentDashboard() {
   const resources = resourcesData || [];
   const isLoading = isCoursesLoading || isSchedulesLoading || isBatchesLoading || isResourcesLoading;
 
-  // Format schedule time
   const formatTime = (timeString) => {
     try {
       const date = new Date(`1970-01-01T${timeString}`);
@@ -126,7 +119,6 @@ export default function StudentDashboard() {
     }
   };
 
-  // Format schedule date
   const formatScheduleDate = (dateString) => {
     try {
       return format(new Date(dateString), 'PPP');
@@ -135,7 +127,6 @@ export default function StudentDashboard() {
     }
   };
 
-  // Calculate upcoming schedules (next 7 days)
   const upcomingSchedules = schedules
     .filter(schedule => {
       try {
@@ -145,13 +136,12 @@ export default function StudentDashboard() {
         sevenDaysFromNow.setDate(today.getDate() + 7);
         return scheduleDate >= today && scheduleDate <= sevenDaysFromNow;
       } catch (error) {
-        return false; // Skip items with invalid dates
+        return false;
       }
     })
     .sort((a, b) => new Date(a.scheduleDate).getTime() - new Date(b.scheduleDate).getTime())
     .slice(0, 5);
 
-  // Get today's schedules
   const todaySchedules = schedules
     .filter(schedule => {
       try {
@@ -164,7 +154,6 @@ export default function StudentDashboard() {
     })
     .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
-  // Get all resources 
   const getFileIcon = (resource: Resource) => {
     const fileName = resource.fileName || '';
     const extension = fileName.split('.').pop()?.toLowerCase() || '';
@@ -187,7 +176,6 @@ export default function StudentDashboard() {
     const fileName = resource.fileName?.toLowerCase() || '';
     const type = resource.type?.toLowerCase() || '';
     
-    // Check if it's a video file by extension or type
     if (fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi') || 
         type === 'recording' || type === 'video') {
       return 'recording';
@@ -235,7 +223,6 @@ export default function StudentDashboard() {
     }
   };
 
-  // Filter resources based on type
   const filteredResources = resources.filter(resource => {
     if (resourcesTab === 'all') return true;
     const resourceType = getResourceType(resource);
@@ -244,18 +231,15 @@ export default function StudentDashboard() {
     return true;
   });
 
-  // Get recent resources (last 5)
   const recentResources = [...filteredResources]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
-  // Calculate progress metrics
   const totalAssignments = resources.filter(r => getResourceType(r) === 'assignment').length;
   const totalRecordings = resources.filter(r => isVideoResource(r)).length;
   const completionPercentage = courses.length > 0 ? Math.round((2 / courses.length) * 100) : 0;
-  const attendancePercentage = 85; // Mock data - replace with actual calculation if available
-  
-  // Get nearest upcoming class
+  const attendancePercentage = 85;
+
   const nextClass = upcomingSchedules[0];
 
   return (
@@ -351,7 +335,10 @@ export default function StudentDashboard() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="text-2xl font-bold">{completionPercentage}%</div>
-                <Progress value={completionPercentage} className="h-2" />
+                <Progress 
+                  value={completionPercentage} 
+                  className="h-2 bg-amber-100 overflow-hidden rounded-full" 
+                />
                 <p className="text-xs text-muted-foreground">
                   Overall course completion
                 </p>
@@ -513,7 +500,10 @@ export default function StudentDashboard() {
                       <span className="text-sm font-medium">Course Completion</span>
                       <span className="text-sm font-medium">{completionPercentage}%</span>
                     </div>
-                    <Progress value={completionPercentage} className="h-2 bg-blue-100" indicatorClassName="bg-blue-500" />
+                    <Progress 
+                      value={completionPercentage} 
+                      className="h-2 bg-blue-100 overflow-hidden rounded-full" 
+                    />
                     <p className="text-xs text-muted-foreground mt-1">
                       {Math.round(completionPercentage / 10)} of 10 modules completed
                     </p>
@@ -524,7 +514,10 @@ export default function StudentDashboard() {
                       <span className="text-sm font-medium">Attendance Rate</span>
                       <span className="text-sm font-medium">{attendancePercentage}%</span>
                     </div>
-                    <Progress value={attendancePercentage} className="h-2 bg-green-100" indicatorClassName="bg-green-500" />
+                    <Progress 
+                      value={attendancePercentage} 
+                      className="h-2 bg-green-100 overflow-hidden rounded-full" 
+                    />
                     <p className="text-xs text-muted-foreground mt-1">
                       Attended {attendancePercentage}% of scheduled classes
                     </p>
@@ -535,7 +528,10 @@ export default function StudentDashboard() {
                       <span className="text-sm font-medium">Resource Usage</span>
                       <span className="text-sm font-medium">{Math.min(resources.length * 10, 100)}%</span>
                     </div>
-                    <Progress value={Math.min(resources.length * 10, 100)} className="h-2 bg-amber-100" indicatorClassName="bg-amber-500" />
+                    <Progress 
+                      value={Math.min(resources.length * 10, 100)} 
+                      className="h-2 bg-amber-100 overflow-hidden rounded-full" 
+                    />
                     <p className="text-xs text-muted-foreground mt-1">
                       {resources.length} resources available
                     </p>

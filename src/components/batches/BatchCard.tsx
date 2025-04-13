@@ -14,6 +14,7 @@ interface BatchCardProps {
   onEdit?: (batch: Batch) => void;
   onDelete?: (batch: Batch) => void;
   onManageStudents?: (batch: Batch) => void;
+  onInstructorClick?: (instructorId: number) => void;
 }
 
 const BatchCard = ({ 
@@ -21,7 +22,8 @@ const BatchCard = ({
   onView, 
   onEdit, 
   onDelete, 
-  onManageStudents 
+  onManageStudents,
+  onInstructorClick 
 }: BatchCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   
@@ -44,6 +46,12 @@ const BatchCard = ({
   const handleViewBatch = () => {
     if (onView) {
       onView(batch);
+    }
+  };
+
+  const handleInstructorClick = () => {
+    if (onInstructorClick && batch.instructorId) {
+      onInstructorClick(batch.instructorId);
     }
   };
   
@@ -95,7 +103,10 @@ const BatchCard = ({
             </TooltipProvider>
           </div>
           
-          <div className="text-muted-foreground">
+          <div 
+            className="text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+            onClick={handleInstructorClick}
+          >
             Instructor: <span className="font-medium text-foreground">{instructor}</span>
           </div>
         </div>

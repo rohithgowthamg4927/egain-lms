@@ -1,4 +1,3 @@
-
 import { Course, User, Category, Batch, Schedule, Resource } from '@/lib/types';
 import { dateToString } from '../utils/date-helpers';
 
@@ -18,10 +17,12 @@ export class EntityAdapter {
       createdAt: dateToString(apiCourse.createdAt),
       updatedAt: dateToString(apiCourse.updatedAt),
       category: apiCourse.category ? this.adaptCategory(apiCourse.category) : undefined,
-      students: apiCourse.students || 0,
-      batches: apiCourse.batches || 0,
       averageRating: apiCourse.averageRating || 0,
-      createdBy: apiCourse.createdBy
+      createdBy: apiCourse.createdBy,
+      _count: {
+        studentCourses: apiCourse.students || 0,
+        batches: apiCourse.batches || 0
+      }
     };
   }
 

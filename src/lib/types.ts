@@ -53,6 +53,7 @@ export type Course = {
   createdAt?: string; // Changed from Date to string
   updatedAt?: string; // Changed from Date to string
   averageRating?: number;
+  createdBy?: any; // Added createdBy property
   _count?: {
     studentCourses: number;
     batches: number;

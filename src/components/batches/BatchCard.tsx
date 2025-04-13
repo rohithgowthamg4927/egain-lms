@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Calendar, Clock, Users, ChevronRight } from 'lucide-react';
@@ -7,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Batch } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
+import { Role } from '@/lib/types';
 
 interface BatchCardProps {
   batch: Batch;
@@ -26,6 +27,8 @@ const BatchCard = ({
   onInstructorClick 
 }: BatchCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user?.role === Role.admin;
   
   const startDate = new Date(batch.startDate);
   const endDate = new Date(batch.endDate);
@@ -50,7 +53,7 @@ const BatchCard = ({
   };
 
   const handleInstructorClick = () => {
-    if (onInstructorClick && batch.instructorId) {
+    if (onInstructorClick && batch.instructorId && isAdmin) {
       onInstructorClick(batch.instructorId);
     }
   };
@@ -104,7 +107,7 @@ const BatchCard = ({
           </div>
           
           <div 
-            className="text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+            className={`text-muted-foreground ${isAdmin ? 'cursor-pointer hover:text-foreground transition-colors' : ''}`}
             onClick={handleInstructorClick}
           >
             Instructor: <span className="font-medium text-foreground">{instructor}</span>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -99,23 +98,69 @@ const InstructorDashboard = () => {
 
   // Process schedules data for upcoming classes
   const schedules = schedulesData?.data || [];
-  const today = new Date();
-  const upcomingSchedules = schedules
-    .filter(schedule => isAfter(parseISO(schedule.scheduleDate), today))
-    .sort((a, b) => parseISO(a.scheduleDate).getTime() - parseISO(b.scheduleDate).getTime());
+  const now = new Date();
 
-  const todaySchedules = schedules.filter(schedule => 
-    isToday(parseISO(schedule.scheduleDate))
-  );
+  const todaySchedules = schedules.filter(schedule => {
+    const scheduleDate = new Date(schedule.scheduleDate);
+    const scheduleStartTime = new Date(schedule.startTime);
+    
+    // Set the schedule's date to the scheduleDate
+    scheduleStartTime.setFullYear(scheduleDate.getFullYear());
+    scheduleStartTime.setMonth(scheduleDate.getMonth());
+    scheduleStartTime.setDate(scheduleDate.getDate());
+    
+    return isToday(scheduleDate) && scheduleStartTime > now;
+  }).sort((a, b) => {
+    const dateA = new Date(a.scheduleDate);
+    const timeA = new Date(a.startTime);
+    dateA.setHours(timeA.getHours(), timeA.getMinutes());
+    
+    const dateB = new Date(b.scheduleDate);
+    const timeB = new Date(b.startTime);
+    dateB.setHours(timeB.getHours(), timeB.getMinutes());
+    
+    return dateA.getTime() - dateB.getTime();
+  });
 
-  const tomorrowSchedules = schedules.filter(schedule => 
-    isTomorrow(parseISO(schedule.scheduleDate))
-  );
+  const tomorrowSchedules = schedules.filter(schedule => {
+    const scheduleDate = new Date(schedule.scheduleDate);
+    return isTomorrow(scheduleDate);
+  }).sort((a, b) => {
+    const dateA = new Date(a.scheduleDate);
+    const timeA = new Date(a.startTime);
+    dateA.setHours(timeA.getHours(), timeA.getMinutes());
+    
+    const dateB = new Date(b.scheduleDate);
+    const timeB = new Date(b.startTime);
+    dateB.setHours(timeB.getHours(), timeB.getMinutes());
+    
+    return dateA.getTime() - dateB.getTime();
+  });
 
   const nextWeekSchedules = schedules.filter(schedule => {
-    const scheduleDate = parseISO(schedule.scheduleDate);
-    const nextWeek = addDays(today, 7);
-    return isAfter(scheduleDate, today) && isBefore(scheduleDate, nextWeek);
+    const scheduleDate = new Date(schedule.scheduleDate);
+    const scheduleStartTime = new Date(schedule.startTime);
+    
+    // Set the schedule's date to the scheduleDate
+    scheduleStartTime.setFullYear(scheduleDate.getFullYear());
+    scheduleStartTime.setMonth(scheduleDate.getMonth());
+    scheduleStartTime.setDate(scheduleDate.getDate());
+    
+    const nextWeek = addDays(now, 7);
+    return scheduleStartTime > now && 
+           !isToday(scheduleDate) && 
+           !isTomorrow(scheduleDate) && 
+           scheduleStartTime <= nextWeek;
+  }).sort((a, b) => {
+    const dateA = new Date(a.scheduleDate);
+    const timeA = new Date(a.startTime);
+    dateA.setHours(timeA.getHours(), timeA.getMinutes());
+    
+    const dateB = new Date(b.scheduleDate);
+    const timeB = new Date(b.startTime);
+    dateB.setHours(timeB.getHours(), timeB.getMinutes());
+    
+    return dateA.getTime() - dateB.getTime();
   });
 
   // Chart data for courses per category
@@ -142,7 +187,7 @@ const InstructorDashboard = () => {
   const COLORS = ['#7E69AB', '#9b87f5', '#D6BCFA', '#E9D8FD', '#FAF5FF'];
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="space-y-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Welcome back, {user?.fullName || 'Instructor'}</h1>
         <p className="text-gray-600 mt-2">Here's an overview of your teaching activities and schedules</p>
@@ -205,7 +250,7 @@ const InstructorDashboard = () => {
               <div className="h-48 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-700"></div>
               </div>
-            ) : upcomingSchedules.length === 0 ? (
+            ) : todaySchedules.length === 0 && tomorrowSchedules.length === 0 && nextWeekSchedules.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                 <p>No upcoming classes scheduled</p>
@@ -229,7 +274,7 @@ const InstructorDashboard = () => {
                           <div className="flex-1">
                             <div className="font-medium">{schedule.batch?.course?.courseName || 'Untitled Course'}</div>
                             <div className="text-sm text-gray-600">
-                              {schedule.batch?.batchName || 'Unnamed Batch'} • {format(parseISO(schedule.scheduleDate), "h:mm a")}
+                              {schedule.batch?.batchName || 'Unnamed Batch'} • {format(new Date(schedule.startTime), "h:mm a")}
                             </div>
                           </div>
                           <Button variant="ghost" size="sm" onClick={() => navigate('/schedules')}>
@@ -258,7 +303,7 @@ const InstructorDashboard = () => {
                           <div className="flex-1">
                             <div className="font-medium">{schedule.batch?.course?.courseName || 'Untitled Course'}</div>
                             <div className="text-sm text-gray-600">
-                              {schedule.batch?.batchName || 'Unnamed Batch'} • {format(parseISO(schedule.scheduleDate), "h:mm a")}
+                              {schedule.batch?.batchName || 'Unnamed Batch'} • {format(new Date(schedule.startTime), "h:mm a")}
                             </div>
                           </div>
                           <Button variant="ghost" size="sm" onClick={() => navigate('/schedules')}>
@@ -270,34 +315,31 @@ const InstructorDashboard = () => {
                   </div>
                 )}
 
-                {nextWeekSchedules.length > 0 && nextWeekSchedules.length !== (todaySchedules.length + tomorrowSchedules.length) && (
+                {nextWeekSchedules.length > 0 && (
                   <div>
                     <h3 className="font-medium text-gray-800 mb-2 flex items-center">
                       <Badge variant="secondary" className="mr-2 bg-indigo-100 text-indigo-800 hover:bg-indigo-200">This Week</Badge>
                     </h3>
                     <div className="space-y-2">
-                      {nextWeekSchedules
-                        .filter(schedule => !isToday(parseISO(schedule.scheduleDate)) && !isTomorrow(parseISO(schedule.scheduleDate)))
-                        .slice(0, 3)
-                        .map((schedule) => (
-                          <div 
-                            key={schedule.scheduleId} 
-                            className="p-3 border rounded-lg flex items-center gap-4 bg-gradient-to-r from-indigo-50 to-white"
-                          >
-                            <div className="bg-indigo-100 p-2 rounded-lg">
-                              <Calendar className="h-5 w-5 text-indigo-700" />
-                            </div>
-                            <div className="flex-1">
-                              <div className="font-medium">{schedule.batch?.course?.courseName || 'Untitled Course'}</div>
-                              <div className="text-sm text-gray-600">
-                                {format(parseISO(schedule.scheduleDate), "EEE, MMM d")} • {format(parseISO(schedule.scheduleDate), "h:mm a")}
-                              </div>
-                            </div>
-                            <Button variant="ghost" size="sm" onClick={() => navigate('/schedules')}>
-                              <ChevronRight className="h-4 w-4" />
-                            </Button>
+                      {nextWeekSchedules.map((schedule) => (
+                        <div 
+                          key={schedule.scheduleId} 
+                          className="p-3 border rounded-lg flex items-center gap-4 bg-gradient-to-r from-indigo-50 to-white"
+                        >
+                          <div className="bg-indigo-100 p-2 rounded-lg">
+                            <Calendar className="h-5 w-5 text-indigo-700" />
                           </div>
-                        ))}
+                          <div className="flex-1">
+                            <div className="font-medium">{schedule.batch?.course?.courseName || 'Untitled Course'}</div>
+                            <div className="text-sm text-gray-600">
+                              {format(new Date(schedule.scheduleDate), "EEE, MMM d")} • {format(new Date(schedule.startTime), "h:mm a")}
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="sm" onClick={() => navigate('/schedules')}>
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}

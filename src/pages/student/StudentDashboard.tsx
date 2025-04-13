@@ -14,87 +14,86 @@ import { useNavigate } from 'react-router-dom';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 import { Resource } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
+import { useQuery } from '@tanstack/react-query';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [courses, setCourses] = useState([]);
-  const [schedules, setSchedules] = useState([]);
-  const [resources, setResources] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (user?.userId) {
-      fetchData();
-    }
-  }, [user]);
+  // Fetch courses with caching
+  const { data: coursesData, isLoading: isCoursesLoading } = useQuery({
+    queryKey: ['studentCourses', user?.userId],
+    queryFn: () => user?.userId ? getStudentCourses(user.userId) : Promise.resolve({ success: false, data: [] }),
+    enabled: !!user?.userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+  });
 
-  const fetchData = async () => {
-    if (!user?.userId) return;
-    
-    setIsLoading(true);
-    try {
-      // Fetch courses
-      const coursesResponse = await getStudentCourses(user.userId);
-      if (coursesResponse.success && coursesResponse.data) {
-        setCourses(coursesResponse.data);
-      }
+  // Fetch schedules with caching
+  const { data: schedulesData, isLoading: isSchedulesLoading } = useQuery({
+    queryKey: ['studentSchedules', user?.userId],
+    queryFn: () => user?.userId ? getStudentSchedules(user.userId) : Promise.resolve({ success: false, data: [] }),
+    enabled: !!user?.userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+  });
 
-      // Fetch schedules
-      const schedulesResponse = await getStudentSchedules(user.userId);
-      if (schedulesResponse.success && schedulesResponse.data) {
-        setSchedules(schedulesResponse.data);
-      }
+  // Fetch enrolled batches with caching
+  const { data: batchesData, isLoading: isBatchesLoading } = useQuery({
+    queryKey: ['studentBatches', user?.userId],
+    queryFn: () => user?.userId ? apiFetch<any[]>(`/student-batches/${user.userId}`) : Promise.resolve({ success: false, data: [] }),
+    enabled: !!user?.userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+  });
 
-      // Fetch enrolled batches first
-      const batchesResponse = await apiFetch<any[]>(`/student-batches/${user.userId}`);
-      if (batchesResponse.success && batchesResponse.data) {
-        // Transform the student batches data
-        const transformedBatches = batchesResponse.data.map(sb => ({
-          batchId: sb.batch.batchId,
-          batchName: sb.batch.batchName,
-          course: {
-            courseId: sb.batch.course.courseId,
-            courseName: sb.batch.course.courseName
-          }
-        }));
-        
-        // Fetch resources for each batch
-        const allResources: Resource[] = [];
-        for (const batch of transformedBatches) {
-          const resourcesResponse = await getResourcesByBatch(batch.batchId.toString());
-          if (resourcesResponse.success && resourcesResponse.data) {
-            // Add batch information to each resource
-            const resourcesWithBatch = resourcesResponse.data.map(resource => ({
-              ...resource,
-              batch: {
-                batchId: batch.batchId,
-                batchName: batch.batchName,
-                course: {
-                  courseId: batch.course.courseId,
-                  courseName: batch.course.courseName
-                }
-              }
-            }));
-            allResources.push(...resourcesWithBatch);
-          }
+  // Fetch resources for each batch with caching
+  const { data: resourcesData, isLoading: isResourcesLoading } = useQuery({
+    queryKey: ['studentResources', batchesData?.data],
+    queryFn: async () => {
+      if (!batchesData?.success || !batchesData.data) return [];
+      
+      const transformedBatches = batchesData.data.map(sb => ({
+        batchId: sb.batch.batchId,
+        batchName: sb.batch.batchName,
+        course: {
+          courseId: sb.batch.course.courseId,
+          courseName: sb.batch.course.courseName
         }
-        setResources(allResources);
+      }));
+      
+      const allResources: Resource[] = [];
+      for (const batch of transformedBatches) {
+        const resourcesResponse = await getResourcesByBatch(batch.batchId.toString());
+        if (resourcesResponse.success && resourcesResponse.data) {
+          const resourcesWithBatch = resourcesResponse.data.map(resource => ({
+            ...resource,
+            batch: {
+              batchId: batch.batchId,
+              batchName: batch.batchName,
+              course: {
+                courseId: batch.course.courseId,
+                courseName: batch.course.courseName
+              }
+            }
+          }));
+          allResources.push(...resourcesWithBatch);
+        }
       }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load dashboard data',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return allResources;
+    },
+    enabled: !!batchesData?.data,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+  });
+
+  const courses = coursesData?.data || [];
+  const schedules = schedulesData?.data || [];
+  const resources = resourcesData || [];
+  const isLoading = isCoursesLoading || isSchedulesLoading || isBatchesLoading || isResourcesLoading;
 
   // Format schedule time
   const formatTime = (timeString) => {

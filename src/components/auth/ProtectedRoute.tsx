@@ -1,4 +1,3 @@
-
 import { ReactNode, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
@@ -53,11 +52,12 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // Specific role-based access control
+  // Strict role-based access control
   if (allowedRoles && allowedRoles.length > 0) {
     // If user role is not in allowed roles, handle accordingly
     if (!allowedRoles.includes(user.role)) {
       console.log(`User role ${user.role} not allowed, redirecting to appropriate dashboard`);
+      
       // If student trying to access admin/instructor route, redirect to student dashboard
       if (user.role === Role.student) {
         return <Navigate to="/student/dashboard" replace />;
@@ -66,32 +66,47 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
       else if (user.role === Role.instructor) {
         return <Navigate to="/instructor/dashboard" replace />;
       }
-      // If admin trying to access student/instructor route, redirect to admin dashboard
-      else {
-        return <Navigate to="/dashboard" replace />;
-      }
-    }
-  } else {
-    // For routes without specific role restrictions, enforce separation
-    const isStudentRoute = location.pathname.startsWith('/student');
-    const isInstructorRoute = location.pathname.startsWith('/instructor');
-    const isAdminRoute = !isStudentRoute && !isInstructorRoute;
-    
-    if (user.role === Role.student && (isAdminRoute || isInstructorRoute)) {
-      console.log("Student trying to access admin/instructor route, redirecting to student dashboard");
-      return <Navigate to="/student/dashboard" replace />;
-    }
-    
-    if (user.role === Role.instructor && (isAdminRoute || isStudentRoute)) {
-      console.log("Instructor trying to access admin/student route, redirecting to instructor dashboard");
-      return <Navigate to="/instructor/dashboard" replace />;
-    }
-    
-    if (user.role === Role.admin && (isStudentRoute || isInstructorRoute)) {
-      console.log("Admin trying to access student/instructor route, redirecting to admin dashboard");
-      return <Navigate to="/dashboard" replace />;
+      // Admin can access all routes, so no need to redirect
     }
   }
+
+  // For routes without specific role restrictions, enforce separation
+  const isStudentRoute = location.pathname.startsWith('/student');
+  const isInstructorRoute = location.pathname.startsWith('/instructor');
+  const isAdminRoute = !isStudentRoute && !isInstructorRoute;
+  
+  if (user.role === Role.student && !isStudentRoute) {
+    console.log("Student trying to access non-student route, redirecting to student dashboard");
+    return <Navigate to="/student/dashboard" replace />;
+  }
+  
+  if (user.role === Role.instructor && isStudentRoute) {
+    console.log("Instructor trying to access student route, redirecting to instructor dashboard");
+    return <Navigate to="/instructor/dashboard" replace />;
+  }
+  
+  if (user.role === Role.instructor && isAdminRoute) {
+    const allowedInstructorPaths = [
+      '/courses', 
+      '/batches',
+      '/schedules',
+      '/resources',
+    ];
+    
+    // Check if current path starts with any allowed path
+    const isAllowedPath = allowedInstructorPaths.some(path => 
+      location.pathname === path || location.pathname.startsWith(`${path}/`)
+    );
+    
+    // Some admin routes are allowed for instructors, but only as specified in App.tsx
+    // For those we let the allowedRoles check handle access control
+    if (!isAllowedPath) {
+      console.log("Instructor trying to access admin route, redirecting to instructor dashboard");
+      return <Navigate to="/instructor/dashboard" replace />;
+    }
+  }
+  
+  // Admin can access all routes, so no need to check for admin role here
 
   // If authenticated and authorized, render the layout
   console.log("Rendering protected route with layout");

@@ -10,13 +10,16 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Schedule, Batch } from '@/lib/types';
+import { Schedule, Batch, Role } from '@/lib/types';
 import ScheduleForm from '@/components/schedules/ScheduleForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
+import { useAuth } from '@/hooks/use-auth';
+import { Link } from 'react-router-dom';
+import { GraduationCap, User, Pencil } from 'lucide-react';
 
 const Schedules = () => {
   const navigate = useNavigate();
@@ -28,16 +31,77 @@ const Schedules = () => {
   const [selectedBatch, setSelectedBatch] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === Role.admin;
+  const isInstructor = user?.role === Role.instructor;
   
-  const { data: schedulesData, isLoading: isLoadingSchedules, error: schedulesError, refetch } = useQuery({
-    queryKey: ['schedules'],
-    queryFn: () => getAllSchedules(),
-  });
-
   const { data: batchesData, isLoading: isLoadingBatches } = useQuery({
     queryKey: ['batches'],
-    queryFn: getBatches,
+    queryFn: async () => {
+      const response = await getBatches();
+      if (!response.success) throw new Error(response.error || 'Failed to fetch batches');
+      return response.data || [];
+    },
   });
+
+  const { data: schedulesData, isLoading: isLoadingSchedules, error: schedulesError, refetch } = useQuery({
+    queryKey: ['schedules'],
+    queryFn: async () => {
+      const response = await getAllSchedules();
+      if (!response.success) throw new Error(response.error || 'Failed to fetch schedules');
+      return response.data || [];
+    },
+  });
+
+  // Filter batches based on user role
+  const filteredBatches = useMemo(() => {
+    if (isAdmin) return batchesData || [];
+    if (!isInstructor || !user?.userId) return [];
+    return (batchesData || []).filter((batch: any) => batch.instructor?.userId === user.userId);
+  }, [batchesData, isAdmin, isInstructor, user?.userId]);
+
+  // Filter schedules based on user role
+  const filteredSchedules = useMemo(() => {
+    if (isAdmin) return schedulesData || [];
+    if (!isInstructor || !user?.userId) return [];
+    return (schedulesData || []).filter((schedule: any) => 
+      filteredBatches.some((batch: any) => batch.batchId === schedule.batchId)
+    );
+  }, [schedulesData, filteredBatches, isAdmin, isInstructor]);
+
+  // Helper function to check if user can access a schedule
+  const canAccessSchedule = (schedule: any) => {
+    if (isAdmin) return true;
+    if (!isInstructor || !user?.userId) return false;
+    return filteredBatches.some((batch: any) => batch.batchId === schedule.batchId);
+  };
+
+  // Helper function to render batch link based on access
+  const renderBatchLink = (schedule: any) => {
+    const batch = filteredBatches.find((b: any) => b.batchId === schedule.batchId);
+    if (!batch) return <span>{schedule.batchName}</span>;
+    
+    if (isAdmin || canAccessSchedule(schedule)) {
+      return (
+        <Link to={`/batches/${batch.batchId}`} className="text-primary hover:underline">
+          {batch.batchName}
+        </Link>
+      );
+    }
+    return <span>{batch.batchName}</span>;
+  };
+
+  // Helper function to render instructor link based on access
+  const renderInstructorLink = (instructor: any) => {
+    if (isAdmin) {
+      return (
+        <Link to={`/instructors/${instructor.userId}`} className="text-primary hover:underline">
+          {instructor.fullName}
+        </Link>
+      );
+    }
+    return <span>{instructor.fullName}</span>;
+  };
 
   const createMutation = useMutation({
     mutationFn: (newSchedule: ScheduleInput) => createSchedule(newSchedule),
@@ -173,103 +237,62 @@ const Schedules = () => {
     return format(new Date(timeString), 'hh:mm a');
   };
 
-  const columns = [
-    {
-      accessorKey: 'scheduleDate' as keyof Schedule,
-      header: 'Date',
-      cell: ({ row }: { row: { original: Schedule } }) => (
-        <span>
-          {row.original.scheduleDate ? 
-            format(new Date(row.original.scheduleDate), 'PPP') : 
-            'Not set'}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'batch' as keyof Schedule,
-      header: 'Instructor',
-      cell: ({ row }: { row: { original: Schedule } }) => (
-        <span>{row.original.batch?.instructor?.fullName || 'N/A'}</span>
-      ),
-    },
-    {
-      accessorKey: 'startTime' as keyof Schedule,
-      header: 'Start Time',
-      cell: ({ row }: { row: { original: Schedule } }) => (
-        <span>{formatTime(row.original.startTime)}</span>
-      ),
-    },
-    {
-      accessorKey: 'endTime' as keyof Schedule,
-      header: 'End Time',
-      cell: ({ row }: { row: { original: Schedule } }) => (
-        <span>{formatTime(row.original.endTime)}</span>
-      ),
-    },
-    {
-      accessorKey: 'batch' as keyof Schedule,
-      header: 'Batch',
-      cell: ({ row }: { row: { original: Schedule } }) => (
-        <span>{row.original.batch?.batchName || 'N/A'}</span>
-      ),
-    },
-    {
-      accessorKey: 'meetingLink' as keyof Schedule,
-      header: 'Meeting Link',
-      cell: ({ row }: { row: { original: Schedule } }) =>
-      <a
-        href={row.original.meetingLink || '#'}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-green-800 hover:underline"
-      >
-      {row.original.meetingLink ? 'Join Meeting' : 'No Link'} 
-      </a>
-    }
-  ];
-
-  const actions = [
-    {
-      label: 'Edit',
-      onClick: openEditDialog,
-      icon: <Edit className="mr-2 h-4 w-4" />,
-    },
-    {
-      label: 'Delete',
-      onClick: openDeleteDialog,
-      icon: <Trash2 className="mr-2 h-4 w-4" />,
-    },
-  ];
-
-  const schedules = schedulesData?.data || [];
-  const batches = batchesData?.data || [];
-
   const now = new Date();
 
   const upcomingSchedules = useMemo(() => {
-    return schedules
-      .filter(schedule => 
-        isAfter(parseISO(schedule.scheduleDate), now) &&
-        (!selectedBatch || schedule.batchId === selectedBatch)
-      )
-      .sort((a, b) => parseISO(a.scheduleDate).getTime() - parseISO(b.scheduleDate).getTime());
-  }, [schedules, selectedBatch]);
+    return filteredSchedules
+      .filter(schedule => {
+        const scheduleDate = new Date(schedule.scheduleDate);
+        const scheduleStartTime = new Date(schedule.startTime);
+        
+        // Set the schedule's date to the scheduleDate
+        scheduleStartTime.setFullYear(scheduleDate.getFullYear());
+        scheduleStartTime.setMonth(scheduleDate.getMonth());
+        scheduleStartTime.setDate(scheduleDate.getDate());
+        
+        return scheduleStartTime > now && (!selectedBatch || schedule.batchId === selectedBatch);
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.scheduleDate);
+        const timeA = new Date(a.startTime);
+        dateA.setHours(timeA.getHours(), timeA.getMinutes());
+        
+        const dateB = new Date(b.scheduleDate);
+        const timeB = new Date(b.startTime);
+        dateB.setHours(timeB.getHours(), timeB.getMinutes());
+        
+        return dateA.getTime() - dateB.getTime();
+      });
+  }, [filteredSchedules, selectedBatch]);
 
   const pastSchedules = useMemo(() => {
-    return schedules
-      .filter(schedule => 
-        isBefore(parseISO(schedule.scheduleDate), now) &&
-        (!selectedBatch || schedule.batchId === selectedBatch)
-      )
-      .sort((a, b) => parseISO(b.scheduleDate).getTime() - parseISO(a.scheduleDate).getTime());
-  }, [schedules, selectedBatch]);
+    return filteredSchedules
+      .filter(schedule => {
+        const scheduleDate = new Date(schedule.scheduleDate);
+        const scheduleStartTime = new Date(schedule.startTime);
+        
+        // Set the schedule's date to the scheduleDate
+        scheduleStartTime.setFullYear(scheduleDate.getFullYear());
+        scheduleStartTime.setMonth(scheduleDate.getMonth());
+        scheduleStartTime.setDate(scheduleDate.getDate());
+        
+        return scheduleStartTime <= now && (!selectedBatch || schedule.batchId === selectedBatch);
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.scheduleDate);
+        const timeA = new Date(a.startTime);
+        dateA.setHours(timeA.getHours(), timeA.getMinutes());
+        
+        const dateB = new Date(b.scheduleDate);
+        const timeB = new Date(b.startTime);
+        dateB.setHours(timeB.getHours(), timeB.getMinutes());
+        
+        return dateB.getTime() - dateA.getTime();
+      });
+  }, [filteredSchedules, selectedBatch]);
 
   const handleBatchSelect = (batchId: string) => {
     setSelectedBatch(batchId === "all" ? null : parseInt(batchId));
-  };
-
-  const handleInstructorClick = (instructorId: number) => {
-    navigate(`/instructors/${instructorId}`);
   };
 
   const ScheduleCard = ({ schedule, isPast = false }: { schedule: Schedule; isPast?: boolean }) => (
@@ -278,31 +301,30 @@ const Schedules = () => {
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-base">{schedule.topic}</CardTitle>
-            <p 
-              className="text-xs text-gray-500 mt-0.5 cursor-pointer hover:text-blue-600 transition-colors"
-              onClick={() => schedule.batch?.instructor?.userId && handleInstructorClick(schedule.batch.instructor.userId)}
-            >
-              {schedule.batch?.instructor?.fullName || 'No Instructor'}
+            <p className="text-xs text-gray-500 mt-0.5">
+              {renderInstructorLink(schedule.batch?.instructor)}
             </p>
           </div>
-          <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={() => openEditDialog(schedule)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={() => openDeleteDialog(schedule)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+          {(isAdmin || (isInstructor && schedule.batch?.instructor?.userId === user?.userId)) && (
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => openEditDialog(schedule)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => openDeleteDialog(schedule)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent className="pb-4 px-4">
@@ -317,11 +339,8 @@ const Schedules = () => {
           </div>
           <div className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5 text-gray-500" />
-            <span 
-              className="cursor-pointer hover:text-blue-600 transition-colors"
-              onClick={() => schedule.batch?.batchId && navigate(`/batches/${schedule.batch.batchId}`)}
-            >
-              {schedule.batch?.batchName || 'No Batch'}
+            <span>
+              {renderBatchLink(schedule)}
             </span>
           </div>
           {!isPast && (
@@ -378,13 +397,15 @@ const Schedules = () => {
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               {isRefreshing ? 'Refreshing...' : 'Refresh'}
             </Button>
-            <Button 
-              onClick={() => setShowAddDialog(true)}
-              className="gap-2 transition-all hover:shadow-md"
-            >
-              <Plus className="h-4 w-4" />
-              Add Schedule
-            </Button>
+            {(isAdmin || filteredBatches.length > 0) && (
+              <Button 
+                onClick={() => setShowAddDialog(true)}
+                className="gap-2 transition-all hover:shadow-md"
+              >
+                <Plus className="h-4 w-4" />
+                Add Schedule
+              </Button>
+            )}
           </div>
         </div>
 
@@ -395,7 +416,7 @@ const Schedules = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Batches</SelectItem>
-              {batches.map((batch) => (
+              {filteredBatches.map((batch) => (
                 <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
                   {batch.batchName} ({batch.instructor?.fullName || 'No Instructor'})
                 </SelectItem>
@@ -449,7 +470,7 @@ const Schedules = () => {
               <DialogTitle>Add New Schedule</DialogTitle>
             </DialogHeader>
             <ScheduleForm
-              batches={batches as Batch[]}
+              batches={filteredBatches as Batch[]}
               onSubmit={handleAddSubmit}
               onSubmitMultiple={handleAddMultipleSubmit}
               isSubmitting={createMutation.isPending || createMultipleMutation.isPending}
@@ -465,7 +486,7 @@ const Schedules = () => {
             </DialogHeader>
             {selectedSchedule && (
               <ScheduleForm
-                batches={batches as Batch[]}
+                batches={filteredBatches as Batch[]}
                 onSubmit={handleEditSubmit}
                 isSubmitting={updateMutation.isPending}
                 defaultValues={selectedSchedule}

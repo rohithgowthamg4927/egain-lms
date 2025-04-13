@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -7,12 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
-import { getCourseById, deleteCourse } from '@/lib/api/courses';
-import { Course, Level } from '@/lib/types';
+import { getCourseById, updateCourse, deleteCourse, getBatches } from '@/lib/api';
+import { Course, Level, Role } from '@/lib/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Calendar, Edit, Trash, Users, Book, Star } from 'lucide-react';
+import { ArrowLeft, Calendar, Edit, Trash, Users, Book, Star, Pencil, Plus, User } from 'lucide-react';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/hooks/use-auth';
+import { format } from 'date-fns';
 
 const CourseDetail = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -20,23 +22,57 @@ const CourseDetail = () => {
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === Role.admin;
+  const isInstructor = user?.role === Role.instructor;
+
+  // Add state for checking if instructor is assigned to this course
+  const [isInstructorAssigned, setIsInstructorAssigned] = useState(false);
 
   const parsedCourseId = courseId ? parseInt(courseId, 10) : undefined;
 
   console.log('CourseDetail - courseId:', courseId, 'parsedCourseId:', parsedCourseId);
 
-  const courseQuery = useQuery({
+  // Fetch course details with proper access control
+  const { data: course, isLoading: isCourseLoading, isError } = useQuery({
     queryKey: ['course', parsedCourseId],
-    queryFn: () => {
-      if (!parsedCourseId) {
-        throw new Error('Course ID is required');
-      }
-      console.log('Fetching course with ID:', parsedCourseId);
-      return getCourseById(parsedCourseId);
+    queryFn: async () => {
+      if (!parsedCourseId) throw new Error('No course ID provided');
+      const response = await getCourseById(parsedCourseId);
+      if (!response.success) throw new Error(response.error || 'Failed to fetch course');
+      return response.data;
     },
     enabled: !!parsedCourseId,
-    refetchOnWindowFocus: true
   });
+
+  // Fetch batches with proper access control
+  const { data: batches = [] } = useQuery({
+    queryKey: ['courseBatches', parsedCourseId],
+    queryFn: async () => {
+      if (!parsedCourseId) throw new Error('No course ID provided');
+      const response = await getBatches();
+      if (!response.success) throw new Error(response.error || 'Failed to fetch batches');
+      return response.data.filter((batch: any) => batch.courseId === parsedCourseId);
+    },
+    enabled: !!parsedCourseId,
+  });
+
+  // Check instructor assignment
+  useEffect(() => {
+    if (course && isInstructor && user?.userId) {
+      const isAssigned = batches.some((batch: any) => batch.instructor?.userId === user.userId);
+      setIsInstructorAssigned(isAssigned);
+      
+      if (!isAssigned) {
+        toast({
+          title: 'Access Denied',
+          description: 'You are not assigned to this course',
+          variant: 'destructive',
+        });
+        navigate('/courses');
+      }
+    }
+  }, [course, batches, isInstructor, user?.userId, navigate, toast]);
 
   const handleEditCourse = () => {
     navigate(`/courses/edit/${courseId}`);
@@ -75,15 +111,13 @@ const CourseDetail = () => {
     }
   };
 
-  const isLoading = courseQuery.isLoading;
-  const isError = courseQuery.isError;
-  const course = courseQuery.data?.data;
-  
-  console.log('CourseDetail - courseQuery result:', {
+  const isLoading = isCourseLoading;
+
+  console.log('CourseDetail - course data:', {
     isLoading,
     isError,
     course,
-    error: courseQuery.error
+    batches
   });
 
   const getLevelLabel = (level: Level): string => {
@@ -104,6 +138,38 @@ const CourseDetail = () => {
     return colors[level] || '';
   };
 
+  // Helper function to check if instructor can access a batch
+  const canAccessBatch = (batch: any) => {
+    if (isAdmin) return true;
+    if (!isInstructor || !user?.userId) return false;
+    return batch.instructor?.userId === user.userId;
+  };
+
+  // Helper function to render batch link based on access
+  const renderBatchLink = (batch: any) => {
+    const canAccess = canAccessBatch(batch);
+    if (canAccess) {
+      return (
+        <Link to={`/batches/${batch.batchId}`} className="text-primary hover:underline">
+          {batch.batchName}
+        </Link>
+      );
+    }
+    return <span>{batch.batchName}</span>;
+  };
+
+  // Helper function to render instructor link based on access
+  const renderInstructorLink = (instructor: any) => {
+    if (isAdmin) {
+      return (
+        <Link to={`/instructors/${instructor.userId}`} className="text-primary hover:underline">
+          {instructor.fullName}
+        </Link>
+      );
+    }
+    return <span>{instructor.fullName}</span>;
+  };
+
   return (
     <div className="p-0">
       <BreadcrumbNav items={[
@@ -122,7 +188,7 @@ const CourseDetail = () => {
             <ArrowLeft className="h-4 w-4" />
             Back to Courses
           </Button>
-          {!isLoading && !isError && course && (
+          {!isLoading && !isError && course && (isAdmin || isInstructorAssigned) && (
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
@@ -268,24 +334,18 @@ const CourseDetail = () => {
                 <TabsContent value="batches">
                   <div className="pt-2">
                     <h3 className="text-lg font-semibold mb-4">Batches</h3>
-                    {Array.isArray(course.batches) && course.batches.length > 0 ? (
+                    {Array.isArray(batches) && batches.length > 0 ? (
                       <div className="space-y-3">
-                        {course.batches.map((batch) => (
+                        {batches.map((batch) => (
                           <Card key={batch.batchId} className="relative overflow-hidden">
                             <div className="p-4">
                               <div className="flex justify-between items-start">
                                 <div>
                                   <h4 className="font-semibold">
-                                    <Link to={`/batches/${batch.batchId}`} className="hover:underline">
-                                      {batch.batchName}
-                                    </Link>
+                                    {renderBatchLink(batch)}
                                   </h4>
                                   <p className="text-sm text-gray-500">
-                                    Instructor: {batch.instructor ? (
-                                      <Link to={`/instructors/${batch.instructor.userId}`} className="hover:underline">
-                                        {batch.instructor.fullName}
-                                      </Link>
-                                    ) : 'Not assigned'}
+                                    Instructor: {renderInstructorLink(batch.instructor)}
                                   </p>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm">

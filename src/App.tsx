@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -72,9 +71,9 @@ function App() {
         } />
 
         <Route path="/courses/:courseId" element={
-        <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
-          <CourseDetail />
-        </ProtectedRoute>
+          <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
+            <CourseDetail />
+          </ProtectedRoute>
         } />
         <Route path="/courses/edit/:courseId" element={
           <ProtectedRoute allowedRoles={[Role.admin]}>
@@ -107,7 +106,7 @@ function App() {
         <Route path="/batches/:batchId" element={
           <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
             <BatchDetail />
-        </ProtectedRoute>
+          </ProtectedRoute>
         } />
         <Route path="/batches/:batchId/edit" element={
           <ProtectedRoute allowedRoles={[Role.admin]}>
@@ -124,7 +123,7 @@ function App() {
           path="/schedules"
           element={
             <ProtectedRoute allowedRoles={[Role.admin, Role.instructor]}>
-              <Schedules/>
+              <Schedules />
             </ProtectedRoute>
           }
         />
@@ -163,12 +162,12 @@ function App() {
           }
         />
         <Route path="/instructors/:userId" element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={[Role.admin]}>
             <UserProfile />
           </ProtectedRoute>
         } />
         <Route path="/instructors/:userId/edit" element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={[Role.admin]}>
             <UserProfile />
           </ProtectedRoute>
         } />

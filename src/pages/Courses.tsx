@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -9,18 +8,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getCourses, getCategories, createCategory, deleteCourse } from '@/lib/api';
 import { getDashboardCounts } from '@/lib/api/dashboard';
-import { Course, Category, Level } from '@/lib/types';
+import { Course, Category, Level, Role } from '@/lib/types';
 import { Search, BookOpen, Users, Layers, Plus } from 'lucide-react';
 import CourseGrid from '@/components/courses/CourseGrid';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
+import { useAuth } from '@/hooks/use-auth';
 
 const Courses = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === Role.admin;
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -234,13 +236,15 @@ const Courses = () => {
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
         <h1 className="text-3xl font-bold">Courses</h1>
-        <Button 
-          className="bg-blue-600 hover:bg-blue-700"
-          onClick={() => navigate('/courses/add')}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Course
-        </Button>
+        {isAdmin && (
+          <Button 
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => navigate('/courses/add')}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Course
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -315,44 +319,46 @@ const Courses = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  Add Category
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Create category</DialogTitle>
-                  <DialogDescription>
-                    Add a new category to group your courses.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="name">Category name</Label>
-                    <Input
-                      id="name"
-                      placeholder="Category name"
-                      value={newCategoryName}
-                      onChange={(e) => setNewCategoryName(e.target.value)}
-                    />
+            {isAdmin && (
+              <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Add Category
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Create category</DialogTitle>
+                    <DialogDescription>
+                      Add a new category to group your courses.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="name">Category name</Label>
+                      <Input
+                        id="name"
+                        placeholder="Category name"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                      />
+                    </div>
                   </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsCreateCategoryDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleCreateCategory} 
-                    disabled={isSubmitting}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {isSubmitting ? 'Creating...' : 'Create'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsCreateCategoryDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleCreateCategory} 
+                      disabled={isSubmitting}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {isSubmitting ? 'Creating...' : 'Create'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </div>
       </div>
@@ -361,8 +367,8 @@ const Courses = () => {
         courses={filteredCourses}
         loading={isLoading}
         onView={handleViewCourse}
-        onEdit={handleEditCourse}
-        onDelete={handleDeleteCourse}
+        onEdit={isAdmin ? handleEditCourse : undefined}
+        onDelete={isAdmin ? handleDeleteCourse : undefined}
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

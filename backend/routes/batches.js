@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
@@ -361,6 +360,13 @@ router.delete('/:batchId/students/:studentId', async (req, res) => {
       where: {
         batchId,
         studentId
+      },
+      include: {
+        batch: {
+          include: {
+            course: true
+          }
+        }
       }
     });
     
@@ -370,12 +376,38 @@ router.delete('/:batchId/students/:studentId', async (req, res) => {
         error: 'Student is not enrolled in this batch'
       });
     }
+
+    // Get the course ID from the batch
+    const courseId = enrollment.batch.courseId;
     
-    // Remove enrollment
-    await prisma.studentBatch.deleteMany({
-      where: {
-        batchId,
-        studentId
+    // Remove enrollment in a transaction
+    await prisma.$transaction(async (prisma) => {
+      // Remove the student from the batch
+      await prisma.studentBatch.deleteMany({
+        where: {
+          batchId,
+          studentId
+        }
+      });
+
+      // Check if student is enrolled in any other batches of the same course
+      const otherBatchEnrollments = await prisma.studentBatch.findMany({
+        where: {
+          studentId,
+          batch: {
+            courseId
+          }
+        }
+      });
+
+      // If no other batch enrollments exist for this course, remove the student from the course
+      if (otherBatchEnrollments.length === 0) {
+        await prisma.studentCourse.deleteMany({
+          where: {
+            studentId,
+            courseId
+          }
+        });
       }
     });
     

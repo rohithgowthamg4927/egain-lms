@@ -38,11 +38,15 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
+import { useAuth } from '@/hooks/use-auth';
 
 const Batches = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === Role.admin;
+  const isInstructor = user?.role === Role.instructor;
   
   const [batches, setBatches] = useState<Batch[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -139,6 +143,11 @@ const Batches = () => {
   }, [toast]);
 
   const filteredBatches = batches.filter((batch) => {
+    // For instructors, only show batches they're assigned to
+    if (isInstructor && batch.instructorId !== user?.userId) {
+      return false;
+    }
+    
     const matchesSearch = batch.batchName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (batch.course?.courseName && batch.course.courseName.toLowerCase().includes(searchTerm.toLowerCase()));
     
@@ -205,10 +214,12 @@ const Batches = () => {
       ]} />
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h1 className="text-3xl font-bold">Batches</h1>
-        <Button onClick={() => navigate('/batches/add')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Batch
-        </Button>
+        {isAdmin && (
+          <Button onClick={() => navigate('/batches/add')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Batch
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">

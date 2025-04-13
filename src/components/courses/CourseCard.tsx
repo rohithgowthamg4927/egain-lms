@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
-import { Course, Level } from '@/lib/types';
+import { Course, Level, Role } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Eye, Users, Bookmark, Edit, Trash } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 interface CourseCardProps {
   course: Course;
@@ -20,6 +20,8 @@ const CourseCard = ({
   onDelete 
 }: CourseCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user?.role === Role.admin;
 
   // For debugging purposes, log the course object
   console.log('CourseCard - rendering course:', course);
@@ -116,24 +118,26 @@ const CourseCard = ({
           View Course
         </Button>
         
-        <div className="flex w-full gap-2">
-          <Button
-            variant="outline"
-            className="flex-1"
-            onClick={handleEditClick}
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-          <Button
-            variant="destructive"
-            className="flex-1"
-            onClick={handleDeleteClick}
-          >
-            <Trash className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
-        </div>
+        {isAdmin && (
+          <div className="flex w-full gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={handleEditClick}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={handleDeleteClick}
+            >
+              <Trash className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </div>
+        )}
       </CardFooter>
     </Card>
   );

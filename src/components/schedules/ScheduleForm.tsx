@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -14,6 +13,8 @@ import { Schedule, Batch } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/hooks/use-auth';
+import { Role } from '@/lib/types';
 
 type ScheduleFormProps = {
   batches: Batch[];
@@ -52,6 +53,8 @@ const ScheduleForm = ({
   
   const [minDate, setMinDate] = useState<Date | undefined>(undefined);
   const [maxDate, setMaxDate] = useState<Date | undefined>(undefined);
+  const { user } = useAuth();
+  const isAdmin = user?.role === Role.admin;
 
   // For multiple sessions
   const [sessions, setSessions] = useState<ScheduleSession[]>([]);
@@ -212,6 +215,15 @@ const ScheduleForm = ({
                 </FormItem>
               )}
             />
+
+            {isAdmin && selectedBatch?.instructor && (
+              <FormItem>
+                <FormLabel>Instructor</FormLabel>
+                <div className="flex items-center gap-2 p-2 border rounded-md bg-muted">
+                  <span className="text-sm font-medium">{selectedBatch.instructor.fullName}</span>
+                </div>
+              </FormItem>
+            )}
 
             <FormField
               control={form.control}

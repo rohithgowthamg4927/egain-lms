@@ -173,7 +173,6 @@ router.post('/', async (req, res) => {
     
     res.status(201).json({ success: true, data: batch });
   } catch (error) {
-    console.error('Error creating batch:', error);
     handleApiError(res, error);
   }
 });
@@ -245,7 +244,6 @@ router.put('/:id', async (req, res) => {
     
     res.json({ success: true, data: batch });
   } catch (error) {
-    console.error('Error updating batch:', error);
     handleApiError(res, error);
   }
 });
@@ -275,7 +273,6 @@ router.delete('/:id', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('Error deleting batch:', error);
     handleApiError(res, error);
   }
 });
@@ -344,7 +341,6 @@ router.post('/:id/students', async (req, res) => {
     
     res.status(201).json({ success: true, data: result });
   } catch (error) {
-    console.error('Error enrolling student:', error);
     handleApiError(res, error);
   }
 });
@@ -413,7 +409,6 @@ router.delete('/:batchId/students/:studentId', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('Error removing student from batch:', error);
     handleApiError(res, error);
   }
 });

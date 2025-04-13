@@ -116,7 +116,6 @@ const ResourceCard = ({
         throw new Error(response.error || 'Failed to get download URL');
       }
     } catch (error) {
-      console.error('Download error:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to download resource',
@@ -138,7 +137,6 @@ const ResourceCard = ({
         throw new Error(response.error || 'Failed to get view URL');
       }
     } catch (error) {
-      console.error('View error:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to view resource',
@@ -155,7 +153,6 @@ const ResourceCard = ({
         await Promise.resolve(onDelete(resource));
         setShowDeleteDialog(false);
       } catch (error) {
-        console.error('Delete error:', error);
         toast({
           title: 'Error',
           description: 'Failed to delete resource',

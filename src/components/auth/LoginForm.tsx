@@ -32,13 +32,13 @@ const LoginForm = () => {
         return;
       }
       
-      console.log("Attempting login with:", { email, password, role });
+      // console.log("Attempting login with:", { email, password, role });
       
-      // Add some debugging output
-      const authToken = localStorage.getItem('authToken');
-      const storedUser = localStorage.getItem('currentUser');
-      console.log("Before login - Auth token exists:", !!authToken);
-      console.log("Before login - User exists:", !!storedUser);
+      // // Add some debugging output
+      // const authToken = localStorage.getItem('authToken');
+      // const storedUser = localStorage.getItem('currentUser');
+      // console.log("Before login - Auth token exists:", !!authToken);
+      // console.log("Before login - User exists:", !!storedUser);
       
       const success = await login(email, password, role);
       
@@ -53,7 +53,7 @@ const LoginForm = () => {
         const userStr = localStorage.getItem('currentUser');
         if (userStr) {
           const user = JSON.parse(userStr);
-          console.log('User in localStorage after login:', user);
+          // console.log('User in localStorage after login:', user);
           
           // Redirect based on role
           if (user.role === Role.student) {

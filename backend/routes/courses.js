@@ -38,8 +38,6 @@ router.get('/:id', async (req, res) => {
       });
     }
     
-    console.log(`Fetching course details for ID: ${courseId}`);
-    
     const course = await prisma.Course.findUnique({
       where: { courseId },
       include: {
@@ -69,7 +67,6 @@ router.get('/:id', async (req, res) => {
     : null;
 
     if (!course) {
-      console.log(`Course with ID ${courseId} not found`);
       return res.status(404).json({
         success: false,
         error: 'Course not found'
@@ -85,10 +82,7 @@ router.get('/:id', async (req, res) => {
       } 
     });
     
-    console.log(`Course found:`, { courseId: course.courseId, courseName: course.courseName });
-    
   } catch (error) {
-    console.error(`Error in GET /courses/:id:`, error);
     handleApiError(res, error);
   }
 });
@@ -96,15 +90,6 @@ router.get('/:id', async (req, res) => {
 // Create a new course
 router.post('/', async (req, res) => {
   try {
-    console.log("Creating course with data:", req.body);
-    const { 
-      courseName, 
-      description, 
-      courseLevel,
-      categoryId,
-      isPublished,
-      thumbnailUrl
-    } = req.body;
     
     // Validate that required fields exist
     if (!courseName || !categoryId) {
@@ -126,10 +111,8 @@ router.post('/', async (req, res) => {
       }
     });
     
-    console.log("Course created successfully:", course);
     res.status(201).json({ success: true, data: course });
   } catch (error) {
-    console.error("Error creating course:", error);
     handleApiError(res, error);
   }
 });
@@ -144,8 +127,6 @@ router.put('/:id', async (req, res) => {
         error: 'Invalid course ID format'
       });
     }
-    
-    console.log(`Updating course ${courseId} with data:`, req.body);
     
     const { 
       courseName, 
@@ -182,7 +163,6 @@ router.put('/:id', async (req, res) => {
     
     res.json({ success: true, data: course });
   } catch (error) {
-    console.error(`Error updating course:`, error);
     handleApiError(res, error);
   }
 });
@@ -197,8 +177,6 @@ router.delete('/:id', async (req, res) => {
         error: 'Invalid course ID format'
       });
     }
-    
-    console.log(`Attempting to delete course ${courseId}`);
     
     // Check if course exists
     const existingCourse = await prisma.Course.findUnique({
@@ -230,7 +208,6 @@ router.delete('/:id', async (req, res) => {
     });
     
     if (studentCoursesCount > 0) {
-      console.log(`Deleting ${studentCoursesCount} student enrollments for course ${courseId}`);
       await prisma.StudentCourse.deleteMany({
         where: { courseId }
       });
@@ -242,7 +219,6 @@ router.delete('/:id', async (req, res) => {
     });
     
     if (reviewsCount > 0) {
-      console.log(`Deleting ${reviewsCount} reviews for course ${courseId}`);
       await prisma.CourseReview.deleteMany({
         where: { courseId }
       });
@@ -258,7 +234,6 @@ router.delete('/:id', async (req, res) => {
     });
     
     if (resources.length > 0) {
-      console.log(`Deleting ${resources.length} resources for course ${courseId}`);
       // Delete resources one by one to avoid relation errors
       for (const resource of resources) {
         await prisma.Resource.delete({
@@ -272,10 +247,8 @@ router.delete('/:id', async (req, res) => {
       where: { courseId }
     });
     
-    console.log(`Course ${courseId} deleted successfully`);
     res.json({ success: true });
   } catch (error) {
-    console.error(`Error deleting course:`, error);
     handleApiError(res, error);
   }
 });
@@ -328,6 +301,106 @@ router.post('/:id/reviews', async (req, res) => {
     });
     
     res.status(201).json({ success: true, data: createdReview });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Update a review
+router.put('/:id/reviews/:reviewId', async (req, res) => {
+  try {
+    const courseId = parseInt(req.params.id);
+    const reviewId = parseInt(req.params.reviewId);
+    const { userId, rating, review } = req.body;
+    
+    // Check if course exists
+    const course = await prisma.Course.findUnique({
+      where: { courseId }
+    });
+    
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        error: 'Course not found'
+      });
+    }
+    
+    // Check if review exists and belongs to the user
+    const existingReview = await prisma.CourseReview.findFirst({
+      where: {
+        reviewId,
+        courseId,
+        userId: parseInt(userId)
+      }
+    });
+    
+    if (!existingReview) {
+      return res.status(404).json({
+        success: false,
+        error: 'Review not found or you do not have permission to edit this review'
+      });
+    }
+    
+    // Update the review
+    const updatedReview = await prisma.CourseReview.update({
+      where: { reviewId },
+      data: {
+        rating: parseInt(rating),
+        review,
+        updatedAt: new Date()
+      },
+      include: {
+        user: true
+      }
+    });
+    
+    res.json({ success: true, data: updatedReview });
+  } catch (error) {
+    handleApiError(res, error);
+  }
+});
+
+// Delete a review
+router.delete('/:id/reviews/:reviewId', async (req, res) => {
+  try {
+    const courseId = parseInt(req.params.id);
+    const reviewId = parseInt(req.params.reviewId);
+    const { userId } = req.body;
+    
+    // Check if course exists
+    const course = await prisma.Course.findUnique({
+      where: { courseId }
+    });
+    
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        error: 'Course not found'
+      });
+    }
+    
+    // Check if review exists and belongs to the user
+    const existingReview = await prisma.CourseReview.findFirst({
+      where: {
+        reviewId,
+        courseId,
+        userId: parseInt(userId)
+      }
+    });
+    
+    if (!existingReview) {
+      return res.status(404).json({
+        success: false,
+        error: 'Review not found or you do not have permission to delete this review'
+      });
+    }
+    
+    // Delete the review
+    await prisma.CourseReview.delete({
+      where: { reviewId }
+    });
+    
+    res.json({ success: true });
   } catch (error) {
     handleApiError(res, error);
   }

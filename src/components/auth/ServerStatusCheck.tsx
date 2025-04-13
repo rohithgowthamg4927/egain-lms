@@ -33,7 +33,6 @@ const ServerStatusCheck = ({ children, onComplete }: ServerStatusCheckProps) => 
         throw new Error('Server is not healthy');
       }
     } catch (error) {
-      console.error('Server check failed:', error);
       
       if (retryCount < maxRetries) {
         setRetryCount(prev => prev + 1);

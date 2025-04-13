@@ -178,7 +178,6 @@ const BatchDetail = () => {
         });
       }
     } catch (error) {
-      console.error('Error deleting batch:', error);
       toast({
         title: 'Error',
         description: 'An error occurred while deleting the batch',
@@ -213,7 +212,6 @@ const BatchDetail = () => {
         });
       }
     } catch (error) {
-      console.error('Error removing student:', error);
       toast({
         title: 'Error',
         description: 'An error occurred while removing the student',
@@ -245,7 +243,6 @@ const BatchDetail = () => {
         });
       }
     } catch (error) {
-      console.error('Error deleting resource:', error);
       toast({
         title: 'Error',
         description: 'An error occurred while deleting the resource',
@@ -312,7 +309,6 @@ const BatchDetail = () => {
         throw new Error(response.error || 'Failed to get download URL');
       }
     } catch (error) {
-      console.error('Download error:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to download resource',
@@ -336,7 +332,6 @@ const BatchDetail = () => {
         setShowDeleteDialog(false);
         setResourceToDelete(null);
       } catch (error) {
-        console.error('Delete error:', error);
         toast({
           title: 'Error',
           description: 'Failed to delete resource',

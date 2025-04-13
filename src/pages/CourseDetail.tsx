@@ -31,8 +31,6 @@ const CourseDetail = () => {
 
   const parsedCourseId = courseId ? parseInt(courseId, 10) : undefined;
 
-  console.log('CourseDetail - courseId:', courseId, 'parsedCourseId:', parsedCourseId);
-
   // Fetch course details with proper access control
   const { data: course, isLoading: isCourseLoading, isError } = useQuery({
     queryKey: ['course', parsedCourseId],
@@ -100,7 +98,7 @@ const CourseDetail = () => {
         });
       }
     } catch (error) {
-      console.error('Error deleting course:', error);
+      //console.error('Error deleting course:', error);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred',
@@ -113,12 +111,12 @@ const CourseDetail = () => {
 
   const isLoading = isCourseLoading;
 
-  console.log('CourseDetail - course data:', {
-    isLoading,
-    isError,
-    course,
-    batches
-  });
+  // console.log('CourseDetail - course data:', {
+  //   isLoading,
+  //   isError,
+  //   course,
+  //   batches
+  // });
 
   const getLevelLabel = (level: Level): string => {
     const labels: Record<Level, string> = {

@@ -40,7 +40,6 @@ export const initiateMultipartUpload = async (batchName, resourceType, fileName)
   }
 
   const key = generateS3Key(batchName, resourceType, fileName);
-  console.log('Generated S3 key:', key);
   
   const command = new CreateMultipartUploadCommand({
     Bucket: BUCKET_NAME,
@@ -49,9 +48,7 @@ export const initiateMultipartUpload = async (batchName, resourceType, fileName)
   });
 
   try {
-    console.log('Sending CreateMultipartUploadCommand to S3...');
     const response = await s3Client.send(command);
-    console.log('S3 response:', response);
     
     if (!response.UploadId) {
       throw new Error('Failed to get upload ID from S3');
@@ -62,7 +59,6 @@ export const initiateMultipartUpload = async (batchName, resourceType, fileName)
       key: key,
     };
   } catch (error) {
-    console.error('Error initiating multipart upload:', error);
     if (error.name === 'NoSuchBucket') {
       throw new Error(`S3 bucket '${BUCKET_NAME}' does not exist`);
     } else if (error.name === 'AccessDenied') {
@@ -89,7 +85,6 @@ export const uploadPart = async (key, uploadId, partNumber, body) => {
       PartNumber: partNumber,
     };
   } catch (error) {
-    console.error('Error uploading part:', error);
     throw error;
   }
 };
@@ -109,7 +104,6 @@ export const completeMultipartUpload = async (key, uploadId, parts) => {
     const response = await s3Client.send(command);
     return response.Location;
   } catch (error) {
-    console.error('Error completing multipart upload:', error);
     throw error;
   }
 };
@@ -125,7 +119,6 @@ export const abortMultipartUpload = async (key, uploadId) => {
   try {
     await s3Client.send(command);
   } catch (error) {
-    console.error('Error aborting multipart upload:', error);
     throw error;
   }
 };
@@ -145,7 +138,6 @@ export const uploadFile = async (batchName, resourceType, fileName, fileBuffer) 
     await s3Client.send(command);
     return key;
   } catch (error) {
-    console.error('Error uploading file:', error);
     throw error;
   }
 };
@@ -162,7 +154,6 @@ export const getPresignedUrl = async (key, expiresIn = 7200) => {
   try {
     return await getSignedUrl(s3Client, command, { expiresIn });
   } catch (error) {
-    console.error('Error generating presigned URL:', error);
     throw error;
   }
 };
@@ -197,7 +188,6 @@ export const deleteFile = async (fileUrl) => {
       // Extract the key from the fileUrl
       const urlParts = fileUrl.split(`https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`);
       if (urlParts.length !== 2) {
-        console.log('Processing as direct key because URL format is not recognized');
         key = fileUrl; // Use fileUrl as key directly if it's not in the expected format
       } else {
         key = urlParts[1];
@@ -207,7 +197,6 @@ export const deleteFile = async (fileUrl) => {
       key = fileUrl;
     }
     
-    console.log('Deleting S3 object with key:', key);
     
     const command = new DeleteObjectCommand({
       Bucket: BUCKET_NAME,
@@ -215,10 +204,8 @@ export const deleteFile = async (fileUrl) => {
     });
 
     await s3Client.send(command);
-    console.log('S3 object deleted successfully');
     return true;
   } catch (error) {
-    console.error('Error deleting S3 object:', error);
     throw error;
   }
 };

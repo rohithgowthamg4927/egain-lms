@@ -258,7 +258,6 @@ export function UploadResourceDialog({
         }
       }
     } catch (error) {
-      console.error('Upload error:', error);
       toast({
         title: 'Upload failed',
         description: error instanceof Error ? error.message : 'An error occurred during upload',

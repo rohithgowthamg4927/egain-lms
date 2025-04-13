@@ -150,7 +150,7 @@ const Categories = () => {
         });
       }
     } catch (error) {
-      console.error('Error creating category:', error);
+      //console.error('Error creating category:', error);
       toast({
         title: 'Error',
         description: 'Failed to create category',
@@ -200,7 +200,7 @@ const Categories = () => {
         });
       }
     } catch (error) {
-      console.error('Error updating category:', error);
+      //console.error('Error updating category:', error);
       toast({
         title: 'Error',
         description: 'Failed to update category',
@@ -257,7 +257,7 @@ const Categories = () => {
         });
       }
     } catch (error) {
-      console.error('Error deleting category:', error);
+      //console.error('Error deleting category:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete category',

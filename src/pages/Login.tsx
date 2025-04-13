@@ -29,7 +29,7 @@ const Login = () => {
     checkServerStatus();
   }, []);
 
-  console.log("Login page - Auth state:", { isAuthenticated, isLoading });
+  //console.log("Login page - Auth state:", { isAuthenticated, isLoading });
 
   // Check localStorage directly as a fallback
   const hasStoredToken = !!localStorage.getItem('authToken');
@@ -37,7 +37,7 @@ const Login = () => {
 
   // If already authenticated, redirect to dashboard
   if (isAuthenticated || (hasStoredToken && hasStoredUser)) {
-    console.log("Already authenticated, redirecting to dashboard");
+    //console.log("Already authenticated, redirecting to dashboard");
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -43,7 +43,6 @@ router.get('/:id/courses', async (req, res) => {
     
     res.json({ success: true, data: courses });
   } catch (error) {
-    console.error('Error fetching instructor courses:', error);
     handleApiError(res, error);
   }
 });
@@ -89,7 +88,6 @@ router.get('/:id/schedules', async (req, res) => {
     
     res.json({ success: true, data: schedules });
   } catch (error) {
-    console.error('Error fetching instructor schedules:', error);
     handleApiError(res, error);
   }
 });

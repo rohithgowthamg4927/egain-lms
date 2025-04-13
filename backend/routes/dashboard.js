@@ -165,7 +165,6 @@ router.get('/', async (req, res) => {
     
     res.json({ success: true, data: metrics });
   } catch (error) {
-    console.error('Dashboard metrics error:', error);
     handleApiError(res, error);
   }
 });
@@ -185,7 +184,6 @@ router.get('/counts', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching counts:', error);
     handleApiError(res, error);
   }
 });

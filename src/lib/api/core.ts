@@ -16,11 +16,6 @@ export async function apiFetch<T>(
   status?: number;
 }> {
   try {
-    console.log(`API Request: ${API_URL}${endpoint}`, {
-      method: options.method || 'GET',
-      headers: options.headers,
-      body: options.body
-    });
     
     // Get auth token from local storage
     const token = localStorage.getItem("authToken");
@@ -49,18 +44,18 @@ export async function apiFetch<T>(
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
       data = await response.json();
-      console.log('Received API response:', {
-        status: response.status,
-        data,
-        endpoint
-      });
+      // console.log('Received API response:', {
+      //   status: response.status,
+      //   data,
+      //   endpoint
+      // });
     } else {
       data = await response.text();
-      console.log('Received non-JSON response:', {
-        status: response.status,
-        data,
-        endpoint
-      });
+      // console.log('Received non-JSON response:', {
+      //   status: response.status,
+      //   data,
+      //   endpoint
+      // });
     }
 
     // Handle errors

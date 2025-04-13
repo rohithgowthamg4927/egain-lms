@@ -86,7 +86,6 @@ export default function StudentResources() {
         throw new Error('Failed to fetch enrolled batches');
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
       toast({
         title: 'Error',
         description: 'Failed to fetch your enrolled batches and resources',
@@ -154,7 +153,6 @@ export default function StudentResources() {
         throw new Error(response.error || 'Failed to get resource URL');
       }
     } catch (error) {
-      console.error('Error viewing resource:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to view resource',
@@ -186,7 +184,6 @@ export default function StudentResources() {
         throw new Error(response.error || 'Failed to get download URL');
       }
     } catch (error) {
-      console.error('Download error:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to open resource',

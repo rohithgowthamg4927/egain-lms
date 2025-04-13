@@ -47,7 +47,7 @@ const Students = () => {
         const studentsData = Array.isArray(response.data) ? response.data : [response.data];
         setStudents(studentsData);
       } else {
-        console.error('API error:', response.error);
+        //console.error('API error:', response.error);
         toast({
           title: 'Error',
           description: response.error || 'Failed to fetch students',
@@ -55,7 +55,7 @@ const Students = () => {
         });
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      //console.error('Error fetching data:', error);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred while fetching students',
@@ -80,7 +80,7 @@ const Students = () => {
         setBatchesCount(batchesData.length);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      //console.error('Error fetching data:', error);
     }
   };
 
@@ -119,7 +119,7 @@ const Students = () => {
         throw new Error(response.error || 'Failed to delete student');
       }
     } catch (error) {
-      console.error('Error deleting student:', error);
+      //console.error('Error deleting student:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'An unexpected error occurred',

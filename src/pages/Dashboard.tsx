@@ -10,9 +10,9 @@ const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
   
   // Add logging to help debug
-  useEffect(() => {
-    console.log("Dashboard rendering - Auth state:", { user, isAuthenticated });
-  }, [user, isAuthenticated]);
+  // useEffect(() => {
+  //   //console.log("Dashboard rendering - Auth state:", { user, isAuthenticated });
+  // }, [user, isAuthenticated]);
 
   // Fetch dashboard metrics
   const metricsQuery = useQuery({
@@ -24,14 +24,14 @@ const Dashboard = () => {
   const isError = metricsQuery.isError;
   const dashboardData = metricsQuery.data?.data;
 
-  useEffect(() => {
-    console.log("Dashboard data loading state:", { 
-      isLoading, 
-      isError, 
-      errorMessage: metricsQuery.error ? String(metricsQuery.error) : null,
-      dashboardData 
-    });
-  }, [isLoading, isError, metricsQuery.error, dashboardData]);
+  // useEffect(() => {
+  //   console.log("Dashboard data loading state:", { 
+  //     isLoading, 
+  //     isError, 
+  //     errorMessage: metricsQuery.error ? String(metricsQuery.error) : null,
+  //     dashboardData 
+  //   });
+  // }, [isLoading, isError, metricsQuery.error, dashboardData]);
 
   return (
     <div className="space-y-6 w-full">

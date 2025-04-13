@@ -31,7 +31,6 @@ export async function uploadFileToS3(
     // Return the public URL
     return `https://${params.Bucket}.s3.${import.meta.env.AWS_REGION || 'ap-south-1'}.amazonaws.com/${fileName}`;
   } catch (error) {
-    console.error('Error uploading file to S3:', error);
     throw error;
   }
 }

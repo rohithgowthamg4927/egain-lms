@@ -8,7 +8,6 @@ export const getInstructorCourses = async (instructorId: number): Promise<{ succ
     const response = await apiFetch<Course[]>(`/instructors/${instructorId}/courses`);
     return response;
   } catch (error) {
-    console.error('Error fetching instructor courses:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch instructor courses'
@@ -22,7 +21,6 @@ export const getInstructorSchedules = async (instructorId: number): Promise<{ su
     const response = await apiFetch<Schedule[]>(`/instructors/${instructorId}/schedules`);
     return response;
   } catch (error) {
-    console.error('Error fetching instructor schedules:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch instructor schedules'
@@ -36,7 +34,6 @@ export const getInstructorBatches = async (instructorId: number): Promise<{ succ
     const response = await apiFetch<Batch[]>(`/instructors/${instructorId}/batches`);
     return response;
   } catch (error) {
-    console.error('Error fetching instructor batches:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch instructor batches'

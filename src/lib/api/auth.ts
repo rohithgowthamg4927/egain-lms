@@ -9,7 +9,6 @@ export const getCurrentUser = async (): Promise<{ success: boolean; data?: User;
       const user = JSON.parse(userJson);
       return { success: true, data: user };
     } catch (e) {
-      console.error('Error parsing user from localStorage', e);
     }
   }
   
@@ -18,23 +17,18 @@ export const getCurrentUser = async (): Promise<{ success: boolean; data?: User;
 };
 
 export const login = async (email: string, password: string, role: Role): Promise<{ success: boolean; data?: { user: User; token: string }; error?: string }> => {
-  console.log("Calling login API with:", { email, role });
   
-  // First verify server is running
+  
   try {
     const healthCheck = await fetch(`http://localhost:3001/api/auth/health`);
     if (!healthCheck.ok) {
-      console.error("Server health check failed");
       return { success: false, error: "Backend server not responding" };
     }
   } catch (error) {
-    console.error("Server health check error:", error);
     return { success: false, error: "Cannot connect to backend server" };
   }
   
-  // Log the exact payload being sent
   const payload = { email, password, role };
-  console.log("Sending login payload:", payload);
   
   try {
     const response = await apiFetch<{ user: User; token: string }>('/auth/login', {
@@ -42,18 +36,15 @@ export const login = async (email: string, password: string, role: Role): Promis
       body: JSON.stringify(payload),
     });
     
-    console.log("Login API response:", response);
     
     // If login was successful, store the auth data
     if (response.success && response.data) {
       localStorage.setItem('currentUser', JSON.stringify(response.data.user));
       localStorage.setItem('authToken', response.data.token);
-      console.log("Stored user data in localStorage:", response.data.user);
     }
     
     return response;
   } catch (error) {
-    console.error("Login fetch error:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Network error during login"

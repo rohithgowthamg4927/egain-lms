@@ -9,9 +9,9 @@ interface CategoryData {
 // Get all categories
 export const getCategories = async (): Promise<{ success: boolean; data?: Category[]; error?: string }> => {
   try {
-    console.log('Fetching categories...');
+    // console.log('Fetching categories...');
     const response = await apiFetch<Category[]>('/categories');
-    console.log('Categories API Response:', response);
+    // console.log('Categories API Response:', response);
     return response;
   } catch (error) {
     console.error('Error fetching categories:', error);

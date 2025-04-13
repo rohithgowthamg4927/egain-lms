@@ -32,7 +32,6 @@ const AddCourse = () => {
         });
       }
     } catch (error) {
-      console.error('Error creating course:', error);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred',

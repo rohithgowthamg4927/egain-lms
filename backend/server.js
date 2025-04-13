@@ -13,7 +13,7 @@ import batchRoutes from './routes/batches.js';
 import categoryRoutes from './routes/categories.js';
 import scheduleRoutes from './routes/schedules.js';
 import dashboardRoutes from './routes/dashboard.js';
-import studentRoutes from './routes/students.js'; // Contains router, batchRoutes, courseRoutes
+import studentRoutes from './routes/students.js'; 
 import instructorRoutes from './routes/instructors.js';
 import resourceRoutes from './routes/resources.js';
 

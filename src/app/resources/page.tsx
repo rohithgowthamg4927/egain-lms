@@ -66,7 +66,6 @@ export default function ResourcesPage() {
         throw new Error(response.error || 'Failed to fetch batches');
       }
     } catch (error) {
-      console.error('Error fetching batches:', error);
       toast({
         title: 'Error',
         description: 'Failed to fetch batches',
@@ -96,7 +95,6 @@ export default function ResourcesPage() {
         throw new Error(response.error || 'Failed to fetch resources');
       }
     } catch (error) {
-      console.error('Error fetching resources:', error);
       toast({
         title: 'Error',
         description: 'Failed to fetch resources',
@@ -122,7 +120,6 @@ export default function ResourcesPage() {
         fetchResources(selectedBatch);
       }
     } catch (error) {
-      console.error('Error deleting resource:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete resource',

@@ -26,7 +26,6 @@ export const getUsers = async (role?: Role, userId?: number): Promise<{ success:
     
     return response;
   } catch (error) {
-    console.error('Error fetching users:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch users'
@@ -40,7 +39,6 @@ export const getUser = async (userId: number): Promise<{ success: boolean; data?
     const response = await apiFetch<User>(`/users/${userId}`);
     return response;
   } catch (error) {
-    console.error(`Error fetching user ${userId}:`, error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch user'
@@ -79,7 +77,6 @@ export const createUser = async (data: Partial<UserData>): Promise<{ success: bo
     });
     return response;
   } catch (error) {
-    console.error('Error creating user:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create user'
@@ -107,7 +104,6 @@ export const updateUser = async (userId: number, data: Partial<UserData>): Promi
     });
     return response;
   } catch (error) {
-    console.error(`Error updating user ${userId}:`, error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update user'
@@ -123,7 +119,6 @@ export const deleteUser = async (userId: number): Promise<{ success: boolean; er
     });
     return response;
   } catch (error) {
-    console.error(`Error deleting user ${userId}:`, error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete user'
@@ -139,7 +134,6 @@ export const regenerateUserPassword = async (userId: number): Promise<{ success:
     });
     return response;
   } catch (error) {
-    console.error(`Error regenerating password for user ${userId}:`, error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to regenerate password'

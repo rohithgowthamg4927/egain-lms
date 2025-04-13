@@ -1,4 +1,3 @@
-
 import { Schedule, Resource } from '../types';
 import { apiFetch } from './core';
 import { EntityAdapter } from '../adapters/entity-adapter';
@@ -166,4 +165,52 @@ export const getStudentAssignment = async (courseId: string, assignmentId: strin
 export const getStudentCourseDetail = async (courseId: string) => {
   const response = await apiFetch<StudentCourseDetail>(`/courses/${courseId}`);
   return response.data;
+};
+
+export const updateCourseReview = async (
+  studentId: number,
+  courseId: number,
+  reviewId: number,
+  rating: number,
+  review: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const response = await apiFetch<{ success: boolean }>(
+      `/courses/${courseId}/reviews/${reviewId}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ userId: studentId, rating, review }),
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error('Error updating course review:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update course review'
+    };
+  }
+};
+
+export const deleteCourseReview = async (
+  studentId: number,
+  courseId: number,
+  reviewId: number
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const response = await apiFetch<{ success: boolean }>(
+      `/courses/${courseId}/reviews/${reviewId}`,
+      {
+        method: 'DELETE',
+        body: JSON.stringify({ userId: studentId }),
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error('Error deleting course review:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete course review'
+    };
+  }
 };

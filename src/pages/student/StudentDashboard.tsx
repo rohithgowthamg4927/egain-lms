@@ -190,7 +190,6 @@ export default function StudentDashboard() {
         throw new Error(response.error || 'Failed to get resource URL');
       }
     } catch (error) {
-      console.error('Error viewing resource:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to view resource',

@@ -62,10 +62,8 @@ router.get('/batch/:batchId', async (req, res) => {
 router.post('/initiate-upload', async (req, res) => {
   try {
     const { batchName, resourceType, fileName } = req.body;
-    console.log('Initiating upload with:', { batchName, resourceType, fileName });
     
     if (!batchName || !resourceType || !fileName) {
-      console.log('Missing required fields:', { batchName, resourceType, fileName });
       return res.status(400).json({
         success: false,
         error: 'Batch name, resource type, and file name are required'
@@ -73,14 +71,12 @@ router.post('/initiate-upload', async (req, res) => {
     }
     
     const { uploadId, key } = await initiateMultipartUpload(batchName, resourceType, fileName);
-    console.log('Upload initiated successfully:', { uploadId, key });
     
     res.json({ 
       success: true, 
       data: { uploadId, key }
     });
   } catch (error) {
-    console.error('Error in initiate-upload:', error);
     handleApiError(res, error);
   }
 });
@@ -242,7 +238,6 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       data: resource
     });
   } catch (error) {
-    console.error('Upload error:', error);
     handleApiError(res, error);
   }
 });
@@ -323,7 +318,6 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const resourceId = parseInt(req.params.id);
-    console.log(`Attempting to delete resource with ID: ${resourceId}`);
     
     // First, get the resource to get the fileUrl
     const resource = await prisma.Resource.findUnique({
@@ -340,12 +334,8 @@ router.delete('/:id', async (req, res) => {
     // Delete the file from S3 if it exists
     if (resource.fileUrl) {
       try {
-        console.log(`Attempting to delete S3 file: ${resource.fileUrl}`);
         await deleteFile(resource.fileUrl);
-        console.log(`S3 file deleted for resource ${resourceId}`);
       } catch (s3Error) {
-        console.error(`Error deleting S3 file for resource ${resourceId}:`, s3Error);
-        // Continue with database deletion even if S3 deletion fails
       }
     }
     
@@ -354,10 +344,8 @@ router.delete('/:id', async (req, res) => {
       where: { resourceId }
     });
     
-    console.log(`Resource ${resourceId} deleted from database`);
     res.json({ success: true });
   } catch (error) {
-    console.error(`Error in delete resource route:`, error);
     handleApiError(res, error);
   }
 });

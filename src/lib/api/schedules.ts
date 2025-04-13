@@ -42,7 +42,6 @@ export const getAllSchedules = async (params?: ScheduleQueryParams): Promise<{ s
     const response = await apiFetch<Schedule[]>(endpoint);
     return response;
   } catch (error) {
-    console.error('Error fetching schedules:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch schedules',
@@ -56,7 +55,6 @@ export const getSchedule = async (scheduleId: number): Promise<{ success: boolea
     const response = await apiFetch<Schedule>(`/schedules/${scheduleId}`);
     return response;
   } catch (error) {
-    console.error(`Error fetching schedule ${scheduleId}:`, error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch schedule',
@@ -81,7 +79,7 @@ export interface ScheduleInput {
 // Create a new schedule
 export const createSchedule = async (data: ScheduleInput): Promise<{ success: boolean; data?: Schedule; error?: string }> => {
   try {
-    console.log('Creating schedule with data:', data);
+     
     
     // Send the data directly to the API
     const response = await apiFetch<Schedule>('/schedules', {
@@ -90,7 +88,6 @@ export const createSchedule = async (data: ScheduleInput): Promise<{ success: bo
     });
     return response;
   } catch (error) {
-    console.error('Error creating schedule:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create schedule',
@@ -120,7 +117,6 @@ export const createMultipleSchedules = async (data: ScheduleInput[]): Promise<{ 
       data: results
     };
   } catch (error) {
-    console.error('Error creating multiple schedules:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create multiple schedules',
@@ -137,7 +133,6 @@ export const updateSchedule = async (scheduleId: number, data: Partial<ScheduleI
     });
     return response;
   } catch (error) {
-    console.error(`Error updating schedule ${scheduleId}:`, error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update schedule',
@@ -153,7 +148,6 @@ export const deleteSchedule = async (scheduleId: number): Promise<{ success: boo
     });
     return response;
   } catch (error) {
-    console.error(`Error deleting schedule ${scheduleId}:`, error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete schedule',

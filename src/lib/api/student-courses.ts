@@ -8,7 +8,6 @@ export const getStudentCourses = async (studentId: number): Promise<{ success: b
     const response = await apiFetch<StudentCourse[]>(`/student-courses/${studentId}`);
     return response;
   } catch (error) {
-    console.error(`Error fetching courses for student ${studentId}:`, error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch student courses'
@@ -25,7 +24,6 @@ export const enrollStudentInCourse = async (studentId: number, courseId: number)
     });
     return response;
   } catch (error) {
-    console.error('Error enrolling student in course:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to enroll student in course'
@@ -41,7 +39,6 @@ export const removeStudentFromCourse = async (studentId: number, courseId: numbe
     });
     return response;
   } catch (error) {
-    console.error('Error removing student from course:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to remove student from course'

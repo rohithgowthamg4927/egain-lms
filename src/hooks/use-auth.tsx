@@ -24,7 +24,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Clear potentially corrupted auth data
   const clearAuthData = () => {
-    console.log('Clearing auth data due to corruption or invalid state');
     localStorage.removeItem('currentUser');
     localStorage.removeItem('authToken');
     setUser(null);
@@ -38,13 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedUser = localStorage.getItem('currentUser');
         const authToken = localStorage.getItem('authToken');
         
-        console.log('Loading stored user data:', { 
-          hasStoredUser: !!storedUser, 
-          hasAuthToken: !!authToken 
-        });
-
         if (!storedUser || !authToken) {
-          console.log('No complete auth data found');
           clearAuthData();
           return;
         }
@@ -52,18 +45,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const userData = JSON.parse(storedUser);
           if (!userData || typeof userData !== 'object') {
-            console.error('Invalid user data format');
             clearAuthData();
             return;
           }
           setUser(userData);
-          console.log('Successfully loaded user data');
         } catch (parseError) {
-          console.error('Failed to parse stored user data:', parseError);
           clearAuthData();
         }
       } catch (error) {
-        console.error('Error loading user from localStorage:', error);
         clearAuthData();
       } finally {
         setIsLoading(false);
@@ -77,14 +66,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
-      console.log("Attempting login with:", { email, role });
       
       const response = await apiLogin(email, password, role);
-      console.log("Login response:", response);
-      
       if (response.success && response.data && response.data.user) {
         const userData = response.data.user;
-        console.log("Login successful, user data:", userData);
         
         try {
           // Validate user data before storing
@@ -117,7 +102,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           return true;
         } catch (storageError) {
-          console.error('Failed to store auth data:', storageError);
           clearAuthData();
           toast({
             title: 'Login Error',
@@ -127,7 +111,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return false;
         }
       } else {
-        console.error("Login failed:", response.error);
         toast({
           title: 'Login Failed',
           description: response.error || 'Invalid credentials',
@@ -137,7 +120,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred during login';
-      console.error("Login error:", error);
       toast({
         title: 'Login Error',
         description: errorMessage,

@@ -17,9 +17,6 @@ interface DashboardMetricsProps {
 const COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f97316', '#10b981', '#14b8a6'];
 
 const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) => {
-  console.log("Dashboard metrics raw data:", data);
-  console.log("Dashboard category distribution:", data?.categoryDistribution);
-  console.log("Dashboard courses by category:", data?.coursesByCategory);
   
   const categoryChartData = data?.categoryDistribution?.filter(cat => cat.value > 0) || [];
   

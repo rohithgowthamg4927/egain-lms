@@ -78,7 +78,6 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
         throw new Error(response.error || 'Failed to get download URL');
       }
     } catch (error) {
-      console.error('Download error:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to download resource',
@@ -102,7 +101,6 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
         setShowDeleteDialog(false);
         setResourceToDelete(null);
       } catch (error) {
-        console.error('Delete error:', error);
         toast({
           title: 'Error',
           description: 'Failed to delete resource',

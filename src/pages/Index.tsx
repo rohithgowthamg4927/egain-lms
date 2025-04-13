@@ -16,18 +16,18 @@ const Index = () => {
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
-        console.log('Checking server status...');
+        //console.log('Checking server status...');
         const response = await fetch('http://localhost:3001/api/health');
         if (response.ok) {
           setServerStatus('online');
-          console.log('Backend server is online at port 3001');
+          //console.log('Backend server is online at port 3001');
         } else {
           setServerStatus('offline');
-          console.log('Backend server responded but with an error');
+          //console.log('Backend server responded but with an error');
         }
       } catch (error) {
         setServerStatus('offline');// No active server
-        console.error('Cannot connect to backend server:', error);
+        //console.error('Cannot connect to backend server:', error);
       } finally {
         // Always set page as loaded after checking server status
         setIsPageLoading(false);
@@ -38,17 +38,17 @@ const Index = () => {
   }, []);
 
   // Add logging to help debug
-  console.log("Index Page - Auth State:", { 
-    isAuthenticated, 
-    authLoading,
-    serverStatus,
-    isPageLoading
-  });
+  // console.log("Index Page - Auth State:", { 
+  //   isAuthenticated, 
+  //   authLoading,
+  //   serverStatus,
+  //   isPageLoading
+  // });
 
   useEffect(() => {
     // If user is authenticated and not loading, redirect to dashboard
     if (!authLoading && isAuthenticated) {
-      console.log("User is authenticated, redirecting to dashboard");
+      //console.log("User is authenticated, redirecting to dashboard");
       navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, authLoading, navigate]);

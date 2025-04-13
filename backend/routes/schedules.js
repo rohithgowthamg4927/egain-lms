@@ -83,8 +83,6 @@ router.post('/', async (req, res) => {
   try {
     const { batchId, topic, startTime, endTime, meetingLink, platform, scheduleDate } = req.body;
 
-    console.log('Creating schedule with data:', { batchId, topic, startTime, endTime, meetingLink, platform, scheduleDate });
-
     const batch = await prisma.Batch.findUnique({
       where: { batchId: parseInt(batchId) }
     });
@@ -133,8 +131,6 @@ router.post('/', async (req, res) => {
       });
     }
 
-    console.log('Parsed dates:', { scheduleDay, parsedStartTime, parsedEndTime });
-
     const schedule = await prisma.Schedule.create({
       data: {
         batch: {
@@ -151,7 +147,6 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({ success: true, data: schedule });
   } catch (error) {
-    console.error('Error creating schedule:', error);
     handleApiError(res, error);
   }
 });

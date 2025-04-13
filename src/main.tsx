@@ -20,8 +20,8 @@ window.onunhandledrejection = function(event) {
   console.error('Unhandled promise rejection:', event.reason);
 };
 
-console.log("==== STARTING APPLICATION ====");
-console.log("Environment:", import.meta.env.MODE);
+  // console.log("==== STARTING APPLICATION ====");
+  // console.log("Environment:", import.meta.env.MODE);
 
 // Create a client
 const queryClient = new QueryClient({
@@ -34,16 +34,16 @@ const queryClient = new QueryClient({
 });
 
 // Log important app startup information
-console.log("Rendering React application...");
-console.log("API URL:", "http://localhost:3001/api");
+  // console.log("Rendering React application...");
+  // console.log("API URL:", "http://localhost:3001/api");
 
 // Check for existing authentication
-const existingToken = localStorage.getItem('authToken');
-const existingUser = localStorage.getItem('currentUser');
-console.log("Initial auth state:", { 
-  hasToken: !!existingToken, 
-  hasUser: !!existingUser 
-});
+// const existingToken = localStorage.getItem('authToken');
+// const existingUser = localStorage.getItem('currentUser');
+// console.log("Initial auth state:", { 
+//   hasToken: !!existingToken, 
+//   hasUser: !!existingUser 
+// });
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
@@ -62,5 +62,3 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   </React.StrictMode>,
 )
 
-// Log when the app has finished rendering
-console.log("==== APPLICATION RENDERED ====");

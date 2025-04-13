@@ -87,7 +87,6 @@ const Batches = () => {
         });
       }
     } catch (error) {
-      console.error('Error fetching batches:', error);
       toast({
         title: 'Error',
         description: 'Failed to fetch batches',
@@ -128,7 +127,6 @@ const Batches = () => {
           });
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
         toast({
           title: 'Error',
           description: 'An unexpected error occurred',
@@ -191,7 +189,6 @@ const Batches = () => {
         });
       }
     } catch (error) {
-      console.error('Error deleting batch:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete batch',

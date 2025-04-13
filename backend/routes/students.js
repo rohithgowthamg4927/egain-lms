@@ -41,7 +41,6 @@ studentRouter.get('/:id/schedules', async (req, res) => {
 
     res.json({ success: true, data: schedules });
   } catch (error) {
-    console.error('Error fetching student schedules:', error);
     handleApiError(res, error);
   }
 });
@@ -86,7 +85,6 @@ studentRouter.get('/:id/resources', async (req, res) => {
 
     res.json({ success: true, data: resources });
   } catch (error) {
-    console.error('Error fetching student resources:', error);
     handleApiError(res, error);
   }
 });
@@ -177,7 +175,6 @@ courseRoutes.get('/:id', async (req, res) => {
 
     res.json({ success: true, data: studentCourses });
   } catch (error) {
-    console.error('Error fetching student courses:', error);
     handleApiError(res, error);
   }
 });

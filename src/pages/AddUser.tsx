@@ -38,8 +38,6 @@ const AddUser = () => {
     try {
       const { password, ...userData } = data;
       
-      console.log('Submitting user data:', { ...userData, password: password });
-      
       const response = await createUser({
         fullName: userData.fullName,
         email: userData.email,
@@ -70,7 +68,6 @@ const AddUser = () => {
           navigate('/dashboard');
       }
     } catch (error) {
-      console.error('Error creating user:', error);
       toast({
         title: 'Error creating user',
         description: error instanceof Error ? error.message : 'There was an error creating the user. Please try again.',

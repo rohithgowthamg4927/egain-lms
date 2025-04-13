@@ -49,7 +49,6 @@ router.post('/', async (req, res) => {
       });
     }
     
-    console.log(`Creating category with name: ${categoryName}`);
     
     const category = await prisma.CourseCategory.create({
       data: { 
@@ -57,10 +56,8 @@ router.post('/', async (req, res) => {
       }
     });
     
-    console.log('Category created:', category);
     res.status(201).json({ success: true, data: category });
   } catch (error) {
-    console.error('Error creating category:', error);
     handleApiError(res, error);
   }
 });

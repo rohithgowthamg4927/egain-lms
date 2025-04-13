@@ -1,8 +1,7 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -238,10 +237,6 @@ export default function StudentDashboard() {
 
   const totalAssignments = resources.filter(r => getResourceType(r) === 'assignment').length;
   const totalRecordings = resources.filter(r => isVideoResource(r)).length;
-  const completionPercentage = courses.length > 0 ? Math.round((2 / courses.length) * 100) : 0;
-  const attendancePercentage = 85;
-
-  const nextClass = upcomingSchedules[0];
 
   return (
     <div className="space-y-6">
@@ -256,28 +251,6 @@ export default function StudentDashboard() {
             Welcome back, {user?.fullName}. Here's an overview of your learning journey.
           </p>
         </div>
-        
-        {nextClass && (
-          <Card className="mt-4 md:mt-0 w-full md:w-auto bg-purple-50 border-purple-200">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="bg-purple-100 p-3 rounded-full">
-                <Calendar className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-purple-800">Next Class</p>
-                <h3 className="font-bold text-purple-900">{nextClass.topic || 'Class Session'}</h3>
-                <div className="flex items-center gap-2 text-xs text-purple-700 mt-1">
-                  <CalendarDays className="h-3 w-3" />
-                  <span>{formatScheduleDate(nextClass.scheduleDate)},</span>
-                  <Clock className="h-3 w-3" />
-                  <span>
-                    {format(new Date(nextClass.startTime), 'h:mm a')} - {format(new Date(nextClass.endTime), 'h:mm a')}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
 
       {isLoading ? (
@@ -325,23 +298,6 @@ export default function StudentDashboard() {
                 <div className="text-2xl font-bold">{resources.length}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {totalAssignments} assignments, {totalRecordings} recordings
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-gradient-to-br from-amber-50 to-white">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Course Progress</CardTitle>
-                <BarChart4 className="h-5 w-5 text-amber-500" />
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="text-2xl font-bold">{completionPercentage}%</div>
-                <Progress 
-                  value={completionPercentage} 
-                  className="h-2 bg-amber-100 overflow-hidden rounded-full" 
-                />
-                <p className="text-xs text-muted-foreground">
-                  Overall course completion
                 </p>
               </CardContent>
             </Card>
@@ -488,58 +444,6 @@ export default function StudentDashboard() {
                     </div>
                   </TabsContent>
                 </Tabs>
-              </CardContent>
-            </Card>
-
-            <Card className="overflow-hidden border-blue-100">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-white">
-                <CardTitle>Learning Progress</CardTitle>
-                <CardDescription>Your performance statistics</CardDescription>
-              </CardHeader>
-              <CardContent className="pb-2 pt-4">
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium">Course Completion</span>
-                      <span className="text-sm font-medium">{completionPercentage}%</span>
-                    </div>
-                    <Progress 
-                      value={completionPercentage} 
-                      className="h-2 bg-blue-100 overflow-hidden rounded-full" 
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {Math.round(completionPercentage / 10)} of 10 modules completed
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium">Attendance Rate</span>
-                      <span className="text-sm font-medium">{attendancePercentage}%</span>
-                    </div>
-                    <Progress 
-                      value={attendancePercentage} 
-                      className="h-2 bg-green-100 overflow-hidden rounded-full" 
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Attended {attendancePercentage}% of scheduled classes
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium">Resource Usage</span>
-                      <span className="text-sm font-medium">{Math.min(resources.length * 10, 100)}%</span>
-                    </div>
-                    <Progress 
-                      value={Math.min(resources.length * 10, 100)} 
-                      className="h-2 bg-amber-100 overflow-hidden rounded-full" 
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {resources.length} resources available
-                    </p>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>

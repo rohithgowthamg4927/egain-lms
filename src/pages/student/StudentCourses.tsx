@@ -1,9 +1,16 @@
+
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { getCourses } from '@/lib/api/courses';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -12,11 +19,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { getStudentCourses, submitCourseReview, updateCourseReview, deleteCourseReview } from '@/lib/api/students';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
-import { Book, Calendar, Clock, Star, Edit, Trash } from 'lucide-react';
+import { Book, Calendar, Clock, Star, Edit, Trash, Search, Filter, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { Level } from '@/lib/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -24,7 +30,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 export default function StudentCourses() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [courses, setCourses] = useState([]);
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('enrolled');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedLevel, setSelectedLevel] = useState('all');
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -35,35 +46,27 @@ export default function StudentCourses() {
   const [review, setReview] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (user?.userId) {
-      fetchCourses();
-    }
-  }, [user?.userId]);
+  // Fetch all courses
+  const { data: allCoursesData, isLoading: isAllCoursesLoading } = useQuery({
+    queryKey: ['courses'],
+    queryFn: getCourses,
+  });
 
-  const fetchCourses = async () => {
-    if (!user?.userId) return;
-    
-    setIsLoading(true);
-    try {
-      const response = await getStudentCourses(user.userId);
-      
-      if (response.success && response.data) {
-        setCourses(response.data);
-      } else {
-        throw new Error(response.error || 'Failed to fetch courses');
-      }
-    } catch (error) {
-      console.error('Error fetching courses:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch your enrolled courses',
-        variant: 'destructive',
-      });
-    } finally {
+  // Fetch enrolled courses
+  const { data: studentCoursesData, isLoading: isStudentCoursesLoading, refetch: refetchStudentCourses } = useQuery({
+    queryKey: ['studentCourses', user?.userId],
+    queryFn: () => getStudentCourses(user?.userId || 0),
+    enabled: !!user?.userId,
+  });
+
+  useEffect(() => {
+    if (studentCoursesData?.success && studentCoursesData.data) {
+      setEnrolledCourses(studentCoursesData.data);
+    }
+    if (!isAllCoursesLoading && !isStudentCoursesLoading) {
       setIsLoading(false);
     }
-  };
+  }, [studentCoursesData, isAllCoursesLoading, isStudentCoursesLoading]);
 
   const openReviewDialog = (course) => {
     setSelectedCourse(course);
@@ -104,7 +107,7 @@ export default function StudentCourses() {
           description: 'Your review has been submitted successfully',
         });
         setIsReviewDialogOpen(false);
-        fetchCourses();
+        refetchStudentCourses();
       } else {
         throw new Error(response.error || 'Failed to submit review');
       }
@@ -139,7 +142,7 @@ export default function StudentCourses() {
           description: 'Your review has been updated successfully',
         });
         setIsEditDialogOpen(false);
-        fetchCourses();
+        refetchStudentCourses();
       } else {
         throw new Error(response.error || 'Failed to update review');
       }
@@ -172,7 +175,7 @@ export default function StudentCourses() {
           description: 'Your review has been deleted successfully',
         });
         setIsDeleteDialogOpen(false);
-        fetchCourses();
+        refetchStudentCourses();
       } else {
         throw new Error(response.error || 'Failed to delete review');
       }
@@ -186,6 +189,10 @@ export default function StudentCourses() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const viewCourseDetails = (courseId) => {
+    navigate(`/student/courses/${courseId}`);
   };
 
   const getLevelLabel = (level) => {
@@ -206,112 +213,347 @@ export default function StudentCourses() {
     return colorMap[level] || 'bg-gray-100 text-gray-800';
   };
 
+  // Filter all courses based on search term, category, and level
+  const filteredAllCourses = allCoursesData?.data?.filter(course => {
+    const matchesSearch = 
+      course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesCategory = 
+      selectedCategory === 'all' || 
+      (course.categoryId && course.categoryId.toString() === selectedCategory);
+    
+    const matchesLevel = 
+      selectedLevel === 'all' || 
+      course.courseLevel === selectedLevel;
+    
+    return matchesSearch && matchesCategory && matchesLevel;
+  }) || [];
+
+  // Filter enrolled courses based on search term, category, and level
+  const filteredEnrolledCourses = enrolledCourses.filter(studentCourse => {
+    const course = studentCourse.course;
+    
+    const matchesSearch = 
+      course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesCategory = 
+      selectedCategory === 'all' || 
+      (course.categoryId && course.categoryId.toString() === selectedCategory);
+    
+    const matchesLevel = 
+      selectedLevel === 'all' || 
+      course.courseLevel === selectedLevel;
+    
+    return matchesSearch && matchesCategory && matchesLevel;
+  });
+
+  // Get all categories from both enrolled and all courses
+  const allCategories = allCoursesData?.data ? [...new Set(allCoursesData.data
+    .filter(course => course.category)
+    .map(course => ({ 
+      id: course.category.categoryId, 
+      name: course.category.categoryName 
+    }))
+    .map(category => JSON.stringify(category))
+  )]
+  .map(category => JSON.parse(category))
+  .sort((a, b) => a.name.localeCompare(b.name)) : [];
+
   return (
     <div className="space-y-6">
       <BreadcrumbNav items={[
         { label: 'My Courses', link: '/student/courses' }
       ]} />
       
-      <h1 className="text-3xl font-bold">My Courses</h1>
-      
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Clock className="h-12 w-12 animate-spin mx-auto text-primary" />
-            <p className="mt-4 text-muted-foreground">Loading your courses...</p>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <h1 className="text-3xl font-bold">Courses</h1>
+        
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+            <Input
+              placeholder="Search courses..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
-      ) : courses.length === 0 ? (
-        <div className="text-center py-12">
-          <Book className="h-12 w-12 mx-auto text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-medium">No courses enrolled</h3>
-          <p className="mt-2 text-muted-foreground">
-            You haven't enrolled in any courses yet.
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2">
-          {courses.map((studentCourse) => (
-            <Card key={studentCourse.studentCourseId} className="overflow-hidden">
-              <CardHeader className="p-4 pb-2">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-xl">
-                    {studentCourse.course.courseName}
-                  </CardTitle>
-                  <Badge className={getLevelColor(studentCourse.course.courseLevel)}>
-                    {getLevelLabel(studentCourse.course.courseLevel)}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 pt-2">
-                <p className="text-muted-foreground text-sm mb-4">
-                  {studentCourse.course.description || 'No description available.'}
-                </p>
-                
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                  <div className="flex items-center text-sm">
-                    <Book className="h-4 w-4 mr-1 text-muted-foreground" />
-                    <span>Category: {studentCourse.course.category?.categoryName || 'Uncategorized'}</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                    <span>Enrolled: {format(new Date(studentCourse.createdAt), 'PP')}</span>
-                  </div>
-                </div>
+      </div>
 
-                {studentCourse.course.reviews?.find(r => r.userId === user?.userId) ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Your Review</span>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditDialog(studentCourse, studentCourse.course.reviews.find(r => r.userId === user?.userId))}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openDeleteDialog(studentCourse, studentCourse.course.reviews.find(r => r.userId === user?.userId))}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
+      <div className="bg-white rounded-lg shadow p-4 flex flex-col md:flex-row gap-4">
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {allCategories.map(category => (
+                <SelectItem key={category.id} value={category.id.toString()}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="All Levels" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Levels</SelectItem>
+              <SelectItem value={Level.beginner}>Beginner</SelectItem>
+              <SelectItem value={Level.intermediate}>Intermediate</SelectItem>
+              <SelectItem value={Level.advanced}>Advanced</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      <Tabs 
+        defaultValue="enrolled" 
+        className="w-full"
+        onValueChange={setActiveTab}
+        value={activeTab}
+      >
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="enrolled">My Enrolled Courses</TabsTrigger>
+          <TabsTrigger value="all">All Courses</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="enrolled" className="mt-6">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <Clock className="h-12 w-12 animate-spin mx-auto text-primary" />
+                <p className="mt-4 text-muted-foreground">Loading your courses...</p>
+              </div>
+            </div>
+          ) : filteredEnrolledCourses.length === 0 ? (
+            <div className="text-center py-12">
+              <Book className="h-12 w-12 mx-auto text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">
+                {searchTerm || selectedCategory !== 'all' || selectedLevel !== 'all'
+                  ? 'No matching courses found'
+                  : 'No courses enrolled'}
+              </h3>
+              <p className="mt-2 text-muted-foreground">
+                {searchTerm || selectedCategory !== 'all' || selectedLevel !== 'all'
+                  ? 'Try adjusting your filters or try a different search term.'
+                  : 'You haven\'t enrolled in any courses yet.'}
+              </p>
+              {(searchTerm || selectedCategory !== 'all' || selectedLevel !== 'all') && (
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedCategory('all');
+                    setSelectedLevel('all');
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredEnrolledCourses.map((studentCourse) => (
+                <Card key={studentCourse.studentCourseId} className="overflow-hidden hover:shadow-md transition-shadow">
+                  <div className="relative w-full h-32 bg-gradient-to-r from-blue-500 to-purple-500">
+                    {studentCourse.course.thumbnailUrl && (
+                      <img 
+                        src={studentCourse.course.thumbnailUrl} 
+                        alt={studentCourse.course.courseName}
+                        className="w-full h-full object-cover opacity-75"
+                      />
+                    )}
+                    <div className="absolute top-2 right-2">
+                      <Badge className={getLevelColor(studentCourse.course.courseLevel)}>
+                        {getLevelLabel(studentCourse.course.courseLevel)}
+                      </Badge>
+                    </div>
+                  </div>
+                  <CardHeader className="p-4 pb-2">
+                    <CardTitle className="text-xl line-clamp-1">
+                      {studentCourse.course.courseName}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-2">
+                    <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                      {studentCourse.course.description || 'No description available.'}
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                      <div className="flex items-center text-sm">
+                        <Book className="h-4 w-4 mr-1 text-muted-foreground" />
+                        <span className="truncate">{studentCourse.course.category?.categoryName || 'Uncategorized'}</span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
+                        <span className="truncate">Enrolled: {format(new Date(studentCourse.createdAt), 'PP')}</span>
                       </div>
                     </div>
-                    <div className="flex items-center">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < studentCourse.course.reviews.find(r => r.userId === user?.userId).rating
-                              ? 'text-yellow-400 fill-yellow-400'
-                              : 'text-gray-300'
-                          }`}
-                        />
-                      ))}
+
+                    <div className="flex flex-col gap-3">
+                      <Button 
+                        variant="default" 
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                        onClick={() => viewCourseDetails(studentCourse.course.courseId)}
+                      >
+                        View Course
+                      </Button>
+                      
+                      {studentCourse.course.reviews?.find(r => r.userId === user?.userId) ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Your Review</span>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditDialog(studentCourse, studentCourse.course.reviews.find(r => r.userId === user?.userId))}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openDeleteDialog(studentCourse, studentCourse.course.reviews.find(r => r.userId === user?.userId))}
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${
+                                  i < studentCourse.course.reviews.find(r => r.userId === user?.userId).rating
+                                    ? 'text-yellow-400 fill-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <Button 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => openReviewDialog(studentCourse)}
+                        >
+                          Rate & Review
+                        </Button>
+                      )}
                     </div>
-                    {studentCourse.course.reviews.find(r => r.userId === user?.userId).review && (
-                      <p className="text-sm text-muted-foreground">
-                        {studentCourse.course.reviews.find(r => r.userId === user?.userId).review}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="all" className="mt-6">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <Clock className="h-12 w-12 animate-spin mx-auto text-primary" />
+                <p className="mt-4 text-muted-foreground">Loading courses...</p>
+              </div>
+            </div>
+          ) : filteredAllCourses.length === 0 ? (
+            <div className="text-center py-12">
+              <Book className="h-12 w-12 mx-auto text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">No courses found</h3>
+              <p className="mt-2 text-muted-foreground">
+                Try adjusting your filters or try a different search term.
+              </p>
+              {(searchTerm || selectedCategory !== 'all' || selectedLevel !== 'all') && (
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedCategory('all');
+                    setSelectedLevel('all');
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredAllCourses.map((course) => {
+                const isUserEnrolled = enrolledCourses.some(
+                  sc => sc.course.courseId === course.courseId
+                );
+                
+                return (
+                  <Card key={course.courseId} className="overflow-hidden hover:shadow-md transition-shadow">
+                    <div className="relative w-full h-32 bg-gradient-to-r from-blue-500 to-purple-500">
+                      {course.thumbnailUrl && (
+                        <img 
+                          src={course.thumbnailUrl} 
+                          alt={course.courseName}
+                          className="w-full h-full object-cover opacity-75"
+                        />
+                      )}
+                      <div className="absolute top-2 right-2">
+                        <Badge className={getLevelColor(course.courseLevel)}>
+                          {getLevelLabel(course.courseLevel)}
+                        </Badge>
+                      </div>
+                      {isUserEnrolled && (
+                        <div className="absolute top-2 left-2">
+                          <Badge className="bg-green-100 text-green-800">
+                            Enrolled
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    <CardHeader className="p-4 pb-2">
+                      <CardTitle className="text-xl line-clamp-1">
+                        {course.courseName}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-2">
+                      <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                        {course.description || 'No description available.'}
                       </p>
-                    )}
-                  </div>
-                ) : (
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => openReviewDialog(studentCourse)}
-                  >
-                    Rate & Review Course
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                      
+                      <div className="grid grid-cols-2 gap-2 mb-4">
+                        <div className="flex items-center text-sm">
+                          <Book className="h-4 w-4 mr-1 text-muted-foreground" />
+                          <span className="truncate">{course.category?.categoryName || 'Uncategorized'}</span>
+                        </div>
+                        <div className="flex items-center text-sm">
+                          <Users className="h-4 w-4 mr-1 text-muted-foreground" />
+                          <span className="truncate">{course._count?.studentCourses || 0} students</span>
+                        </div>
+                      </div>
+
+                      <Button 
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                        onClick={() => viewCourseDetails(course.courseId)}
+                      >
+                        View Course
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
       
       {/* Review Dialog */}
       <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>

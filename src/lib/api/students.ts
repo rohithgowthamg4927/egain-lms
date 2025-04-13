@@ -1,88 +1,25 @@
-import { Schedule, Resource } from '../types';
+
 import { apiFetch } from './core';
-import { EntityAdapter } from '../adapters/entity-adapter';
 
-export interface StudentCourse {
-  studentCourseId: number;
-  studentId: number;
-  courseId: number;
-  createdAt: string;
-  course: {
-    courseId: number;
-    courseName: string;
-    description: string | null;
-    categoryId: number | null;
-    category: {
-      categoryId: number;
-      categoryName: string;
-    } | null;
-  };
-}
-
-export interface StudentSchedule {
-  scheduleId: number;
-  topic: string;
-  scheduleDate: string;
-  startTime: string;
-  endTime: string;
-  batch: {
-    batchId: number;
-    batchName: string;
-    course: {
-      courseId: number;
-      courseName: string;
-    };
-  };
-}
-
-export interface StudentResource {
-  resourceId: number;
-  title: string;
-  description: string | null;
-  fileUrl: string;
-  resourceType: 'assignment' | 'recording';
-  batch: {
-    batchId: number;
-    batchName: string;
-    course: {
-      courseId: number;
-      courseName: string;
-    };
-  };
-}
-
-export interface StudentAssignment {
-  assignmentId: number;
-  title: string;
-  description: string | null;
-  dueDate: string;
-  grade: number | null;
-  isSubmitted: boolean;
-  submissionUrl: string | null;
-  resourceUrl: string;
-  comments: string | null;
-}
-
-export interface StudentCourseDetail {
-  courseId: number;
-  courseName: string;
-  description: string | null;
-  categoryId: number | null;
-  category: {
-    categoryId: number;
-    categoryName: string;
-  } | null;
-  assignments: StudentAssignment[];
-  resources: StudentResource[];
-  schedules: StudentSchedule[];
-}
-
-export const getStudentCourses = async (studentId: number): Promise<{ success: boolean; data?: StudentCourse[]; error?: string }> => {
+// Get student's course details
+export const getStudentCourseDetail = async (courseId: string): Promise<{ success: boolean; data?: any; error?: string }> => {
   try {
-    const response = await apiFetch<StudentCourse[]>(`/student-courses/${studentId}`);
+    const response = await apiFetch(`/courses/${courseId}`);
     return response;
   } catch (error) {
-    console.error('Error fetching student courses:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch course details'
+    };
+  }
+};
+
+// Get all courses for a student
+export const getStudentCourses = async (studentId: number): Promise<{ success: boolean; data?: any[]; error?: string }> => {
+  try {
+    const response = await apiFetch(`/student-courses/${studentId}`);
+    return response;
+  } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch student courses'
@@ -90,12 +27,12 @@ export const getStudentCourses = async (studentId: number): Promise<{ success: b
   }
 };
 
-export const getStudentSchedules = async (studentId: number): Promise<{ success: boolean; data?: Schedule[]; error?: string }> => {
+// Get all schedules for a student
+export const getStudentSchedules = async (studentId: number): Promise<{ success: boolean; data?: any[]; error?: string }> => {
   try {
-    const response = await apiFetch<Schedule[]>(`/students/${studentId}/schedules`);
+    const response = await apiFetch(`/students/${studentId}/schedules`);
     return response;
   } catch (error) {
-    console.error('Error fetching student schedules:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch student schedules'
@@ -103,48 +40,38 @@ export const getStudentSchedules = async (studentId: number): Promise<{ success:
   }
 };
 
-export const getStudentResources = async (studentId: number): Promise<{ success: boolean; data?: Resource[]; error?: string }> => {
+// Get all resources for a student
+export const getStudentResources = async (studentId: number): Promise<{ success: boolean; data?: any[]; error?: string }> => {
   try {
-    const response = await apiFetch<{ success: boolean; data: Resource[] }>(`/students/${studentId}/resources`);
-    
-    // Extract the data array from the nested response
-    if (response.success && response.data) {
-      return {
-        success: true,
-        data: response.data.data || []
-      };
-    }
-    
+    const response = await apiFetch(`/students/${studentId}/resources`);
+    return response;
+  } catch (error) {
     return {
       success: false,
-      error: 'Failed to fetch resources'
-    };
-  } catch (error) {
-    console.error('Error fetching student resources:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to fetch resources' 
+      error: error instanceof Error ? error.message : 'Failed to fetch student resources'
     };
   }
 };
 
+// Submit a course review
 export const submitCourseReview = async (
   studentId: number,
   courseId: number,
   rating: number,
-  review: string
-): Promise<{ success: boolean; error?: string }> => {
+  review?: string
+): Promise<{ success: boolean; data?: any; error?: string }> => {
   try {
-    const response = await apiFetch<{ success: boolean }>(
-      `/courses/${courseId}/reviews`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ userId: studentId, rating, review }),
-      }
-    );
+    const response = await apiFetch('/course-reviews', {
+      method: 'POST',
+      body: JSON.stringify({
+        userId: studentId,
+        courseId,
+        rating,
+        review
+      })
+    });
     return response;
   } catch (error) {
-    console.error('Error submitting course review:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to submit course review'
@@ -152,39 +79,26 @@ export const submitCourseReview = async (
   }
 };
 
-export const getStudentCourseAssignments = async (courseId: string) => {
-  const response = await apiFetch<StudentAssignment[]>(`/courses/${courseId}/assignments`);
-  return response.data;
-};
-
-export const getStudentAssignment = async (courseId: string, assignmentId: string) => {
-  const response = await apiFetch<StudentAssignment>(`/courses/${courseId}/assignments/${assignmentId}`);
-  return response.data;
-};
-
-export const getStudentCourseDetail = async (courseId: string) => {
-  const response = await apiFetch<StudentCourseDetail>(`/courses/${courseId}`);
-  return response.data;
-};
-
+// Update a course review
 export const updateCourseReview = async (
   studentId: number,
   courseId: number,
   reviewId: number,
   rating: number,
-  review: string
-): Promise<{ success: boolean; error?: string }> => {
+  review?: string
+): Promise<{ success: boolean; data?: any; error?: string }> => {
   try {
-    const response = await apiFetch<{ success: boolean }>(
-      `/courses/${courseId}/reviews/${reviewId}`,
-      {
-        method: 'PUT',
-        body: JSON.stringify({ userId: studentId, rating, review }),
-      }
-    );
+    const response = await apiFetch(`/course-reviews/${reviewId}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        userId: studentId,
+        courseId,
+        rating,
+        review
+      })
+    });
     return response;
   } catch (error) {
-    console.error('Error updating course review:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update course review'
@@ -192,22 +106,18 @@ export const updateCourseReview = async (
   }
 };
 
+// Delete a course review
 export const deleteCourseReview = async (
   studentId: number,
   courseId: number,
   reviewId: number
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const response = await apiFetch<{ success: boolean }>(
-      `/courses/${courseId}/reviews/${reviewId}`,
-      {
-        method: 'DELETE',
-        body: JSON.stringify({ userId: studentId }),
-      }
-    );
+    const response = await apiFetch(`/course-reviews/${reviewId}`, {
+      method: 'DELETE'
+    });
     return response;
   } catch (error) {
-    console.error('Error deleting course review:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete course review'

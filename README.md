@@ -1,4 +1,4 @@
-Learning Management System for eGain Technologies
+<h1>Learning Management System for <a href="https://e-gain.ci.in">eGain Technologies</a></h1>
 
 
-Developed by: Rohith Gowtham G
+<h2>Developed by: <a href="https://github.com/rohithgowthamg4927">Rohith Gowtham G</a></h2>

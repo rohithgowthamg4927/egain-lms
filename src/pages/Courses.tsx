@@ -9,21 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getCourses, getCategories, createCategory, deleteCourse } from '@/lib/api';
 import { getDashboardCounts } from '@/lib/api/dashboard';
-import { Course, Category, Level, Role } from '@/lib/types';
+import { Course, Category, Level } from '@/lib/types';
 import { Search, BookOpen, Users, Layers, Plus } from 'lucide-react';
 import CourseGrid from '@/components/courses/CourseGrid';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
-import { useAuth } from '@/hooks/use-auth';
 
 const Courses = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { user } = useAuth();
-  const isAdmin = user?.role === Role.admin;
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -63,38 +60,105 @@ const Courses = () => {
     }
   }, [countsQuery.data]);
 
-  // Handle course view
+  const courses = coursesQuery.data?.data || [];
+  const categories = categoriesQuery.data?.data || [];
+  const isLoading = coursesQuery.isLoading || categoriesQuery.isLoading;
+  const isError = coursesQuery.isError || categoriesQuery.isError;
+
+  useEffect(() => {
+    // Show errors if data fetching fails
+    if (coursesQuery.isError) {
+      console.error('Courses query error:', coursesQuery.error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch courses. Please try refreshing the page.',
+        variant: 'destructive',
+      });
+    }
+
+    if (categoriesQuery.isError) {
+      console.error('Categories query error:', categoriesQuery.error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch categories. Please try refreshing the page.',
+        variant: 'destructive',
+      });
+    }
+  }, [coursesQuery.isError, categoriesQuery.isError, toast]);
+
+  // Refetch data function
+  const refetchData = () => {
+    coursesQuery.refetch();
+    categoriesQuery.refetch();
+    countsQuery.refetch();
+  };
+
+  // Automatically refetch when the component mounts
+  useEffect(() => {
+    refetchData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading courses...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Failed to load courses</p>
+          <Button onClick={refetchData}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const filteredCourses = courses.filter((course) => {
+    const matchesSearch =
+      course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const matchesCategory =
+      selectedCategory === 'all' || course.categoryId.toString() === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
+
   const handleViewCourse = (course: Course) => {
     navigate(`/courses/${course.courseId}`);
   };
 
-  // Handle course edit (admin only)
   const handleEditCourse = (course: Course) => {
-    if (!isAdmin) return;
     navigate(`/courses/edit/${course.courseId}`);
   };
 
-  // Handle course delete (admin only)
   const handleDeleteCourse = (course: Course) => {
-    if (!isAdmin) return;
     setCourseToDelete(course);
     setIsDeleteDialogOpen(true);
   };
 
-  // Confirm course deletion
   const confirmDeleteCourse = async () => {
-    if (!courseToDelete || !isAdmin) return;
+    if (!courseToDelete) return;
     
     setIsDeleting(true);
     try {
       const response = await deleteCourse(courseToDelete.courseId);
       
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: ['courses'] });
         toast({
-          title: 'Course deleted',
-          description: `Course "${courseToDelete.courseName}" has been deleted successfully.`,
+          title: 'Success',
+          description: 'Course deleted successfully',
         });
+        
+        // Refresh the courses list
+        queryClient.invalidateQueries({ queryKey: ['courses'] });
       } else {
         toast({
           title: 'Error',
@@ -106,7 +170,7 @@ const Courses = () => {
       console.error('Error deleting course:', error);
       toast({
         title: 'Error',
-        description: 'An unexpected error occurred while deleting the course',
+        description: 'An unexpected error occurred',
         variant: 'destructive',
       });
     } finally {
@@ -116,24 +180,33 @@ const Courses = () => {
     }
   };
 
-  // Handle category creation
   const handleCreateCategory = async () => {
-    if (!newCategoryName.trim() || !isAdmin) {
+    if (!newCategoryName) {
+      toast({
+        title: 'Error',
+        description: 'Category name is required',
+        variant: 'destructive',
+      });
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
-      const response = await createCategory({ categoryName: newCategoryName.trim() });
-      
-      if (response.success) {
-        queryClient.invalidateQueries({ queryKey: ['categories'] });
+      const response = await createCategory({
+        categoryName: newCategoryName,
+        description: '', // Pass an empty string instead of null
+      });
+
+      if (response.success && response.data) {
         toast({
-          title: 'Category created',
-          description: `Category "${newCategoryName}" has been created successfully.`,
+          title: 'Success',
+          description: `Category "${newCategoryName}" has been created`,
         });
         setNewCategoryName('');
         setIsCreateCategoryDialogOpen(false);
+        
+        // Refresh categories using React Query
+        queryClient.invalidateQueries({ queryKey: ['categories'] });
       } else {
         toast({
           title: 'Error',
@@ -145,7 +218,7 @@ const Courses = () => {
       console.error('Error creating category:', error);
       toast({
         title: 'Error',
-        description: 'An unexpected error occurred while creating the category',
+        description: 'Failed to create category',
         variant: 'destructive',
       });
     } finally {
@@ -153,162 +226,162 @@ const Courses = () => {
     }
   };
 
-  // Filter courses based on search term and selected category
-  const filteredCourses = coursesQuery.data?.data
-    ? coursesQuery.data.data.filter((course) => {
-        const matchesSearch = course.courseName.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCategory = selectedCategory === 'all' || (course.categoryId && course.categoryId.toString() === selectedCategory);
-        return matchesSearch && matchesCategory;
-      })
-    : [];
-
   return (
-    <div className="space-y-6">
-      <BreadcrumbNav items={[{ label: 'Courses', link: '/courses' }]} />
-      
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="animate-fade-in">
+      <BreadcrumbNav items={[
+        { label: 'Courses', link: '/courses' }
+      ]} />
+
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
         <h1 className="text-3xl font-bold">Courses</h1>
-        {isAdmin && (
-          <div className="flex gap-2">
-            <Button onClick={() => navigate('/courses/add')}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Course
-            </Button>
-            <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Category
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create New Category</DialogTitle>
-                  <DialogDescription>
-                    Add a new category for organizing courses.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="py-4">
-                  <Label htmlFor="categoryName">Category Name</Label>
-                  <Input
-                    id="categoryName"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="Enter category name"
-                    className="mt-1"
-                  />
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsCreateCategoryDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleCreateCategory} disabled={isSubmitting}>
-                    {isSubmitting ? 'Creating...' : 'Create Category'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        )}
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => navigate('/courses/add')}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Course
+        </Button>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <Card className="shadow-md">
+        <Card className="shadow-md border-blue-100">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <span className="text-3xl font-bold">
-                {coursesQuery.data?.data?.length || 0}
-              </span>
-              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <span className="text-3xl font-bold">{courses.length}</span>
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
                 <BookOpen className="h-5 w-5 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-md">
+        <Card className="shadow-md border-blue-100">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Students</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <span className="text-3xl font-bold">{studentsCount}</span>
-              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
                 <Users className="h-5 w-5 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-md">
+        <Card className="shadow-md border-blue-100">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Categories</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <span className="text-3xl font-bold">
-                {categoriesQuery.data?.data?.length || 0}
-              </span>
-              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <span className="text-3xl font-bold">{categories.length}</span>
+              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
                 <Layers className="h-5 w-5 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-      
+
       <div className="bg-white rounded-lg border shadow-sm p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
             <Input
               placeholder="Search courses..."
-              className="pl-10"
+              className="pl-10 border-gray-200"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[180px]">
+          <div className="flex items-center gap-2">
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
+              <SelectTrigger className="w-[180px] border-gray-200">
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {categoriesQuery.data?.data?.map((category) => (
+                {categories.map((category) => (
                   <SelectItem key={category.categoryId} value={category.categoryId.toString()}>
                     {category.categoryName}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  Add Category
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Create category</DialogTitle>
+                  <DialogDescription>
+                    Add a new category to group your courses.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Category name</Label>
+                    <Input
+                      id="name"
+                      placeholder="Category name"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsCreateCategoryDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleCreateCategory} 
+                    disabled={isSubmitting}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {isSubmitting ? 'Creating...' : 'Create'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>
-      
+
       <CourseGrid
         courses={filteredCourses}
-        loading={coursesQuery.isLoading}
+        loading={isLoading}
         onView={handleViewCourse}
-        onEdit={isAdmin ? handleEditCourse : undefined}
-        onDelete={isAdmin ? handleDeleteCourse : undefined}
+        onEdit={handleEditCourse}
+        onDelete={handleDeleteCourse}
       />
-      
+
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Course</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this course? This action cannot be undone.
+              This action cannot be undone. This will permanently delete the course
+              "{courseToDelete?.courseName}" and remove any associated data.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteCourse} disabled={isDeleting} className="bg-red-600 hover:bg-red-700">
-              {isDeleting ? 'Deleting...' : 'Delete Course'}
+            <AlertDialogAction 
+              onClick={confirmDeleteCourse}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

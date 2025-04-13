@@ -1,17 +1,10 @@
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Course, Level } from '@/lib/types';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Pencil, Trash2, Eye } from 'lucide-react';
-import { Course, Level, Role } from '@/lib/types';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/hooks/use-auth';
+import { Badge } from '@/components/ui/badge';
+import { Eye, Users, Bookmark, Edit, Trash } from 'lucide-react';
 
 interface CourseCardProps {
   course: Course;
@@ -20,97 +13,127 @@ interface CourseCardProps {
   onDelete?: (course: Course) => void;
 }
 
-const CourseCard = ({ course, onView, onEdit, onDelete }: CourseCardProps) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user } = useAuth();
-  const isAdmin = user?.role === Role.admin;
+const CourseCard = ({ 
+  course,
+  onView,
+  onEdit,
+  onDelete 
+}: CourseCardProps) => {
+  const [isHovered, setIsHovered] = useState(false);
 
-  const getLevelBadgeClass = (level: Level) => {
-    switch (level) {
-      case Level.beginner:
-        return 'bg-green-100 text-green-800';
-      case Level.intermediate:
-        return 'bg-blue-100 text-blue-800';
-      case Level.advanced:
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  // For debugging purposes, log the course object
+  console.log('CourseCard - rendering course:', course);
+
+  const levelColor = {
+    'beginner': 'bg-green-100 hover:bg-green-200 text-green-800',
+    'intermediate': 'bg-blue-100 hover:bg-blue-200 text-blue-800',
+    'advanced': 'bg-purple-100 hover:bg-purple-200 text-purple-800'
+  };
+
+  const handleViewClick = () => {
+    console.log('View button clicked for course:', course.courseId);
+    if (onView) {
+      onView(course);
     }
   };
 
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Edit button clicked for course:', course.courseId);
+    if (onEdit) {
+      onEdit(course);
+    }
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Delete button clicked for course:', course.courseId);
+    if (onDelete) {
+      onDelete(course);
+    }
+  };
+
+  const getLevelLabel = (level: Level): string => {
+    const labels = {
+      'beginner': 'Beginner',
+      'intermediate': 'Intermediate',
+      'advanced': 'Advanced'
+    };
+    return labels[level] || level;
+  };
+
   return (
-    <Card className="overflow-hidden transition-all duration-200 hover:shadow-md">
-      <div className="relative">
-        <img
-          src={course.thumbnailUrl || '/images/course-placeholder.jpg'}
-          alt={course.courseName}
-          className="w-full aspect-video object-cover"
-        />
-        <div className="absolute top-2 right-2">
-          <span
-            className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getLevelBadgeClass(
-              course.courseLevel
-            )}`}
-          >
-            {course.courseLevel.charAt(0).toUpperCase() + course.courseLevel.slice(1)}
-          </span>
+    <Card 
+      className={`overflow-hidden transition-all duration-300 h-full flex flex-col relative ${
+        isHovered ? 'shadow-lg translate-y-[-4px]' : 'shadow'
+      }`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="relative w-full pt-[56.25%] bg-muted">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30 flex items-end">
+          <div className="p-4 w-full">
+            <Badge variant="outline" className={`font-normal ${levelColor[course.courseLevel]}`}>
+              {getLevelLabel(course.courseLevel)}
+            </Badge>
+          </div>
         </div>
+        <img
+          src={course.thumbnailUrl || '/thumbnail.jpeg'}
+          alt={course.courseName}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
       </div>
 
-      <CardContent className="p-4">
-        <h3 className="font-semibold text-lg mb-2 line-clamp-2">{course.courseName}</h3>
-        <p className="text-muted-foreground text-sm mb-3 line-clamp-3">
-          {course.description || 'No description available.'}
+      <CardHeader className="pb-2">
+        <CardTitle className="line-clamp-1 text-lg">{course.courseName}</CardTitle>
+      </CardHeader>
+
+      <CardContent className="pb-4 flex-grow">
+        <p className="text-muted-foreground text-sm line-clamp-2 mb-4">
+          {course.description || "No description available for this course."}
         </p>
-        <div className="flex items-center text-sm text-muted-foreground">
-          <span className="flex items-center">
-            <Eye className="h-4 w-4 mr-1" />
-            {course._count?.studentCourses || 0} student{course._count?.studentCourses !== 1 ? 's' : ''}
-          </span>
-          <span className="mx-2">•</span>
-          <span>
-            {course._count?.batches || 0} batch{course._count?.batches !== 1 ? 'es' : ''}
-          </span>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Users className="h-4 w-4 mr-1" />
+            <span>{course._count?.studentCourses || 0} students</span>
+          </div>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Bookmark className="h-4 w-4 mr-1" />
+            <span>{course._count?.batches || 0} batches</span>
+          </div>
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0 flex justify-between gap-4">
+      <CardFooter className="pt-0 flex flex-col gap-2">
         <Button
-          variant="outline"
-          className="flex-1"
-          onClick={() => onView && onView(course)}
+          variant="default"
+          className="w-full gap-2 group"
+          onClick={handleViewClick}
         >
-          View Details
+          <Eye className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
+          View Course
         </Button>
         
-        {isAdmin && (
-          <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => {
-                setIsMenuOpen(false);
-                onEdit && onEdit(course);
-              }}>
-                <Pencil className="h-4 w-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-red-600"
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  onDelete && onDelete(course);
-                }}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        <div className="flex w-full gap-2">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={handleEditClick}
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+          <Button
+            variant="destructive"
+            className="flex-1"
+            onClick={handleDeleteClick}
+          >
+            <Trash className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

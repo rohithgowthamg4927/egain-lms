@@ -7,45 +7,26 @@ import { useToast } from '@/hooks/use-toast';
 import { getResourcePresignedUrl } from '@/lib/api/resources';
 import { Resource } from '@/lib/types';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
-import { useAuth } from '@/hooks/use-auth';
-import { Role } from '@/lib/types';
 
 interface ResourceListProps {
   resources: Resource[];
   onDelete: (resource: Resource) => void;
   userRole?: string;
-  instructorId?: number;
 }
 
-export function ResourceList({ resources, onDelete, userRole, instructorId }: ResourceListProps) {
+export function ResourceList({ resources, onDelete, userRole }: ResourceListProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [resourceToDelete, setResourceToDelete] = useState<Resource | null>(null);
   const canDelete = userRole === 'instructor' || userRole === 'admin';
   const [isDownloading, setIsDownloading] = useState(false);
-  const isInstructor = user?.role === Role.instructor;
-
-  const filteredResources = isInstructor && instructorId 
-    ? resources.filter(resource => 
-        (resource.uploadedById === instructorId) || 
-        (resource.batch?.instructorId === instructorId)
-      )
-    : resources;
-
-  const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString();
-    } catch (error) {
-      return 'Invalid Date';
-    }
-  };
 
   const getResourceType = (resource: Resource): string => {
     const fileName = resource.fileName?.toLowerCase() || '';
     const type = resource.type?.toLowerCase() || '';
     
+    // Check if it's a video file by extension or type
     if (fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi') || 
         type === 'recording' || type === 'video') {
       return 'Class Recording';
@@ -110,21 +91,6 @@ export function ResourceList({ resources, onDelete, userRole, instructorId }: Re
   };
 
   const handleDeleteClick = (resource: Resource) => {
-    if (isInstructor && instructorId) {
-      const canInstructorDelete = 
-        resource.uploadedById === instructorId || 
-        resource.batch?.instructorId === instructorId;
-      
-      if (!canInstructorDelete) {
-        toast({
-          title: 'Permission Denied',
-          description: 'You can only delete resources for your own batches',
-          variant: 'destructive',
-        });
-        return;
-      }
-    }
-    
     setResourceToDelete(resource);
     setShowDeleteDialog(true);
   };
@@ -159,7 +125,7 @@ export function ResourceList({ resources, onDelete, userRole, instructorId }: Re
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredResources.map((resource) => (
+          {resources.map((resource) => (
             <TableRow key={resource.resourceId}>
               <TableCell className="font-medium">
                 <div className="flex items-center gap-2">
@@ -176,7 +142,7 @@ export function ResourceList({ resources, onDelete, userRole, instructorId }: Re
                 </Badge>
               </TableCell>
               <TableCell>{resource.uploadedBy.fullName}</TableCell>
-              <TableCell>{formatDate(resource.createdAt)}</TableCell>
+              <TableCell>{new Date(resource.createdAt).toLocaleDateString()}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button

@@ -39,7 +39,7 @@ interface SidebarProps {
 
 export default function Sidebar({ className }: SidebarProps) {
   const { pathname } = useLocation();
-  const { logout, hasRole, user } = useAuth();
+  const { logout, hasRole } = useAuth();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -64,26 +64,16 @@ export default function Sidebar({ className }: SidebarProps) {
     logout();
   };
 
-  // Determine dashboard link based on user role
-  const getDashboardLink = () => {
-    if (hasRole(Role.admin)) return "/dashboard";
-    if (hasRole(Role.instructor)) return "/instructor/dashboard";
-    if (hasRole(Role.student)) return "/student/dashboard";
-    return "/dashboard";
-  };
-
   const NavItems = () => (
     <div className="group flex flex-col gap-1 py-2">
       {hasRole([Role.admin, Role.instructor, Role.student]) && (
-        <Link to={getDashboardLink()}>
+        <Link to="/dashboard">
           <Button
             variant="ghost"
             size={isCollapsed ? "icon" : "default"}
             className={cn(
               "w-full justify-start",
-              (pathname === "/dashboard" || 
-               pathname === "/instructor/dashboard" || 
-               pathname === "/student/dashboard") && "bg-accent text-accent-foreground",
+              pathname === "/dashboard" && "bg-accent text-accent-foreground",
               isCollapsed && "flex h-10 w-10 p-0 justify-center"
             )}
           >
@@ -161,7 +151,7 @@ export default function Sidebar({ className }: SidebarProps) {
         </Link>
       )}
 
-      {hasRole([Role.admin, Role.instructor]) && (
+      {hasRole([Role.admin]) && (
         <Link to="/students">
           <Button
             variant="ghost"

@@ -7,30 +7,14 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { useAuth } from '@/hooks/use-auth';
-import { Role } from '@/lib/types';
 
 interface ResourceGridProps {
   resources: Resource[];
   onDelete: (resource: Resource) => void;
   userRole?: string;
-  instructorId?: number;
 }
 
-const ResourceGrid = ({ resources, onDelete, userRole, instructorId }: ResourceGridProps) => {
-  const { user } = useAuth();
-  const isInstructor = user?.role === Role.instructor;
-  
-  // Filter resources for instructors to only show resources from their batches
-  const filteredResources = isInstructor && instructorId 
-    ? resources.filter(resource => 
-        // Check if resource belongs to instructor's batch
-        (resource.uploadedById === instructorId) || 
-        // Or check if instructor is assigned to the batch
-        (resource.batch?.instructorId === instructorId)
-      )
-    : resources;
-
+const ResourceGrid = ({ resources, onDelete, userRole }: ResourceGridProps) => {
   // Helper function to determine resource type
   const getResourceType = (resource: Resource): string => {
     const type = resource.type?.toLowerCase();
@@ -56,7 +40,7 @@ const ResourceGrid = ({ resources, onDelete, userRole, instructorId }: ResourceG
   const groupResourcesByType = () => {
     const grouped: Record<string, Resource[]> = {};
     
-    filteredResources.forEach(resource => {
+    resources.forEach(resource => {
       // Use our helper function to determine the resource type
       const resourceType = getResourceType(resource);
       
@@ -85,7 +69,7 @@ const ResourceGrid = ({ resources, onDelete, userRole, instructorId }: ResourceG
       
       <TabsContent value="all" className="mt-0">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredResources.map((resource) => (
+          {resources.map((resource) => (
             <ResourceCard 
               key={resource.resourceId} 
               resource={resource} 

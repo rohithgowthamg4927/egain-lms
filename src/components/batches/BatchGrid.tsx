@@ -9,7 +9,6 @@ interface BatchGridProps {
   onEdit?: (batch: Batch) => void;
   onDelete?: (batch: Batch) => void;
   onManageStudents?: (batch: Batch) => void;
-  onInstructorClick?: (instructorId: number) => void;
 }
 
 const BatchGrid = ({ 
@@ -18,8 +17,7 @@ const BatchGrid = ({
   onView, 
   onEdit, 
   onDelete,
-  onManageStudents,
-  onInstructorClick
+  onManageStudents
 }: BatchGridProps) => {
   if (loading) {
     return (
@@ -55,7 +53,6 @@ const BatchGrid = ({
           onEdit={onEdit}
           onDelete={onDelete}
           onManageStudents={onManageStudents}
-          onInstructorClick={onInstructorClick}
         />
       ))}
     </div>

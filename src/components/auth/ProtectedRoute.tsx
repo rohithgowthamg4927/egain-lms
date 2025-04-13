@@ -53,66 +53,34 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // Strict role-based access control
+  // Specific role-based access control
   if (allowedRoles && allowedRoles.length > 0) {
     // If user role is not in allowed roles, handle accordingly
     if (!allowedRoles.includes(user.role)) {
       console.log(`User role ${user.role} not allowed, redirecting to appropriate dashboard`);
-      
       // If student trying to access admin/instructor route, redirect to student dashboard
       if (user.role === Role.student) {
         return <Navigate to="/student/dashboard" replace />;
       }
-      // If instructor trying to access admin route, redirect to instructor dashboard
-      else if (user.role === Role.instructor) {
-        return <Navigate to="/instructor/dashboard" replace />;
-      }
-      // If admin trying to access student/instructor route, redirect to admin dashboard
+      // If admin/instructor trying to access student route, redirect to admin dashboard
       else {
         return <Navigate to="/dashboard" replace />;
       }
     }
-  }
-
-  // For routes without specific role restrictions, enforce separation
-  const isStudentRoute = location.pathname.startsWith('/student');
-  const isInstructorRoute = location.pathname.startsWith('/instructor');
-  const isAdminRoute = !isStudentRoute && !isInstructorRoute;
-  
-  if (user.role === Role.student && !isStudentRoute) {
-    console.log("Student trying to access non-student route, redirecting to student dashboard");
-    return <Navigate to="/student/dashboard" replace />;
-  }
-  
-  if (user.role === Role.instructor && isStudentRoute) {
-    console.log("Instructor trying to access student route, redirecting to instructor dashboard");
-    return <Navigate to="/instructor/dashboard" replace />;
-  }
-  
-  if (user.role === Role.instructor && isAdminRoute) {
-    const allowedInstructorPaths = [
-      '/courses', 
-      '/batches',
-      '/schedules',
-      '/resources',
-    ];
+  } else {
+    // For routes without specific role restrictions, enforce separation
+    const isStudentRoute = location.pathname.startsWith('/student');
+    const isAdminRoute = !isStudentRoute;
     
-    // Check if current path starts with any allowed path
-    const isAllowedPath = allowedInstructorPaths.some(path => 
-      location.pathname === path || location.pathname.startsWith(`${path}/`)
-    );
-    
-    // Some admin routes are allowed for instructors, but only as specified in App.tsx
-    // For those we let the allowedRoles check handle access control
-    if (!isAllowedPath) {
-      console.log("Instructor trying to access admin route, redirecting to instructor dashboard");
-      return <Navigate to="/instructor/dashboard" replace />;
+    if (user.role === Role.student && isAdminRoute) {
+      console.log("Student trying to access admin route, redirecting to student dashboard");
+      return <Navigate to="/student/dashboard" replace />;
     }
-  }
-  
-  if (user.role === Role.admin && (isStudentRoute || isInstructorRoute)) {
-    console.log("Admin trying to access student/instructor route, redirecting to admin dashboard");
-    return <Navigate to="/dashboard" replace />;
+    
+    if (user.role !== Role.student && isStudentRoute) {
+      console.log("Admin/instructor trying to access student route, redirecting to admin dashboard");
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   // If authenticated and authorized, render the layout

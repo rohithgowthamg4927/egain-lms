@@ -39,7 +39,6 @@ export interface ProfilePicture {
   fileSize: number;
   createdAt: string;
   updatedAt: string;
-  user?: User;  // Corrected the relation syntax to proper TypeScript
 }
 
 export type Course = {
@@ -50,8 +49,8 @@ export type Course = {
   description?: string;
   thumbnailUrl?: string;
   isPublished?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
   averageRating?: number;
   _count?: {
     studentCourses: number;
@@ -66,8 +65,8 @@ export type Course = {
   batches?: Array<{
     batchId: number;
     batchName: string;
-    startDate: string;
-    endDate: string;
+    startDate: Date;
+    endDate: Date;
     instructor?: {
       userId: number;
       fullName: string;
@@ -75,16 +74,8 @@ export type Course = {
   }>;
   category?: CourseCategory;
   reviews?: CourseReview[];
-  instructors?: InstructorCourseAssignment[];
-  createdBy?: User;  // Add the createdBy property to the Course type
+  instructorCourses?: InstructorCourse[];
 };
-
-export interface InstructorCourseAssignment {
-  instructorId: number;
-  courseId: number;
-  instructor?: User;
-  course?: Course;
-}
 
 export interface Category {
   categoryId: number;
@@ -157,13 +148,11 @@ export interface Resource {
   fileUrl: string; // Making fileUrl required
   batchId?: number; // Adding batchId as optional
   uploadedById?: number; // Adding uploadedById as optional
-  presignedUrl?: string; // Adding presignedUrl as optional
   createdAt: string;
   updatedAt: string;
-  batch?: { // Adding batch property with instructorId
+  batch?: { // Adding batch property
     batchId: number;
     batchName: string;
-    instructorId?: number;
     course: {
       courseId: number;
       courseName: string;
@@ -179,7 +168,6 @@ export interface CourseReview {
   review?: string;
   createdAt: string;
   updatedAt: string;
-  user?: User;  // Add user as optional
 }
 
 export interface StudentCourse {

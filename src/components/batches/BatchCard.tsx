@@ -1,25 +1,12 @@
 
 import { useState } from 'react';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  Calendar,
-  GraduationCap,
-  Users,
-  User
-} from 'lucide-react';
-import { Batch, Role } from '@/lib/types';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
-import { useAuth } from '@/hooks/use-auth';
+import { Calendar, Clock, Users, ChevronRight } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Batch } from '@/lib/types';
 
 interface BatchCardProps {
   batch: Batch;
@@ -27,150 +14,103 @@ interface BatchCardProps {
   onEdit?: (batch: Batch) => void;
   onDelete?: (batch: Batch) => void;
   onManageStudents?: (batch: Batch) => void;
-  onInstructorClick?: (instructorId: number) => void;
 }
 
-const BatchCard = ({
-  batch,
-  onView,
-  onEdit,
-  onDelete,
-  onManageStudents,
-  onInstructorClick
+const BatchCard = ({ 
+  batch, 
+  onView, 
+  onEdit, 
+  onDelete, 
+  onManageStudents 
 }: BatchCardProps) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user } = useAuth();
-  const isAdmin = user?.role === Role.admin;
-
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'MMM dd, yyyy');
+  const [isHovered, setIsHovered] = useState(false);
+  
+  const startDate = new Date(batch.startDate);
+  const endDate = new Date(batch.endDate);
+  
+  const courseName = batch.course?.courseName || 'Unknown Course';
+  const instructor = batch.instructor?.fullName || 'Unassigned';
+  const studentsCount = batch.students?.length || 0;
+  
+  const batchStatus = () => {
+    const today = new Date();
+    if (today < startDate) return { label: 'Upcoming', variant: 'outline' as const };
+    if (today > endDate) return { label: 'Completed', variant: 'secondary' as const };
+    return { label: 'Active', variant: 'default' as const };
   };
+  
+  const { label, variant } = batchStatus();
 
-  const getBatchStatus = () => {
-    const now = new Date();
-    const startDate = new Date(batch.startDate);
-    const endDate = new Date(batch.endDate);
-
-    if (now < startDate) {
-      return {
-        label: 'Upcoming',
-        class: 'bg-yellow-100 text-yellow-800',
-      };
-    } else if (now > endDate) {
-      return {
-        label: 'Completed',
-        class: 'bg-gray-100 text-gray-800',
-      };
-    } else {
-      return {
-        label: 'In Progress',
-        class: 'bg-green-100 text-green-800',
-      };
+  const handleViewBatch = () => {
+    if (onView) {
+      onView(batch);
     }
   };
-
-  const status = getBatchStatus();
-
+  
   return (
-    <Card className="overflow-hidden transition-all duration-200 hover:shadow-md">
-      <CardContent className="p-4">
-        <div className="flex justify-between items-start mb-3">
-          <h3 className="font-semibold text-lg">{batch.batchName}</h3>
-          <span
-            className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${status.class}`}
-          >
-            {status.label}
-          </span>
+    <Card 
+      className={`hover:shadow-md transition-all duration-200 ${isHovered ? 'border-primary/50' : ''}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-xl font-bold">{batch.batchName}</CardTitle>
+            <CardDescription className="text-sm">{courseName}</CardDescription>
+          </div>
+          <Badge variant={variant}>{label}</Badge>
         </div>
-
-        <div className="mb-3">
-          <div className="text-sm font-medium">{batch.course?.courseName}</div>
-        </div>
-
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center text-sm text-muted-foreground">
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="flex items-center text-muted-foreground">
             <Calendar className="h-4 w-4 mr-2" />
             <span>
-              {formatDate(batch.startDate)} - {formatDate(batch.endDate)}
+              {format(startDate, 'MMM d, yyyy')} - {format(endDate, 'MMM d, yyyy')}
             </span>
           </div>
-
-          <div className="flex items-center text-sm text-muted-foreground">
-            <GraduationCap className="h-4 w-4 mr-2" />
+          
+          <div className="flex items-center text-muted-foreground">
+            <Clock className="h-4 w-4 mr-2" />
             <span>
-              Instructor:{' '}
-              <button
-                className="text-blue-600 hover:underline"
-                onClick={() => onInstructorClick && batch.instructor?.userId && onInstructorClick(batch.instructor.userId)}
-              >
-                {batch.instructor?.fullName || 'Unassigned'}
-              </button>
+              {Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))} days
             </span>
           </div>
+        </div>
 
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Users className="h-4 w-4 mr-2" />
-            <span>
-              {batch.studentsCount !== undefined
-                ? batch.studentsCount
-                : batch.students?.length || 0}{' '}
-              student{(batch.studentsCount !== 1 && batch.studentsCount !== undefined) ||
-              (batch.students?.length !== 1 && batch.students !== undefined)
-                ? 's'
-                : ''}
-            </span>
+        <div className="flex justify-between items-center text-sm">
+          <div className="flex items-center gap-1">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger className="flex items-center text-muted-foreground hover:text-foreground transition-colors">
+                  <Users className="h-4 w-4 mr-1" />
+                  <span>{studentsCount} students</span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{studentsCount} students enrolled</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          
+          <div className="text-muted-foreground">
+            Instructor: <span className="font-medium text-foreground">{instructor}</span>
           </div>
         </div>
       </CardContent>
-
-      <CardFooter className="p-4 pt-0 flex justify-between">
-        <Button
-          variant="outline"
-          className="flex-1"
-          onClick={() => onView && onView(batch)}
+      
+      <CardFooter className="flex justify-between pt-2">
+        <Button 
+          variant="default"
+          size="sm"
+          className="w-full"
+          onClick={handleViewBatch}
         >
-          View Details
+          View Batch
+          <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
-
-        {isAdmin && (
-          <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  onEdit && onEdit(batch);
-                }}
-              >
-                <Pencil className="h-4 w-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  onManageStudents && onManageStudents(batch);
-                }}
-              >
-                <User className="h-4 w-4 mr-2" />
-                Manage Students
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-red-600"
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  onDelete && onDelete(batch);
-                }}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
       </CardFooter>
     </Card>
   );

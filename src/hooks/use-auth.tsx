@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -109,8 +108,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Navigate to appropriate dashboard based on role
           if (userData.role === Role.student) {
             navigate('/student/dashboard', { replace: true });
-          } else if (userData.role === Role.instructor) {
-            navigate('/instructor/dashboard', { replace: true });
           } else {
             navigate('/dashboard', { replace: true });
           }

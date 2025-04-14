@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getInstructorCourses, getInstructorSchedules } from '@/lib/api/instructors';
+import { getInstructorCourses } from '@/lib/api/instructors';
+import { getAllSchedules } from '@/lib/api/schedules';
 import { useAuth } from '@/hooks/use-auth';
 import {
   Card,
@@ -41,6 +43,7 @@ import {
   CheckCircle,
   AlertCircle,
   ChevronRight,
+  ExternalLink,
 } from 'lucide-react';
 import { format, parseISO, isToday, isTomorrow, addDays, isAfter, isBefore } from 'date-fns';
 
@@ -61,14 +64,19 @@ const InstructorDashboard = () => {
     enabled: !!instructorId,
   });
 
-  // Fetch instructor schedules
+  // Improved: Fetch instructor schedules directly using getAllSchedules
   const {
     data: schedulesData,
     isLoading: isSchedulesLoading,
     error: schedulesError,
   } = useQuery({
     queryKey: ['instructorSchedules', instructorId],
-    queryFn: () => instructorId ? getInstructorSchedules(instructorId) : Promise.resolve({ success: false, data: [] }),
+    queryFn: async () => {
+      if (!instructorId) return { success: false, data: [] };
+      
+      const result = await getAllSchedules({ instructorId });
+      return result;
+    },
     enabled: !!instructorId,
   });
 
@@ -100,68 +108,84 @@ const InstructorDashboard = () => {
   const schedules = schedulesData?.data || [];
   const now = new Date();
 
+  // Today's schedules
   const todaySchedules = schedules.filter(schedule => {
     const scheduleDate = new Date(schedule.scheduleDate);
-    const scheduleStartTime = new Date(schedule.startTime);
-    
-    // Set the schedule's date to the scheduleDate
-    scheduleStartTime.setFullYear(scheduleDate.getFullYear());
-    scheduleStartTime.setMonth(scheduleDate.getMonth());
-    scheduleStartTime.setDate(scheduleDate.getDate());
-    
-    return isToday(scheduleDate) && scheduleStartTime > now;
+    return isToday(scheduleDate);
   }).sort((a, b) => {
-    const dateA = new Date(a.scheduleDate);
-    const timeA = new Date(a.startTime);
-    dateA.setHours(timeA.getHours(), timeA.getMinutes());
+    // Extract time from startTime string
+    const getTimeFromString = (timeStr) => {
+      if (timeStr.includes('T')) {
+        return new Date(timeStr);
+      }
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const date = new Date();
+      date.setHours(hours, minutes, 0, 0);
+      return date;
+    };
     
-    const dateB = new Date(b.scheduleDate);
-    const timeB = new Date(b.startTime);
-    dateB.setHours(timeB.getHours(), timeB.getMinutes());
+    const timeA = getTimeFromString(a.startTime);
+    const timeB = getTimeFromString(b.startTime);
     
-    return dateA.getTime() - dateB.getTime();
+    return timeA.getTime() - timeB.getTime();
   });
 
+  // Tomorrow's schedules
   const tomorrowSchedules = schedules.filter(schedule => {
     const scheduleDate = new Date(schedule.scheduleDate);
     return isTomorrow(scheduleDate);
   }).sort((a, b) => {
+    // Extract time from startTime string
+    const getTimeFromString = (timeStr) => {
+      if (timeStr.includes('T')) {
+        return new Date(timeStr);
+      }
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const date = new Date();
+      date.setHours(hours, minutes, 0, 0);
+      return date;
+    };
+    
+    const timeA = getTimeFromString(a.startTime);
+    const timeB = getTimeFromString(b.startTime);
+    
+    return timeA.getTime() - timeB.getTime();
+  });
+
+  // Upcoming schedules (next 7 days)
+  const nextWeekSchedules = schedules.filter(schedule => {
+    const scheduleDate = new Date(schedule.scheduleDate);
+    const nextWeek = addDays(now, 7);
+    
+    return isAfter(scheduleDate, now) && 
+           !isToday(scheduleDate) && 
+           !isTomorrow(scheduleDate) && 
+           isBefore(scheduleDate, nextWeek);
+  }).sort((a, b) => {
     const dateA = new Date(a.scheduleDate);
-    const timeA = new Date(a.startTime);
-    dateA.setHours(timeA.getHours(), timeA.getMinutes());
-    
     const dateB = new Date(b.scheduleDate);
-    const timeB = new Date(b.startTime);
-    dateB.setHours(timeB.getHours(), timeB.getMinutes());
-    
     return dateA.getTime() - dateB.getTime();
   });
 
-  const nextWeekSchedules = schedules.filter(schedule => {
-    const scheduleDate = new Date(schedule.scheduleDate);
-    const scheduleStartTime = new Date(schedule.startTime);
-    
-    // Set the schedule's date to the scheduleDate
-    scheduleStartTime.setFullYear(scheduleDate.getFullYear());
-    scheduleStartTime.setMonth(scheduleDate.getMonth());
-    scheduleStartTime.setDate(scheduleDate.getDate());
-    
-    const nextWeek = addDays(now, 7);
-    return scheduleStartTime > now && 
-           !isToday(scheduleDate) && 
-           !isTomorrow(scheduleDate) && 
-           scheduleStartTime <= nextWeek;
-  }).sort((a, b) => {
-    const dateA = new Date(a.scheduleDate);
-    const timeA = new Date(a.startTime);
-    dateA.setHours(timeA.getHours(), timeA.getMinutes());
-    
-    const dateB = new Date(b.scheduleDate);
-    const timeB = new Date(b.startTime);
-    dateB.setHours(timeB.getHours(), timeB.getMinutes());
-    
-    return dateA.getTime() - dateB.getTime();
-  });
+  // Format time correctly
+  const formatTime = (timeString) => {
+    if (!timeString) return '';
+    try {
+      // For full ISO string
+      if (timeString.includes('T')) {
+        const date = new Date(timeString);
+        return format(date, 'h:mm a');
+      }
+      // For time-only string (HH:mm:ss)
+      const [hours, minutes] = timeString.split(':').map(Number);
+      const date = new Date();
+      date.setHours(hours, minutes, 0, 0);
+      return format(date, 'h:mm a');
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return timeString;
+    }
+  };
 
   // Chart data for courses per category
   const categoryData = courses.reduce((acc, course) => {
@@ -272,11 +296,19 @@ const InstructorDashboard = () => {
                             <Clock className="h-5 w-5 text-purple-700" />
                           </div>
                           <div className="flex-1">
-                            <div className="font-medium">{schedule.batch?.course?.courseName || 'Untitled Course'}</div>
+                            <div className="font-medium">{schedule.topic || 'Class Session'}</div>
                             <div className="text-sm text-gray-600">
-                              {schedule.batch?.batchName || 'Unnamed Batch'} • {format(new Date(schedule.startTime), "h:mm a")}
+                              {schedule.batch?.batchName || 'Unnamed Batch'} • {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
                             </div>
                           </div>
+                          {schedule.meetingLink && (
+                            <Button asChild size="sm" variant="outline" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
+                              <a href={schedule.meetingLink} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="h-4 w-4 mr-1" />
+                                Join
+                              </a>
+                            </Button>
+                          )}
                           <Button variant="ghost" size="sm" onClick={() => navigate('/schedules')}>
                             <ChevronRight className="h-4 w-4" />
                           </Button>
@@ -301,11 +333,19 @@ const InstructorDashboard = () => {
                             <Clock className="h-5 w-5 text-blue-700" />
                           </div>
                           <div className="flex-1">
-                            <div className="font-medium">{schedule.batch?.course?.courseName || 'Untitled Course'}</div>
+                            <div className="font-medium">{schedule.topic || 'Class Session'}</div>
                             <div className="text-sm text-gray-600">
-                              {schedule.batch?.batchName || 'Unnamed Batch'} • {format(new Date(schedule.startTime), "h:mm a")}
+                              {schedule.batch?.batchName || 'Unnamed Batch'} • {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
                             </div>
                           </div>
+                          {schedule.meetingLink && (
+                            <Button asChild size="sm" variant="outline" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
+                              <a href={schedule.meetingLink} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="h-4 w-4 mr-1" />
+                                Join
+                              </a>
+                            </Button>
+                          )}
                           <Button variant="ghost" size="sm" onClick={() => navigate('/schedules')}>
                             <ChevronRight className="h-4 w-4" />
                           </Button>
@@ -330,11 +370,19 @@ const InstructorDashboard = () => {
                             <Calendar className="h-5 w-5 text-indigo-700" />
                           </div>
                           <div className="flex-1">
-                            <div className="font-medium">{schedule.batch?.course?.courseName || 'Untitled Course'}</div>
+                            <div className="font-medium">{schedule.topic || 'Class Session'}</div>
                             <div className="text-sm text-gray-600">
-                              {format(new Date(schedule.scheduleDate), "EEE, MMM d")} • {format(new Date(schedule.startTime), "h:mm a")}
+                              {format(new Date(schedule.scheduleDate), "EEE, MMM d")} • {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
                             </div>
                           </div>
+                          {schedule.meetingLink && (
+                            <Button asChild size="sm" variant="outline" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
+                              <a href={schedule.meetingLink} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="h-4 w-4 mr-1" />
+                                Join
+                              </a>
+                            </Button>
+                          )}
                           <Button variant="ghost" size="sm" onClick={() => navigate('/schedules')}>
                             <ChevronRight className="h-4 w-4" />
                           </Button>

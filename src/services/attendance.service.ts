@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+
 import { apiFetch } from '@/lib/api/core';
 import { Role } from '@/lib/types';
-
-const prisma = new PrismaClient();
 
 export class AttendanceService {
   // Check if instructor is assigned to the batch
@@ -71,4 +69,4 @@ export class AttendanceService {
 
     return { message: 'Attendance record deleted successfully' };
   }
-} 
+}

@@ -8,12 +8,12 @@ import { handleApiError } from '../utils/errorHandler.js';
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Login endpoint
+//endpoint for login
 router.post('/login', async (req, res) => {
   try {
     const { email, password, role } = req.body;
     
-    // Validate input
+    //check creds
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -21,7 +21,6 @@ router.post('/login', async (req, res) => {
       });
     }
     
-    // Find user by email
     const user = await prisma.User.findUnique({
       where: { email },
       include: {
@@ -29,7 +28,7 @@ router.post('/login', async (req, res) => {
       }
     });
     
-    // Check if user exists and if the role matches (if provided)
+    //match user with role
     if (!user || (role && user.role !== role)) {
       return res.status(401).json({
         success: false,
@@ -37,7 +36,7 @@ router.post('/login', async (req, res) => {
       });
     }
     
-    // Check if password matches (without hashing for development purposes)
+    //match password from db
     if (user.password !== password) {
       return res.status(401).json({
         success: false,
@@ -45,14 +44,14 @@ router.post('/login', async (req, res) => {
       });
     }
     
-    // Generate JWT token
+    //Generate JWT token
     const token = jwt.sign(
       { userId: user.userId, email: user.email, role: user.role },
       process.env.JWT_SECRET || 'development-secret',
       { expiresIn: '7d' }
     );
     
-    // Return success response with token and user data
+    //Return success response with token and user data
     res.json({
       success: true,
       data: {
@@ -77,12 +76,11 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Change password endpoint
+//Change password
 router.post('/change-password', async (req, res) => {
   try {
     const { userId, currentPassword, newPassword } = req.body;
-    
-    // Validate input
+
     if (!userId || !currentPassword || !newPassword) {
       return res.status(400).json({
         success: false,
@@ -90,12 +88,12 @@ router.post('/change-password', async (req, res) => {
       });
     }
     
-    // Find user by ID
+    //Find instructor/student by ID
     const user = await prisma.User.findUnique({
       where: { userId: parseInt(userId) }
     });
     
-    // Check if user exists
+    //Check if user exists
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -103,8 +101,7 @@ router.post('/change-password', async (req, res) => {
       });
     }
     
-    // Check if current password matches 
-    // Note: In a real production app, we would use bcrypt.compare here
+    //Check if current password matches 
     if (user.password !== currentPassword) {
       return res.status(401).json({
         success: false,
@@ -112,7 +109,7 @@ router.post('/change-password', async (req, res) => {
       });
     }
     
-    // Update user with new password
+    //Update with new password
     await prisma.User.update({
       where: { userId: parseInt(userId) },
       data: {
@@ -122,7 +119,7 @@ router.post('/change-password', async (req, res) => {
       }
     });
     
-    // Return success response
+    //Return a response
     res.json({
       success: true,
       message: 'Password updated successfully'
@@ -132,7 +129,7 @@ router.post('/change-password', async (req, res) => {
   }
 });
 
-// Add a health check endpoint
+//Health check route to display timestamp and OK
 router.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });

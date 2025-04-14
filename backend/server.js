@@ -16,6 +16,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import studentRoutes from './routes/students.js'; 
 import instructorRoutes from './routes/instructors.js';
 import resourceRoutes from './routes/resources.js';
+import attendanceRoutes from './routes/attendance.js';
 
 // Setup __dirname for ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -52,6 +53,7 @@ app.use('/api/student-batches', studentRoutes.batchRoutes);
 app.use('/api/student-courses', studentRoutes.courseRoutes);
 app.use('/api/instructors', instructorRoutes);
 app.use('/api/resources', resourceRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 // Root and health check routes
 app.get('/', (req, res) => {

@@ -1,4 +1,3 @@
-
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -9,6 +8,12 @@ export enum Level {
   beginner = 'beginner',
   intermediate = 'intermediate',
   advanced = 'advanced'
+}
+
+export enum Status {
+  present = 'present',
+  absent = 'absent',
+  late = 'late'
 }
 
 export interface User {

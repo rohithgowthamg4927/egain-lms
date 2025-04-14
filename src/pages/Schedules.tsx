@@ -1,21 +1,24 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, isAfter, isBefore, parseISO } from 'date-fns';
-import { Plus, Edit, Trash2, RefreshCw, Calendar, Clock, Users, Video, ChevronDown } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, Calendar, Clock, Users, Video, ChevronDown, CheckCircle2, XCircle, Clock4 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getBatches } from '@/lib/api/batches';
 import { getAllSchedules, createSchedule, updateSchedule, deleteSchedule, ScheduleInput } from '@/lib/api/schedules';
+import { useAttendance } from '@/hooks/use-attendance';
 import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { Schedule, Batch, Role } from '@/lib/types';
+import { Schedule, Batch, Role, Status } from '@/lib/types';
 import ScheduleForm from '@/components/schedules/ScheduleForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 import { useAuth } from '@/hooks/use-auth';
 import { Link } from 'react-router-dom';
@@ -34,6 +37,10 @@ const Schedules = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === Role.admin;
   const isInstructor = user?.role === Role.instructor;
+  const { markAttendance, getScheduleAttendance, updateAttendance, deleteAttendance } = useAttendance();
+  const [selectedScheduleForAttendance, setSelectedScheduleForAttendance] = useState<Schedule | null>(null);
+  const [showAttendanceDialog, setShowAttendanceDialog] = useState(false);
+  const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
   
   const { data: batchesData, isLoading: isLoadingBatches } = useQuery({
     queryKey: ['batches'],
@@ -365,6 +372,105 @@ const Schedules = () => {
     </Card>
   );
 
+  const handleOpenAttendance = async (schedule: Schedule) => {
+    setSelectedScheduleForAttendance(schedule);
+    try {
+      const response = await getScheduleAttendance(schedule.scheduleId);
+      if (response.success && Array.isArray(response.data)) {
+        setAttendanceRecords(response.data);
+      } else {
+        setAttendanceRecords([]);
+      }
+      setShowAttendanceDialog(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch attendance records",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleMarkAttendance = async (userId: number, status: Status) => {
+    if (!selectedScheduleForAttendance) return;
+    
+    try {
+      // First update the UI optimistically
+      setAttendanceRecords(prev => 
+        prev.map(record => 
+          record.userId === userId 
+            ? { ...record, status }
+            : record
+        )
+      );
+      
+      // Then make the API call
+      await markAttendance(
+        selectedScheduleForAttendance.scheduleId,
+        userId,
+        status
+      );
+      
+      // Refresh attendance records to ensure sync
+      const response = await getScheduleAttendance(selectedScheduleForAttendance.scheduleId);
+      if (response.success && Array.isArray(response.data)) {
+        setAttendanceRecords(response.data);
+      }
+      
+      toast({
+        title: "Success",
+        description: "Attendance marked successfully",
+      });
+    } catch (error) {
+      // Revert UI changes on error
+      const response = await getScheduleAttendance(selectedScheduleForAttendance.scheduleId);
+      if (response.success && Array.isArray(response.data)) {
+        setAttendanceRecords(response.data);
+      }
+      
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to mark attendance",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getStatusIcon = (status: Status) => {
+    switch (status) {
+      case Status.present:
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      case Status.absent:
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return null;
+    }
+  };
+
+  const getStatusBadge = (status: Status) => {
+    switch (status) {
+      case Status.present:
+        return <Badge variant="secondary">Present</Badge>;
+      case Status.absent:
+        return <Badge variant="destructive">Absent</Badge>;
+      default:
+        return <Badge variant="outline">Not Marked</Badge>;
+    }
+  };
+
+  const getAttendanceStatus = (schedule: Schedule) => {
+    const attendanceCount = attendanceRecords.filter(record => record.status).length;
+    const totalStudents = attendanceRecords.length;
+    
+    if (attendanceCount === 0) {
+      return <Badge variant="outline">Attendance Not Marked</Badge>;
+    } else if (attendanceCount === totalStudents) {
+      return <Badge variant="default">Attendance Completed</Badge>;
+    } else {
+      return <Badge variant="secondary">{`Partially Marked (${attendanceCount}/${totalStudents})`}</Badge>;
+    }
+  };
+
   if (isLoadingSchedules || isLoadingBatches) {
     return <div className="p-4">Loading schedules...</div>;
   }
@@ -439,6 +545,9 @@ const Schedules = () => {
           <TabsList>
             <TabsTrigger value="upcoming">Upcoming Schedules</TabsTrigger>
             <TabsTrigger value="past">Past Schedules</TabsTrigger>
+            {(isAdmin || isInstructor) && (
+              <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            )}
           </TabsList>
           <TabsContent value="upcoming" className="space-y-4">
             {upcomingSchedules.length === 0 ? (
@@ -459,6 +568,54 @@ const Schedules = () => {
             ) : (
               pastSchedules.map((schedule) => (
                 <ScheduleCard key={schedule.scheduleId} schedule={schedule} isPast={true} />
+              ))
+            )}
+          </TabsContent>
+          <TabsContent value="attendance" className="space-y-4">
+            {filteredSchedules.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No schedules found
+              </div>
+            ) : (
+              filteredSchedules.map((schedule) => (
+                <Card key={schedule.scheduleId} className="mb-2 hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3 pt-2 px-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-base">{schedule.topic}</CardTitle>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {renderInstructorLink(schedule.batch?.instructor)}
+                        </p>
+                        <div className="mt-2">
+                          {getAttendanceStatus(schedule)}
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenAttendance(schedule)}
+                      >
+                        View Attendance
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-4 px-4">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-gray-500" />
+                        <span>{format(new Date(schedule.scheduleDate), 'PPP')}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5 text-gray-500" />
+                        <span>{formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Users className="h-3.5 w-3.5 text-gray-500" />
+                        <span>{renderBatchLink(schedule)}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               ))
             )}
           </TabsContent>
@@ -515,6 +672,96 @@ const Schedules = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog open={showAttendanceDialog} onOpenChange={setShowAttendanceDialog}>
+          <DialogContent className="sm:max-w-[800px]">
+            <DialogHeader>
+              <DialogTitle>Attendance Records</DialogTitle>
+            </DialogHeader>
+            {selectedScheduleForAttendance && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Topic:</span> {selectedScheduleForAttendance.topic}
+                  </div>
+                  <div>
+                    <span className="font-medium">Date:</span> {format(new Date(selectedScheduleForAttendance.scheduleDate), 'PPP')}
+                  </div>
+                  <div>
+                    <span className="font-medium">Time:</span> {formatTime(selectedScheduleForAttendance.startTime)} - {formatTime(selectedScheduleForAttendance.endTime)}
+                  </div>
+                  <div>
+                    <span className="font-medium">Batch:</span> {selectedScheduleForAttendance.batch?.batchName}
+                  </div>
+                </div>
+                
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Student</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Marked By</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {attendanceRecords.length > 0 ? (
+                      attendanceRecords.map((record) => (
+                        <TableRow key={record.userId}>
+                          <TableCell>{record.user.fullName}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(record.status)}
+                              <Badge
+                                variant={
+                                  record.status === 'present'
+                                    ? 'default'
+                                    : record.status === 'absent'
+                                    ? 'destructive'
+                                    : 'secondary'
+                                }
+                              >
+                                {record.status || 'Not Marked'}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell>{record.markedByUser?.fullName || '-'}</TableCell>
+                          <TableCell>
+                            {(isAdmin || (isInstructor && selectedScheduleForAttendance.batch?.instructor?.userId === user?.userId)) && (
+                              <div className="flex gap-2">
+                                <Select
+                                  value={record.status || ''}
+                                  onValueChange={(value) => {
+                                    handleMarkAttendance(record.userId, value as Status);
+                                  }}
+                                >
+                                  <SelectTrigger className="w-[100px]">
+                                    <SelectValue placeholder="Status" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value={Status.present}>Present</SelectItem>
+                                    <SelectItem value={Status.absent}>Absent</SelectItem>
+                                    <SelectItem value={Status.late}>Late</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-4">
+                          No students found in this batch
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

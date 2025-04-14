@@ -25,6 +25,8 @@ model User {
   studentBatches    StudentBatch[]     @relation("StudentInBatch")
   studentCourses    StudentCourse[]    @relation("StudentInCourse")
   uploadedResources Resource[]         @relation("ResourceUploader")
+  attendances       Attendance[]       @relation("UserAttendance")
+  markedAttendances Attendance[]       @relation("AttendanceMarkedBy")
 
   @@map("users")
 }
@@ -141,6 +143,7 @@ model Schedule {
   platform     String?   @map("platform")
   scheduleDate DateTime  @default(now()) @map("schedule_date") @db.Timestamp(6)
   batch        Batch?    @relation("BatchSchedules", fields: [batchId], references: [batchId])
+  attendances  Attendance[] @relation("ScheduleAttendance")
 
   @@map("schedules")
 }
@@ -176,6 +179,28 @@ model CourseReview {
 
   @@unique([courseId, userId])
   @@map("course_reviews")
+}
+
+model Attendance {
+  attendanceId    Int       @id @default(autoincrement()) @map("attendance_id")
+  scheduleId     Int       @map("schedule_id")
+  userId         Int       @map("user_id")
+  status         Status    @default(present)
+  markedBy       Int       @map("marked_by")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  schedule       Schedule  @relation("ScheduleAttendance", fields: [scheduleId], references: [scheduleId])
+  user           User      @relation("UserAttendance", fields: [userId], references: [userId])
+  markedByUser   User      @relation("AttendanceMarkedBy", fields: [markedBy], references: [userId])
+
+  @@unique([scheduleId, userId])
+  @@map("attendances")
+}
+
+enum Status {
+  present
+  absent
+  late
 }
 
 enum Role {

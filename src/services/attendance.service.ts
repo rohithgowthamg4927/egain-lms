@@ -104,7 +104,7 @@ export class AttendanceService {
     }
 
     // Extract the data from the response and ensure it's an array
-    return Array.isArray(response.data) ? response.data : [];
+    return response.data && Array.isArray(response.data) ? response.data : [];
   }
 
   // Get attendance analytics for a student
@@ -115,15 +115,17 @@ export class AttendanceService {
       throw new Error(response.error || 'Failed to fetch attendance analytics');
     }
 
-    // If no data or data doesn't match our expected structure, return a default structure
-    if (!response.data || !response.data.overall || !response.data.byBatch) {
-      return {
-        overall: { total: 0, present: 0, absent: 0, late: 0, percentage: 0 },
-        byBatch: []
-      };
+    // Default structure to return if no data or incomplete data
+    const defaultAnalytics: AttendanceAnalytics = {
+      overall: { total: 0, present: 0, absent: 0, late: 0, percentage: 0 },
+      byBatch: []
+    };
+
+    // Return response data if it exists and has the expected structure, otherwise return default
+    if (!response.data) {
+      return defaultAnalytics;
     }
 
-    // Return the analytics data
     return response.data;
   }
 
@@ -135,18 +137,20 @@ export class AttendanceService {
       throw new Error(response.error || 'Failed to fetch batch attendance analytics');
     }
 
-    // If no data or data doesn't match our expected structure, return a default structure
-    if (!response.data || !response.data.overall || !response.data.byBatch) {
-      return {
-        overall: { total: 0, present: 0, absent: 0, late: 0, percentage: 0 },
-        byBatch: [],
-        totalClasses: 0,
-        totalStudents: 0,
-        students: []
-      };
+    // Default structure to return if no data or incomplete data
+    const defaultAnalytics: AttendanceAnalytics = {
+      overall: { total: 0, present: 0, absent: 0, late: 0, percentage: 0 },
+      byBatch: [],
+      totalClasses: 0,
+      totalStudents: 0,
+      students: []
+    };
+
+    // Return response data if it exists, otherwise return default
+    if (!response.data) {
+      return defaultAnalytics;
     }
 
-    // Return the analytics data
     return response.data;
   }
 

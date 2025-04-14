@@ -26,7 +26,8 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { getStudentCourses, getStudentSchedules } from '@/lib/api/students';
+import { getStudentCourses } from '@/lib/api/students';
+import { getAllSchedules } from '@/lib/api/schedules';
 import { getResourcesByBatch, getResourcePresignedUrl } from '@/lib/api/resources';
 import { apiFetch } from '@/lib/api/core';
 import { useNavigate } from 'react-router-dom';
@@ -50,28 +51,56 @@ export default function StudentDashboard() {
     gcTime: 30 * 60 * 1000, // 30 minutes
   });
 
-  const { data: schedulesData, isLoading: isSchedulesLoading } = useQuery({
-    queryKey: ['studentSchedules', user?.userId],
-    queryFn: () => user?.userId ? getStudentSchedules(user.userId) : Promise.resolve({ success: false, data: [] }),
-    enabled: !!user?.userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+  // Query for student batches
+  const { data: studentBatchesData, isLoading: isBatchesLoading } = useQuery({
+    queryKey: ['studentBatches', user?.userId],
+    queryFn: async () => {
+      if (!user?.userId) throw new Error('User ID required');
+      return await fetch(`/api/student-batches/${user.userId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      }).then(res => res.json());
+    },
+    enabled: !!user?.userId
   });
 
-  const { data: batchesData, isLoading: isBatchesLoading } = useQuery({
-    queryKey: ['studentBatches', user?.userId],
-    queryFn: () => user?.userId ? apiFetch<any[]>(`/student-batches/${user.userId}`) : Promise.resolve({ success: false, data: [] }),
-    enabled: !!user?.userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+  // Query for schedules using the same logic as StudentSchedules
+  const { data: schedulesData, isLoading: isSchedulesLoading } = useQuery({
+    queryKey: ['studentSchedules', studentBatchesData?.data],
+    queryFn: async () => {
+      if (!studentBatchesData?.success || !studentBatchesData.data) {
+        throw new Error('No batches found');
+      }
+      
+      // Extract batch IDs from student batches
+      const batchIds = studentBatchesData.data.map(sb => sb.batch.batchId);
+      if (batchIds.length === 0) return { success: true, data: [] };
+      
+      // Fetch all schedules for these batches
+      const schedulesPromises = batchIds.map(batchId => 
+        getAllSchedules({ batchId })
+      );
+      
+      const schedulesResults = await Promise.all(schedulesPromises);
+      
+      // Combine all schedules from different batches
+      const allSchedules = schedulesResults.flatMap(result => 
+        result.success && result.data ? result.data : []
+      );
+      
+      return { success: true, data: allSchedules };
+    },
+    enabled: !!studentBatchesData?.data
   });
 
   const { data: resourcesData, isLoading: isResourcesLoading } = useQuery({
-    queryKey: ['studentResources', batchesData?.data],
+    queryKey: ['studentResources', studentBatchesData?.data],
     queryFn: async () => {
-      if (!batchesData?.success || !batchesData.data) return [];
+      if (!studentBatchesData?.success || !studentBatchesData.data) return [];
       
-      const transformedBatches = batchesData.data.map(sb => ({
+      const transformedBatches = studentBatchesData.data.map(sb => ({
         batchId: sb.batch.batchId,
         batchName: sb.batch.batchName,
         course: {
@@ -100,7 +129,7 @@ export default function StudentDashboard() {
       }
       return allResources;
     },
-    enabled: !!batchesData?.data,
+    enabled: !!studentBatchesData?.data,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
   });
@@ -110,49 +139,75 @@ export default function StudentDashboard() {
   const resources = resourcesData || [];
   const isLoading = isCoursesLoading || isSchedulesLoading || isBatchesLoading || isResourcesLoading;
 
-  const formatTime = (timeString) => {
+  const formatTime = (timeString: string) => {
+    if (!timeString) return '';
     try {
-      const date = new Date(`1970-01-01T${timeString}`);
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      // For full ISO string (from database)
+      if (timeString.includes('T')) {
+        const date = new Date(timeString);
+        return format(date, 'h:mm a');
+      }
+      // For time-only string (HH:mm:ss)
+      const [hours, minutes] = timeString.split(':').map(Number);
+      const date = new Date();
+      date.setHours(hours, minutes, 0, 0);
+      return format(date, 'h:mm a');
     } catch (error) {
+      console.error('Error formatting time:', error);
       return timeString;
     }
   };
 
-  const formatScheduleDate = (dateString) => {
+  const formatScheduleDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'PPP');
     } catch (error) {
+      console.error('Error formatting date:', error);
       return dateString;
     }
   };
 
-  const upcomingSchedules = schedules
-    .filter(schedule => {
-      try {
-        const scheduleDate = new Date(schedule.scheduleDate);
-        const today = new Date();
-        const sevenDaysFromNow = new Date();
-        sevenDaysFromNow.setDate(today.getDate() + 7);
-        return scheduleDate >= today && scheduleDate <= sevenDaysFromNow;
-      } catch (error) {
-        return false;
-      }
-    })
-    .sort((a, b) => new Date(a.scheduleDate).getTime() - new Date(b.scheduleDate).getTime())
-    .slice(0, 5);
-
   const todaySchedules = schedules
     .filter(schedule => {
-      try {
-        const scheduleDate = new Date(schedule.scheduleDate);
-        const today = new Date();
-        return scheduleDate.toDateString() === today.toDateString();
-      } catch (error) {
-        return false;
-      }
+      const scheduleDate = new Date(schedule.scheduleDate);
+      const today = new Date();
+      
+      // Compare only the date part
+      return scheduleDate.getFullYear() === today.getFullYear() &&
+             scheduleDate.getMonth() === today.getMonth() &&
+             scheduleDate.getDate() === today.getDate();
     })
-    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    .sort((a, b) => {
+      const timeA = new Date(a.startTime);
+      const timeB = new Date(b.startTime);
+      return timeA.getTime() - timeB.getTime();
+    });
+
+  const upcomingSchedules = schedules
+    .filter(schedule => {
+      const scheduleDate = new Date(schedule.scheduleDate);
+      const scheduleDateTime = new Date(scheduleDate);
+      
+      // Get time parts from startTime
+      if (schedule.startTime.includes('T')) {
+        const startTime = new Date(schedule.startTime);
+        scheduleDateTime.setHours(startTime.getHours(), startTime.getMinutes());
+      } else {
+        const [hours, minutes] = schedule.startTime.split(':').map(Number);
+        scheduleDateTime.setHours(hours, minutes);
+      }
+      
+      const now = new Date();
+      const sevenDaysFromNow = new Date();
+      sevenDaysFromNow.setDate(now.getDate() + 7);
+      
+      return scheduleDateTime > now && scheduleDateTime <= sevenDaysFromNow;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.scheduleDate);
+      const dateB = new Date(b.scheduleDate);
+      return dateA.getTime() - dateB.getTime();
+    });
 
   const getFileIcon = (resource: Resource) => {
     const fileName = resource.fileName || '';
@@ -271,7 +326,7 @@ export default function StudentDashboard() {
               <CardContent>
                 <div className="text-2xl font-bold">{courses.length}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Across {batchesData?.data?.length || 0} active batches
+                  Across {studentBatchesData?.data?.length || 0} active batches
                 </p>
               </CardContent>
             </Card>
@@ -342,7 +397,7 @@ export default function StudentDashboard() {
                                       <div className="flex flex-col text-sm">
                                         <span className="text-muted-foreground text-xs">Time</span>
                                         <span className="font-medium text-gray-900">
-                                          {format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
+                                          {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
                                         </span>
                                       </div>
                                       {schedule.meetingLink && (
@@ -402,7 +457,7 @@ export default function StudentDashboard() {
                                         <div className="flex items-center gap-2">
                                           <Clock className="h-3.5 w-3.5 text-gray-500" />
                                           <span className="font-medium text-gray-900">
-                                            {format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}
+                                            {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
                                           </span>
                                         </div>
                                       </div>

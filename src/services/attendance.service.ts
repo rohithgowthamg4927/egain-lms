@@ -103,6 +103,7 @@ export class AttendanceService {
       throw new Error(response.error || 'Failed to fetch attendance');
     }
 
+    // Return the data array or an empty array if data is undefined
     return response.data || [];
   }
 
@@ -114,14 +115,15 @@ export class AttendanceService {
       throw new Error(response.error || 'Failed to fetch attendance analytics');
     }
 
+    // If no data, return a default structure
     if (!response.data) {
-      // Return default structure if no data
       return {
         overall: { total: 0, present: 0, absent: 0, late: 0, percentage: 0 },
         byBatch: []
       };
     }
 
+    // Return the analytics data
     return response.data;
   }
 
@@ -133,8 +135,8 @@ export class AttendanceService {
       throw new Error(response.error || 'Failed to fetch batch attendance analytics');
     }
 
+    // If no data, return a default structure
     if (!response.data) {
-      // Return default structure if no data
       return {
         overall: { total: 0, present: 0, absent: 0, late: 0, percentage: 0 },
         byBatch: [],
@@ -144,6 +146,7 @@ export class AttendanceService {
       };
     }
 
+    // Return the analytics data
     return response.data;
   }
 

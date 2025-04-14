@@ -356,7 +356,7 @@ export default function StudentCourses() {
               )}
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
               {filteredEnrolledCourses.map((studentCourse) => (
                 <Card key={studentCourse.studentCourseId} className="overflow-hidden hover:shadow-md transition-shadow">
                   <div className="relative w-full h-48 bg-gradient-to-r from-blue-500 to-purple-500">
@@ -482,7 +482,7 @@ export default function StudentCourses() {
               )}
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
               {filteredAllCourses.map((course) => {
                 const isUserEnrolled = enrolledCourses.some(
                   sc => sc.course.courseId === course.courseId

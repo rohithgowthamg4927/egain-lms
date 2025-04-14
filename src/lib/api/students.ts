@@ -1,4 +1,3 @@
-
 import { apiFetch } from './core';
 import { Course, CourseReview } from '@/lib/types';
 
@@ -62,11 +61,10 @@ export const submitCourseReview = async (
   review?: string
 ): Promise<{ success: boolean; data?: CourseReview; error?: string }> => {
   try {
-    const response = await apiFetch<CourseReview>('/course-reviews', {
+    const response = await apiFetch<CourseReview>(`/courses/${courseId}/reviews`, {
       method: 'POST',
       body: JSON.stringify({
         userId: studentId,
-        courseId,
         rating,
         review
       })
@@ -89,11 +87,10 @@ export const updateCourseReview = async (
   review?: string
 ): Promise<{ success: boolean; data?: CourseReview; error?: string }> => {
   try {
-    const response = await apiFetch<CourseReview>(`/course-reviews/${reviewId}`, {
+    const response = await apiFetch<CourseReview>(`/courses/${courseId}/reviews/${reviewId}`, {
       method: 'PUT',
       body: JSON.stringify({
         userId: studentId,
-        courseId,
         rating,
         review
       })
@@ -114,8 +111,11 @@ export const deleteCourseReview = async (
   reviewId: number
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const response = await apiFetch(`/course-reviews/${reviewId}`, {
-      method: 'DELETE'
+    const response = await apiFetch(`/courses/${courseId}/reviews/${reviewId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({
+        userId: studentId
+      })
     });
     return response;
   } catch (error) {

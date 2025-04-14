@@ -1,4 +1,3 @@
-
 import { apiFetch } from '@/lib/api/core';
 import { Role, Status } from '@/lib/types';
 
@@ -127,13 +126,12 @@ export class AttendanceService {
     }
 
     // Ensure we return a properly formatted AttendanceAnalytics object
-    const analyticsData = response.data;
     return {
-      overall: analyticsData.overall || defaultAnalytics.overall,
-      byBatch: analyticsData.byBatch || defaultAnalytics.byBatch,
-      totalClasses: analyticsData.totalClasses,
-      totalStudents: analyticsData.totalStudents,
-      students: analyticsData.students
+      overall: response.data.overall || defaultAnalytics.overall,
+      byBatch: response.data.byBatch || defaultAnalytics.byBatch,
+      totalClasses: response.data.totalClasses,
+      totalStudents: response.data.totalStudents,
+      students: response.data.students
     };
   }
 
@@ -160,13 +158,12 @@ export class AttendanceService {
     }
 
     // Ensure we return a properly formatted AttendanceAnalytics object
-    const analyticsData = response.data;
     return {
-      overall: analyticsData.overall || defaultAnalytics.overall,
-      byBatch: analyticsData.byBatch || defaultAnalytics.byBatch,
-      totalClasses: analyticsData.totalClasses || defaultAnalytics.totalClasses,
-      totalStudents: analyticsData.totalStudents || defaultAnalytics.totalStudents,
-      students: analyticsData.students || defaultAnalytics.students
+      overall: response.data.overall || defaultAnalytics.overall,
+      byBatch: response.data.byBatch || defaultAnalytics.byBatch,
+      totalClasses: response.data.totalClasses || defaultAnalytics.totalClasses,
+      totalStudents: response.data.totalStudents || defaultAnalytics.totalStudents,
+      students: response.data.students || defaultAnalytics.students
     };
   }
 

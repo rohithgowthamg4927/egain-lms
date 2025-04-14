@@ -114,10 +114,15 @@ export class AttendanceService {
       throw new Error(response.error || 'Failed to fetch attendance analytics');
     }
 
-    return response.data || {
-      overall: { total: 0, present: 0, absent: 0, late: 0, percentage: 0 },
-      byBatch: []
-    };
+    if (!response.data) {
+      // Return default structure if no data
+      return {
+        overall: { total: 0, present: 0, absent: 0, late: 0, percentage: 0 },
+        byBatch: []
+      };
+    }
+
+    return response.data;
   }
 
   // Get attendance analytics for a batch
@@ -128,13 +133,18 @@ export class AttendanceService {
       throw new Error(response.error || 'Failed to fetch batch attendance analytics');
     }
 
-    return response.data || {
-      overall: { total: 0, present: 0, absent: 0, late: 0, percentage: 0 },
-      byBatch: [],
-      totalClasses: 0,
-      totalStudents: 0,
-      students: []
-    };
+    if (!response.data) {
+      // Return default structure if no data
+      return {
+        overall: { total: 0, present: 0, absent: 0, late: 0, percentage: 0 },
+        byBatch: [],
+        totalClasses: 0,
+        totalStudents: 0,
+        students: []
+      };
+    }
+
+    return response.data;
   }
 
   // Update attendance record

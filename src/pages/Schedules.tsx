@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, isAfter, isBefore, parseISO } from 'date-fns';
@@ -60,14 +59,12 @@ const Schedules = () => {
     },
   });
 
-  // Filter batches based on user role
   const filteredBatches = useMemo(() => {
     if (isAdmin) return batchesData || [];
     if (!isInstructor || !user?.userId) return [];
     return (batchesData || []).filter((batch: any) => batch.instructor?.userId === user.userId);
   }, [batchesData, isAdmin, isInstructor, user?.userId]);
 
-  // Filter schedules based on user role
   const filteredSchedules = useMemo(() => {
     if (isAdmin) return schedulesData || [];
     if (!isInstructor || !user?.userId) return [];
@@ -76,14 +73,12 @@ const Schedules = () => {
     );
   }, [schedulesData, filteredBatches, isAdmin, isInstructor]);
 
-  // Helper function to check if user can access a schedule
   const canAccessSchedule = (schedule: any) => {
     if (isAdmin) return true;
     if (!isInstructor || !user?.userId) return false;
     return filteredBatches.some((batch: any) => batch.batchId === schedule.batchId);
   };
 
-  // Helper function to render batch link based on access
   const renderBatchLink = (schedule: any) => {
     const batch = filteredBatches.find((b: any) => b.batchId === schedule.batchId);
     if (!batch) return <span>{schedule.batchName}</span>;
@@ -98,7 +93,6 @@ const Schedules = () => {
     return <span>{batch.batchName}</span>;
   };
 
-  // Helper function to render instructor link based on access
   const renderInstructorLink = (instructor: any) => {
     if (isAdmin) {
       return (
@@ -252,7 +246,6 @@ const Schedules = () => {
         const scheduleDate = new Date(schedule.scheduleDate);
         const scheduleStartTime = new Date(schedule.startTime);
         
-        // Set the schedule's date to the scheduleDate
         scheduleStartTime.setFullYear(scheduleDate.getFullYear());
         scheduleStartTime.setMonth(scheduleDate.getMonth());
         scheduleStartTime.setDate(scheduleDate.getDate());
@@ -278,7 +271,6 @@ const Schedules = () => {
         const scheduleDate = new Date(schedule.scheduleDate);
         const scheduleStartTime = new Date(schedule.startTime);
         
-        // Set the schedule's date to the scheduleDate
         scheduleStartTime.setFullYear(scheduleDate.getFullYear());
         scheduleStartTime.setMonth(scheduleDate.getMonth());
         scheduleStartTime.setDate(scheduleDate.getDate());
@@ -308,7 +300,6 @@ const Schedules = () => {
   };
 
   const getAttendanceStatusBadge = (schedule: Schedule) => {
-    // This is just a placeholder. In a real implementation, you might want to fetch the actual status.
     const scheduleDate = new Date(schedule.scheduleDate);
     const isPast = scheduleDate < now;
     
@@ -316,7 +307,6 @@ const Schedules = () => {
       return <Badge variant="outline">Upcoming</Badge>;
     }
     
-    // For past schedules, show a placeholder badge. In production, this would be based on actual attendance data.
     return <Badge variant="secondary">Attendance Required</Badge>;
   };
 
@@ -648,8 +638,13 @@ const Schedules = () => {
                   </div>
                 </CardContent>
                 {pastSchedules.length > 5 && (
-                  <CardFooter>
-                    <Button variant="outline" className="w-full" onClick={() => document.querySelector('[data-value="past"]')?.click()}>
+                  <CardFooter className="pt-0">
+                    <Button variant="outline" className="w-full" onClick={() => {
+                      const tabsElement = document.querySelector('[value="past"]');
+                      if (tabsElement) {
+                        (tabsElement as HTMLElement).click();
+                      }
+                    }}>
                       View All Past Schedules
                     </Button>
                   </CardFooter>

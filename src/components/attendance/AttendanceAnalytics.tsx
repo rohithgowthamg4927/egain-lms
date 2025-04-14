@@ -25,8 +25,8 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
   const isLoading = studentAnalyticsQuery.isLoading || batchAnalyticsQuery.isLoading;
   const isError = studentAnalyticsQuery.isError || batchAnalyticsQuery.isError;
   
-  const studentData = userId ? studentAnalyticsQuery.data?.data : null;
-  const batchData = batchId ? batchAnalyticsQuery.data?.data : null;
+  const studentData = userId ? studentAnalyticsQuery.data : null;
+  const batchData = batchId ? batchAnalyticsQuery.data : null;
   
   if (isLoading) {
     return (
@@ -200,13 +200,13 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
                 <CardContent>
                   <div className="flex items-center gap-2">
                     <CalendarClock className="h-5 w-5" />
-                    <div className="text-2xl font-bold">{batchData.totalClasses}</div>
+                    <div className="text-2xl font-bold">{batchData.totalClasses || 0}</div>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
                     Total Classes
                   </p>
                   <p className="text-sm text-muted-foreground mt-2">
-                    {batchData.totalStudents} students enrolled
+                    {batchData.totalStudents || 0} students enrolled
                   </p>
                 </CardContent>
               </Card>
@@ -274,7 +274,7 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {batchData.students.map((student) => (
+                  {batchData.students && batchData.students.map((student) => (
                     <div key={student.userId} className="space-y-1">
                       <div className="flex justify-between items-center">
                         <div className="font-medium">{student.fullName}</div>

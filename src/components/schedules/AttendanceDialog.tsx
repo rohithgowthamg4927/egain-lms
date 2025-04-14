@@ -12,6 +12,7 @@ import { useAttendance } from '@/hooks/use-attendance';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AttendanceRecord } from '@/services/attendance.service';
 
 interface AttendanceDialogProps {
   open: boolean;
@@ -34,8 +35,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule, userRole, userId }: At
   const [selectAll, setSelectAll] = useState(false);
   const [bulkStatus, setBulkStatus] = useState<Status>(Status.present);
   
-  const { data: attendanceData, isLoading } = useScheduleAttendance(schedule?.scheduleId || null);
-  const attendanceRecords = attendanceData?.data || [];
+  const { data: attendanceRecords = [], isLoading } = useScheduleAttendance(schedule?.scheduleId || null);
   
   const markAttendanceMutation = useMarkAttendanceMutation();
   const updateAttendanceMutation = useUpdateAttendanceMutation();
@@ -133,7 +133,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule, userRole, userId }: At
         return (
           <div className="flex items-center gap-1">
             <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <Badge variant="success" className="bg-green-500">Present</Badge>
+            <Badge variant="outline" className="bg-green-500 text-white">Present</Badge>
           </div>
         );
       case Status.absent:
@@ -147,7 +147,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule, userRole, userId }: At
         return (
           <div className="flex items-center gap-1">
             <Clock className="h-4 w-4 text-yellow-500" />
-            <Badge variant="warning" className="bg-yellow-500">Late</Badge>
+            <Badge variant="outline" className="bg-yellow-500 text-white">Late</Badge>
           </div>
         );
       default:

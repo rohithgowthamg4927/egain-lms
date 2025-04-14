@@ -16,6 +16,7 @@ export interface AttendanceRecord {
     userId: number;
     fullName: string;
   };
+  isInstructor?: boolean;
 }
 
 export interface AttendanceAnalytics {
@@ -29,6 +30,18 @@ export interface AttendanceAnalytics {
   byBatch: Array<{
     batchId: number;
     batchName: string;
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+    percentage: number;
+  }>;
+  totalClasses?: number;
+  totalStudents?: number;
+  students?: Array<{
+    userId: number;
+    fullName: string;
+    email: string;
     total: number;
     present: number;
     absent: number;
@@ -83,36 +96,45 @@ export class AttendanceService {
   }
 
   // Get attendance for a schedule
-  async getScheduleAttendance(scheduleId: number) {
+  async getScheduleAttendance(scheduleId: number): Promise<AttendanceRecord[]> {
     const response = await apiFetch<{ success: boolean; data?: AttendanceRecord[] }>(`/attendance/schedule/${scheduleId}`);
 
     if (!response.success) {
       throw new Error(response.error || 'Failed to fetch attendance');
     }
 
-    return response;
+    return response.data || [];
   }
 
   // Get attendance analytics for a student
-  async getStudentAttendanceAnalytics(userId: number) {
+  async getStudentAttendanceAnalytics(userId: number): Promise<AttendanceAnalytics> {
     const response = await apiFetch<{ success: boolean; data?: AttendanceAnalytics }>(`/attendance/analytics/student/${userId}`);
 
     if (!response.success) {
       throw new Error(response.error || 'Failed to fetch attendance analytics');
     }
 
-    return response;
+    return response.data || {
+      overall: { total: 0, present: 0, absent: 0, late: 0, percentage: 0 },
+      byBatch: []
+    };
   }
 
   // Get attendance analytics for a batch
-  async getBatchAttendanceAnalytics(batchId: number) {
-    const response = await apiFetch<{ success: boolean; data?: any }>(`/attendance/analytics/batch/${batchId}`);
+  async getBatchAttendanceAnalytics(batchId: number): Promise<AttendanceAnalytics> {
+    const response = await apiFetch<{ success: boolean; data?: AttendanceAnalytics }>(`/attendance/analytics/batch/${batchId}`);
 
     if (!response.success) {
       throw new Error(response.error || 'Failed to fetch batch attendance analytics');
     }
 
-    return response;
+    return response.data || {
+      overall: { total: 0, present: 0, absent: 0, late: 0, percentage: 0 },
+      byBatch: [],
+      totalClasses: 0,
+      totalStudents: 0,
+      students: []
+    };
   }
 
   // Update attendance record

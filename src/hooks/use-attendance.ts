@@ -74,15 +74,11 @@ export function useAttendance() {
     }
   };
 
-  const getScheduleAttendance = async (scheduleId: number) => {
+  const getScheduleAttendance = async (scheduleId: number): Promise<AttendanceRecord[]> => {
     try {
       if (!user) throw new Error('Not authenticated');
 
-      const result = await attendanceService.getScheduleAttendance(
-        scheduleId
-      );
-
-      return result;
+      return await attendanceService.getScheduleAttendance(scheduleId);
     } catch (error) {
       toast({
         title: 'Error',
@@ -96,7 +92,7 @@ export function useAttendance() {
   const useScheduleAttendance = (scheduleId: number | null) => {
     return useQuery({
       queryKey: ['scheduleAttendance', scheduleId],
-      queryFn: () => {
+      queryFn: async () => {
         if (!scheduleId) throw new Error('Schedule ID is required');
         return attendanceService.getScheduleAttendance(scheduleId);
       },
@@ -107,7 +103,7 @@ export function useAttendance() {
   const useStudentAttendanceAnalytics = (userId: number | null) => {
     return useQuery({
       queryKey: ['studentAttendanceAnalytics', userId],
-      queryFn: () => {
+      queryFn: async () => {
         if (!userId) throw new Error('User ID is required');
         return attendanceService.getStudentAttendanceAnalytics(userId);
       },
@@ -118,7 +114,7 @@ export function useAttendance() {
   const useBatchAttendanceAnalytics = (batchId: number | null) => {
     return useQuery({
       queryKey: ['batchAttendanceAnalytics', batchId],
-      queryFn: () => {
+      queryFn: async () => {
         if (!batchId) throw new Error('Batch ID is required');
         return attendanceService.getBatchAttendanceAnalytics(batchId);
       },

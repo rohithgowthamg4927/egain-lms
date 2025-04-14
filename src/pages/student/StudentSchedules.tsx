@@ -45,22 +45,59 @@ export default function StudentSchedules() {
   // Filter schedules for current week
   const currentWeekSchedules = schedules.filter(schedule => {
     const scheduleDate = new Date(schedule.scheduleDate);
-    return weekDays.some(day => isSameDay(day, scheduleDate));
+    // Reset time part to compare only dates
+    scheduleDate.setHours(0, 0, 0, 0);
+    
+    return weekDays.some(day => {
+      const compareDay = new Date(day);
+      compareDay.setHours(0, 0, 0, 0);
+      return scheduleDate.getTime() === compareDay.getTime();
+    });
   });
   
   // Filter for upcoming schedules (after current date)
-  const upcomingSchedules = schedules.filter(schedule => 
-    isAfter(new Date(schedule.scheduleDate), new Date())
-  ).sort((a, b) => 
-    new Date(a.scheduleDate).getTime() - new Date(b.scheduleDate).getTime()
-  );
+  const upcomingSchedules = schedules.filter(schedule => {
+    const scheduleDate = new Date(schedule.scheduleDate);
+    const scheduleDateTime = new Date(scheduleDate);
+    
+    // Get time parts from startTime
+    if (schedule.startTime.includes('T')) {
+      const startTime = new Date(schedule.startTime);
+      scheduleDateTime.setHours(startTime.getHours(), startTime.getMinutes());
+    } else {
+      const [hours, minutes] = schedule.startTime.split(':').map(Number);
+      scheduleDateTime.setHours(hours, minutes);
+    }
+    
+    const now = new Date();
+    return scheduleDateTime > now;
+  }).sort((a, b) => {
+    const dateA = new Date(a.scheduleDate);
+    const dateB = new Date(b.scheduleDate);
+    return dateA.getTime() - dateB.getTime();
+  });
   
   // Filter for past schedules (before current date)
-  const pastSchedules = schedules.filter(schedule => 
-    isBefore(new Date(schedule.scheduleDate), new Date())
-  ).sort((a, b) => 
-    new Date(b.scheduleDate).getTime() - new Date(a.scheduleDate).getTime()
-  );
+  const pastSchedules = schedules.filter(schedule => {
+    const scheduleDate = new Date(schedule.scheduleDate);
+    const scheduleDateTime = new Date(scheduleDate);
+    
+    // Get time parts from startTime
+    if (schedule.startTime.includes('T')) {
+      const startTime = new Date(schedule.startTime);
+      scheduleDateTime.setHours(startTime.getHours(), startTime.getMinutes());
+    } else {
+      const [hours, minutes] = schedule.startTime.split(':').map(Number);
+      scheduleDateTime.setHours(hours, minutes);
+    }
+    
+    const now = new Date();
+    return scheduleDateTime <= now;
+  }).sort((a, b) => {
+    const dateB = new Date(b.scheduleDate);
+    const dateA = new Date(a.scheduleDate);
+    return dateB.getTime() - dateA.getTime();
+  });
   
   const navigateWeek = (direction: 'prev' | 'next') => {
     setCurrentWeekStart(prev => 
@@ -68,6 +105,26 @@ export default function StudentSchedules() {
         ? addWeeks(prev, 1) 
         : addWeeks(prev, -1)
     );
+  };
+  
+  // Modify the formatTime helper function to handle timezone correctly
+  const formatTime = (timeString: string) => {
+    if (!timeString) return '';
+    try {
+      // For full ISO string (from database)
+      if (timeString.includes('T')) {
+        const date = new Date(timeString);
+        return format(date, 'h:mm a');
+      }
+      // For time-only string (HH:mm:ss)
+      const [hours, minutes] = timeString.split(':').map(Number);
+      const date = new Date();
+      date.setHours(hours, minutes, 0, 0);
+      return format(date, 'h:mm a');
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return timeString;
+    }
   };
   
   if (error) {
@@ -150,7 +207,9 @@ export default function StudentSchedules() {
                                     <h4 className="font-medium">{schedule.topic || 'Class Session'}</h4>
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                       <Clock className="h-4 w-4" />
-                                      <span>{format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}</span>
+                                      <span>
+                                        {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
+                                      </span>
                                     </div>
                                     <div className="text-sm text-muted-foreground mt-1">
                                       <span className="font-medium">Course:</span> {schedule.batch.course.courseName}
@@ -216,7 +275,9 @@ export default function StudentSchedules() {
                           </div>
                           <div className="flex items-center gap-2 text-sm text-primary">
                             <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span>{format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}</span>
+                            <span>
+                              {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
+                            </span>
                           </div>
                           <div className="flex flex-wrap gap-2 mt-2">
                             <Badge variant="outline" className="bg-muted/50">

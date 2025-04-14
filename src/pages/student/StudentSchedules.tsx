@@ -1,14 +1,16 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { getStudentSchedules } from '@/lib/api/students';
+import { getAllSchedules } from '@/lib/api/schedules';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Schedule } from '@/lib/types';
-import { format, parseISO, startOfWeek, addDays, isSameDay, addWeeks, isAfter, isBefore } from 'date-fns';
+import { format, parseISO, startOfWeek, addDays, isSameDay, addWeeks, isAfter, isBefore, isToday } from 'date-fns';
 import { Calendar, Clock, ExternalLink } from 'lucide-react';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 
@@ -17,14 +19,48 @@ export default function StudentSchedules() {
   const { toast } = useToast();
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   
-  // Query for student schedules
-  const { data: schedulesData, isLoading, error } = useQuery({
-    queryKey: ['studentSchedules', user?.userId],
-    queryFn: () => {
+  // Query for student schedules - updated to include batches the student is enrolled in
+  const { data: studentBatchesData, isLoading: isBatchesLoading } = useQuery({
+    queryKey: ['studentBatches', user?.userId],
+    queryFn: async () => {
       if (!user?.userId) throw new Error('User ID required');
-      return getStudentSchedules(user.userId);
+      return await fetch(`/api/student-batches/${user.userId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      }).then(res => res.json());
     },
     enabled: !!user?.userId
+  });
+  
+  // Get all schedules for batches the student is enrolled in
+  const { data: schedulesData, isLoading, error } = useQuery({
+    queryKey: ['studentSchedules', studentBatchesData?.data],
+    queryFn: async () => {
+      if (!studentBatchesData?.success || !studentBatchesData.data) {
+        throw new Error('No batches found');
+      }
+      
+      // Extract batch IDs from student batches
+      const batchIds = studentBatchesData.data.map(sb => sb.batch.batchId);
+      if (batchIds.length === 0) return { success: true, data: [] };
+      
+      // Fetch all schedules for these batches
+      const schedulesPromises = batchIds.map(batchId => 
+        getAllSchedules({ batchId })
+      );
+      
+      const schedulesResults = await Promise.all(schedulesPromises);
+      
+      // Combine all schedules from different batches
+      const allSchedules = schedulesResults.flatMap(result => 
+        result.success && result.data ? result.data : []
+      );
+      
+      return { success: true, data: allSchedules };
+    },
+    enabled: !!studentBatchesData?.data
   });
   
   const schedules = schedulesData?.data || [];
@@ -107,6 +143,16 @@ export default function StudentSchedules() {
     );
   };
   
+  // Format date to display in UI
+  const formatScheduleDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'EEEE, MMMM d, yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString;
+    }
+  };
+  
   // Modify the formatTime helper function to handle timezone correctly
   const formatTime = (timeString: string) => {
     if (!timeString) return '';
@@ -126,6 +172,8 @@ export default function StudentSchedules() {
       return timeString;
     }
   };
+  
+  const isLoaderShowing = isLoading || isBatchesLoading;
   
   if (error) {
     return (
@@ -182,7 +230,7 @@ export default function StudentSchedules() {
             </CardHeader>
             
             <CardContent className="pt-4">
-              {isLoading ? (
+              {isLoaderShowing ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
@@ -194,7 +242,7 @@ export default function StudentSchedules() {
                     
                     return (
                       <div key={dateKey} className="border rounded-md overflow-hidden">
-                        <div className={`py-2 px-4 font-medium ${isSameDay(day, new Date()) ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                        <div className={`py-2 px-4 font-medium ${isToday(day) ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                           {format(day, 'EEEE, MMMM d')}
                         </div>
                         
@@ -212,10 +260,10 @@ export default function StudentSchedules() {
                                       </span>
                                     </div>
                                     <div className="text-sm text-muted-foreground mt-1">
-                                      <span className="font-medium">Course:</span> {schedule.batch.course.courseName}
+                                      <span className="font-medium">Course:</span> {schedule.batch?.course?.courseName}
                                     </div>
                                     <div className="text-sm text-muted-foreground">
-                                      <span className="font-medium">Batch:</span> {schedule.batch.batchName}
+                                      <span className="font-medium">Batch:</span> {schedule.batch?.batchName}
                                     </div>
                                   </div>
                                   
@@ -258,7 +306,7 @@ export default function StudentSchedules() {
               <CardTitle>Upcoming Classes</CardTitle>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
+              {isLoaderShowing ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
@@ -271,7 +319,7 @@ export default function StudentSchedules() {
                           <h4 className="font-medium">{schedule.topic || 'Class Session'}</h4>
                           <div className="flex items-center gap-2 text-sm">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span>{format(parseISO(schedule.scheduleDate), 'EEEE, MMMM d, yyyy')}</span>
+                            <span>{formatScheduleDate(schedule.scheduleDate)}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-primary">
                             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -281,10 +329,10 @@ export default function StudentSchedules() {
                           </div>
                           <div className="flex flex-wrap gap-2 mt-2">
                             <Badge variant="outline" className="bg-muted/50">
-                              {schedule.batch.course.courseName}
+                              {schedule.batch?.course?.courseName}
                             </Badge>
                             <Badge variant="outline" className="bg-muted/50">
-                              {schedule.batch.batchName}
+                              {schedule.batch?.batchName}
                             </Badge>
                           </div>
                         </div>

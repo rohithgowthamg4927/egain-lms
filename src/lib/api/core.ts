@@ -66,12 +66,12 @@ export async function apiFetch<T>(
         status: response.status
       });
       
-      // For authentication errors, clear token and reload
-      if (response.status === 401) {
+      // For authentication errors (401) and forbidden errors (403), clear token and reload
+      if (response.status === 401 || response.status === 403) {
         localStorage.removeItem("authToken");
         localStorage.removeItem("currentUser");
-        window.location.href = "/";
-        return { success: false, error: "Authentication failed", status: 401 };
+        window.location.href = "/login";
+        return { success: false, error: "Authentication failed", status: response.status };
       }
       
       // If the error response has success and error fields, use them

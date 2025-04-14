@@ -240,7 +240,13 @@ router.delete('/:id', async (req, res) => {
   try {
     const scheduleId = parseInt(req.params.id);
     
-    await prisma.Schedule.delete({
+    // First delete all attendance records for this schedule
+    await prisma.attendance.deleteMany({
+      where: { scheduleId }
+    });
+    
+    // Then delete the schedule
+    await prisma.schedule.delete({
       where: { scheduleId }
     });
     

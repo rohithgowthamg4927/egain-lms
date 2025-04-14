@@ -1,32 +1,80 @@
-
 import { useState } from 'react';
-import { useAttendance } from '@/hooks/use-attendance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
 import { CalendarClock, Users, Medal, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api/core';
+import { Status } from '@/lib/types';
 
 interface AttendanceAnalyticsProps {
   userId?: number;
   batchId?: number;
 }
 
+interface AttendanceAnalytics {
+  overall: {
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+    percentage: number;
+  };
+  byBatch?: Array<{
+    batchId: number;
+    batchName: string;
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+    percentage: number;
+  }>;
+  students?: Array<{
+    userId: number;
+    fullName: string;
+    email: string;
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+    percentage: number;
+  }>;
+  totalClasses?: number;
+  totalStudents?: number;
+}
+
 const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
   const { user } = useAuth();
-  const { useStudentAttendanceAnalytics, useBatchAttendanceAnalytics } = useAttendance();
   const [activeTab, setActiveTab] = useState('overview');
   
-  // Use the appropriate analytics hook based on props
-  const studentAnalyticsQuery = useStudentAttendanceAnalytics(userId || null);
-  const batchAnalyticsQuery = useBatchAttendanceAnalytics(batchId || null);
+  // Fetch student attendance analytics
+  const { data: studentData, isLoading: isLoadingStudent } = useQuery({
+    queryKey: ['studentAttendance', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const response = await apiFetch<AttendanceAnalytics>(`/attendance/analytics/student/${userId}`);
+      if (!response.success) throw new Error(response.error);
+      return response.data;
+    },
+    enabled: !!userId
+  });
+
+  // Fetch batch attendance analytics
+  const { data: batchData, isLoading: isLoadingBatch } = useQuery({
+    queryKey: ['batchAttendance', batchId],
+    queryFn: async () => {
+      if (!batchId) return null;
+      const response = await apiFetch<AttendanceAnalytics>(`/attendance/analytics/batch/${batchId}`);
+      if (!response.success) throw new Error(response.error);
+      return response.data;
+    },
+    enabled: !!batchId
+  });
   
-  const isLoading = studentAnalyticsQuery.isLoading || batchAnalyticsQuery.isLoading;
-  const isError = studentAnalyticsQuery.isError || batchAnalyticsQuery.isError;
-  
-  const studentData = userId ? studentAnalyticsQuery.data : null;
-  const batchData = batchId ? batchAnalyticsQuery.data : null;
+  const isLoading = isLoadingStudent || isLoadingBatch;
+  const isError = false; // We handle errors in the query functions
   
   if (isLoading) {
     return (

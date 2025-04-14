@@ -1,13 +1,35 @@
-
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
-import { authenticateToken } from '../middleware/auth.js';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 // Middleware to authenticate all routes
+const authenticateToken = (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'No token provided'
+      });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'development-secret');
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      error: 'Invalid or expired token'
+    });
+  }
+};
+
+// Apply authentication middleware to all routes
 router.use(authenticateToken);
 
 // Get attendance for a schedule
@@ -16,20 +38,11 @@ router.get('/schedule/:scheduleId', async (req, res) => {
     const scheduleId = parseInt(req.params.scheduleId);
     const { role, userId } = req.user;
     
-    // Get the schedule with its batch and students
+    // First get the schedule with batch info
     const schedule = await prisma.Schedule.findUnique({
       where: { scheduleId },
       include: {
-        batch: {
-          include: {
-            students: {
-              include: {
-                student: true
-              }
-            },
-            instructor: true
-          }
-        }
+        batch: true
       }
     });
 
@@ -40,104 +53,82 @@ router.get('/schedule/:scheduleId', async (req, res) => {
       });
     }
 
-    // Role-based access control
-    if (role === 'student') {
-      // Students can only see their own records
-      const isStudentEnrolled = schedule.batch.students.some(s => s.studentId === userId);
-      if (!isStudentEnrolled) {
-        return res.status(403).json({
-          success: false,
-          error: 'You are not enrolled in this batch'
-        });
-      }
-    } else if (role === 'instructor') {
-      // Instructors can only see their batch records
-      if (schedule.batch.instructorId !== userId) {
-        return res.status(403).json({
-          success: false,
-          error: 'You are not assigned to this batch'
-        });
-      }
-    }
-    // Admins can see all records
-
-    // Get existing attendance records
-    const attendanceRecords = await prisma.Attendance.findMany({
-      where: { scheduleId },
+    // Get enrolled students with their user details
+    const studentBatches = await prisma.StudentBatch.findMany({
+      where: {
+        batchId: schedule.batchId,
+      },
       include: {
-        user: true,
-        markedByUser: true
+        student: {
+          select: {
+            userId: true,
+            fullName: true,
+            email: true,
+            role: true
+          }
+        }
       }
     });
 
-    // Create a map of existing attendance records
-    const attendanceMap = new Map(
-      attendanceRecords.map(record => [record.userId, record])
-    );
-
-    // Get all students in the batch
-    const students = schedule.batch.students.map(sb => sb.student);
-
-    // Filter based on role
-    let responseData;
-    if (role === 'student') {
-      // For students, only return their own record
-      const studentRecord = students.find(s => s.userId === userId);
-      if (!studentRecord) {
-        return res.status(404).json({
-          success: false,
-          error: 'Student record not found'
-        });
-      }
-      
-      const existingRecord = attendanceMap.get(userId);
-      responseData = [{
-        attendanceId: existingRecord?.attendanceId,
-        userId: studentRecord.userId,
-        user: studentRecord,
-        status: existingRecord?.status || null,
-        markedBy: existingRecord?.markedBy || null,
-        markedByUser: existingRecord?.markedByUser || null
-      }];
-    } else {
-      // For instructors and admins, return all student records
-      responseData = students.map(student => {
-        const existingRecord = attendanceMap.get(student.userId);
-        return {
-          attendanceId: existingRecord?.attendanceId,
-          userId: student.userId,
-          user: student,
-          status: existingRecord?.status || null,
-          markedBy: existingRecord?.markedBy || null,
-          markedByUser: existingRecord?.markedByUser || null
-        };
-      });
-      
-      // Also include instructor record for this schedule
-      if (schedule.batch.instructorId) {
-        const instructorRecord = attendanceMap.get(schedule.batch.instructorId);
-        if (instructorRecord || (role === 'admin' || userId === schedule.batch.instructorId)) {
-          responseData.push({
-            attendanceId: instructorRecord?.attendanceId,
-            userId: schedule.batch.instructorId,
-            user: schedule.batch.instructor,
-            status: instructorRecord?.status || null,
-            markedBy: instructorRecord?.markedBy || null,
-            markedByUser: instructorRecord?.markedByUser || null,
-            isInstructor: true
-          });
+    // Get existing attendance records
+    const attendanceRecords = await prisma.Attendance.findMany({
+      where: { 
+        scheduleId,
+        user: {
+          role: 'student'  // Only get student attendance records
+        }
+      },
+      include: {
+        user: {
+          select: {
+            userId: true,
+            fullName: true,
+            email: true,
+            role: true
+          }
         }
       }
-    }
+    });
 
-    res.json({ success: true, data: responseData });
+    // Map enrolled students to the expected format
+    const enrolledStudents = studentBatches
+      .filter(sb => sb.student.role === 'student')  // Ensure we only get students
+      .map(sb => ({
+        userId: sb.student.userId,
+        fullName: sb.student.fullName,
+        email: sb.student.email
+      }));
+
+    // Filter based on role
+    const filteredStudents = role === 'student' 
+      ? enrolledStudents.filter(s => s.userId === userId)
+      : enrolledStudents;
+
+    const filteredRecords = role === 'student'
+      ? attendanceRecords.filter(record => record.user.userId === userId)
+      : attendanceRecords;
+
+    // Format attendance records to match frontend expectations
+    const formattedRecords = filteredRecords.map(record => ({
+      attendanceId: record.attendanceId,
+      userId: record.user.userId,
+      status: record.status,
+      markedAt: record.createdAt
+    }));
+
+    res.json({ 
+      success: true, 
+      data: {
+        records: formattedRecords
+      }
+    });
   } catch (error) {
     handleApiError(res, error);
   }
 });
 
 // Mark attendance
-router.post('/', async (req, res) => {
+router.post('/mark', async (req, res) => {
   try {
     const { scheduleId, userId, status } = req.body;
     const instructorId = req.user.userId;
@@ -249,50 +240,35 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // If marking student attendance and instructor is doing it, auto-mark instructor as present
-    if (targetUser.role === 'student' && role === 'instructor') {
-      // Auto-mark instructor as present if not already marked
-      const instructorAttendance = await prisma.Attendance.findUnique({
-        where: {
-          scheduleId_userId: {
-            scheduleId,
-            userId: instructorId
-          }
-        }
-      });
+    // Format the response to match frontend expectations
+    const formattedAttendance = {
+      attendanceId: attendance.attendanceId,
+      userId: attendance.user.userId,
+      status: attendance.status,
+      markedAt: attendance.createdAt
+    };
 
-      if (!instructorAttendance) {
-        await prisma.Attendance.create({
-          data: {
-            scheduleId,
-            userId: instructorId,
-            status: 'present',
-            markedBy: instructorId,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          }
-        });
-      }
-    }
-
-    res.json({ success: true, data: attendance });
+    res.json({
+      success: true,
+      data: formattedAttendance
+    });
   } catch (error) {
     handleApiError(res, error);
   }
 });
 
-// Mark bulk attendance
+// Bulk mark attendance
 router.post('/bulk', async (req, res) => {
   try {
     const { scheduleId, attendanceRecords } = req.body;
     const instructorId = req.user.userId;
     const role = req.user.role;
-    
+
     // Validate required fields
-    if (!scheduleId || !attendanceRecords || !Array.isArray(attendanceRecords) || attendanceRecords.length === 0) {
+    if (!scheduleId || !attendanceRecords || !Array.isArray(attendanceRecords)) {
       return res.status(400).json({
         success: false,
-        error: 'Missing or invalid required fields'
+        error: 'Missing required fields'
       });
     }
 
@@ -308,15 +284,7 @@ router.post('/bulk', async (req, res) => {
     const schedule = await prisma.Schedule.findUnique({
       where: { scheduleId },
       include: {
-        batch: {
-          include: {
-            students: {
-              include: {
-                student: true
-              }
-            }
-          }
-        }
+        batch: true
       }
     });
 
@@ -335,97 +303,109 @@ router.post('/bulk', async (req, res) => {
       });
     }
 
-    // Validate that all users in attendanceRecords are enrolled in the batch
-    const enrolledStudentIds = schedule.batch.students.map(s => s.studentId);
-    
-    for (const record of attendanceRecords) {
-      if (!enrolledStudentIds.includes(record.userId) && record.userId !== schedule.batch.instructorId) {
-        return res.status(400).json({
-          success: false,
-          error: `User with ID ${record.userId} is not enrolled in this batch`
-        });
-      }
-    }
-
     // Process each attendance record
-    const results = [];
-    for (const record of attendanceRecords) {
-      const { userId, status } = record;
-      
-      const existingAttendance = await prisma.Attendance.findUnique({
-        where: {
-          scheduleId_userId: {
-            scheduleId,
-            userId
-          }
-        }
-      });
+    const results = await Promise.all(
+      attendanceRecords.map(async ({ userId, status }) => {
+        try {
+          // Check if user exists and is a student
+          const targetUser = await prisma.User.findUnique({
+            where: { userId },
+            include: {
+              studentBatches: {
+                where: { batchId: schedule.batchId }
+              }
+            }
+          });
 
-      let attendance;
-      if (existingAttendance) {
-        attendance = await prisma.Attendance.update({
-          where: {
-            attendanceId: existingAttendance.attendanceId
-          },
-          data: {
-            status,
-            updatedAt: new Date()
+          if (!targetUser) {
+            return { userId, success: false, error: 'User not found' };
           }
-        });
-      } else {
-        attendance = await prisma.Attendance.create({
-          data: {
-            scheduleId,
+
+          // Check if student is enrolled in the batch
+          if (targetUser.role === 'student' && targetUser.studentBatches.length === 0) {
+            return { userId, success: false, error: 'Student is not enrolled in this batch' };
+          }
+
+          const existingAttendance = await prisma.Attendance.findUnique({
+            where: {
+              scheduleId_userId: {
+                scheduleId,
+                userId
+              }
+            }
+          });
+
+          let attendance;
+          if (existingAttendance) {
+            attendance = await prisma.Attendance.update({
+              where: {
+                attendanceId: existingAttendance.attendanceId
+              },
+              data: {
+                status,
+                updatedAt: new Date()
+              },
+              include: {
+                user: true,
+                markedByUser: true
+              }
+            });
+          } else {
+            attendance = await prisma.Attendance.create({
+              data: {
+                scheduleId,
+                userId,
+                status,
+                markedBy: instructorId,
+                createdAt: new Date(),
+                updatedAt: new Date()
+              },
+              include: {
+                user: true,
+                markedByUser: true
+              }
+            });
+          }
+
+          return {
             userId,
-            status,
-            markedBy: instructorId,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          }
-        });
-      }
-      
-      results.push(attendance);
-    }
-
-    // Auto-mark instructor as present if not already marked
-    if (role === 'instructor') {
-      const instructorAttendance = await prisma.Attendance.findUnique({
-        where: {
-          scheduleId_userId: {
-            scheduleId,
-            userId: instructorId
-          }
+            success: true,
+            data: {
+              attendanceId: attendance.attendanceId,
+              status: attendance.status,
+              markedAt: attendance.createdAt
+            }
+          };
+        } catch (error) {
+          return { userId, success: false, error: error.message };
         }
-      });
+      })
+    );
 
-      if (!instructorAttendance) {
-        await prisma.Attendance.create({
-          data: {
-            scheduleId,
-            userId: instructorId,
-            status: 'present',
-            markedBy: instructorId,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          }
-        });
-      }
-    }
-
-    res.json({ success: true, data: results });
+    res.json({
+      success: true,
+      data: results
+    });
   } catch (error) {
     handleApiError(res, error);
   }
 });
 
-// Update attendance record
+// Update attendance
 router.put('/:attendanceId', async (req, res) => {
   try {
     const attendanceId = parseInt(req.params.attendanceId);
     const { status } = req.body;
-    const userId = req.user.userId;
+    const instructorId = req.user.userId;
     const role = req.user.role;
+
+    // Validate required fields
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields'
+      });
+    }
 
     // Only instructors and admins can update attendance
     if (role !== 'admin' && role !== 'instructor') {
@@ -436,7 +416,7 @@ router.put('/:attendanceId', async (req, res) => {
     }
 
     // Get the attendance record
-    const existingAttendance = await prisma.Attendance.findUnique({
+    const attendance = await prisma.Attendance.findUnique({
       where: { attendanceId },
       include: {
         schedule: {
@@ -447,7 +427,7 @@ router.put('/:attendanceId', async (req, res) => {
       }
     });
 
-    if (!existingAttendance) {
+    if (!attendance) {
       return res.status(404).json({
         success: false,
         error: 'Attendance record not found'
@@ -455,14 +435,15 @@ router.put('/:attendanceId', async (req, res) => {
     }
 
     // Check if user is instructor for this batch or admin
-    if (role !== 'admin' && existingAttendance.schedule.batch.instructorId !== userId) {
+    if (role !== 'admin' && attendance.schedule.batch.instructorId !== instructorId) {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to update attendance for this batch'
       });
     }
 
-    const attendance = await prisma.Attendance.update({
+    // Update the attendance
+    const updatedAttendance = await prisma.Attendance.update({
       where: { attendanceId },
       data: {
         status,
@@ -474,7 +455,18 @@ router.put('/:attendanceId', async (req, res) => {
       }
     });
 
-    res.json({ success: true, data: attendance });
+    // Format the response to match frontend expectations
+    const formattedAttendance = {
+      attendanceId: updatedAttendance.attendanceId,
+      userId: updatedAttendance.user.userId,
+      status: updatedAttendance.status,
+      markedAt: updatedAttendance.createdAt
+    };
+
+    res.json({
+      success: true,
+      data: formattedAttendance
+    });
   } catch (error) {
     handleApiError(res, error);
   }

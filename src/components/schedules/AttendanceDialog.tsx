@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { CheckCircle2, XCircle, AlertCircle, Clock, UserCheck, Users } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -8,45 +7,114 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Schedule, Status, Role } from '@/lib/types';
-import { useAttendance } from '@/hooks/use-attendance';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AttendanceRecord } from '@/services/attendance.service';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getBatchStudents } from '@/lib/api/batches';
+import { useAuth } from '@/hooks/use-auth';
+import { apiFetch } from '@/lib/api/core';
+
+interface AttendanceRecord {
+  attendanceId: number;
+  userId: number;
+  status: Status;
+  markedAt: string;
+}
 
 interface AttendanceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   schedule: Schedule | null;
-  userRole: Role;
-  userId: number;
 }
 
-const AttendanceDialog = ({ open, onOpenChange, schedule, userRole, userId }: AttendanceDialogProps) => {
-  const { 
-    useScheduleAttendance, 
-    useMarkAttendanceMutation, 
-    useMarkBulkAttendanceMutation,
-    useUpdateAttendanceMutation
-  } = useAttendance();
+const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProps) => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   
   const [selectedTab, setSelectedTab] = useState('attendance');
   const [selectedStudents, setSelectedStudents] = useState<Set<number>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
   const [bulkStatus, setBulkStatus] = useState<Status>(Status.present);
   
-  const { data: attendanceRecords = [], isLoading } = useScheduleAttendance(schedule?.scheduleId || null);
-  
-  const markAttendanceMutation = useMarkAttendanceMutation();
-  const updateAttendanceMutation = useUpdateAttendanceMutation();
-  const markBulkAttendanceMutation = useMarkBulkAttendanceMutation();
-  
+  // Fetch batch students
+  const { data: batchStudents = [] } = useQuery({
+    queryKey: ['batchStudents', schedule?.batchId],
+    queryFn: async () => {
+      if (!schedule?.batchId) return [];
+      const response = await getBatchStudents(schedule.batchId);
+      if (!response.success) throw new Error(response.error || 'Failed to fetch students');
+      return response.data || [];
+    },
+    enabled: !!schedule?.batchId
+  });
+
+  // Fetch attendance records
+  const { data: attendanceRecords = [], isLoading, error } = useQuery({
+    queryKey: ['attendance', schedule?.scheduleId],
+    queryFn: async () => {
+      if (!schedule?.scheduleId) return [];
+      const response = await apiFetch<{ records: AttendanceRecord[] }>(`/attendance/schedule/${schedule.scheduleId}`);
+      if (!response.success) throw new Error(response.error || 'Failed to fetch attendance records');
+      return response.data?.records || [];
+    },
+    enabled: !!schedule?.scheduleId
+  });
+
+  // Mark attendance mutation
+  const markAttendanceMutation = useMutation({
+    mutationFn: async ({ userId, status }: { userId: number; status: Status }) => {
+      if (!schedule?.scheduleId) throw new Error('No schedule selected');
+      return apiFetch(`/attendance/mark`, {
+        method: 'POST',
+        body: JSON.stringify({
+          scheduleId: schedule.scheduleId,
+          userId,
+          status
+        })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance', schedule?.scheduleId] });
+    }
+  });
+
+  // Update attendance mutation
+  const updateAttendanceMutation = useMutation({
+    mutationFn: async ({ attendanceId, status }: { attendanceId: number; status: Status }) => {
+      return apiFetch(`/attendance/${attendanceId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance', schedule?.scheduleId] });
+    }
+  });
+
+  // Bulk mark attendance mutation
+  const markBulkAttendanceMutation = useMutation({
+    mutationFn: async ({ attendanceRecords }: { attendanceRecords: Array<{ userId: number; status: Status }> }) => {
+      if (!schedule?.scheduleId) throw new Error('No schedule selected');
+      return apiFetch(`/attendance/bulk`, {
+        method: 'POST',
+        body: JSON.stringify({
+          scheduleId: schedule.scheduleId,
+          attendanceRecords
+        })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance', schedule?.scheduleId] });
+    }
+  });
+
   // Reset selected students when schedule changes
   useEffect(() => {
     setSelectedStudents(new Set());
     setSelectAll(false);
   }, [schedule?.scheduleId]);
-  
+
   const formatTime = (timeString: string) => {
     if (!timeString) return '';
     if (timeString.length <= 8) {
@@ -54,28 +122,30 @@ const AttendanceDialog = ({ open, onOpenChange, schedule, userRole, userId }: At
     }
     return format(new Date(timeString), 'hh:mm a');
   };
-  
-  const handleMarkAttendance = (studentId: number, status: Status) => {
+
+  const handleMarkAttendance = async (studentId: number, status: Status) => {
     if (!schedule) return;
     
     const existingRecord = attendanceRecords.find(record => record.userId === studentId);
     
-    if (existingRecord?.attendanceId) {
-      updateAttendanceMutation.mutate({
-        attendanceId: existingRecord.attendanceId,
-        status,
-        scheduleId: schedule.scheduleId
-      });
-    } else {
-      markAttendanceMutation.mutate({
-        scheduleId: schedule.scheduleId,
-        userId: studentId,
-        status
-      });
+    try {
+      if (existingRecord?.attendanceId) {
+        await updateAttendanceMutation.mutateAsync({
+          attendanceId: existingRecord.attendanceId,
+          status
+        });
+      } else {
+        await markAttendanceMutation.mutateAsync({
+          userId: studentId,
+          status
+        });
+      }
+    } catch (error) {
+      console.error('Error marking attendance:', error);
     }
   };
-  
-  const handleBulkMarkAttendance = () => {
+
+  const handleBulkMarkAttendance = async () => {
     if (!schedule || selectedStudents.size === 0) return;
     
     const attendanceRecordsToUpdate = Array.from(selectedStudents).map(studentId => ({
@@ -83,32 +153,31 @@ const AttendanceDialog = ({ open, onOpenChange, schedule, userRole, userId }: At
       status: bulkStatus
     }));
     
-    markBulkAttendanceMutation.mutate({
-      scheduleId: schedule.scheduleId,
-      attendanceRecords: attendanceRecordsToUpdate
-    });
-    
-    // Clear selections after marking
-    setSelectedStudents(new Set());
-    setSelectAll(false);
+    try {
+      await markBulkAttendanceMutation.mutateAsync({
+        attendanceRecords: attendanceRecordsToUpdate
+      });
+      
+      setSelectedStudents(new Set());
+      setSelectAll(false);
+    } catch (error) {
+      console.error('Error marking bulk attendance:', error);
+    }
   };
-  
+
   const handleSelectAll = (checked: boolean) => {
     setSelectAll(checked);
     if (checked) {
       const newSelectedStudents = new Set<number>();
-      attendanceRecords.forEach(record => {
-        // Don't include instructors in bulk selection
-        if (!record.isInstructor) {
-          newSelectedStudents.add(record.userId);
-        }
+      batchStudents.forEach(student => {
+        newSelectedStudents.add(student.userId);
       });
       setSelectedStudents(newSelectedStudents);
     } else {
       setSelectedStudents(new Set());
     }
   };
-  
+
   const handleSelectStudent = (studentId: number, checked: boolean) => {
     const newSelectedStudents = new Set(selectedStudents);
     if (checked) {
@@ -118,13 +187,9 @@ const AttendanceDialog = ({ open, onOpenChange, schedule, userRole, userId }: At
     }
     setSelectedStudents(newSelectedStudents);
     
-    // Update selectAll state
-    setSelectAll(
-      newSelectedStudents.size === attendanceRecords.filter(r => !r.isInstructor).length && 
-      newSelectedStudents.size > 0
-    );
+    setSelectAll(newSelectedStudents.size === batchStudents.length && newSelectedStudents.size > 0);
   };
-  
+
   const getStatusBadge = (status: Status | null) => {
     if (!status) return <Badge variant="outline">Not marked</Badge>;
     
@@ -132,41 +197,54 @@ const AttendanceDialog = ({ open, onOpenChange, schedule, userRole, userId }: At
       case Status.present:
         return (
           <div className="flex items-center gap-1">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <Badge variant="outline" className="bg-green-500 text-white">Present</Badge>
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <Badge variant="outline" className="border-green-600 text-green-600">Present</Badge>
           </div>
         );
       case Status.absent:
         return (
           <div className="flex items-center gap-1">
-            <XCircle className="h-4 w-4 text-red-500" />
-            <Badge variant="destructive">Absent</Badge>
+            <XCircle className="h-4 w-4 text-red-600" />
+            <Badge variant="outline" className="border-red-600 text-red-600">Absent</Badge>
           </div>
         );
       case Status.late:
         return (
           <div className="flex items-center gap-1">
-            <Clock className="h-4 w-4 text-yellow-500" />
-            <Badge variant="outline" className="bg-yellow-500 text-white">Late</Badge>
+            <Clock className="h-4 w-4 text-yellow-600" />
+            <Badge variant="outline" className="border-yellow-600 text-yellow-600">Late</Badge>
           </div>
         );
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }
   };
-  
+
   const getAttendanceStats = () => {
-    const total = attendanceRecords.filter(r => !r.isInstructor).length;
-    const present = attendanceRecords.filter(r => !r.isInstructor && r.status === Status.present).length;
-    const absent = attendanceRecords.filter(r => !r.isInstructor && r.status === Status.absent).length;
-    const late = attendanceRecords.filter(r => !r.isInstructor && r.status === Status.late).length;
-    const notMarked = attendanceRecords.filter(r => !r.isInstructor && !r.status).length;
+    const total = batchStudents.length;
+    const present = attendanceRecords.filter(r => r.status === Status.present).length;
+    const absent = attendanceRecords.filter(r => r.status === Status.absent).length;
+    const late = attendanceRecords.filter(r => r.status === Status.late).length;
+    const notMarked = total - (present + absent + late);
     
     return { total, present, absent, late, notMarked };
   };
-  
-  const stats = getAttendanceStats();
-  
+
+  if (error) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[900px]">
+          <DialogHeader>
+            <DialogTitle>Attendance Manager</DialogTitle>
+          </DialogHeader>
+          <div className="text-center p-6 text-red-600">
+            Error loading attendance data. Please try again.
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px]">
@@ -176,6 +254,11 @@ const AttendanceDialog = ({ open, onOpenChange, schedule, userRole, userId }: At
         
         {!schedule ? (
           <div className="text-center p-6">No schedule selected</div>
+        ) : isLoading ? (
+          <div className="text-center p-6">
+            <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2" />
+            <div className="text-sm text-muted-foreground">Loading attendance data...</div>
+          </div>
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-x-4 gap-y-2">
@@ -200,207 +283,135 @@ const AttendanceDialog = ({ open, onOpenChange, schedule, userRole, userId }: At
               </TabsList>
               
               <TabsContent value="attendance" className="space-y-4">
-                {(userRole === Role.admin || userRole === Role.instructor) && (
-                  <div className="flex flex-wrap items-center gap-3 p-3 bg-muted/50 rounded-md">
-                    <div className="font-medium">Bulk Actions:</div>
-                    <Select value={bulkStatus} onValueChange={(value) => setBulkStatus(value as Status)}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={Status.present}>Present</SelectItem>
-                        <SelectItem value={Status.absent}>Absent</SelectItem>
-                        <SelectItem value={Status.late}>Late</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button 
-                      onClick={handleBulkMarkAttendance} 
-                      disabled={selectedStudents.size === 0 || markBulkAttendanceMutation.isPending}
-                      size="sm"
-                    >
-                      Mark Selected ({selectedStudents.size})
-                    </Button>
+                {user?.role !== Role.student && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={selectAll}
+                        onCheckedChange={handleSelectAll}
+                      />
+                      <span className="text-sm">Select All</span>
+                    </div>
+                    {selectedStudents.size > 0 && (
+                      <div className="flex items-center gap-2">
+                        <Select value={bulkStatus} onValueChange={(value) => setBulkStatus(value as Status)}>
+                          <SelectTrigger className="w-[120px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={Status.present}>Present</SelectItem>
+                            <SelectItem value={Status.absent}>Absent</SelectItem>
+                            <SelectItem value={Status.late}>Late</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button 
+                          onClick={handleBulkMarkAttendance}
+                          disabled={markBulkAttendanceMutation.isPending}
+                        >
+                          {markBulkAttendanceMutation.isPending ? 'Marking...' : 'Mark Selected'}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
                 
-                {isLoading ? (
-                  <div className="text-center p-6">Loading attendance records...</div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {(userRole === Role.admin || userRole === Role.instructor) && (
-                          <TableHead className="w-12">
-                            <Checkbox 
-                              checked={selectAll} 
-                              onCheckedChange={handleSelectAll}
-                              disabled={attendanceRecords.length === 0}
-                            />
-                          </TableHead>
-                        )}
-                        <TableHead>Student</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Marked By</TableHead>
-                        {(userRole === Role.admin || userRole === Role.instructor) && (
-                          <TableHead>Actions</TableHead>
-                        )}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {attendanceRecords.length > 0 ? (
-                        attendanceRecords.map((record) => (
-                          <TableRow key={record.userId} className={record.isInstructor ? "bg-muted/30" : ""}>
-                            {(userRole === Role.admin || userRole === Role.instructor) && (
-                              <TableCell>
-                                {!record.isInstructor && (
-                                  <Checkbox 
-                                    checked={selectedStudents.has(record.userId)}
-                                    onCheckedChange={(checked) => 
-                                      handleSelectStudent(record.userId, checked === true)
-                                    }
-                                  />
-                                )}
-                              </TableCell>
-                            )}
-                            <TableCell className="font-medium">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {user?.role !== Role.student && <TableHead className="w-[50px]" />}
+                      <TableHead>Student</TableHead>
+                      <TableHead>Status</TableHead>
+                      {user?.role !== Role.student && <TableHead>Actions</TableHead>}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {batchStudents.map((student) => {
+                      const attendanceRecord = attendanceRecords.find(record => record.userId === student.userId);
+                      return (
+                        <TableRow key={student.userId}>
+                          {user?.role !== Role.student && (
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedStudents.has(student.userId)}
+                                onCheckedChange={(checked) => handleSelectStudent(student.userId, !!checked)}
+                              />
+                            </TableCell>
+                          )}
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span>{student.fullName}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(attendanceRecord?.status || null)}</TableCell>
+                          {user?.role !== Role.student && (
+                            <TableCell>
                               <div className="flex items-center gap-2">
-                                {record.isInstructor && <UserCheck className="h-4 w-4 text-primary" />}
-                                {record.user.fullName}
-                                {record.isInstructor && <Badge variant="outline">Instructor</Badge>}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleMarkAttendance(student.userId, Status.present)}
+                                  disabled={markAttendanceMutation.isPending}
+                                >
+                                  Present
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleMarkAttendance(student.userId, Status.absent)}
+                                  disabled={markAttendanceMutation.isPending}
+                                >
+                                  Absent
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleMarkAttendance(student.userId, Status.late)}
+                                  disabled={markAttendanceMutation.isPending}
+                                >
+                                  Late
+                                </Button>
                               </div>
                             </TableCell>
-                            <TableCell>{getStatusBadge(record.status)}</TableCell>
-                            <TableCell>{record.markedByUser?.fullName || '-'}</TableCell>
-                            {(userRole === Role.admin || userRole === Role.instructor) && (
-                              <TableCell>
-                                {!record.isInstructor && (
-                                  <div className="flex gap-2">
-                                    <Select
-                                      value={record.status || ''}
-                                      onValueChange={(value) => {
-                                        handleMarkAttendance(record.userId, value as Status);
-                                      }}
-                                    >
-                                      <SelectTrigger className="w-28">
-                                        <SelectValue placeholder="Mark" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value={Status.present}>Present</SelectItem>
-                                        <SelectItem value={Status.absent}>Absent</SelectItem>
-                                        <SelectItem value={Status.late}>Late</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                )}
-                              </TableCell>
-                            )}
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={userRole === Role.student ? 3 : 5} className="text-center py-8">
-                            No students found in this batch
-                          </TableCell>
+                          )}
                         </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                )}
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </TabsContent>
               
               <TabsContent value="summary">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">Attendance Summary</CardTitle>
+                      <CardTitle className="text-sm font-medium">Total Students</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span>Total Students:</span>
-                          <span className="font-medium">{stats.total}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Present:</span>
-                          <span className="font-medium text-green-600">{stats.present}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Absent:</span>
-                          <span className="font-medium text-red-600">{stats.absent}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Late:</span>
-                          <span className="font-medium text-yellow-600">{stats.late}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Not Marked:</span>
-                          <span className="font-medium text-gray-600">{stats.notMarked}</span>
-                        </div>
-                        <div className="flex justify-between border-t pt-2 mt-2">
-                          <span>Attendance Rate:</span>
-                          <span className="font-medium">
-                            {stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : 0}%
-                          </span>
-                        </div>
-                      </div>
+                      <div className="text-2xl font-bold">{getAttendanceStats().total}</div>
                     </CardContent>
                   </Card>
-                  
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">Status Distribution</CardTitle>
+                      <CardTitle className="text-sm font-medium">Present</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="relative pt-1">
-                        <div className="flex h-4 overflow-hidden text-xs rounded-full">
-                          {stats.total > 0 && (
-                            <>
-                              {stats.present > 0 && (
-                                <div 
-                                  style={{ width: `${(stats.present / stats.total) * 100}%` }}
-                                  className="flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500"
-                                ></div>
-                              )}
-                              {stats.late > 0 && (
-                                <div 
-                                  style={{ width: `${(stats.late / stats.total) * 100}%` }}
-                                  className="flex flex-col text-center whitespace-nowrap text-white justify-center bg-yellow-500"
-                                ></div>
-                              )}
-                              {stats.absent > 0 && (
-                                <div 
-                                  style={{ width: `${(stats.absent / stats.total) * 100}%` }}
-                                  className="flex flex-col text-center whitespace-nowrap text-white justify-center bg-red-500"
-                                ></div>
-                              )}
-                              {stats.notMarked > 0 && (
-                                <div 
-                                  style={{ width: `${(stats.notMarked / stats.total) * 100}%` }}
-                                  className="flex flex-col text-center whitespace-nowrap text-gray-700 justify-center bg-gray-200"
-                                ></div>
-                              )}
-                            </>
-                          )}
-                        </div>
-                        <div className="flex justify-between text-xs mt-2">
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 bg-green-500 rounded-full mr-1"></div>
-                            <span>Present</span>
-                          </div>
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 bg-yellow-500 rounded-full mr-1"></div>
-                            <span>Late</span>
-                          </div>
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 bg-red-500 rounded-full mr-1"></div>
-                            <span>Absent</span>
-                          </div>
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 bg-gray-200 rounded-full mr-1"></div>
-                            <span>Not Marked</span>
-                          </div>
-                        </div>
-                      </div>
+                      <div className="text-2xl font-bold text-green-600">{getAttendanceStats().present}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Absent</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-red-600">{getAttendanceStats().absent}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Late</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-yellow-600">{getAttendanceStats().late}</div>
                     </CardContent>
                   </Card>
                 </div>

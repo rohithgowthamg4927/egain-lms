@@ -126,7 +126,15 @@ export class AttendanceService {
       return defaultAnalytics;
     }
 
-    return response.data;
+    // Ensure we return a properly formatted AttendanceAnalytics object
+    const data = response.data;
+    return {
+      overall: data.overall || defaultAnalytics.overall,
+      byBatch: data.byBatch || defaultAnalytics.byBatch,
+      totalClasses: data.totalClasses,
+      totalStudents: data.totalStudents,
+      students: data.students
+    };
   }
 
   // Get attendance analytics for a batch
@@ -151,7 +159,15 @@ export class AttendanceService {
       return defaultAnalytics;
     }
 
-    return response.data;
+    // Ensure we return a properly formatted AttendanceAnalytics object
+    const data = response.data;
+    return {
+      overall: data.overall || defaultAnalytics.overall,
+      byBatch: data.byBatch || defaultAnalytics.byBatch,
+      totalClasses: data.totalClasses || defaultAnalytics.totalClasses,
+      totalStudents: data.totalStudents || defaultAnalytics.totalStudents,
+      students: data.students || defaultAnalytics.students
+    };
   }
 
   // Update attendance record

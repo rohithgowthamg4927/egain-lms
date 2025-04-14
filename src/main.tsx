@@ -9,21 +9,16 @@ import { Toaster } from '@/components/ui/toaster'
 import { AuthProvider } from '@/hooks/use-auth'
 import ErrorBoundary from '@/components/ErrorBoundary'
 
-// Add global error handler
+//global error handler
 window.onerror = function(message, source, lineno, colno, error) {
   console.error('Global error:', { message, source, lineno, colno, error });
   return false;
 };
 
-// Add unhandled promise rejection handler
 window.onunhandledrejection = function(event) {
   console.error('Unhandled promise rejection:', event.reason);
 };
 
-  // console.log("==== STARTING APPLICATION ====");
-  // console.log("Environment:", import.meta.env.MODE);
-
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -33,17 +28,7 @@ const queryClient = new QueryClient({
   },
 });
 
-// Log important app startup information
-  // console.log("Rendering React application...");
-  // console.log("API URL:", "http://localhost:3001/api");
-
-// Check for existing authentication
-// const existingToken = localStorage.getItem('authToken');
-// const existingUser = localStorage.getItem('currentUser');
-// console.log("Initial auth state:", { 
-//   hasToken: !!existingToken, 
-//   hasUser: !!existingUser 
-// });
+//Render App
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

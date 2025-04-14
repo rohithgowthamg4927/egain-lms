@@ -48,10 +48,8 @@ const CourseForm = ({ course, onSubmit, isSubmitting }: CourseFormProps) => {
     queryKey: ['categories'],
     queryFn: getCategories
   });
-
-  console.log('Categories Response:', categoriesResponse);
+  
   const categories = categoriesResponse?.data || [];
-  console.log('Processed Categories:', categories);
 
   // Setup form with default values
   const form = useForm<CourseFormValues>({

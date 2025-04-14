@@ -95,6 +95,14 @@ router.get('/:id', async (req, res) => {
 // Create a new course
 router.post('/', async (req, res) => {
   try {
+    const {
+      courseName,
+      description,
+      courseLevel,
+      categoryId,
+      isPublished,
+      thumbnailUrl
+    } = req.body;
     
     // Validate that required fields exist
     if (!courseName || !categoryId) {

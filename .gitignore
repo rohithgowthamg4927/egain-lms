@@ -44,3 +44,5 @@ start-app.sh
 schema.prisma.backup
 
 .git.bak
+
+Attendance.md

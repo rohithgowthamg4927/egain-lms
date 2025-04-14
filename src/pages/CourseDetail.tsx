@@ -186,7 +186,7 @@ const CourseDetail = () => {
             <ArrowLeft className="h-4 w-4" />
             Back to Courses
           </Button>
-          {!isLoading && !isError && course && (isAdmin || isInstructorAssigned) && (
+          {!isLoading && !isError && course && (isAdmin) && (
             <div className="flex gap-2">
               <Button 
                 variant="outline" 

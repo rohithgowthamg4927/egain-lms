@@ -127,13 +127,13 @@ export class AttendanceService {
     }
 
     // Ensure we return a properly formatted AttendanceAnalytics object
-    const data = response.data;
+    const analyticsData = response.data;
     return {
-      overall: data.overall || defaultAnalytics.overall,
-      byBatch: data.byBatch || defaultAnalytics.byBatch,
-      totalClasses: data.totalClasses,
-      totalStudents: data.totalStudents,
-      students: data.students
+      overall: analyticsData.overall || defaultAnalytics.overall,
+      byBatch: analyticsData.byBatch || defaultAnalytics.byBatch,
+      totalClasses: analyticsData.totalClasses,
+      totalStudents: analyticsData.totalStudents,
+      students: analyticsData.students
     };
   }
 
@@ -160,13 +160,13 @@ export class AttendanceService {
     }
 
     // Ensure we return a properly formatted AttendanceAnalytics object
-    const data = response.data;
+    const analyticsData = response.data;
     return {
-      overall: data.overall || defaultAnalytics.overall,
-      byBatch: data.byBatch || defaultAnalytics.byBatch,
-      totalClasses: data.totalClasses || defaultAnalytics.totalClasses,
-      totalStudents: data.totalStudents || defaultAnalytics.totalStudents,
-      students: data.students || defaultAnalytics.students
+      overall: analyticsData.overall || defaultAnalytics.overall,
+      byBatch: analyticsData.byBatch || defaultAnalytics.byBatch,
+      totalClasses: analyticsData.totalClasses || defaultAnalytics.totalClasses,
+      totalStudents: analyticsData.totalStudents || defaultAnalytics.totalStudents,
+      students: analyticsData.students || defaultAnalytics.students
     };
   }
 

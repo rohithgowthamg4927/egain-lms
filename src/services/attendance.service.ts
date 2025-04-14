@@ -1,6 +1,41 @@
 
 import { apiFetch } from '@/lib/api/core';
-import { Role } from '@/lib/types';
+import { Role, Status } from '@/lib/types';
+
+export interface AttendanceRecord {
+  attendanceId?: number;
+  userId: number;
+  user: {
+    userId: number;
+    fullName: string;
+    email: string;
+  };
+  status: Status | null;
+  markedBy?: number;
+  markedByUser?: {
+    userId: number;
+    fullName: string;
+  };
+}
+
+export interface AttendanceAnalytics {
+  overall: {
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+    percentage: number;
+  };
+  byBatch: Array<{
+    batchId: number;
+    batchName: string;
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+    percentage: number;
+  }>;
+}
 
 export class AttendanceService {
   // Check if instructor is assigned to the batch
@@ -13,7 +48,7 @@ export class AttendanceService {
   }
 
   // Mark attendance for a schedule
-  async markAttendance(scheduleId: number, userId: number, status: string) {
+  async markAttendance(scheduleId: number, userId: number, status: Status) {
     const response = await apiFetch<{ success: boolean; data?: any }>('/attendance', {
       method: 'POST',
       body: JSON.stringify({
@@ -30,9 +65,26 @@ export class AttendanceService {
     return response.data;
   }
 
+  // Mark attendance for multiple students at once
+  async markBulkAttendance(scheduleId: number, attendanceRecords: { userId: number; status: Status }[]) {
+    const response = await apiFetch<{ success: boolean; data?: any }>('/attendance/bulk', {
+      method: 'POST',
+      body: JSON.stringify({
+        scheduleId,
+        attendanceRecords
+      })
+    });
+
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to mark bulk attendance');
+    }
+
+    return response.data;
+  }
+
   // Get attendance for a schedule
   async getScheduleAttendance(scheduleId: number) {
-    const response = await apiFetch<{ success: boolean; data?: any }>(`/attendance/schedule/${scheduleId}`);
+    const response = await apiFetch<{ success: boolean; data?: AttendanceRecord[] }>(`/attendance/schedule/${scheduleId}`);
 
     if (!response.success) {
       throw new Error(response.error || 'Failed to fetch attendance');
@@ -41,8 +93,30 @@ export class AttendanceService {
     return response;
   }
 
+  // Get attendance analytics for a student
+  async getStudentAttendanceAnalytics(userId: number) {
+    const response = await apiFetch<{ success: boolean; data?: AttendanceAnalytics }>(`/attendance/analytics/student/${userId}`);
+
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch attendance analytics');
+    }
+
+    return response;
+  }
+
+  // Get attendance analytics for a batch
+  async getBatchAttendanceAnalytics(batchId: number) {
+    const response = await apiFetch<{ success: boolean; data?: any }>(`/attendance/analytics/batch/${batchId}`);
+
+    if (!response.success) {
+      throw new Error(response.error || 'Failed to fetch batch attendance analytics');
+    }
+
+    return response;
+  }
+
   // Update attendance record
-  async updateAttendance(attendanceId: number, status: string) {
+  async updateAttendance(attendanceId: number, status: Status) {
     const response = await apiFetch<{ success: boolean; data?: any }>(`/attendance/${attendanceId}`, {
       method: 'PUT',
       body: JSON.stringify({

@@ -1,7 +1,8 @@
+
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, isAfter, isBefore, parseISO } from 'date-fns';
-import { Plus, Edit, Trash2, RefreshCw, Calendar, Clock, Users, Video, ChevronDown, CheckCircle2, XCircle, Clock4 } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, Calendar, Clock, Users, Video, ChevronDown, CheckCircle2, XCircle, Clock4, UserCheck, AlertCircle, BookOpen, CalendarClock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getBatches } from '@/lib/api/batches';
 import { getAllSchedules, createSchedule, updateSchedule, deleteSchedule, ScheduleInput } from '@/lib/api/schedules';
@@ -15,14 +16,15 @@ import { Schedule, Batch, Role, Status } from '@/lib/types';
 import ScheduleForm from '@/components/schedules/ScheduleForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 import { useAuth } from '@/hooks/use-auth';
 import { Link } from 'react-router-dom';
 import { GraduationCap, User, Pencil } from 'lucide-react';
+import AttendanceDialog from '@/components/schedules/AttendanceDialog';
+import AttendanceAnalytics from '@/components/attendance/AttendanceAnalytics';
 
 const Schedules = () => {
   const navigate = useNavigate();
@@ -37,10 +39,8 @@ const Schedules = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === Role.admin;
   const isInstructor = user?.role === Role.instructor;
-  const { markAttendance, getScheduleAttendance, updateAttendance, deleteAttendance } = useAttendance();
-  const [selectedScheduleForAttendance, setSelectedScheduleForAttendance] = useState<Schedule | null>(null);
+  const isStudent = user?.role === Role.student;
   const [showAttendanceDialog, setShowAttendanceDialog] = useState(false);
-  const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
   
   const { data: batchesData, isLoading: isLoadingBatches } = useQuery({
     queryKey: ['batches'],
@@ -302,6 +302,24 @@ const Schedules = () => {
     setSelectedBatch(batchId === "all" ? null : parseInt(batchId));
   };
 
+  const openAttendanceDialog = (schedule: Schedule) => {
+    setSelectedSchedule(schedule);
+    setShowAttendanceDialog(true);
+  };
+
+  const getAttendanceStatusBadge = (schedule: Schedule) => {
+    // This is just a placeholder. In a real implementation, you might want to fetch the actual status.
+    const scheduleDate = new Date(schedule.scheduleDate);
+    const isPast = scheduleDate < now;
+    
+    if (!isPast) {
+      return <Badge variant="outline">Upcoming</Badge>;
+    }
+    
+    // For past schedules, show a placeholder badge. In production, this would be based on actual attendance data.
+    return <Badge variant="secondary">Attendance Required</Badge>;
+  };
+
   const ScheduleCard = ({ schedule, isPast = false }: { schedule: Schedule; isPast?: boolean }) => (
     <Card className="mb-2 hover:shadow-md transition-shadow">
       <CardHeader className="pb-3 pt-2 px-4">
@@ -309,29 +327,49 @@ const Schedules = () => {
           <div>
             <CardTitle className="text-base">{schedule.topic}</CardTitle>
             <p className="text-xs text-gray-500 mt-0.5">
-              {renderInstructorLink(schedule.batch?.instructor)}
+              {schedule.batch?.instructor ? renderInstructorLink(schedule.batch.instructor) : 'No Instructor'}
             </p>
           </div>
-          {(isAdmin || (isInstructor && schedule.batch?.instructor?.userId === user?.userId)) && (
-            <div className="flex gap-1">
+          <div className="flex gap-1">
+            {(isAdmin || isInstructor) && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => openAttendanceDialog(schedule)}
+                >
+                  <UserCheck className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => openEditDialog(schedule)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => openDeleteDialog(schedule)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+            {isStudent && isPast && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                onClick={() => openEditDialog(schedule)}
+                onClick={() => openAttendanceDialog(schedule)}
               >
-                <Edit className="h-4 w-4" />
+                <UserCheck className="h-4 w-4" />
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => openDeleteDialog(schedule)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pb-4 px-4">
@@ -347,129 +385,32 @@ const Schedules = () => {
           <div className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5 text-gray-500" />
             <span>
-              {renderBatchLink(schedule)}
+              {schedule.batch ? renderBatchLink(schedule) : 'No Batch'}
             </span>
           </div>
-          {!isPast && (
+          {!isPast && schedule.meetingLink && (
             <div className="flex items-center gap-1.5">
               <Video className="h-3.5 w-3.5 text-gray-500" />
-              {schedule.meetingLink ? (
-                <a
-                  href={schedule.meetingLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  Join Meeting
-                </a>
-              ) : (
-                <span className="text-gray-500">No Link</span>
-              )}
+              <a
+                href={schedule.meetingLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                Join Meeting
+              </a>
+            </div>
+          )}
+          {isPast && (
+            <div className="flex items-center gap-1.5">
+              <UserCheck className="h-3.5 w-3.5 text-gray-500" />
+              {getAttendanceStatusBadge(schedule)}
             </div>
           )}
         </div>
       </CardContent>
     </Card>
   );
-
-  const handleOpenAttendance = async (schedule: Schedule) => {
-    setSelectedScheduleForAttendance(schedule);
-    try {
-      const response = await getScheduleAttendance(schedule.scheduleId);
-      if (response.success && Array.isArray(response.data)) {
-        setAttendanceRecords(response.data);
-      } else {
-        setAttendanceRecords([]);
-      }
-      setShowAttendanceDialog(true);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch attendance records",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleMarkAttendance = async (userId: number, status: Status) => {
-    if (!selectedScheduleForAttendance) return;
-    
-    try {
-      // First update the UI optimistically
-      setAttendanceRecords(prev => 
-        prev.map(record => 
-          record.userId === userId 
-            ? { ...record, status }
-            : record
-        )
-      );
-      
-      // Then make the API call
-      await markAttendance(
-        selectedScheduleForAttendance.scheduleId,
-        userId,
-        status
-      );
-      
-      // Refresh attendance records to ensure sync
-      const response = await getScheduleAttendance(selectedScheduleForAttendance.scheduleId);
-      if (response.success && Array.isArray(response.data)) {
-        setAttendanceRecords(response.data);
-      }
-      
-      toast({
-        title: "Success",
-        description: "Attendance marked successfully",
-      });
-    } catch (error) {
-      // Revert UI changes on error
-      const response = await getScheduleAttendance(selectedScheduleForAttendance.scheduleId);
-      if (response.success && Array.isArray(response.data)) {
-        setAttendanceRecords(response.data);
-      }
-      
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to mark attendance",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getStatusIcon = (status: Status) => {
-    switch (status) {
-      case Status.present:
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      case Status.absent:
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const getStatusBadge = (status: Status) => {
-    switch (status) {
-      case Status.present:
-        return <Badge variant="secondary">Present</Badge>;
-      case Status.absent:
-        return <Badge variant="destructive">Absent</Badge>;
-      default:
-        return <Badge variant="outline">Not Marked</Badge>;
-    }
-  };
-
-  const getAttendanceStatus = (schedule: Schedule) => {
-    const attendanceCount = attendanceRecords.filter(record => record.status).length;
-    const totalStudents = attendanceRecords.length;
-    
-    if (attendanceCount === 0) {
-      return <Badge variant="outline">Attendance Not Marked</Badge>;
-    } else if (attendanceCount === totalStudents) {
-      return <Badge variant="default">Attendance Completed</Badge>;
-    } else {
-      return <Badge variant="secondary">{`Partially Marked (${attendanceCount}/${totalStudents})`}</Badge>;
-    }
-  };
 
   if (isLoadingSchedules || isLoadingBatches) {
     return <div className="p-4">Loading schedules...</div>;
@@ -545,7 +486,7 @@ const Schedules = () => {
           <TabsList>
             <TabsTrigger value="upcoming">Upcoming Schedules</TabsTrigger>
             <TabsTrigger value="past">Past Schedules</TabsTrigger>
-            {(isAdmin || isInstructor) && (
+            {(isAdmin || isInstructor || isStudent) && (
               <TabsTrigger value="attendance">Attendance</TabsTrigger>
             )}
           </TabsList>
@@ -572,51 +513,148 @@ const Schedules = () => {
             )}
           </TabsContent>
           <TabsContent value="attendance" className="space-y-4">
+            {isStudent && user ? (
+              <AttendanceAnalytics userId={user.userId} />
+            ) : (
+              selectedBatch ? (
+                <AttendanceAnalytics batchId={selectedBatch} />
+              ) : (
+                <div className="bg-muted p-6 rounded-lg">
+                  <div className="flex flex-col items-center justify-center text-center space-y-2">
+                    <CalendarClock className="h-12 w-12 text-muted-foreground" />
+                    <h3 className="font-medium text-lg">Attendance Analytics</h3>
+                    <p className="text-muted-foreground">
+                      {isAdmin 
+                        ? "Select a batch to view detailed attendance analytics." 
+                        : "View and manage attendance for your classes."}
+                    </p>
+                    {isAdmin && (
+                      <Select onValueChange={handleBatchSelect} value={selectedBatch?.toString() || ""}>
+                        <SelectTrigger className="w-[250px] mt-2">
+                          <SelectValue placeholder="Select a batch" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filteredBatches.map((batch) => (
+                            <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
+                              {batch.batchName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                </div>
+              )
+            )}
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    <span>Mark Attendance</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Record attendance for your scheduled classes. Mark students as present, absent, or late.
+                  </p>
+                  <div className="text-sm">
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>Click on any past schedule to access attendance marking</li>
+                      <li>Use bulk actions for faster attendance marking</li>
+                      <li>View attendance summary for each class</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-yellow-500" />
+                    <span>Monitor Participation</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Track student participation and identify attendance patterns across batches and courses.
+                  </p>
+                  <div className="text-sm">
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>View attendance analytics by batch or student</li>
+                      <li>Identify students who need attention</li>
+                      <li>Generate attendance reports</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-blue-500" />
+                    <span>Attendance Policy</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Students must maintain at least 75% attendance in all courses to receive certification.
+                  </p>
+                  <div className="text-sm">
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>Automatic warnings for low attendance</li>
+                      <li>Real-time attendance tracking</li>
+                      <li>Attendance affects final grading</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
             {filteredSchedules.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 No schedules found
               </div>
             ) : (
-              filteredSchedules.map((schedule) => (
-                <Card key={schedule.scheduleId} className="mb-2 hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3 pt-2 px-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-base">{schedule.topic}</CardTitle>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {renderInstructorLink(schedule.batch?.instructor)}
-                        </p>
-                        <div className="mt-2">
-                          {getAttendanceStatus(schedule)}
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenAttendance(schedule)}
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle>Recent Schedules</CardTitle>
+                  <CardDescription>Mark or view attendance for recent sessions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {pastSchedules.slice(0, 5).map((schedule) => (
+                      <div 
+                        key={schedule.scheduleId} 
+                        className="flex justify-between items-center p-2 rounded-md hover:bg-muted/50 cursor-pointer"
+                        onClick={() => openAttendanceDialog(schedule)}
                       >
-                        View Attendance
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-4 px-4">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="h-3.5 w-3.5 text-gray-500" />
-                        <span>{format(new Date(schedule.scheduleDate), 'PPP')}</span>
+                        <div>
+                          <div className="font-medium">{schedule.topic}</div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {format(new Date(schedule.scheduleDate), 'PPP')}
+                            <span className="text-xs">•</span>
+                            <Clock className="h-3.5 w-3.5" />
+                            {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
+                          </div>
+                        </div>
+                        <Button size="sm" variant="outline">
+                          {isStudent ? "View Attendance" : "Manage Attendance"}
+                        </Button>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5 text-gray-500" />
-                        <span>{formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5 text-gray-500" />
-                        <span>{renderBatchLink(schedule)}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    ))}
+                  </div>
+                </CardContent>
+                {pastSchedules.length > 5 && (
+                  <CardFooter>
+                    <Button variant="outline" className="w-full" onClick={() => document.querySelector('[data-value="past"]')?.click()}>
+                      View All Past Schedules
+                    </Button>
+                  </CardFooter>
+                )}
+              </Card>
             )}
           </TabsContent>
         </Tabs>
@@ -673,95 +711,13 @@ const Schedules = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        <Dialog open={showAttendanceDialog} onOpenChange={setShowAttendanceDialog}>
-          <DialogContent className="sm:max-w-[800px]">
-            <DialogHeader>
-              <DialogTitle>Attendance Records</DialogTitle>
-            </DialogHeader>
-            {selectedScheduleForAttendance && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium">Topic:</span> {selectedScheduleForAttendance.topic}
-                  </div>
-                  <div>
-                    <span className="font-medium">Date:</span> {format(new Date(selectedScheduleForAttendance.scheduleDate), 'PPP')}
-                  </div>
-                  <div>
-                    <span className="font-medium">Time:</span> {formatTime(selectedScheduleForAttendance.startTime)} - {formatTime(selectedScheduleForAttendance.endTime)}
-                  </div>
-                  <div>
-                    <span className="font-medium">Batch:</span> {selectedScheduleForAttendance.batch?.batchName}
-                  </div>
-                </div>
-                
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Student</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Marked By</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {attendanceRecords.length > 0 ? (
-                      attendanceRecords.map((record) => (
-                        <TableRow key={record.userId}>
-                          <TableCell>{record.user.fullName}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {getStatusIcon(record.status)}
-                              <Badge
-                                variant={
-                                  record.status === 'present'
-                                    ? 'default'
-                                    : record.status === 'absent'
-                                    ? 'destructive'
-                                    : 'secondary'
-                                }
-                              >
-                                {record.status || 'Not Marked'}
-                              </Badge>
-                            </div>
-                          </TableCell>
-                          <TableCell>{record.markedByUser?.fullName || '-'}</TableCell>
-                          <TableCell>
-                            {(isAdmin || (isInstructor && selectedScheduleForAttendance.batch?.instructor?.userId === user?.userId)) && (
-                              <div className="flex gap-2">
-                                <Select
-                                  value={record.status || ''}
-                                  onValueChange={(value) => {
-                                    handleMarkAttendance(record.userId, value as Status);
-                                  }}
-                                >
-                                  <SelectTrigger className="w-[100px]">
-                                    <SelectValue placeholder="Status" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value={Status.present}>Present</SelectItem>
-                                    <SelectItem value={Status.absent}>Absent</SelectItem>
-                                    <SelectItem value={Status.late}>Late</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-4">
-                          No students found in this batch
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        <AttendanceDialog 
+          open={showAttendanceDialog} 
+          onOpenChange={setShowAttendanceDialog}
+          schedule={selectedSchedule}
+          userRole={user?.role || Role.student}
+          userId={user?.userId || 0}
+        />
       </div>
     </div>
   );

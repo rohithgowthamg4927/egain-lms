@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -20,16 +21,23 @@ export default function StudentSchedules() {
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   
   // Query for student schedules - updated to include batches the student is enrolled in
-  const { data: studentBatchesData, isLoading: isBatchesLoading } = useQuery({
+  const { data: studentBatchesData, isLoading: isBatchesLoading, error: batchesError } = useQuery({
     queryKey: ['studentBatches', user?.userId],
     queryFn: async () => {
       if (!user?.userId) throw new Error('User ID required');
-      return await fetch(`/api/student-batches/${user.userId}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      }).then(res => res.json());
+      try {
+        const response = await fetch(`/api/student-batches/${user.userId}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("Error fetching student batches:", error);
+        throw error;
+      }
     },
     enabled: !!user?.userId
   });
@@ -38,48 +46,67 @@ export default function StudentSchedules() {
   const { data: schedulesData, isLoading, error } = useQuery({
     queryKey: ['studentSchedules', studentBatchesData?.data],
     queryFn: async () => {
-      if (!studentBatchesData?.success || !studentBatchesData.data) {
-        throw new Error('No batches found');
+      if (!studentBatchesData?.success || !studentBatchesData.data || !Array.isArray(studentBatchesData.data)) {
+        console.log("No valid batch data found:", studentBatchesData);
+        return { success: true, data: [] };
       }
       
-      // Extract batch IDs from student batches
-      const batchIds = studentBatchesData.data.map(sb => sb.batch.batchId);
-      if (batchIds.length === 0) return { success: true, data: [] };
-      
-      // Fetch all schedules for these batches
-      const schedulesPromises = batchIds.map(batchId => 
-        getAllSchedules({ batchId })
-      );
-      
-      const schedulesResults = await Promise.all(schedulesPromises);
-      
-      // Combine all schedules from different batches
-      const allSchedules = schedulesResults.flatMap(result => 
-        result.success && result.data ? result.data : []
-      );
-      
-      return { success: true, data: allSchedules };
+      try {
+        // Extract batch IDs from student batches
+        const batchIds = studentBatchesData.data
+          .filter(sb => sb && sb.batch && sb.batch.batchId)
+          .map(sb => sb.batch.batchId);
+        
+        if (batchIds.length === 0) {
+          console.log("No batch IDs found");
+          return { success: true, data: [] };
+        }
+        
+        // Fetch all schedules for these batches
+        const schedulesPromises = batchIds.map(batchId => 
+          getAllSchedules({ batchId })
+        );
+        
+        const schedulesResults = await Promise.all(schedulesPromises);
+        
+        // Combine all schedules from different batches
+        const allSchedules = schedulesResults.flatMap(result => 
+          result.success && result.data ? result.data : []
+        );
+        
+        return { success: true, data: allSchedules };
+      } catch (error) {
+        console.error("Error fetching schedules:", error);
+        return { success: false, data: [], error: String(error) };
+      }
     },
-    enabled: !!studentBatchesData?.data
+    enabled: !!studentBatchesData?.data && Array.isArray(studentBatchesData.data)
   });
   
+  // Safely get schedules array, defaulting to empty array if undefined
   const schedules = schedulesData?.data || [];
   
   // Group schedules by date
   const groupedSchedules: Record<string, Schedule[]> = {};
-  schedules.forEach(schedule => {
-    const dateKey = format(new Date(schedule.scheduleDate), 'yyyy-MM-dd');
-    if (!groupedSchedules[dateKey]) {
-      groupedSchedules[dateKey] = [];
-    }
-    groupedSchedules[dateKey].push(schedule);
-  });
+  if (Array.isArray(schedules)) {
+    schedules.forEach(schedule => {
+      if (schedule && schedule.scheduleDate) {
+        const dateKey = format(new Date(schedule.scheduleDate), 'yyyy-MM-dd');
+        if (!groupedSchedules[dateKey]) {
+          groupedSchedules[dateKey] = [];
+        }
+        groupedSchedules[dateKey].push(schedule);
+      }
+    });
+  }
   
   // Get current week days
   const weekDays = [...Array(7)].map((_, i) => addDays(currentWeekStart, i));
   
   // Filter schedules for current week
-  const currentWeekSchedules = schedules.filter(schedule => {
+  const currentWeekSchedules = Array.isArray(schedules) ? schedules.filter(schedule => {
+    if (!schedule || !schedule.scheduleDate) return false;
+    
     const scheduleDate = new Date(schedule.scheduleDate);
     // Reset time part to compare only dates
     scheduleDate.setHours(0, 0, 0, 0);
@@ -89,51 +116,65 @@ export default function StudentSchedules() {
       compareDay.setHours(0, 0, 0, 0);
       return scheduleDate.getTime() === compareDay.getTime();
     });
-  });
+  }) : [];
   
   // Filter for upcoming schedules (after current date)
-  const upcomingSchedules = schedules.filter(schedule => {
+  const upcomingSchedules = Array.isArray(schedules) ? schedules.filter(schedule => {
+    if (!schedule || !schedule.scheduleDate || !schedule.startTime) return false;
+    
     const scheduleDate = new Date(schedule.scheduleDate);
     const scheduleDateTime = new Date(scheduleDate);
     
     // Get time parts from startTime
-    if (schedule.startTime.includes('T')) {
-      const startTime = new Date(schedule.startTime);
-      scheduleDateTime.setHours(startTime.getHours(), startTime.getMinutes());
-    } else {
-      const [hours, minutes] = schedule.startTime.split(':').map(Number);
-      scheduleDateTime.setHours(hours, minutes);
+    try {
+      if (schedule.startTime.includes('T')) {
+        const startTime = new Date(schedule.startTime);
+        scheduleDateTime.setHours(startTime.getHours(), startTime.getMinutes());
+      } else {
+        const [hours, minutes] = schedule.startTime.split(':').map(Number);
+        scheduleDateTime.setHours(hours, minutes);
+      }
+      
+      const now = new Date();
+      return scheduleDateTime > now;
+    } catch (error) {
+      console.error("Error parsing time:", error);
+      return false;
     }
-    
-    const now = new Date();
-    return scheduleDateTime > now;
   }).sort((a, b) => {
     const dateA = new Date(a.scheduleDate);
     const dateB = new Date(b.scheduleDate);
     return dateA.getTime() - dateB.getTime();
-  });
+  }) : [];
   
   // Filter for past schedules (before current date)
-  const pastSchedules = schedules.filter(schedule => {
+  const pastSchedules = Array.isArray(schedules) ? schedules.filter(schedule => {
+    if (!schedule || !schedule.scheduleDate || !schedule.startTime) return false;
+    
     const scheduleDate = new Date(schedule.scheduleDate);
     const scheduleDateTime = new Date(scheduleDate);
     
     // Get time parts from startTime
-    if (schedule.startTime.includes('T')) {
-      const startTime = new Date(schedule.startTime);
-      scheduleDateTime.setHours(startTime.getHours(), startTime.getMinutes());
-    } else {
-      const [hours, minutes] = schedule.startTime.split(':').map(Number);
-      scheduleDateTime.setHours(hours, minutes);
+    try {
+      if (schedule.startTime.includes('T')) {
+        const startTime = new Date(schedule.startTime);
+        scheduleDateTime.setHours(startTime.getHours(), startTime.getMinutes());
+      } else {
+        const [hours, minutes] = schedule.startTime.split(':').map(Number);
+        scheduleDateTime.setHours(hours, minutes);
+      }
+      
+      const now = new Date();
+      return scheduleDateTime <= now;
+    } catch (error) {
+      console.error("Error parsing time:", error);
+      return false;
     }
-    
-    const now = new Date();
-    return scheduleDateTime <= now;
   }).sort((a, b) => {
     const dateB = new Date(b.scheduleDate);
     const dateA = new Date(a.scheduleDate);
     return dateB.getTime() - dateA.getTime();
-  });
+  }) : [];
   
   const navigateWeek = (direction: 'prev' | 'next') => {
     setCurrentWeekStart(prev => 
@@ -175,58 +216,71 @@ export default function StudentSchedules() {
   
   const isLoaderShowing = isLoading || isBatchesLoading;
   
-  // Add new query for student attendance analytics
+  // Add new query for student attendance analytics with better error handling
   const { data: attendanceData, isLoading: isLoadingAttendance } = useQuery({
     queryKey: ['studentAttendance', user?.userId],
     queryFn: async () => {
       if (!user?.userId) return null;
-      const response = await apiFetch<{
-        overall: {
-          total: number;
-          present: number;
-          absent: number;
-          late: number;
-          percentage: number;
-        };
-        byBatch: Array<{
-          batchId: number;
-          batchName: string;
-          total: number;
-          present: number;
-          absent: number;
-          late: number;
-          percentage: number;
-        }>;
-        history: Array<{
-          attendanceId: number;
-          scheduleId: number;
-          status: Status;
-          markedAt: string;
-          schedule: {
-            topic: string;
-            scheduleDate: string;
-            startTime: string;
-            endTime: string;
-            batch: {
-              batchName: string;
-              instructor: {
-                fullName: string;
+      try {
+        const response = await apiFetch<{
+          overall: {
+            total: number;
+            present: number;
+            absent: number;
+            late: number;
+            percentage: number;
+          };
+          byBatch: Array<{
+            batchId: number;
+            batchName: string;
+            total: number;
+            present: number;
+            absent: number;
+            late: number;
+            percentage: number;
+          }>;
+          history: Array<{
+            attendanceId: number;
+            scheduleId: number;
+            status: Status;
+            markedAt: string;
+            schedule: {
+              topic: string;
+              scheduleDate: string;
+              startTime: string;
+              endTime: string;
+              batch: {
+                batchName: string;
+                instructor: {
+                  fullName: string;
+                };
               };
             };
-          };
-          markedByUser: {
-            fullName: string;
-            role: Role;
-          };
-        }>;
-      }>(`/attendance/analytics/student/${user.userId}`);
-      if (!response.success) throw new Error(response.error);
-      return response.data;
+            markedByUser: {
+              fullName: string;
+              role: Role;
+            };
+          }>;
+        }>(`/attendance/analytics/student/${user.userId}`);
+        
+        if (!response.success) throw new Error(response.error);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching attendance data:", error);
+        return null;
+      }
     },
     enabled: !!user?.userId
   });
   
-  if (error) {
+  // Show error message if either fetching batches or schedules failed
+  if (batchesError || error) {
+    const errorMessage = batchesError instanceof Error 
+      ? batchesError.message 
+      : error instanceof Error 
+        ? error.message 
+        : 'Unknown error loading schedules';
+    
     return (
       <div className="space-y-6">
         <BreadcrumbNav items={[
@@ -234,7 +288,7 @@ export default function StudentSchedules() {
         ]} />
         <h1 className="text-3xl font-bold">My Schedule</h1>
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-red-600">Error loading schedules. Please try again later.</p>
+          <p className="text-red-600">Error loading schedules: {errorMessage}</p>
         </div>
       </div>
     );
@@ -312,10 +366,10 @@ export default function StudentSchedules() {
                                       </span>
                                     </div>
                                     <div className="text-sm text-muted-foreground mt-1">
-                                      <span className="font-medium">Course:</span> {schedule.batch?.course?.courseName}
+                                      <span className="font-medium">Course:</span> {schedule.batch?.course?.courseName || 'Unknown Course'}
                                     </div>
                                     <div className="text-sm text-muted-foreground">
-                                      <span className="font-medium">Batch:</span> {schedule.batch?.batchName}
+                                      <span className="font-medium">Batch:</span> {schedule.batch?.batchName || 'Unknown Batch'}
                                     </div>
                                   </div>
                                   
@@ -381,10 +435,10 @@ export default function StudentSchedules() {
                           </div>
                           <div className="flex flex-wrap gap-2 mt-2">
                             <Badge variant="outline" className="bg-muted/50">
-                              {schedule.batch?.course?.courseName}
+                              {schedule.batch?.course?.courseName || 'Unknown Course'}
                             </Badge>
                             <Badge variant="outline" className="bg-muted/50">
-                              {schedule.batch?.batchName}
+                              {schedule.batch?.batchName || 'Unknown Batch'}
                             </Badge>
                           </div>
                         </div>
@@ -419,7 +473,7 @@ export default function StudentSchedules() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : attendanceData ? (
-            <div className="w-[1200px] space-y-6">
+            <div className="w-full max-w-[1200px] space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card>
                   <CardHeader className="pb-2">
@@ -464,19 +518,19 @@ export default function StudentSchedules() {
                     <CardTitle className="text-sm font-medium">Attendance Status</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold flex items-center text-green-500">
+                    <div className="text-2xl font-bold flex items-center">
                       {attendanceData.overall.percentage >= 75 ? (
-                        <>
+                        <div className="text-green-500 flex items-center">
                           <CheckCircle2 className="h-5 w-5 mr-2" />
                           Good
-                        </>
+                        </div>
                       ) : attendanceData.overall.percentage >= 60 ? (
-                        <div className="text-yellow-500">
+                        <div className="text-yellow-500 flex items-center">
                           <AlertCircle className="h-5 w-5 mr-2" />
                           Warning
                         </div>
                       ) : (
-                        <div className="text-red-500">
+                        <div className="text-red-500 flex items-center">
                           <XCircle className="h-5 w-5 mr-2" />
                           Critical
                         </div>
@@ -493,94 +547,107 @@ export default function StudentSchedules() {
                 </Card>
               </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Batch Breakdown</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {attendanceData.byBatch.map((batch) => (
-                      <div key={batch.batchId} className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <div className="font-medium">{batch.batchName}</div>
-                          <div className="text-sm">
-                            {batch.percentage}% ({batch.present}/{batch.total} classes)
+              {Array.isArray(attendanceData.byBatch) && attendanceData.byBatch.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Batch Breakdown</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {attendanceData.byBatch.map((batch) => (
+                        <div key={batch.batchId} className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <div className="font-medium">{batch.batchName}</div>
+                            <div className="text-sm">
+                              {batch.percentage}% ({batch.present}/{batch.total} classes)
+                            </div>
+                          </div>
+                          <Progress value={batch.percentage} className="h-2" />
+                          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              Present: {batch.present}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4 text-yellow-500" />
+                              Late: {batch.late}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <XCircle className="h-4 w-4 text-red-500" />
+                              Absent: {batch.absent}
+                            </div>
                           </div>
                         </div>
-                        <Progress value={batch.percentage} className="h-2" />
-                        <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            Present: {batch.present}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4 text-yellow-500" />
-                            Late: {batch.late}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <XCircle className="h-4 w-4 text-red-500" />
-                            Absent: {batch.absent}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Attendance History</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {attendanceData.history.map((record) => (
-                      <div key={record.attendanceId} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-1">
-                            <div className="font-medium">{record.schedule.topic || 'Class Session'}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {format(new Date(record.schedule.scheduleDate), 'PPP')}
+              {Array.isArray(attendanceData.history) && attendanceData.history.length > 0 ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Attendance History</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {attendanceData.history.map((record) => (
+                        <div key={record.attendanceId} className="border rounded-lg p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-1">
+                              <div className="font-medium">{record.schedule?.topic || 'Class Session'}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {record.schedule?.scheduleDate && format(new Date(record.schedule.scheduleDate), 'PPP')}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {record.schedule?.startTime && formatTime(record.schedule.startTime)} - 
+                                {record.schedule?.endTime && formatTime(record.schedule.endTime)}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Instructor: {record.schedule?.batch?.instructor?.fullName || 'Unknown Instructor'}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Batch: {record.schedule?.batch?.batchName || 'Unknown Batch'}
+                              </div>
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              {formatTime(record.schedule.startTime)} - {formatTime(record.schedule.endTime)}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              Instructor: {record.schedule.batch.instructor.fullName}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              Batch: {record.schedule.batch.batchName}
+                            <div className="flex items-center gap-2">
+                              {record.status === 'present' && (
+                                <div className="flex items-center text-green-500">
+                                  <CheckCircle2 className="h-5 w-5 mr-1" />
+                                  Present
+                                </div>
+                              )}
+                              {record.status === 'absent' && (
+                                <div className="flex items-center text-red-500">
+                                  <XCircle className="h-5 w-5 mr-1" />
+                                  Absent
+                                </div>
+                              )}
+                              {record.status === 'late' && (
+                                <div className="flex items-center text-yellow-500">
+                                  <Clock className="h-5 w-5 mr-1" />
+                                  Late
+                                </div>
+                              )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {record.status === 'present' && (
-                              <div className="flex items-center text-green-500">
-                                <CheckCircle2 className="h-5 w-5 mr-1" />
-                                Present
-                              </div>
-                            )}
-                            {record.status === 'absent' && (
-                              <div className="flex items-center text-red-500">
-                                <XCircle className="h-5 w-5 mr-1" />
-                                Absent
-                              </div>
-                            )}
-                            {record.status === 'late' && (
-                              <div className="flex items-center text-yellow-500">
-                                <Clock className="h-5 w-5 mr-1" />
-                                Late
-                              </div>
-                            )}
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            Marked by {record.markedByUser?.fullName || 'Unknown'} 
+                            ({record.markedByUser?.role || 'User'}) on 
+                            {record.markedAt && format(new Date(record.markedAt), ' PPP p')}
                           </div>
                         </div>
-                        <div className="mt-2 text-xs text-muted-foreground">
-                          Marked by {record.markedByUser.fullName} ({record.markedByUser.role}) on {format(new Date(record.markedAt), 'PPP p')}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    No attendance history available
+                  </CardContent>
+                </Card>
+              )}
             </div>
           ) : (
             <Card>

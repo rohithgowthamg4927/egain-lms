@@ -1,3 +1,4 @@
+
 import { apiFetch } from './core';
 import { Course, CourseReview } from '@/lib/types';
 
@@ -33,8 +34,10 @@ export const getStudentSchedules = async (studentId: number): Promise<{ success:
     const response = await apiFetch<any[]>(`/students/${studentId}/schedules`);
     return response;
   } catch (error) {
+    console.error("getStudentSchedules error:", error);
     return {
       success: false,
+      data: [], // Return empty array as fallback
       error: error instanceof Error ? error.message : 'Failed to fetch student schedules'
     };
   }

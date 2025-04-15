@@ -43,5 +43,5 @@ export {
   getInstructorBatches
 } from './instructors';
 
-// Re-export attendance service functions
-export * from '../services/attendance.service';
+// Remove the export from non-existent module
+// export * from '../services/attendance.service';

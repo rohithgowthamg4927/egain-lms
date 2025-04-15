@@ -44,6 +44,55 @@ import {
 } from 'lucide-react';
 import { format, parseISO, isToday, isTomorrow, addDays, isAfter, isBefore } from 'date-fns';
 
+// Add utility functions for date/time handling
+const formatTime = (timeString: string) => {
+  if (!timeString) return '';
+  try {
+    // For full ISO string (from database)
+    if (timeString.includes('T')) {
+      const date = new Date(timeString);
+      return format(date, 'h:mm a');
+    }
+    // For time-only string (HH:mm:ss)
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return format(date, 'h:mm a');
+  } catch (error) {
+    console.error('Error formatting time:', error);
+    return timeString;
+  }
+};
+
+const formatScheduleDate = (dateString: string) => {
+  try {
+    return format(new Date(dateString), 'PPP');
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return dateString;
+  }
+};
+
+const getScheduleDateTime = (schedule: any) => {
+  try {
+    const scheduleDate = new Date(schedule.scheduleDate);
+    const scheduleDateTime = new Date(scheduleDate);
+    
+    if (schedule.startTime.includes('T')) {
+      const startTime = new Date(schedule.startTime);
+      scheduleDateTime.setHours(startTime.getHours(), startTime.getMinutes());
+    } else {
+      const [hours, minutes] = schedule.startTime.split(':').map(Number);
+      scheduleDateTime.setHours(hours, minutes);
+    }
+    
+    return scheduleDateTime;
+  } catch (error) {
+    console.error('Error creating schedule datetime:', error);
+    return null;
+  }
+};
+
 const InstructorDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -99,68 +148,84 @@ const InstructorDashboard = () => {
   // Process schedules data for upcoming classes
   const schedules = schedulesData?.data || [];
   const now = new Date();
+  now.setSeconds(0, 0); // Normalize seconds and milliseconds
 
   const todaySchedules = schedules.filter(schedule => {
-    const scheduleDate = new Date(schedule.scheduleDate);
-    const scheduleStartTime = new Date(schedule.startTime);
-    
-    // Set the schedule's date to the scheduleDate
-    scheduleStartTime.setFullYear(scheduleDate.getFullYear());
-    scheduleStartTime.setMonth(scheduleDate.getMonth());
-    scheduleStartTime.setDate(scheduleDate.getDate());
-    
-    return isToday(scheduleDate) && scheduleStartTime > now;
+    try {
+      const scheduleDate = new Date(schedule.scheduleDate);
+      const scheduleDateTime = getScheduleDateTime(schedule);
+      
+      if (!scheduleDateTime) return false;
+      
+      return isToday(scheduleDate) && scheduleDateTime > now;
+    } catch (error) {
+      console.error('Error filtering today schedules:', error);
+      return false;
+    }
   }).sort((a, b) => {
-    const dateA = new Date(a.scheduleDate);
-    const timeA = new Date(a.startTime);
-    dateA.setHours(timeA.getHours(), timeA.getMinutes());
-    
-    const dateB = new Date(b.scheduleDate);
-    const timeB = new Date(b.startTime);
-    dateB.setHours(timeB.getHours(), timeB.getMinutes());
-    
-    return dateA.getTime() - dateB.getTime();
+    try {
+      const dateTimeA = getScheduleDateTime(a);
+      const dateTimeB = getScheduleDateTime(b);
+      
+      if (!dateTimeA || !dateTimeB) return 0;
+      
+      return dateTimeA.getTime() - dateTimeB.getTime();
+    } catch (error) {
+      console.error('Error sorting today schedules:', error);
+      return 0;
+    }
   });
 
   const tomorrowSchedules = schedules.filter(schedule => {
-    const scheduleDate = new Date(schedule.scheduleDate);
-    return isTomorrow(scheduleDate);
+    try {
+      const scheduleDate = new Date(schedule.scheduleDate);
+      return isTomorrow(scheduleDate);
+    } catch (error) {
+      console.error('Error filtering tomorrow schedules:', error);
+      return false;
+    }
   }).sort((a, b) => {
-    const dateA = new Date(a.scheduleDate);
-    const timeA = new Date(a.startTime);
-    dateA.setHours(timeA.getHours(), timeA.getMinutes());
-    
-    const dateB = new Date(b.scheduleDate);
-    const timeB = new Date(b.startTime);
-    dateB.setHours(timeB.getHours(), timeB.getMinutes());
-    
-    return dateA.getTime() - dateB.getTime();
+    try {
+      const dateTimeA = getScheduleDateTime(a);
+      const dateTimeB = getScheduleDateTime(b);
+      
+      if (!dateTimeA || !dateTimeB) return 0;
+      
+      return dateTimeA.getTime() - dateTimeB.getTime();
+    } catch (error) {
+      console.error('Error sorting tomorrow schedules:', error);
+      return 0;
+    }
   });
 
   const nextWeekSchedules = schedules.filter(schedule => {
-    const scheduleDate = new Date(schedule.scheduleDate);
-    const scheduleStartTime = new Date(schedule.startTime);
-    
-    // Set the schedule's date to the scheduleDate
-    scheduleStartTime.setFullYear(scheduleDate.getFullYear());
-    scheduleStartTime.setMonth(scheduleDate.getMonth());
-    scheduleStartTime.setDate(scheduleDate.getDate());
-    
-    const nextWeek = addDays(now, 7);
-    return scheduleStartTime > now && 
-           !isToday(scheduleDate) && 
-           !isTomorrow(scheduleDate) && 
-           scheduleStartTime <= nextWeek;
+    try {
+      const scheduleDate = new Date(schedule.scheduleDate);
+      const scheduleDateTime = getScheduleDateTime(schedule);
+      const nextWeek = addDays(now, 7);
+      
+      if (!scheduleDateTime) return false;
+      
+      return scheduleDateTime > now && 
+             !isToday(scheduleDate) && 
+             !isTomorrow(scheduleDate) && 
+             scheduleDateTime <= nextWeek;
+    } catch (error) {
+      console.error('Error filtering next week schedules:', error);
+      return false;
+    }
   }).sort((a, b) => {
-    const dateA = new Date(a.scheduleDate);
-    const timeA = new Date(a.startTime);
-    dateA.setHours(timeA.getHours(), timeA.getMinutes());
-    
-    const dateB = new Date(b.scheduleDate);
-    const timeB = new Date(b.startTime);
-    dateB.setHours(timeB.getHours(), timeB.getMinutes());
-    
-    return dateA.getTime() - dateB.getTime();
+    try {
+      const dateTimeA = getScheduleDateTime(a);
+      const dateTimeB = getScheduleDateTime(b);
+      
+      if (!dateTimeA || !dateTimeB) return 0;
+      
+      return dateTimeA.getTime() - dateTimeB.getTime();
+    } catch (error) {
+      console.error('Error sorting next week schedules:', error);
+      return 0;
+    }
   });
 
   // Chart data for courses per category
@@ -274,7 +339,7 @@ const InstructorDashboard = () => {
                           <div className="flex-1">
                             <div className="font-medium">{schedule.batch?.course?.courseName || 'Untitled Course'}</div>
                             <div className="text-sm text-gray-600">
-                              {schedule.batch?.batchName || 'Unnamed Batch'} • {format(new Date(schedule.startTime), "h:mm a")}
+                              {formatTime(schedule.startTime)}
                             </div>
                           </div>
                           <Button variant="ghost" size="sm" onClick={() => navigate('/schedules')}>
@@ -303,7 +368,7 @@ const InstructorDashboard = () => {
                           <div className="flex-1">
                             <div className="font-medium">{schedule.batch?.course?.courseName || 'Untitled Course'}</div>
                             <div className="text-sm text-gray-600">
-                              {schedule.batch?.batchName || 'Unnamed Batch'} • {format(new Date(schedule.startTime), "h:mm a")}
+                              {formatTime(schedule.startTime)}
                             </div>
                           </div>
                           <Button variant="ghost" size="sm" onClick={() => navigate('/schedules')}>
@@ -332,7 +397,7 @@ const InstructorDashboard = () => {
                           <div className="flex-1">
                             <div className="font-medium">{schedule.batch?.course?.courseName || 'Untitled Course'}</div>
                             <div className="text-sm text-gray-600">
-                              {format(new Date(schedule.scheduleDate), "EEE, MMM d")} • {format(new Date(schedule.startTime), "h:mm a")}
+                              {formatScheduleDate(schedule.scheduleDate)} • {formatTime(schedule.startTime)}
                             </div>
                           </div>
                           <Button variant="ghost" size="sm" onClick={() => navigate('/schedules')}>

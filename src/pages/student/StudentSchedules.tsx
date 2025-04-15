@@ -589,16 +589,13 @@ export default function StudentSchedules() {
                         <div key={record.attendanceId} className="border rounded-lg p-4">
                           <div className="flex justify-between items-start">
                             <div className="space-y-1">
-                              <div className="font-medium">{record.schedule?.topic || 'Class Session'}</div>
+                              <div className="font-medium">Topic: {record.schedule?.topic || 'Class Session'}</div>
                               <div className="text-sm text-muted-foreground">
                                 {record.schedule?.scheduleDate && format(new Date(record.schedule.scheduleDate), 'PPP')}
                               </div>
                               <div className="text-sm text-muted-foreground">
                                 {record.schedule?.startTime && formatTime(record.schedule.startTime)} - 
                                 {record.schedule?.endTime && formatTime(record.schedule.endTime)}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                Instructor: {record.schedule?.batch?.instructor?.fullName || 'Unknown Instructor'}
                               </div>
                               <div className="text-sm text-muted-foreground">
                                 Batch: {record.schedule?.batch?.batchName || 'Unknown Batch'}

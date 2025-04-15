@@ -4,13 +4,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
-import { CalendarClock, Users, Medal, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { CalendarClock, Users, Medal, Clock, CheckCircle2, XCircle, AlertCircle, Search, UserCircle2, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/core';
 import { Status, Role } from '@/lib/types';
 import { format } from 'date-fns';
 import { formatTime } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 
 interface AttendanceAnalyticsProps {
   userId?: number;
@@ -160,6 +163,8 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   
   const { data: studentData, isLoading: isLoadingStudent } = useQuery({
     queryKey: ['studentAttendance', userId],
@@ -220,19 +225,35 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
       return [];
     }
 
+    let filtered: AttendanceRecord[] = [...batchData.history];
+
     if (user?.role === Role.admin) {
       // For admin, show both student and instructor records
-      return batchData.history;
+      filtered = [...batchData.history];
     } else if (user?.role === Role.instructor) {
       // For instructor, show only student records
-      return batchData.history.filter(record => record.user.role === Role.student);
+      filtered = filtered.filter(record => record.user.role === Role.student);
     } else if (user?.role === Role.student && user?.userId) {
       // For students, show only their own records
-      return batchData.history.filter(record => record.user.userId === user.userId);
+      filtered = filtered.filter(record => record.user.userId === user.userId);
+    }
+
+    // Apply student selection filter
+    if (selectedStudentId) {
+      filtered = filtered.filter(record => 
+        record.user.userId === parseInt(selectedStudentId)
+      );
+    }
+    // Apply name search filter if there's a search query
+    else if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(record => 
+        record.user.fullName.toLowerCase().includes(query)
+      );
     }
     
-    return [];
-  }, [batchData?.history, user]);
+    return filtered;
+  }, [batchData?.history, user, searchQuery, selectedStudentId]);
   
   const isLoading = isLoadingStudent || isLoadingBatch;
   const isError = false; 
@@ -515,6 +536,78 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
           </TabsContent>
           
           <TabsContent value="history" className="space-y-4">
+            <Card>
+              <CardContent className="py-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                  {/*Student Selection Dropdown*/}
+                  <div className="flex-1 max-w-sm">
+                    <Select
+                      value={selectedStudentId}
+                      onValueChange={setSelectedStudentId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue className="text-muted-foreground" placeholder="Select a student" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {batchData?.students?.map((student) => (
+                          <SelectItem 
+                            key={student.userId} 
+                            value={student.userId.toString()}
+                          >
+                            <div className="flex items-center gap-2">
+                              {student.fullName}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex-1 max-w-sm relative">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder="Or search by name..."
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          setSelectedStudentId(''); // Clear selection when searching
+                        }}
+                        className="pl-8"
+                        disabled={!!selectedStudentId}
+                      />
+                      {searchQuery && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                          onClick={() => setSearchQuery('')}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Clear Filters Button */}
+                  {(selectedStudentId || searchQuery) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedStudentId('');
+                        setSearchQuery('');
+                      }}
+                      className="shrink-0"
+                    >
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             {isLoading ? (
               <Card>
                 <CardContent className="py-6">
@@ -527,7 +620,11 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
               <Card>
                 <CardContent className="py-6">
                   <div className="text-center text-muted-foreground">
-                    No attendance records found.
+                    {selectedStudentId
+                      ? "No attendance records found for selected student."
+                      : searchQuery.trim()
+                        ? "No attendance records found for this search."
+                        : "No attendance records found."}
                   </div>
                 </CardContent>
               </Card>

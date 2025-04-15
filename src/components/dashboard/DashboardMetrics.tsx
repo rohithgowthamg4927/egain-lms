@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +15,55 @@ interface DashboardMetricsProps {
 
 const COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f97316', '#10b981', '#14b8a6'];
 
+// Add utility functions for date/time handling
+const formatTime = (timeString: string) => {
+  if (!timeString) return '';
+  try {
+    // For full ISO string (from database)
+    if (timeString.includes('T')) {
+      const date = new Date(timeString);
+      return format(date, 'h:mm a');
+    }
+    // For time-only string (HH:mm:ss)
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return format(date, 'h:mm a');
+  } catch (error) {
+    console.error('Error formatting time:', error);
+    return timeString;
+  }
+};
+
+const formatScheduleDate = (dateString: string) => {
+  try {
+    return format(new Date(dateString), 'PPP');
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return dateString;
+  }
+};
+
+const getScheduleDateTime = (schedule: any) => {
+  try {
+    const scheduleDate = new Date(schedule.scheduleDate);
+    const scheduleDateTime = new Date(scheduleDate);
+    
+    if (schedule.startTime.includes('T')) {
+      const startTime = new Date(schedule.startTime);
+      scheduleDateTime.setHours(startTime.getHours(), startTime.getMinutes());
+    } else {
+      const [hours, minutes] = schedule.startTime.split(':').map(Number);
+      scheduleDateTime.setHours(hours, minutes);
+    }
+    
+    return scheduleDateTime;
+  } catch (error) {
+    console.error('Error creating schedule datetime:', error);
+    return null;
+  }
+};
+
 const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) => {
   
   const categoryChartData = data?.categoryDistribution?.filter(cat => cat.value > 0) || [];
@@ -31,6 +79,35 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
   })) || [];
 
   const upcomingSchedules = data?.upcomingSchedules || [];
+
+  // Update schedule filtering and sorting
+  const now = new Date();
+  now.setSeconds(0, 0); // Normalize seconds and milliseconds
+
+  const filteredUpcomingSchedules = upcomingSchedules
+    .filter(schedule => {
+      try {
+        const scheduleDateTime = getScheduleDateTime(schedule);
+        return scheduleDateTime ? scheduleDateTime > now : false;
+      } catch (error) {
+        console.error('Error filtering upcoming schedules:', error);
+        return false;
+      }
+    })
+    .sort((a, b) => {
+      try {
+        const dateTimeA = getScheduleDateTime(a);
+        const dateTimeB = getScheduleDateTime(b);
+        
+        if (!dateTimeA || !dateTimeB) return 0;
+        
+        return dateTimeA.getTime() - dateTimeB.getTime();
+      } catch (error) {
+        console.error('Error sorting upcoming schedules:', error);
+        return 0;
+      }
+    })
+    .slice(0, 5); // Keep only the first 5 upcoming schedules
 
   if (isError) {
     return (
@@ -276,9 +353,9 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />
               </div>
-            ) : upcomingSchedules && upcomingSchedules.length > 0 ? (
+            ) : filteredUpcomingSchedules && filteredUpcomingSchedules.length > 0 ? (
               <div className="space-y-4">
-                {upcomingSchedules.map((schedule) => (
+                {filteredUpcomingSchedules.map((schedule, index) => (
                   <Link 
                     to={`/schedules`}
                     key={schedule.scheduleId}
@@ -291,11 +368,9 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
                       <p className="font-medium">{schedule.topic}</p>
                       <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                         <span>
-                          {schedule.scheduleDate
-                            ? format(new Date(schedule.scheduleDate), 'E, MMM d')
-                            : 'Date not set'}
+                          {formatScheduleDate(schedule.scheduleDate)}
                         </span>
-                        <span>{format(new Date(schedule.startTime), 'h:mm a')} - {format(new Date(schedule.endTime), 'h:mm a')}</span>
+                        <span>{formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}</span>
                       </div>
                     </div>
                     <div className="text-sm">

@@ -47,8 +47,8 @@ router.post('/login', async (req, res) => {
     //Generate JWT token
     const token = jwt.sign(
       { userId: user.userId, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'development-secret',
-      { expiresIn: '7d' }
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' }
     );
     
     //Return success response with token and user data
@@ -66,8 +66,7 @@ router.post('/login', async (req, res) => {
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
           mustResetPassword: user.mustResetPassword,
-          profilePicture: user.profilePicture,
-          password: user.password // Include password in response for the client functionality
+          profilePicture: user.profilePicture
         }
       }
     });

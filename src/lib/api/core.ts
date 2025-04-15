@@ -39,26 +39,14 @@ export async function apiFetch<T>(
       headers,
     });
 
-    // Get response data
     let data;
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
       data = await response.json();
-      // console.log('Received API response:', {
-      //   status: response.status,
-      //   data,
-      //   endpoint
-      // });
     } else {
       data = await response.text();
-      // console.log('Received non-JSON response:', {
-      //   status: response.status,
-      //   data,
-      //   endpoint
-      // });
     }
 
-    // Handle errors
     if (!response.ok) {
       console.error(`API Error (${response.status}):`, {
         endpoint,
@@ -66,15 +54,13 @@ export async function apiFetch<T>(
         status: response.status
       });
       
-      // For authentication errors (401) and forbidden errors (403), clear token and reload
-      if (response.status === 401 || response.status === 403) {
+      if (response.status === 401) {
         localStorage.removeItem("authToken");
         localStorage.removeItem("currentUser");
         window.location.href = "/login";
         return { success: false, error: "Authentication failed", status: response.status };
       }
       
-      // If the error response has success and error fields, use them
       if (data && typeof data === 'object' && 'success' in data && 'error' in data) {
         return {
           success: false,
@@ -90,12 +76,10 @@ export async function apiFetch<T>(
       };
     }
 
-    // If the response already has the expected structure, return it
     if (data && typeof data === 'object' && 'success' in data) {
       return data;
     }
 
-    // Otherwise, wrap the response data in our standard format
     return {
       success: true,
       data: data as T,

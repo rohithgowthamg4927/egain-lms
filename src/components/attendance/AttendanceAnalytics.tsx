@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
@@ -7,11 +7,37 @@ import { useAuth } from '@/hooks/use-auth';
 import { CalendarClock, Users, Medal, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/core';
-import { Status } from '@/lib/types';
+import { Status, Role } from '@prisma/client';
+import { format } from 'date-fns';
+import { formatTime } from '@/lib/utils';
 
 interface AttendanceAnalyticsProps {
   userId?: number;
   batchId?: number;
+}
+
+interface AttendanceRecord {
+  attendanceId: number;
+  scheduleId: number;
+  userId: number;
+  status: Status;
+  markedAt: string;
+  user: {
+    id: number;
+    fullName: string;
+    role: Role;
+  };
+  schedule: {
+    id: number;
+    topic: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+  };
+  markedByUser: {
+    fullName: string;
+    email: string;
+  };
 }
 
 interface AttendanceAnalytics {
@@ -30,6 +56,9 @@ interface AttendanceAnalytics {
     absent: number;
     late: number;
     percentage: number;
+    scheduleDate?: string;
+    startTime?: string;
+    endTime?: string;
   }>;
   students?: Array<{
     userId: number;
@@ -41,13 +70,70 @@ interface AttendanceAnalytics {
     late: number;
     percentage: number;
   }>;
+  history?: Array<{
+    attendanceId: number;
+    scheduleId: number;
+    userId: number;
+    status: Status;
+    markedAt: string;
+    user: {
+      fullName: string;
+      email: string;
+      role: Role;
+    };
+    schedule: {
+      topic: string;
+      scheduleDate: string;
+      startTime: string;
+      endTime: string;
+    };
+    markedByUser: {
+      fullName: string;
+      email: string;
+      role: Role;
+    };
+  }>;
   totalClasses?: number;
   totalStudents?: number;
+}
+
+interface AttendanceHistoryResponse {
+  success: boolean;
+  data: Array<{
+    attendanceId: number;
+    scheduleId: number;
+    userId: number;
+    status: Status;
+    markedAt: string;
+    user: {
+      userId: number;
+      fullName: string;
+      email: string;
+      role: Role;
+    };
+    schedule: {
+      topic: string;
+      scheduleDate: string;
+      startTime: string;
+      endTime: string;
+      batch: {
+        batchName: string;
+        instructor: {
+          fullName: string;
+        };
+      };
+    };
+    markedByUser: {
+      fullName: string;
+      role: Role;
+    };
+  }>;
 }
 
 const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   
   // Fetch student attendance analytics
   const { data: studentData, isLoading: isLoadingStudent } = useQuery({
@@ -61,17 +147,67 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
     enabled: !!userId
   });
 
-  // Fetch batch attendance analytics
+  // Fetch batch attendance analytics with history
   const { data: batchData, isLoading: isLoadingBatch } = useQuery({
     queryKey: ['batchAttendance', batchId],
     queryFn: async () => {
       if (!batchId) return null;
-      const response = await apiFetch<AttendanceAnalytics>(`/attendance/analytics/batch/${batchId}`);
-      if (!response.success) throw new Error(response.error);
-      return response.data;
+      
+      // Get batch analytics
+      const analyticsResponse = await apiFetch<{
+        overall: {
+          total: number;
+          present: number;
+          absent: number;
+          late: number;
+          percentage: number;
+        };
+        students: Array<{
+          userId: number;
+          fullName: string;
+          email: string;
+          total: number;
+          present: number;
+          absent: number;
+          late: number;
+          percentage: number;
+        }>;
+        totalClasses: number;
+        totalStudents: number;
+      }>(`/attendance/analytics/batch/${batchId}`);
+      
+      if (!analyticsResponse.success) throw new Error(analyticsResponse.error);
+      
+      // Get attendance history
+      const historyResponse = await apiFetch<AttendanceHistoryResponse>(`/attendance/history/${batchId}`);
+      
+      if (!historyResponse.success) throw new Error(historyResponse.error);
+      
+      // Combine analytics with history data
+      return {
+        ...analyticsResponse.data,
+        history: historyResponse.data.data
+      };
     },
     enabled: !!batchId
   });
+  
+  // Filter history based on user role
+  const filteredHistory = useMemo(() => {
+    if (!batchData?.history) return [];
+    
+    // Admins and instructors can see all history
+    if (user?.role === Role.admin || user?.role === Role.instructor) {
+      return batchData.history;
+    }
+    
+    // Students can only see their own history
+    if (user?.role === Role.student && user?.userId) {
+      return batchData.history.filter(record => record.user.userId === user.userId);
+    }
+    
+    return [];
+  }, [batchData?.history, user]);
   
   const isLoading = isLoadingStudent || isLoadingBatch;
   const isError = false; // We handle errors in the query functions
@@ -188,8 +324,20 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
                   <div className="flex justify-between items-center">
                     <div className="font-medium">{batch.batchName}</div>
                     <div className="text-sm">
-                      <span className="font-semibold">{batch.percentage}%</span> ({batch.present}/{batch.total} classes)
+                      {batch.percentage}% ({batch.present}/{batch.total} classes)
                     </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    {batch.scheduleDate && (
+                      <div className="flex items-center gap-2">
+                        <span>{format(new Date(batch.scheduleDate), 'PPP')}</span>
+                        {batch.startTime && batch.endTime && (
+                          <span>
+                            {formatTime(batch.startTime)} - {formatTime(batch.endTime)}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <Progress value={batch.percentage} />
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -218,12 +366,12 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
   // Render batch attendance data
   if (batchId && batchData) {
     return (
-      <div className="space-y-6">
+      <div className="w-[1200px] space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3 mb-4">
+          <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="students">Students</TabsTrigger>
-            <TabsTrigger value="classes">Classes</TabsTrigger>
+            <TabsTrigger value="history">Detailed History</TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview">
@@ -324,14 +472,18 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
                 <div className="space-y-4">
                   {batchData.students && batchData.students.map((student) => (
                     <div key={student.userId} className="space-y-1">
-                      <div className="flex justify-between items-center">
-                        <div className="font-medium">{student.fullName}</div>
-                        <div className="text-sm">
-                          <span className="font-semibold">{student.percentage}%</span> 
-                          ({student.present}/{student.total} classes)
+                      <div className="flex justify-between items-center gap-4">
+                        <div className="font-medium min-w-[200px]">{student.fullName}</div>
+                        <div className="flex-1 max-w-[400px]">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm">
+                              <span className="font-semibold">{student.percentage}%</span> 
+                              ({student.present}/{student.total} classes)
+                            </span>
+                          </div>
+                          <Progress value={student.percentage} className="h-2" />
                         </div>
                       </div>
-                      <Progress value={student.percentage} className="h-2" />
                     </div>
                   ))}
                 </div>
@@ -339,18 +491,67 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
             </Card>
           </TabsContent>
           
-          <TabsContent value="classes">
-            <Card>
-              <CardHeader>
-                <CardTitle>Class Attendance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center text-muted-foreground py-8">
-                  <CalendarClock className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                  <p>Class-specific attendance details will be available soon.</p>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="history" className="space-y-4">
+            {isLoading ? (
+              <Card>
+                <CardContent className="py-6">
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : filteredHistory.length === 0 ? (
+              <Card>
+                <CardContent className="py-6">
+                  <div className="text-center text-muted-foreground">
+                    No attendance records found.
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {filteredHistory.map((record) => (
+                  <Card key={record.attendanceId}>
+                    <CardContent className="py-4">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium">{record.user.fullName}</div>
+                            <div className="text-sm text-muted-foreground">{record.user.email}</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {record.status === Status.present && (
+                              <div className="flex items-center gap-1 text-green-500">
+                                <CheckCircle2 className="h-4 w-4" />
+                                <span>Present</span>
+                              </div>
+                            )}
+                            {record.status === Status.absent && (
+                              <div className="flex items-center gap-1 text-red-500">
+                                <XCircle className="h-4 w-4" />
+                                <span>Absent</span>
+                              </div>
+                            )}
+                            {record.status === Status.late && (
+                              <div className="flex items-center gap-1 text-yellow-500">
+                                <Clock className="h-4 w-4" />
+                                <span>Late</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-sm">
+                          <div className="text-muted-foreground">
+                            {format(new Date(record.schedule.scheduleDate), 'PPP')} • {formatTime(record.schedule.startTime)} - {formatTime(record.schedule.endTime)}
+                          </div>
+                          <div className="font-medium mt-1">{record.schedule.topic}</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

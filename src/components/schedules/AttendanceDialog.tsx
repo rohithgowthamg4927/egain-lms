@@ -5,11 +5,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Schedule, Status, Role } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getBatchStudents } from '@/lib/api/batches';
 import { useAuth } from '@/hooks/use-auth';
@@ -20,6 +18,12 @@ interface AttendanceRecord {
   userId: number;
   status: Status;
   markedAt: string;
+  role: Role;
+  markedBy?: {
+    userId: number;
+    fullName: string;
+    role: Role;
+  } | null;
 }
 
 interface AttendanceDialogProps {
@@ -31,11 +35,7 @@ interface AttendanceDialogProps {
 const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  
   const [selectedTab, setSelectedTab] = useState('attendance');
-  const [selectedStudents, setSelectedStudents] = useState<Set<number>>(new Set());
-  const [selectAll, setSelectAll] = useState(false);
-  const [bulkStatus, setBulkStatus] = useState<Status>(Status.present);
   
   // Fetch batch students
   const { data: batchStudents = [] } = useQuery({
@@ -44,7 +44,22 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
       if (!schedule?.batchId) return [];
       const response = await getBatchStudents(schedule.batchId);
       if (!response.success) throw new Error(response.error || 'Failed to fetch students');
-      return response.data || [];
+      
+      // Add instructor to the list if they exist
+      const students = response.data || [];
+      if (schedule.batch?.instructor) {
+        const instructorData = {
+          userId: schedule.batch.instructor.userId,
+          fullName: schedule.batch.instructor.fullName,
+          email: schedule.batch.instructor.email,
+          role: Role.instructor,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        students.push(instructorData);
+      }
+      
+      return students;
     },
     enabled: !!schedule?.batchId
   });
@@ -56,7 +71,33 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
       if (!schedule?.scheduleId) return [];
       const response = await apiFetch<{ records: AttendanceRecord[] }>(`/attendance/schedule/${schedule.scheduleId}`);
       if (!response.success) throw new Error(response.error || 'Failed to fetch attendance records');
-      return response.data?.records || [];
+      
+      // Get all records including instructor
+      const records = response.data?.records || [];
+      
+      // If instructor exists and doesn't have a record, create an absent record
+      if (schedule.batch?.instructor) {
+        const instructorRecord = records.find(
+          record => record.userId === schedule.batch.instructor.userId
+        );
+        
+        if (!instructorRecord) {
+          // Create a new record for the instructor as absent
+          await apiFetch(`/attendance/mark`, {
+            method: 'POST',
+            body: JSON.stringify({
+              scheduleId: schedule.scheduleId,
+              userId: schedule.batch.instructor.userId,
+              status: Status.absent
+            })
+          });
+        }
+      }
+      
+      // Refetch the records to get the updated instructor status
+      const updatedResponse = await apiFetch<{ records: AttendanceRecord[] }>(`/attendance/schedule/${schedule.scheduleId}`);
+      if (!updatedResponse.success) throw new Error(updatedResponse.error || 'Failed to fetch attendance records');
+      return updatedResponse.data?.records || [];
     },
     enabled: !!schedule?.scheduleId
   });
@@ -65,7 +106,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
   const markAttendanceMutation = useMutation({
     mutationFn: async ({ userId, status }: { userId: number; status: Status }) => {
       if (!schedule?.scheduleId) throw new Error('No schedule selected');
-      return apiFetch(`/attendance/mark`, {
+      const response = await apiFetch(`/attendance/mark`, {
         method: 'POST',
         body: JSON.stringify({
           scheduleId: schedule.scheduleId,
@@ -73,71 +114,92 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
           status
         })
       });
+      if (!response.success) throw new Error(response.error || 'Failed to mark attendance');
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance', schedule?.scheduleId] });
     }
   });
 
-  // Update attendance mutation
-  const updateAttendanceMutation = useMutation({
-    mutationFn: async ({ attendanceId, status }: { attendanceId: number; status: Status }) => {
-      return apiFetch(`/attendance/${attendanceId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ status })
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance', schedule?.scheduleId] });
-    }
-  });
-
-  // Bulk mark attendance mutation
+  // Add bulk mark attendance mutation
   const markBulkAttendanceMutation = useMutation({
-    mutationFn: async ({ attendanceRecords }: { attendanceRecords: Array<{ userId: number; status: Status }> }) => {
+    mutationFn: async ({ status }: { status: Status }) => {
       if (!schedule?.scheduleId) throw new Error('No schedule selected');
-      return apiFetch(`/attendance/bulk`, {
+      
+      // Get all student IDs (excluding instructor)
+      const studentIds = batchStudents
+        .filter(student => student.role !== Role.instructor)
+        .map(student => student.userId);
+      
+      const response = await apiFetch(`/attendance/bulk`, {
         method: 'POST',
         body: JSON.stringify({
           scheduleId: schedule.scheduleId,
-          attendanceRecords
+          attendanceRecords: studentIds.map(userId => ({
+            userId,
+            status
+          }))
         })
       });
+      
+      if (!response.success) throw new Error(response.error || 'Failed to mark bulk attendance');
+      
+      // If the user is an instructor, mark them as present after bulk marking
+      if (user?.role === Role.instructor && schedule.batch?.instructor?.userId === user.userId) {
+        await markAttendanceMutation.mutateAsync({
+          userId: user.userId,
+          status: Status.present
+        });
+      }
+      
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance', schedule?.scheduleId] });
     }
   });
 
-  // Reset selected students when schedule changes
-  useEffect(() => {
-    setSelectedStudents(new Set());
-    setSelectAll(false);
-  }, [schedule?.scheduleId]);
-
-  const formatTime = (timeString: string) => {
-    if (!timeString) return '';
-    if (timeString.length <= 8) {
-      return timeString.substring(0, 5);
+  // Modify clear attendance mutation
+  const clearAttendanceMutation = useMutation({
+    mutationFn: async () => {
+      if (!schedule?.scheduleId) throw new Error('No schedule selected');
+      
+      // Get all attendance records for this schedule
+      const records = attendanceRecords || [];
+      
+      // Delete all attendance records including instructor's
+      await Promise.all(
+        records.map(record => 
+          apiFetch(`/attendance/${record.attendanceId}`, {
+            method: 'DELETE'
+          })
+        )
+      );
+      
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance', schedule?.scheduleId] });
     }
-    return format(new Date(timeString), 'hh:mm a');
-  };
+  });
 
   const handleMarkAttendance = async (studentId: number, status: Status) => {
     if (!schedule) return;
     
-    const existingRecord = attendanceRecords.find(record => record.userId === studentId);
-    
     try {
-      if (existingRecord?.attendanceId) {
-        await updateAttendanceMutation.mutateAsync({
-          attendanceId: existingRecord.attendanceId,
-          status
-        });
-      } else {
+      // Mark the student's attendance
+      await markAttendanceMutation.mutateAsync({
+        userId: studentId,
+        status
+      });
+
+      // If any student's attendance is marked and there's an instructor, mark instructor as present
+      if (schedule.batch?.instructor && user?.role === Role.instructor) {
+        const instructorId = schedule.batch.instructor.userId;
         await markAttendanceMutation.mutateAsync({
-          userId: studentId,
-          status
+          userId: instructorId,
+          status: Status.present
         });
       }
     } catch (error) {
@@ -145,49 +207,36 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
     }
   };
 
-  const handleBulkMarkAttendance = async () => {
-    if (!schedule || selectedStudents.size === 0) return;
-    
-    const attendanceRecordsToUpdate = Array.from(selectedStudents).map(studentId => ({
-      userId: studentId,
-      status: bulkStatus
-    }));
-    
+  const handleBulkMarkAttendance = async (status: Status) => {
     try {
-      await markBulkAttendanceMutation.mutateAsync({
-        attendanceRecords: attendanceRecordsToUpdate
-      });
-      
-      setSelectedStudents(new Set());
-      setSelectAll(false);
+      await markBulkAttendanceMutation.mutateAsync({ status });
     } catch (error) {
       console.error('Error marking bulk attendance:', error);
     }
   };
 
-  const handleSelectAll = (checked: boolean) => {
-    setSelectAll(checked);
-    if (checked) {
-      const newSelectedStudents = new Set<number>();
-      batchStudents.forEach(student => {
-        newSelectedStudents.add(student.userId);
-      });
-      setSelectedStudents(newSelectedStudents);
-    } else {
-      setSelectedStudents(new Set());
+  const handleClearAttendance = async () => {
+    try {
+      await clearAttendanceMutation.mutateAsync();
+    } catch (error) {
+      console.error('Error clearing attendance:', error);
     }
   };
 
-  const handleSelectStudent = (studentId: number, checked: boolean) => {
-    const newSelectedStudents = new Set(selectedStudents);
-    if (checked) {
-      newSelectedStudents.add(studentId);
-    } else {
-      newSelectedStudents.delete(studentId);
+  const formatTime = (timeString: string) => {
+    if (!timeString) return '';
+    try {
+      if (timeString.includes('T')) {
+        return format(new Date(timeString), 'h:mm a');
+      }
+      const [hours, minutes] = timeString.split(':').map(Number);
+      const date = new Date();
+      date.setHours(hours, minutes);
+      return format(date, 'h:mm a');
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return timeString;
     }
-    setSelectedStudents(newSelectedStudents);
-    
-    setSelectAll(newSelectedStudents.size === batchStudents.length && newSelectedStudents.size > 0);
   };
 
   const getStatusBadge = (status: Status | null) => {
@@ -221,10 +270,19 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
   };
 
   const getAttendanceStats = () => {
-    const total = batchStudents.length;
-    const present = attendanceRecords.filter(r => r.status === Status.present).length;
-    const absent = attendanceRecords.filter(r => r.status === Status.absent).length;
-    const late = attendanceRecords.filter(r => r.status === Status.late).length;
+    // Get only students (excluding instructor)
+    const students = batchStudents.filter(student => student.role !== Role.instructor);
+    const total = students.length;
+
+    // Filter attendance records to only include student records
+    const studentAttendanceRecords = attendanceRecords.filter(record => {
+      const student = batchStudents.find(s => s.userId === record.userId);
+      return student && student.role !== Role.instructor;
+    });
+
+    const present = studentAttendanceRecords.filter(r => r.status === Status.present).length;
+    const absent = studentAttendanceRecords.filter(r => r.status === Status.absent).length;
+    const late = studentAttendanceRecords.filter(r => r.status === Status.late).length;
     const notMarked = total - (present + absent + late);
     
     return { total, present, absent, late, notMarked };
@@ -235,7 +293,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[900px]">
           <DialogHeader>
-            <DialogTitle>Attendance Manager</DialogTitle>
+            <DialogTitle>Attendance</DialogTitle>
           </DialogHeader>
           <div className="text-center p-6 text-red-600">
             Error loading attendance data. Please try again.
@@ -249,7 +307,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px]">
         <DialogHeader>
-          <DialogTitle>Attendance Manager</DialogTitle>
+          <DialogTitle>Attendance</DialogTitle>
         </DialogHeader>
         
         {!schedule ? (
@@ -284,41 +342,49 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
               
               <TabsContent value="attendance" className="space-y-4">
                 {user?.role !== Role.student && (
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={selectAll}
-                        onCheckedChange={handleSelectAll}
-                      />
-                      <span className="text-sm">Select All</span>
+                      <span className="font-medium text-sm mr-2">Mark All:</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleBulkMarkAttendance(Status.present)}
+                        disabled={markBulkAttendanceMutation.isPending || clearAttendanceMutation.isPending}
+                      >
+                        Present
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleBulkMarkAttendance(Status.absent)}
+                        disabled={markBulkAttendanceMutation.isPending || clearAttendanceMutation.isPending}
+                      >
+                        Absent
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleBulkMarkAttendance(Status.late)}
+                        disabled={markBulkAttendanceMutation.isPending || clearAttendanceMutation.isPending}
+                      >
+                        Late
+                      </Button>
                     </div>
-                    {selectedStudents.size > 0 && (
-                      <div className="flex items-center gap-2">
-                        <Select value={bulkStatus} onValueChange={(value) => setBulkStatus(value as Status)}>
-                          <SelectTrigger className="w-[120px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={Status.present}>Present</SelectItem>
-                            <SelectItem value={Status.absent}>Absent</SelectItem>
-                            <SelectItem value={Status.late}>Late</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button 
-                          onClick={handleBulkMarkAttendance}
-                          disabled={markBulkAttendanceMutation.isPending}
-                        >
-                          {markBulkAttendanceMutation.isPending ? 'Marking...' : 'Mark Selected'}
-                        </Button>
-                      </div>
-                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 border-red-600 hover:bg-red-50"
+                      onClick={handleClearAttendance}
+                      disabled={markBulkAttendanceMutation.isPending || clearAttendanceMutation.isPending}
+                    >
+                      Clear Attendance
+                    </Button>
                   </div>
                 )}
                 
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      {user?.role !== Role.student && <TableHead className="w-[50px]" />}
                       <TableHead>Student</TableHead>
                       <TableHead>Status</TableHead>
                       {user?.role !== Role.student && <TableHead>Actions</TableHead>}
@@ -327,30 +393,31 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
                   <TableBody>
                     {batchStudents.map((student) => {
                       const attendanceRecord = attendanceRecords.find(record => record.userId === student.userId);
+                      const isInstructor = student.role === Role.instructor;
+                      
                       return (
                         <TableRow key={student.userId}>
-                          {user?.role !== Role.student && (
-                            <TableCell>
-                              <Checkbox
-                                checked={selectedStudents.has(student.userId)}
-                                onCheckedChange={(checked) => handleSelectStudent(student.userId, !!checked)}
-                              />
-                            </TableCell>
-                          )}
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <span>{student.fullName}</span>
+                              {isInstructor && (
+                                <Badge variant="secondary">Instructor</Badge>
+                              )}
                             </div>
                           </TableCell>
-                          <TableCell>{getStatusBadge(attendanceRecord?.status || null)}</TableCell>
-                          {user?.role !== Role.student && (
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              {getStatusBadge(attendanceRecord?.status || null)}
+                            </div>
+                          </TableCell>
+                          {user?.role !== Role.student && !isInstructor && (
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleMarkAttendance(student.userId, Status.present)}
-                                  disabled={markAttendanceMutation.isPending}
+                                  disabled={markAttendanceMutation.isPending || clearAttendanceMutation.isPending}
                                 >
                                   Present
                                 </Button>
@@ -358,7 +425,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleMarkAttendance(student.userId, Status.absent)}
-                                  disabled={markAttendanceMutation.isPending}
+                                  disabled={markAttendanceMutation.isPending || clearAttendanceMutation.isPending}
                                 >
                                   Absent
                                 </Button>
@@ -366,7 +433,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleMarkAttendance(student.userId, Status.late)}
-                                  disabled={markAttendanceMutation.isPending}
+                                  disabled={markAttendanceMutation.isPending || clearAttendanceMutation.isPending}
                                 >
                                   Late
                                 </Button>
@@ -388,6 +455,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">{getAttendanceStats().total}</div>
+                      <p className="text-xs text-muted-foreground mt-1">Enrolled in batch</p>
                     </CardContent>
                   </Card>
                   <Card>
@@ -396,6 +464,9 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-green-600">{getAttendanceStats().present}</div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {((getAttendanceStats().present / getAttendanceStats().total) * 100).toFixed(1)}% of students
+                      </p>
                     </CardContent>
                   </Card>
                   <Card>
@@ -404,6 +475,9 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-red-600">{getAttendanceStats().absent}</div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {((getAttendanceStats().absent / getAttendanceStats().total) * 100).toFixed(1)}% of students
+                      </p>
                     </CardContent>
                   </Card>
                   <Card>
@@ -412,6 +486,9 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-yellow-600">{getAttendanceStats().late}</div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {((getAttendanceStats().late / getAttendanceStats().total) * 100).toFixed(1)}% of students
+                      </p>
                     </CardContent>
                   </Card>
                 </div>

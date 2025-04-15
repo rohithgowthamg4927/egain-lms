@@ -20,6 +20,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Link } from 'react-router-dom';
 import AttendanceDialog from '@/components/schedules/AttendanceDialog';
 import AttendanceAnalytics from '@/components/attendance/AttendanceAnalytics';
+import { apiFetch } from '@/lib/api/core';
 
 const Schedules = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -234,107 +235,115 @@ const Schedules = () => {
       });
   }, [filteredSchedules]);
 
-  const ScheduleCard = ({ schedule, isPast = false }: { schedule: Schedule; isPast?: boolean }) => (
-    <Card className="mb-2 hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3 pt-2 px-4">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-base">{schedule.topic}</CardTitle>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {schedule.batch?.instructor?.fullName || 'No instructor assigned'}
-            </p>
-          </div>
-          <div className="flex gap-1">
-            {(isAdmin || isInstructor) && (
-              <>
+  const ScheduleCard = ({ schedule, isPast = false }: { schedule: Schedule; isPast?: boolean }) => {
+    const { data: attendanceStatus } = useQuery({
+      queryKey: ['attendanceStatus', schedule.scheduleId],
+      queryFn: async () => {
+        const response = await apiFetch<{ records: any[] }>(`/attendance/schedule/${schedule.scheduleId}`);
+        if (!response.success) return 'not_marked';
+        return response.data?.records?.length > 0 ? 'marked' : 'not_marked';
+      }
+    });
+
+    return (
+      <Card className="mb-2 hover:shadow-md transition-shadow">
+        <CardHeader className="pb-3 pt-2 px-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="text-base">{schedule.topic}</CardTitle>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {schedule.batch?.instructor?.fullName || 'No instructor assigned'}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {(isAdmin || isInstructor) && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3 text-blue-600 border-blue-600 hover:bg-blue-50"
+                    onClick={() => {
+                      setSelectedSchedule(schedule);
+                      setShowAttendanceDialog(true);
+                    }}
+                  >
+                    <UserCheck className="h-4 w-4 mr-1" />
+                    Mark Attendance
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3"
+                    onClick={() => {
+                      setSelectedSchedule(schedule);
+                      setShowEditDialog(true);
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3 text-red-600 border-red-600 hover:bg-red-50"
+                    onClick={() => {
+                      setSelectedSchedule(schedule);
+                      setShowDeleteDialog(true);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
+                </>
+              )}
+              {isStudent && isPast && (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="h-8 w-8 p-0"
+                  className="h-8 px-3 text-blue-600 border-blue-600 hover:bg-blue-50"
                   onClick={() => {
                     setSelectedSchedule(schedule);
                     setShowAttendanceDialog(true);
                   }}
                 >
-                  <UserCheck className="h-4 w-4" />
+                  <UserCheck className="h-4 w-4 mr-1" />
+                  View Attendance
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => {
-                    setSelectedSchedule(schedule);
-                    setShowEditDialog(true);
-                  }}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => {
-                    setSelectedSchedule(schedule);
-                    setShowDeleteDialog(true);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-            {isStudent && isPast && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => {
-                  setSelectedSchedule(schedule);
-                  setShowAttendanceDialog(true);
-                }}
-              >
-                <UserCheck className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pb-4 px-4">
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5 text-gray-500" />
-            <span>{format(new Date(schedule.scheduleDate), 'PPP')}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5 text-gray-500" />
-            <span>{formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Users className="h-3.5 w-3.5 text-gray-500" />
-            <span>{schedule.batch?.batchName || 'No batch assigned'}</span>
-          </div>
-          {schedule.meetingLink && !isPast && (
-            <div className="flex items-center gap-1.5">
-              <Video className="h-3.5 w-3.5 text-gray-500" />
-              <a
-                href={schedule.meetingLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
-              >
-                Join Meeting
-              </a>
+              )}
             </div>
-          )}
-          {isPast && (
+          </div>
+        </CardHeader>
+        <CardContent className="pb-4 px-4">
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 text-gray-500" />
+              <span>{format(new Date(schedule.scheduleDate), 'PPP')}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 text-gray-500" />
+              <span>{formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5 text-gray-500" />
+              <span>{schedule.batch?.batchName || 'No batch assigned'}</span>
+            </div>
             <div className="flex items-center gap-1.5">
               <UserCheck className="h-3.5 w-3.5 text-gray-500" />
-              <Badge variant="secondary">Past Session</Badge>
+              {attendanceStatus === 'marked' ? (
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  Attendance Marked
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                  Attendance Not Marked
+                </Badge>
+              )}
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   if (isLoadingSchedules || isLoadingBatches) {
     return (

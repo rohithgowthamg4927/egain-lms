@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
-import { getStudentSchedules } from '@/lib/api/students';
+import { getStudentSchedules, getStudentBatches } from '@/lib/api/students';
 import { getAllSchedules } from '@/lib/api/schedules';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,26 +17,15 @@ import { apiFetch } from '@/lib/api/core';
 
 export default function StudentSchedules() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   
-  // Query for student schedules - updated to include batches the student is enrolled in
+  // Query for student batches - using the new getStudentBatches function
   const { data: studentBatchesData, isLoading: isBatchesLoading, error: batchesError } = useQuery({
     queryKey: ['studentBatches', user?.userId],
     queryFn: async () => {
       if (!user?.userId) throw new Error('User ID required');
-      try {
-        const response = await fetch(`/api/student-batches/${user.userId}`, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        console.error("Error fetching student batches:", error);
-        throw error;
-      }
+      return getStudentBatches(user.userId);
     },
     enabled: !!user?.userId
   });

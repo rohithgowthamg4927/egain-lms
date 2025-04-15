@@ -1,6 +1,6 @@
 
 import { apiFetch } from './core';
-import { Course, CourseReview } from '@/lib/types';
+import { Course, CourseReview, Schedule } from '@/lib/types';
 
 // Get student's course details
 export const getStudentCourseDetail = async (courseId: string): Promise<{ success: boolean; data?: any; error?: string }> => {
@@ -29,9 +29,10 @@ export const getStudentCourses = async (studentId: number): Promise<{ success: b
 };
 
 // Get all schedules for a student
-export const getStudentSchedules = async (studentId: number): Promise<{ success: boolean; data?: any[]; error?: string }> => {
+export const getStudentSchedules = async (studentId: number): Promise<{ success: boolean; data?: Schedule[]; error?: string }> => {
   try {
-    const response = await apiFetch<any[]>(`/students/${studentId}/schedules`);
+    // Use the apiFetch function which properly handles authentication tokens
+    const response = await apiFetch<Schedule[]>(`/students/${studentId}/schedules`);
     return response;
   } catch (error) {
     console.error("getStudentSchedules error:", error);
@@ -39,6 +40,22 @@ export const getStudentSchedules = async (studentId: number): Promise<{ success:
       success: false,
       data: [], // Return empty array as fallback
       error: error instanceof Error ? error.message : 'Failed to fetch student schedules'
+    };
+  }
+};
+
+// Get student batch enrollments
+export const getStudentBatches = async (studentId: number): Promise<{ success: boolean; data?: any[]; error?: string }> => {
+  try {
+    // Use the apiFetch function which properly handles authentication tokens
+    const response = await apiFetch<any[]>(`/student-batches/${studentId}`);
+    return response;
+  } catch (error) {
+    console.error("getStudentBatches error:", error);
+    return {
+      success: false,
+      data: [], // Return empty array as fallback
+      error: error instanceof Error ? error.message : 'Failed to fetch student batches'
     };
   }
 };

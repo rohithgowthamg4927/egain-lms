@@ -13,6 +13,7 @@ export * from './schedules';
 export * from './student-courses';
 export * from './dashboard';
 export * from './instructors';
+export * from './students';
 
 // Re-export getUser from users.ts for backward compatibility
 export { getUser, updateUser, deleteUser, regenerateUserPassword } from './users';
@@ -43,5 +44,13 @@ export {
   getInstructorBatches
 } from './instructors';
 
-// Remove the export from non-existent module
-// export * from '../services/attendance.service';
+// Re-export student-specific functions
+export {
+  getStudentSchedules,
+  getStudentBatches,
+  getStudentResources,
+  getStudentCourseDetail,
+  submitCourseReview,
+  updateCourseReview,
+  deleteCourseReview
+} from './students';

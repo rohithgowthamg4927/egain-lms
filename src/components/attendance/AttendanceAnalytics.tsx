@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { CalendarClock, Users, Medal, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api/core';
-import { Status, Role } from '@prisma/client';
+import { Status, Role } from '@/lib/types';
 import { format } from 'date-fns';
 import { formatTime } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';

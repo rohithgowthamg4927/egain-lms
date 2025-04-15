@@ -1,5 +1,7 @@
 
-// Re-export all API modules
+// Remove any import or export related to attendance.service
+
+// Re-export attendance-related functions directly from the existing implementation
 export * from './core';
 export * from './auth';
 export * from './users';

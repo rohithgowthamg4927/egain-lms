@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +15,7 @@ import { Calendar, Clock, ExternalLink, CheckCircle2, XCircle, AlertCircle } fro
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 import { Progress } from '@/components/ui/progress';
 import { apiFetch } from '@/lib/api/core';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 
 export default function StudentSchedules() {
   const { user } = useAuth();
@@ -242,17 +244,21 @@ export default function StudentSchedules() {
     enabled: !!user?.userId
   });
   
+  // Updated to use the correct history endpoint
   const { data: attendanceHistoryData, isLoading: isLoadingHistory } = useQuery({
     queryKey: ['studentAttendanceHistory', user?.userId],
     queryFn: async () => {
-      if (!user?.userId) return null;
+      if (!user?.userId) return [];
       try {
         const response = await getStudentAttendanceHistory(user.userId);
-        if (!response.success) throw new Error(response.error);
-        return response.data;
+        if (!response.success) {
+          console.error("Failed to fetch attendance history:", response.error);
+          return [];
+        }
+        return response.data || [];
       } catch (error) {
-        console.error("Error fetching attendance history:", error);
-        return null;
+        console.error("Error in attendance history query:", error);
+        return [];
       }
     },
     enabled: !!user?.userId
@@ -577,7 +583,7 @@ export default function StudentSchedules() {
                     <div className="flex items-center justify-center py-6">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                     </div>
-                  ) : Array.isArray(attendanceHistoryData) && attendanceHistoryData.length > 0 ? (
+                  ) : attendanceHistoryData && attendanceHistoryData.length > 0 ? (
                     <div className="space-y-4">
                       {attendanceHistoryData.map((record) => (
                         <div key={record.attendanceId} className="border rounded-lg p-4">

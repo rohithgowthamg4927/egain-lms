@@ -76,7 +76,27 @@ export const getStudentResources = async (studentId: number): Promise<{ success:
 // Get attendance history for a student
 export const getStudentAttendanceHistory = async (studentId: number): Promise<{ success: boolean; data?: any[]; error?: string }> => {
   try {
-    const response = await apiFetch<any[]>(`/attendance/student/${studentId}`);
+    // Updated to use the attendance/history endpoint with the student's batches
+    const studentBatches = await getStudentBatches(studentId);
+    
+    if (!studentBatches.success || !studentBatches.data || !Array.isArray(studentBatches.data) || studentBatches.data.length === 0) {
+      console.log("No batches found for student:", studentId);
+      return { success: true, data: [] };
+    }
+    
+    // Get the first batch ID for the student (assuming we want to start with this)
+    const batchId = studentBatches.data[0].batch.batchId;
+    
+    // Use the attendance history endpoint which is the same one used by admin/instructors
+    const response = await apiFetch<any[]>(`/attendance/history/${batchId}`);
+    
+    // Filter the response to only include the current student's records if needed
+    if (response.success && Array.isArray(response.data)) {
+      // Filter the data to only include records for this student
+      const filteredData = response.data.filter(record => record.user.userId === studentId);
+      return { ...response, data: filteredData };
+    }
+    
     return response;
   } catch (error) {
     console.error("getStudentAttendanceHistory error:", error);

@@ -10,6 +10,7 @@ import { apiFetch } from '@/lib/api/core';
 import { Status, Role } from '@prisma/client';
 import { format } from 'date-fns';
 import { formatTime } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface AttendanceAnalyticsProps {
   userId?: number;
@@ -21,22 +22,34 @@ interface AttendanceRecord {
   scheduleId: number;
   userId: number;
   status: Status;
-  markedAt: string;
+  markedBy: number; 
+  createdAt: string;
+  updatedAt: string;
   user: {
-    id: number;
+    userId: number;
     fullName: string;
+    email: string;
     role: Role;
   };
   schedule: {
-    id: number;
+    scheduleId: number;
     topic: string;
-    date: string;
+    scheduleDate: string;
     startTime: string;
     endTime: string;
+    batch: {
+      batchId: number;
+      batchName: string;
+      instructor: {
+        userId: number;
+        fullName: string;
+      };
+    };
   };
   markedByUser: {
+    userId: number;
     fullName: string;
-    email: string;
+    role: Role;
   };
 }
 
@@ -77,6 +90,7 @@ interface AttendanceAnalytics {
     status: Status;
     markedAt: string;
     user: {
+      userId: number;  
       fullName: string;
       email: string;
       role: Role;
@@ -86,6 +100,12 @@ interface AttendanceAnalytics {
       scheduleDate: string;
       startTime: string;
       endTime: string;
+      batch?: {      
+        batchName: string;
+        instructor?: {
+          fullName: string;
+        };
+      };
     };
     markedByUser: {
       fullName: string;
@@ -104,7 +124,9 @@ interface AttendanceHistoryResponse {
     scheduleId: number;
     userId: number;
     status: Status;
-    markedAt: string;
+    markedBy: number;
+    createdAt: string;
+    updatedAt: string;
     user: {
       userId: number;
       fullName: string;
@@ -112,18 +134,22 @@ interface AttendanceHistoryResponse {
       role: Role;
     };
     schedule: {
+      scheduleId: number;
       topic: string;
       scheduleDate: string;
       startTime: string;
       endTime: string;
       batch: {
+        batchId: number;
         batchName: string;
         instructor: {
+          userId: number;
           fullName: string;
         };
       };
     };
     markedByUser: {
+      userId: number;
       fullName: string;
       role: Role;
     };
@@ -135,7 +161,6 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   
-  // Fetch student attendance analytics
   const { data: studentData, isLoading: isLoadingStudent } = useQuery({
     queryKey: ['studentAttendance', userId],
     queryFn: async () => {
@@ -147,13 +172,11 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
     enabled: !!userId
   });
 
-  // Fetch batch attendance analytics with history
   const { data: batchData, isLoading: isLoadingBatch } = useQuery({
     queryKey: ['batchAttendance', batchId],
     queryFn: async () => {
       if (!batchId) return null;
       
-      // Get batch analytics
       const analyticsResponse = await apiFetch<{
         overall: {
           total: number;
@@ -178,31 +201,33 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
       
       if (!analyticsResponse.success) throw new Error(analyticsResponse.error);
       
-      // Get attendance history
       const historyResponse = await apiFetch<AttendanceHistoryResponse>(`/attendance/history/${batchId}`);
       
       if (!historyResponse.success) throw new Error(historyResponse.error);
       
-      // Combine analytics with history data
-      return {
+      const combinedData = {
         ...analyticsResponse.data,
-        history: historyResponse.data.data
+        history: historyResponse.data
       };
+      
+      return combinedData;
     },
     enabled: !!batchId
   });
   
-  // Filter history based on user role
   const filteredHistory = useMemo(() => {
-    if (!batchData?.history) return [];
-    
-    // Admins and instructors can see all history
-    if (user?.role === Role.admin || user?.role === Role.instructor) {
-      return batchData.history;
+    if (!batchData?.history || !Array.isArray(batchData.history)) {
+      return [];
     }
-    
-    // Students can only see their own history
-    if (user?.role === Role.student && user?.userId) {
+
+    if (user?.role === Role.admin) {
+      // For admin, show both student and instructor records
+      return batchData.history;
+    } else if (user?.role === Role.instructor) {
+      // For instructor, show only student records
+      return batchData.history.filter(record => record.user.role === Role.student);
+    } else if (user?.role === Role.student && user?.userId) {
+      // For students, show only their own records
       return batchData.history.filter(record => record.user.userId === user.userId);
     }
     
@@ -210,7 +235,7 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
   }, [batchData?.history, user]);
   
   const isLoading = isLoadingStudent || isLoadingBatch;
-  const isError = false; // We handle errors in the query functions
+  const isError = false; 
   
   if (isLoading) {
     return (
@@ -237,7 +262,6 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
     );
   }
   
-  // Render student attendance data
   if (userId && studentData) {
     return (
       <div className="space-y-6">
@@ -363,7 +387,6 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
     );
   }
   
-  // Render batch attendance data
   if (batchId && batchData) {
     return (
       <div className="w-[1200px] space-y-6">
@@ -517,7 +540,6 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="font-medium">{record.user.fullName}</div>
-                            <div className="text-sm text-muted-foreground">{record.user.email}</div>
                           </div>
                           <div className="flex items-center gap-2">
                             {record.status === Status.present && (
@@ -538,13 +560,22 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
                                 <span>Late</span>
                               </div>
                             )}
+                            {record.user.role === Role.instructor && (
+                              <Badge variant="secondary">Instructor</Badge>
+                            )}
                           </div>
                         </div>
                         <div className="text-sm">
-                          <div className="text-muted-foreground">
-                            {format(new Date(record.schedule.scheduleDate), 'PPP')} • {formatTime(record.schedule.startTime)} - {formatTime(record.schedule.endTime)}
+                          <div className="text-muted-foreground">Date & time - {format(new Date(record.schedule.scheduleDate), 'PPP')} • {formatTime(record.schedule.startTime)} - {formatTime(record.schedule.endTime)}
                           </div>
-                          <div className="font-medium mt-1">{record.schedule.topic}</div>
+                          {record.schedule.batch && record.user.role === Role.student && (
+                            <div className="text-muted-foreground mt-1">
+                              Batch: {record.schedule.batch.batchName}
+                              {record.schedule.batch.instructor && (
+                                <span> • Instructor: {record.schedule.batch.instructor.fullName}</span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardContent>

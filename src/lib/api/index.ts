@@ -50,6 +50,7 @@ export {
   getStudentBatches,
   getStudentResources,
   getStudentCourseDetail,
+  getStudentAttendanceHistory,
   submitCourseReview,
   updateCourseReview,
   deleteCourseReview

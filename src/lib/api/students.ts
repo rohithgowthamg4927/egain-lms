@@ -73,6 +73,21 @@ export const getStudentResources = async (studentId: number): Promise<{ success:
   }
 };
 
+// Get attendance history for a student
+export const getStudentAttendanceHistory = async (studentId: number): Promise<{ success: boolean; data?: any[]; error?: string }> => {
+  try {
+    const response = await apiFetch<any[]>(`/attendance/student/${studentId}`);
+    return response;
+  } catch (error) {
+    console.error("getStudentAttendanceHistory error:", error);
+    return {
+      success: false,
+      data: [], // Return empty array as fallback
+      error: error instanceof Error ? error.message : 'Failed to fetch student attendance history'
+    };
+  }
+};
+
 // Submit a course review
 export const submitCourseReview = async (
   studentId: number,

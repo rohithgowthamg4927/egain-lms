@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
-import { getStudentSchedules, getStudentBatches } from '@/lib/api/students';
+import { getStudentSchedules, getStudentBatches, getStudentAttendanceHistory } from '@/lib/api/students';
 import { getAllSchedules } from '@/lib/api/schedules';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,6 @@ export default function StudentSchedules() {
   const { toast } = useToast();
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   
-  // Query for student batches - using the new getStudentBatches function
   const { data: studentBatchesData, isLoading: isBatchesLoading, error: batchesError } = useQuery({
     queryKey: ['studentBatches', user?.userId],
     queryFn: async () => {
@@ -30,7 +29,6 @@ export default function StudentSchedules() {
     enabled: !!user?.userId
   });
   
-  // Get all schedules for batches the student is enrolled in
   const { data: schedulesData, isLoading, error } = useQuery({
     queryKey: ['studentSchedules', studentBatchesData?.data],
     queryFn: async () => {
@@ -40,7 +38,6 @@ export default function StudentSchedules() {
       }
       
       try {
-        // Extract batch IDs from student batches
         const batchIds = studentBatchesData.data
           .filter(sb => sb && sb.batch && sb.batch.batchId)
           .map(sb => sb.batch.batchId);
@@ -50,14 +47,12 @@ export default function StudentSchedules() {
           return { success: true, data: [] };
         }
         
-        // Fetch all schedules for these batches
         const schedulesPromises = batchIds.map(batchId => 
           getAllSchedules({ batchId })
         );
         
         const schedulesResults = await Promise.all(schedulesPromises);
         
-        // Combine all schedules from different batches
         const allSchedules = schedulesResults.flatMap(result => 
           result.success && result.data ? result.data : []
         );
@@ -71,10 +66,8 @@ export default function StudentSchedules() {
     enabled: !!studentBatchesData?.data && Array.isArray(studentBatchesData.data)
   });
   
-  // Safely get schedules array, defaulting to empty array if undefined
   const schedules = schedulesData?.data || [];
   
-  // Group schedules by date
   const groupedSchedules: Record<string, Schedule[]> = {};
   if (Array.isArray(schedules)) {
     schedules.forEach(schedule => {
@@ -88,15 +81,12 @@ export default function StudentSchedules() {
     });
   }
   
-  // Get current week days
   const weekDays = [...Array(7)].map((_, i) => addDays(currentWeekStart, i));
   
-  // Filter schedules for current week
   const currentWeekSchedules = Array.isArray(schedules) ? schedules.filter(schedule => {
     if (!schedule || !schedule.scheduleDate) return false;
     
     const scheduleDate = new Date(schedule.scheduleDate);
-    // Reset time part to compare only dates
     scheduleDate.setHours(0, 0, 0, 0);
     
     return weekDays.some(day => {
@@ -106,14 +96,12 @@ export default function StudentSchedules() {
     });
   }) : [];
   
-  // Filter for upcoming schedules (after current date)
   const upcomingSchedules = Array.isArray(schedules) ? schedules.filter(schedule => {
     if (!schedule || !schedule.scheduleDate || !schedule.startTime) return false;
     
     const scheduleDate = new Date(schedule.scheduleDate);
     const scheduleDateTime = new Date(scheduleDate);
     
-    // Get time parts from startTime
     try {
       if (schedule.startTime.includes('T')) {
         const startTime = new Date(schedule.startTime);
@@ -135,14 +123,12 @@ export default function StudentSchedules() {
     return dateA.getTime() - dateB.getTime();
   }) : [];
   
-  // Filter for past schedules (before current date)
   const pastSchedules = Array.isArray(schedules) ? schedules.filter(schedule => {
     if (!schedule || !schedule.scheduleDate || !schedule.startTime) return false;
     
     const scheduleDate = new Date(schedule.scheduleDate);
     const scheduleDateTime = new Date(scheduleDate);
     
-    // Get time parts from startTime
     try {
       if (schedule.startTime.includes('T')) {
         const startTime = new Date(schedule.startTime);
@@ -172,7 +158,6 @@ export default function StudentSchedules() {
     );
   };
   
-  // Format date to display in UI
   const formatScheduleDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'EEEE, MMMM d, yyyy');
@@ -182,16 +167,13 @@ export default function StudentSchedules() {
     }
   };
   
-  // Modify the formatTime helper function to handle timezone correctly
   const formatTime = (timeString: string) => {
     if (!timeString) return '';
     try {
-      // For full ISO string (from database)
       if (timeString.includes('T')) {
         const date = new Date(timeString);
         return format(date, 'h:mm a');
       }
-      // For time-only string (HH:mm:ss)
       const [hours, minutes] = timeString.split(':').map(Number);
       const date = new Date();
       date.setHours(hours, minutes, 0, 0);
@@ -204,7 +186,6 @@ export default function StudentSchedules() {
   
   const isLoaderShowing = isLoading || isBatchesLoading;
   
-  // Add new query for student attendance analytics with better error handling
   const { data: attendanceData, isLoading: isLoadingAttendance } = useQuery({
     queryKey: ['studentAttendance', user?.userId],
     queryFn: async () => {
@@ -261,7 +242,22 @@ export default function StudentSchedules() {
     enabled: !!user?.userId
   });
   
-  // Show error message if either fetching batches or schedules failed
+  const { data: attendanceHistoryData, isLoading: isLoadingHistory } = useQuery({
+    queryKey: ['studentAttendanceHistory', user?.userId],
+    queryFn: async () => {
+      if (!user?.userId) return null;
+      try {
+        const response = await getStudentAttendanceHistory(user.userId);
+        if (!response.success) throw new Error(response.error);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching attendance history:", error);
+        return null;
+      }
+    },
+    enabled: !!user?.userId
+  });
+  
   if (batchesError || error) {
     const errorMessage = batchesError instanceof Error 
       ? batchesError.message 
@@ -572,14 +568,18 @@ export default function StudentSchedules() {
                 </Card>
               )}
 
-              {Array.isArray(attendanceData.history) && attendanceData.history.length > 0 ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Attendance History</CardTitle>
-                  </CardHeader>
-                  <CardContent>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Attendance History</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingHistory ? (
+                    <div className="flex items-center justify-center py-6">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
+                  ) : Array.isArray(attendanceHistoryData) && attendanceHistoryData.length > 0 ? (
                     <div className="space-y-4">
-                      {attendanceData.history.map((record) => (
+                      {attendanceHistoryData.map((record) => (
                         <div key={record.attendanceId} className="border rounded-lg p-4">
                           <div className="flex justify-between items-start">
                             <div className="space-y-1">
@@ -620,22 +620,20 @@ export default function StudentSchedules() {
                             </div>
                           </div>
                           <div className="mt-2 text-xs text-muted-foreground">
-                            Marked by {record.markedByUser?.fullName || 'Unknown'} 
-                            ({record.markedByUser?.role || 'User'}) on 
-                            {record.markedAt && format(new Date(record.markedAt), ' PPP p')}
+                            Marked by: {record.markedByUser?.fullName || 'Unknown'} 
+                            ({record.markedByUser?.role || 'User'}) 
+                            {record.createdAt && format(new Date(record.createdAt), ' PPP p')}
                           </div>
                         </div>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card>
-                  <CardContent className="py-8 text-center text-muted-foreground">
-                    No attendance history available
-                  </CardContent>
-                </Card>
-              )}
+                  ) : (
+                    <div className="py-8 text-center text-muted-foreground">
+                      No attendance history available
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           ) : (
             <Card>

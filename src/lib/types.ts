@@ -1,3 +1,4 @@
+
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -292,4 +293,69 @@ export interface APIResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+}
+
+// Export AttendanceAnalytics interface to be used across the application
+export interface AttendanceAnalytics {
+  overall: {
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+    percentage: number;
+  };
+  byBatch?: Array<{
+    batchId: number;
+    batchName: string;
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+    percentage: number;
+    scheduleDate?: string;
+    startTime?: string;
+    endTime?: string;
+  }>;
+  students?: Array<{
+    userId: number;
+    fullName: string;
+    email: string;
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+    percentage: number;
+  }>;
+  history?: Array<{
+    attendanceId: number;
+    scheduleId: number;
+    userId: number;
+    status: Status;
+    markedAt: string;
+    user: {
+      userId: number;  
+      fullName: string;
+      email: string;
+      role: Role;
+    };
+    schedule: {
+      topic: string;
+      scheduleDate: string;
+      startTime: string;
+      endTime: string;
+      batch?: {      
+        batchName: string;
+        instructor?: {
+          fullName: string;
+        };
+      };
+    };
+    markedByUser: {
+      fullName: string;
+      email: string;
+      role: Role;
+    };
+  }>;
+  totalClasses?: number;
+  totalStudents?: number;
 }

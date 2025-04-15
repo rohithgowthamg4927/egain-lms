@@ -40,3 +40,6 @@ export {
   getInstructorSchedules,
   getInstructorBatches
 } from './instructors';
+
+// Re-export attendance service functions
+export * from '../services/attendance.service';

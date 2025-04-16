@@ -109,6 +109,7 @@ export default function StudentCourses() {
         throw new Error(response.error || 'Failed to submit review');
       }
     } catch (error) {
+      console.error('Error submitting review:', error);
       toast({
         title: 'Error',
         description: 'Failed to submit your review',
@@ -143,6 +144,7 @@ export default function StudentCourses() {
         throw new Error(response.error || 'Failed to update review');
       }
     } catch (error) {
+      console.error('Error updating review:', error);
       toast({
         title: 'Error',
         description: 'Failed to update your review',
@@ -175,6 +177,7 @@ export default function StudentCourses() {
         throw new Error(response.error || 'Failed to delete review');
       }
     } catch (error) {
+      console.error('Error deleting review:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete your review',

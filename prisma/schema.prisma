@@ -142,7 +142,7 @@ model Schedule {
   topic        String?   @map("topic")
   platform     String?   @map("platform")
   scheduleDate DateTime  @default(now()) @map("schedule_date") @db.Timestamp(6)
-  batch        Batch?    @relation("BatchSchedules", fields: [batchId], references: [batchId], onDelete: Cascade)
+  batch        Batch?    @relation("BatchSchedules", fields: [batchId], references: [batchId])
   attendances  Attendance[] @relation("ScheduleAttendance")
 
   @@map("schedules")
@@ -189,7 +189,7 @@ model Attendance {
   markedBy       Int       @map("marked_by")
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
-  schedule       Schedule  @relation("ScheduleAttendance", fields: [scheduleId], references: [scheduleId], onDelete: Cascade)
+  schedule       Schedule  @relation("ScheduleAttendance", fields: [scheduleId], references: [scheduleId])
   user           User      @relation("UserAttendance", fields: [userId], references: [userId])
   markedByUser   User      @relation("AttendanceMarkedBy", fields: [markedBy], references: [userId])
 

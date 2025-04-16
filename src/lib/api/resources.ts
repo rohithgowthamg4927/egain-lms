@@ -22,6 +22,7 @@ export const createResource = async (resourceData: Partial<Resource>): Promise<{
 
 // Enhanced delete resource function that ensures S3 deletion
 export const deleteResource = async (resourceId: number): Promise<{ success: boolean; error?: string }> => {
+  // console.log(`Deleting resource with ID: ${resourceId}`);
   return apiFetch(`/resources/${resourceId}`, {
     method: 'DELETE',
   });

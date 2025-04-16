@@ -86,6 +86,7 @@ const ManageStudents = () => {
           });
         }
       } catch (error) {
+        //console.error('Error fetching data:', error);
         toast({
           title: 'Error',
           description: 'An unexpected error occurred',
@@ -144,6 +145,7 @@ const ManageStudents = () => {
         });
       }
     } catch (error) {
+      //console.error('Error enrolling students:', error);
       toast({
         title: 'Error',
         description: 'Failed to enroll students',

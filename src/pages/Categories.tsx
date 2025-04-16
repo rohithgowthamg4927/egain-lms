@@ -90,6 +90,7 @@ const Categories = () => {
         });
       }
     } catch (error) {
+      console.error('Error fetching data:', error);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred while fetching data',
@@ -149,6 +150,7 @@ const Categories = () => {
         });
       }
     } catch (error) {
+      //console.error('Error creating category:', error);
       toast({
         title: 'Error',
         description: 'Failed to create category',
@@ -198,6 +200,7 @@ const Categories = () => {
         });
       }
     } catch (error) {
+      //console.error('Error updating category:', error);
       toast({
         title: 'Error',
         description: 'Failed to update category',
@@ -254,6 +257,7 @@ const Categories = () => {
         });
       }
     } catch (error) {
+      //console.error('Error deleting category:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete category',

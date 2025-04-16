@@ -23,6 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
+git.txt
 
 # AWS credentials
 .env
@@ -31,9 +32,17 @@ backend/docs
 
 migrations
 docs/
+scripts/
 
+MANUAL_INSTALL.md
+DATABASE_SETUP.md
+RESOLVING_DATABASE_CONFLICTS.md
+SETUP_GUIDE.md
+make-scripts-executable.sh
+schema.txt
+start-app.sh
+schema.prisma.backup
 
 .git.bak
-PRODUCTION_DEPLOYMENT.md
-schema.prisma.backup
-start-app.sh
+
+Attendance.md

@@ -3,9 +3,16 @@ import { useQuery } from '@tanstack/react-query';
 import { getDashboardMetrics } from '@/lib/api/dashboard';
 import DashboardMetrics from '@/components/dashboard/DashboardMetrics';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
+import { useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 
 const Dashboard = () => {
+  const { user, isAuthenticated } = useAuth();
+  
+  // Add logging to help debug
+  // useEffect(() => {
+  //   //console.log("Dashboard rendering - Auth state:", { user, isAuthenticated });
+  // }, [user, isAuthenticated]);
 
   // Fetch dashboard metrics
   const metricsQuery = useQuery({
@@ -16,6 +23,15 @@ const Dashboard = () => {
   const isLoading = metricsQuery.isLoading;
   const isError = metricsQuery.isError;
   const dashboardData = metricsQuery.data?.data;
+
+  // useEffect(() => {
+  //   console.log("Dashboard data loading state:", { 
+  //     isLoading, 
+  //     isError, 
+  //     errorMessage: metricsQuery.error ? String(metricsQuery.error) : null,
+  //     dashboardData 
+  //   });
+  // }, [isLoading, isError, metricsQuery.error, dashboardData]);
 
   return (
     <div className="space-y-6 w-full">

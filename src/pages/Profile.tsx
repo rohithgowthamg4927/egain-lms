@@ -47,6 +47,7 @@ const Profile: React.FC<ProfileProps> = ({ noHeader = false }) => {
           });
         }
       } catch (err) {
+        //console.error('Error fetching user:', err);
         setError('An error occurred while fetching user data');
         toast({
           title: 'Error',

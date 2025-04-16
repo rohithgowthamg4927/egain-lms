@@ -80,6 +80,7 @@ export const getStudentAttendanceHistory = async (studentId: number): Promise<{ 
     const studentBatches = await getStudentBatches(studentId);
     
     if (!studentBatches.success || !studentBatches.data || !Array.isArray(studentBatches.data) || studentBatches.data.length === 0) {
+      console.log("No batches found for student:", studentId);
       return { success: true, data: [] };
     }
     

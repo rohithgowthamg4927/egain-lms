@@ -26,6 +26,7 @@ const EditCourse = () => {
       if (!parsedCourseId) {
         throw new Error('Course ID is required');
       }
+      //console.log('Fetching course for edit with ID:', parsedCourseId);
       return getCourseById(parsedCourseId);
     },
     enabled: !!parsedCourseId
@@ -34,6 +35,7 @@ const EditCourse = () => {
   const handleSubmit = async (formData: any) => {
     if (!parsedCourseId) return;
     
+    // console.log('Updating course with data:', formData);
     setIsSubmitting(true);
     try {
       const response = await updateCourse(parsedCourseId, formData);
@@ -62,6 +64,7 @@ const EditCourse = () => {
         });
       }
     } catch (error) {
+      //console.error('Error updating course:', error);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred',
@@ -75,6 +78,13 @@ const EditCourse = () => {
   const isLoading = courseQuery.isLoading;
   const isError = courseQuery.isError;
   const course = courseQuery.data?.data;
+
+  // console.log('EditCourse - courseQuery result:', {
+  //   isLoading,
+  //   isError,
+  //   course,
+  //   error: courseQuery.error
+  // });
 
   if (isError) {
     return (

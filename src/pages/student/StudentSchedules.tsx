@@ -35,6 +35,7 @@ export default function StudentSchedules() {
     queryKey: ['studentSchedules', studentBatchesData?.data],
     queryFn: async () => {
       if (!studentBatchesData?.success || !studentBatchesData.data || !Array.isArray(studentBatchesData.data)) {
+        console.log("No valid batch data found:", studentBatchesData);
         return { success: true, data: [] };
       }
       
@@ -44,6 +45,7 @@ export default function StudentSchedules() {
           .map(sb => sb.batch.batchId);
         
         if (batchIds.length === 0) {
+          console.log("No batch IDs found");
           return { success: true, data: [] };
         }
         
@@ -59,6 +61,7 @@ export default function StudentSchedules() {
         
         return { success: true, data: allSchedules };
       } catch (error) {
+        console.error("Error fetching schedules:", error);
         return { success: false, data: [], error: String(error) };
       }
     },
@@ -113,6 +116,7 @@ export default function StudentSchedules() {
       const now = new Date();
       return scheduleDateTime > now;
     } catch (error) {
+      console.error("Error parsing time:", error);
       return false;
     }
   }).sort((a, b) => {
@@ -139,6 +143,7 @@ export default function StudentSchedules() {
       const now = new Date();
       return scheduleDateTime <= now;
     } catch (error) {
+      console.error("Error parsing time:", error);
       return false;
     }
   }).sort((a, b) => {

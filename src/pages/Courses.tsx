@@ -70,7 +70,6 @@ const Courses = () => {
   useEffect(() => {
     // Show errors if data fetching fails
     if (coursesQuery.isError) {
-      //console.error('Courses query error:', coursesQuery.error);
       toast({
         title: 'Error',
         description: 'Failed to fetch courses. Please try refreshing the page.',
@@ -79,7 +78,6 @@ const Courses = () => {
     }
 
     if (categoriesQuery.isError) {
-      //console.error('Categories query error:', categoriesQuery.error);
       toast({
         title: 'Error',
         description: 'Failed to fetch categories. Please try refreshing the page.',
@@ -169,7 +167,6 @@ const Courses = () => {
         });
       }
     } catch (error) {
-      //console.error('Error deleting course:', error);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred',
@@ -217,7 +214,6 @@ const Courses = () => {
         });
       }
     } catch (error) {
-     // console.error('Error creating category:', error);
       toast({
         title: 'Error',
         description: 'Failed to create category',

@@ -180,7 +180,6 @@ const Schedules = () => {
       date.setHours(hours, minutes);
       return format(date, 'h:mm a');
     } catch (error) {
-      console.error('Error formatting time:', error);
       return timeString;
     }
   };

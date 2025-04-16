@@ -153,7 +153,6 @@ export default function StudentDashboard() {
       date.setHours(hours, minutes, 0, 0);
       return format(date, 'h:mm a');
     } catch (error) {
-      console.error('Error formatting time:', error);
       return timeString;
     }
   };
@@ -162,7 +161,6 @@ export default function StudentDashboard() {
     try {
       return format(new Date(dateString), 'PPP');
     } catch (error) {
-      console.error('Error formatting date:', error);
       return dateString;
     }
   };

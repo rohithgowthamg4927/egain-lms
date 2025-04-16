@@ -32,18 +32,9 @@ const LoginForm = () => {
         return;
       }
       
-      // console.log("Attempting login with:", { email, password, role });
-      
-      // // Add some debugging output
-      // const authToken = localStorage.getItem('authToken');
-      // const storedUser = localStorage.getItem('currentUser');
-      // console.log("Before login - Auth token exists:", !!authToken);
-      // console.log("Before login - User exists:", !!storedUser);
-      
       const success = await login(email, password, role);
       
       if (success) {
-        console.log("Login successful, redirecting to dashboard from form");
         toast({
           title: "Login successful",
           description: "Welcome to the LMS system",
@@ -53,7 +44,6 @@ const LoginForm = () => {
         const userStr = localStorage.getItem('currentUser');
         if (userStr) {
           const user = JSON.parse(userStr);
-          // console.log('User in localStorage after login:', user);
           
           // Redirect based on role
           if (user.role === Role.student) {
@@ -63,7 +53,6 @@ const LoginForm = () => {
           }
         }
       } else {
-        console.log("Login failed");
         setErrorMessage("Invalid credentials. Please check your email, password, and role.");
         toast({
           title: "Login failed",

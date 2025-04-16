@@ -15,19 +15,6 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
-  // Add detailed logging
-  // useEffect(() => {
-  //   console.log("ProtectedRoute Debug:", {
-  //     isAuthenticated,
-  //     isLoading,
-  //     userRole: user?.role,
-  //     allowedRoles,
-  //     currentPath: location.pathname,
-  //     hasUser: !!user
-  //   });
-  // }, [isAuthenticated, isLoading, user, allowedRoles, location.pathname]);
-
-  // While checking authentication, show a loading placeholder
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -42,13 +29,11 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
 
   // If not authenticated, redirect to login
   if (!isAuthenticated) {
-    //console.log("Not authenticated, redirecting to login");
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   // If no user data, redirect to login
   if (!user) {
-    //console.log("No user data, redirecting to login");
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
@@ -56,7 +41,6 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   if (allowedRoles && allowedRoles.length > 0) {
     // If user role is not in allowed roles, handle accordingly
     if (!allowedRoles.includes(user.role)) {
-      //console.log(`User role ${user.role} not allowed, redirecting to appropriate dashboard`);
       
       // If student trying to access admin/instructor route, redirect to student dashboard
       if (user.role === Role.student) {
@@ -76,12 +60,10 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const isAdminRoute = !isStudentRoute && !isInstructorRoute;
   
   if (user.role === Role.student && !isStudentRoute) {
-    // console.log("Student trying to access non-student route, redirecting to student dashboard");
     return <Navigate to="/student/dashboard" replace />;
   }
   
   if (user.role === Role.instructor && isStudentRoute) {
-    //console.log("Instructor trying to access student route, redirecting to instructor dashboard");
     return <Navigate to="/instructor/dashboard" replace />;
   }
   
@@ -101,15 +83,10 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     // Some admin routes are allowed for instructors, but only as specified in App.tsx
     // For those we let the allowedRoles check handle access control
     if (!isAllowedPath) {
-      // console.log("Instructor trying to access admin route, redirecting to instructor dashboard");
       return <Navigate to="/instructor/dashboard" replace />;
     }
   }
   
-  // Admin can access all routes, so no need to check for admin role here
-
-  // If authenticated and authorized, render the layout
-  // console.log("Rendering protected route with layout");
   return (
     <div className="min-h-screen bg-background">
       <div className="flex h-full">

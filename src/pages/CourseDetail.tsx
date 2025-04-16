@@ -98,7 +98,6 @@ const CourseDetail = () => {
         });
       }
     } catch (error) {
-      //console.error('Error deleting course:', error);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred',
@@ -110,13 +109,6 @@ const CourseDetail = () => {
   };
 
   const isLoading = isCourseLoading;
-
-  // console.log('CourseDetail - course data:', {
-  //   isLoading,
-  //   isError,
-  //   course,
-  //   batches
-  // });
 
   const getLevelLabel = (level: Level): string => {
     const labels: Record<Level, string> = {

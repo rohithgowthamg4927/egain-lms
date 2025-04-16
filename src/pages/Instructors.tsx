@@ -43,15 +43,12 @@ const Instructors = () => {
     setIsLoading(true);
     
     try {
-      //console.log('Fetching instructors...');
       const response = await getUsers(Role.instructor);
-      //console.log('Response:', response);
       
       if (response.success && response.data) {
         const instructorsList = Array.isArray(response.data) ? response.data : [response.data];
         setInstructors(instructorsList);
       } else {
-        //console.error('API error:', response.error);
         toast({
           title: 'Error',
           description: response.error || 'Failed to fetch instructors',
@@ -59,7 +56,6 @@ const Instructors = () => {
         });
       }
     } catch (error) {
-      //console.error('Error fetching data:', error);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred while fetching instructors',
@@ -84,7 +80,6 @@ const Instructors = () => {
         setBatchesCount(batchesData.length);
       }
     } catch (error) {
-      //console.error('Error fetching data:', error);
     }
   };
 
@@ -97,7 +92,6 @@ const Instructors = () => {
         setStudentsCount(studentsData.length);
       }
     } catch (error) {
-      //console.error('Error fetching students count:', error);
     }
   };
   
@@ -125,7 +119,6 @@ const Instructors = () => {
     if (!instructorToDelete) return;
     
     try {
-      //console.log(`Deleting instructor with ID: ${instructorToDelete.userId}`);
       
       const response = await deleteUser(instructorToDelete.userId);
       
@@ -144,7 +137,6 @@ const Instructors = () => {
       setShowDeleteDialog(false);
       setInstructorToDelete(null);
     } catch (error) {
-      //console.error('Error deleting instructor:', error);
       toast({
         title: 'Error deleting instructor',
         description: error instanceof Error ? error.message : 'An unexpected error occurred',

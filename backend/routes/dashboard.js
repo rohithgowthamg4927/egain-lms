@@ -1,5 +1,6 @@
+import pkg from '@prisma/client';
+const { PrismaClient, Role } = pkg;
 import express from 'express';
-import { PrismaClient, Role } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
 
 const router = express.Router();

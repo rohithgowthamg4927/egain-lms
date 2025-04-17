@@ -18,15 +18,15 @@ model User {
   createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime?          @default(now()) @map("updated_at") @db.Timestamptz(6)
   address           String?
+  markedAttendances Attendance[]       @relation("AttendanceMarkedBy")
+  attendances       Attendance[]       @relation("UserAttendance")
   batches           Batch[]            @relation("BatchInstructor")
   courseReviews     CourseReview[]     @relation("UserReviews")
   instructorCourses InstructorCourse[] @relation("InstructorForCourse")
   profilePicture    ProfilePicture?
+  uploadedResources Resource[]         @relation("ResourceUploader")
   studentBatches    StudentBatch[]     @relation("StudentInBatch")
   studentCourses    StudentCourse[]    @relation("StudentInCourse")
-  uploadedResources Resource[]         @relation("ResourceUploader")
-  attendances       Attendance[]       @relation("UserAttendance")
-  markedAttendances Attendance[]       @relation("AttendanceMarkedBy")
 
   @@map("users")
 }
@@ -85,9 +85,9 @@ model Batch {
   updatedAt    DateTime?      @default(now()) @map("updated_at") @db.Timestamptz(6)
   course       Course?        @relation("CourseBatch", fields: [courseId], references: [courseId])
   instructor   User?          @relation("BatchInstructor", fields: [instructorId], references: [userId])
+  resources    Resource[]     @relation("BatchResources")
   schedules    Schedule[]     @relation("BatchSchedules")
   students     StudentBatch[] @relation("BatchStudents")
-  resources    Resource[]     @relation("BatchResources")
 
   @@map("batches")
 }
@@ -132,34 +132,34 @@ model InstructorCourse {
 }
 
 model Schedule {
-  scheduleId   Int       @id @default(autoincrement()) @map("schedule_id")
-  batchId      Int?      @map("batch_id")
-  startTime    DateTime  @map("start_time") @db.Time(6)
-  endTime      DateTime  @map("end_time") @db.Time(6)
-  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
-  meetingLink  String?   @map("meeting_link")
-  topic        String?   @map("topic")
-  platform     String?   @map("platform")
-  scheduleDate DateTime  @default(now()) @map("schedule_date") @db.Timestamp(6)
-  batch        Batch?    @relation("BatchSchedules", fields: [batchId], references: [batchId], onDelete: Cascade)
+  scheduleId   Int          @id @default(autoincrement()) @map("schedule_id")
+  batchId      Int?         @map("batch_id")
+  startTime    DateTime     @map("start_time") @db.Time(6)
+  endTime      DateTime     @map("end_time") @db.Time(6)
+  createdAt    DateTime?    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime?    @default(now()) @map("updated_at") @db.Timestamptz(6)
+  meetingLink  String?      @map("meeting_link")
+  topic        String?      @map("topic")
+  platform     String?      @map("platform")
+  scheduleDate DateTime     @default(now()) @map("schedule_date") @db.Timestamp(6)
   attendances  Attendance[] @relation("ScheduleAttendance")
+  batch        Batch?       @relation("BatchSchedules", fields: [batchId], references: [batchId], onDelete: Cascade)
 
   @@map("schedules")
 }
 
 model Resource {
-  resourceId      Int       @id @default(autoincrement()) @map("resource_id")
-  title           String    @db.VarChar(255)
-  description     String?   @db.Text
-  fileName        String    @map("file_name") @db.VarChar(255)
-  fileUrl         String    @map("file_url") @db.VarChar(255)
-  batchId         Int       @map("batch_id")
-  uploadedById    Int       @map("uploaded_by_id")
-  createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
-  batch           Batch     @relation("BatchResources", fields: [batchId], references: [batchId])
-  uploadedBy      User      @relation("ResourceUploader", fields: [uploadedById], references: [userId])
+  resourceId   Int       @id @default(autoincrement()) @map("resource_id")
+  title        String    @db.VarChar(255)
+  description  String?
+  fileName     String    @map("file_name") @db.VarChar(255)
+  fileUrl      String    @map("file_url") @db.VarChar(255)
+  batchId      Int       @map("batch_id")
+  uploadedById Int       @map("uploaded_by_id")
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  batch        Batch     @relation("BatchResources", fields: [batchId], references: [batchId])
+  uploadedBy   User      @relation("ResourceUploader", fields: [uploadedById], references: [userId])
 
   @@index([batchId])
   @@index([uploadedById])
@@ -182,16 +182,16 @@ model CourseReview {
 }
 
 model Attendance {
-  attendanceId    Int       @id @default(autoincrement()) @map("attendance_id")
-  scheduleId     Int       @map("schedule_id")
-  userId         Int       @map("user_id")
-  status         Status    @default(present)
-  markedBy       Int       @map("marked_by")
-  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
-  schedule       Schedule  @relation("ScheduleAttendance", fields: [scheduleId], references: [scheduleId], onDelete: Cascade)
-  user           User      @relation("UserAttendance", fields: [userId], references: [userId])
-  markedByUser   User      @relation("AttendanceMarkedBy", fields: [markedBy], references: [userId])
+  attendanceId Int      @id @default(autoincrement()) @map("attendance_id")
+  scheduleId   Int      @map("schedule_id")
+  userId       Int      @map("user_id")
+  status       Status   @default(present)
+  markedBy     Int      @map("marked_by")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  markedByUser User     @relation("AttendanceMarkedBy", fields: [markedBy], references: [userId])
+  schedule     Schedule @relation("ScheduleAttendance", fields: [scheduleId], references: [scheduleId], onDelete: Cascade)
+  user         User     @relation("UserAttendance", fields: [userId], references: [userId])
 
   @@unique([scheduleId, userId])
   @@map("attendances")

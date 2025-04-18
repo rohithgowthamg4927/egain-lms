@@ -37,3 +37,5 @@ docs/
 PRODUCTION_DEPLOYMENT.md
 schema.prisma.backup
 start-app.sh
+
+Dockerfile

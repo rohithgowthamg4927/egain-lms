@@ -1,12 +1,11 @@
-
 import { S3Client, PutObjectCommand, ObjectCannedACL } from '@aws-sdk/client-s3';
 
 // Initialize S3 client
-const s3Client = new S3Client({
+const s3 = new S3Client({
   region: import.meta.env.AWS_REGION || 'ap-south-1',
   credentials: {
-    accessKeyId: import.meta.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: import.meta.env.AWS_SECRET_ACCESS_KEY || '',
+    accessKeyId: import.meta.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: import.meta.env.AWS_SECRET_ACCESS_KEY,
   },
 });
 
@@ -26,7 +25,7 @@ export async function uploadFileToS3(
       ACL: 'public-read' as ObjectCannedACL,
     };
 
-    await s3Client.send(new PutObjectCommand(params));
+    await s3.send(new PutObjectCommand(params));
     
     // Return the public URL
     return `https://${params.Bucket}.s3.${import.meta.env.AWS_REGION || 'ap-south-1'}.amazonaws.com/${fileName}`;

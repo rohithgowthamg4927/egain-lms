@@ -13,8 +13,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION,
+const s3 = new S3Client({
+  region: process.env.AWS_REGION || 'ap-south-1',
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -48,7 +48,7 @@ export const initiateMultipartUpload = async (batchName, resourceType, fileName)
   });
 
   try {
-    const response = await s3Client.send(command);
+    const response = await s3.send(command);
     
     if (!response.UploadId) {
       throw new Error('Failed to get upload ID from S3');
@@ -79,7 +79,7 @@ export const uploadPart = async (key, uploadId, partNumber, body) => {
   });
 
   try {
-    const response = await s3Client.send(command);
+    const response = await s3.send(command);
     return {
       ETag: response.ETag,
       PartNumber: partNumber,
@@ -101,7 +101,7 @@ export const completeMultipartUpload = async (key, uploadId, parts) => {
   });
 
   try {
-    const response = await s3Client.send(command);
+    const response = await s3.send(command);
     return response.Location;
   } catch (error) {
     throw error;
@@ -117,7 +117,7 @@ export const abortMultipartUpload = async (key, uploadId) => {
   });
 
   try {
-    await s3Client.send(command);
+    await s3.send(command);
   } catch (error) {
     throw error;
   }
@@ -135,7 +135,7 @@ export const uploadFile = async (batchName, resourceType, fileName, fileBuffer) 
   });
 
   try {
-    await s3Client.send(command);
+    await s3.send(command);
     return key;
   } catch (error) {
     throw error;
@@ -152,7 +152,7 @@ export const getPresignedUrl = async (key, expiresIn = 7200) => {
   //pre-signed url expires in 2 hours.
 
   try {
-    return await getSignedUrl(s3Client, command, { expiresIn });
+    return await getSignedUrl(s3, command, { expiresIn });
   } catch (error) {
     throw error;
   }
@@ -203,7 +203,7 @@ export const deleteFile = async (fileUrl) => {
       Key: key,
     });
 
-    await s3Client.send(command);
+    await s3.send(command);
     return true;
   } catch (error) {
     throw error;

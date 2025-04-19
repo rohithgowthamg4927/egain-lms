@@ -306,12 +306,18 @@ export default function Sidebar({ className }: SidebarProps) {
               <SheetDescription className="sr-only">Main navigation menu for the application</SheetDescription>
             </SheetHeader>
             <div className="flex h-16 items-center border-b px-4">
-              <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
-                <div className="flex items-center">
-                  <div className="text-blue-600 text-2xl font-bold">e</div>
-                  <div className="text-blue-600 text-2xl font-bold">gain</div>
-                </div>
-              </Link>
+              <a
+                href="https://e-gain.co.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-full"
+              >
+              <img
+                src="/egain-logo.jpeg"
+                alt="e-Gain Logo"
+                className="h-10 object-contain bg-white"
+              />
+             </a>
             </div>
             <ScrollArea className="h-[calc(100vh-4rem)] pb-10">
               <div className="px-2">

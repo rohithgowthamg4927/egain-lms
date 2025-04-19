@@ -15,7 +15,7 @@ const Login = () => {
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/health');
+        const response = await fetch('http://13.203.91.192:3001/api/health');
         if (!response.ok) {
           setServerError('Backend server is not responding properly');
         }

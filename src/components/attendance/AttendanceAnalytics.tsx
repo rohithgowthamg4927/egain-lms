@@ -410,7 +410,7 @@ const AttendanceAnalytics = ({ userId, batchId }: AttendanceAnalyticsProps) => {
   
   if (batchId && batchData) {
     return (
-      <div className="w-[1200px] space-y-6">
+      <div className="w-full max-w-[1200px] px-4 space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="overview">Overview</TabsTrigger>

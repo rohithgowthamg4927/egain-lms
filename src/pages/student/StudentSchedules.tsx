@@ -289,7 +289,7 @@ export default function StudentSchedules() {
         <h1 className="text-3xl font-bold">My Schedule</h1>
       </div>
       
-      <Tabs defaultValue="weekly" className="w-full">
+      <Tabs defaultValue="weekly" className="w-full max-w-[1200px] px-4 space-y-6">
         <TabsList className="mb-4">
           <TabsTrigger value="weekly">Weekly</TabsTrigger>
           <TabsTrigger value="upcoming">Upcoming</TabsTrigger>

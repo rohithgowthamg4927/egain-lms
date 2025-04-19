@@ -8,7 +8,7 @@ import crypto from 'crypto';
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Helper function to generate random password
+//Random Password generation helper
 const generateRandomPassword = (length = 8) => {
   const uppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   const lowercase = "abcdefghijkmnpqrstuvwxyz";
@@ -66,7 +66,7 @@ router.get('/:id', async (req, res) => {
     }
     
     const user = await prisma.User.findUnique({
-      where: { userId: userId },  // Make sure userId is explicitly provided
+      where: { userId: userId },  //userId should be explicitly provided
       include: {
         profilePicture: true
       }
@@ -88,7 +88,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create a new user
+//Create a new user
 router.post('/', async (req, res) => {
   try {
     const { 
@@ -101,7 +101,7 @@ router.post('/', async (req, res) => {
       mustResetPassword 
     } = req.body;
     
-    // Check if email already exists
+    //Check if email already exists
     const existingUser = await prisma.User.findUnique({
       where: { email }
     });
@@ -113,7 +113,6 @@ router.post('/', async (req, res) => {
       });
     }
     
-    // Create user without hashing password as requested
     const user = await prisma.User.create({
       data: {
         fullName,
@@ -137,7 +136,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Update a user
+//Update user details
 router.put('/:id', async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
@@ -151,7 +150,7 @@ router.put('/:id', async (req, res) => {
       mustResetPassword
     } = req.body;
     
-    // Check if user exists
+    //Check if user exists
     const existingUser = await prisma.User.findUnique({
       where: { userId }
     });
@@ -163,7 +162,7 @@ router.put('/:id', async (req, res) => {
       });
     }
     
-    // If email is being changed, check if new email is already in use
+    //If email is being changed, check if new email is already in use
     if (email && email !== existingUser.email) {
       const userWithSameEmail = await prisma.User.findUnique({
         where: { email }
@@ -177,7 +176,6 @@ router.put('/:id', async (req, res) => {
       }
     }
     
-    // Prepare update data
     const updateData = {
       ...(fullName !== undefined && { fullName }),
       ...(email !== undefined && { email }),
@@ -189,7 +187,7 @@ router.put('/:id', async (req, res) => {
       updatedAt: new Date()
     };
     
-    // Update user
+    //Update user
     const updatedUser = await prisma.User.update({
       where: { userId },
       data: updateData
@@ -204,12 +202,12 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete a user
+//Delete a user
 router.delete('/:id', async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
     
-    // Check if user exists
+    //Check if user exists
     const user = await prisma.User.findUnique({
       where: { userId }
     });
@@ -221,14 +219,14 @@ router.delete('/:id', async (req, res) => {
       });
     }
     
-    // Check if user is an instructor with assigned batches
+    //Check if user is an instructor with assigned batches
     if (user.role === 'instructor') {
       const associatedBatches = await prisma.Batch.findMany({
         where: { instructorId: userId }
       });
       
       if (associatedBatches.length > 0) {
-        // Update the instructorId to null for all batches this instructor is assigned to
+        //Update instructorId to null for all batches this instructor is assigned to
         await prisma.Batch.updateMany({
           where: { instructorId: userId },
           data: { instructorId: null }
@@ -236,7 +234,7 @@ router.delete('/:id', async (req, res) => {
       }
     }
     
-    // Remove student enrollments if user is a student
+    //Remove student enrollments if user is a student
     if (user.role === 'student') {
       await prisma.StudentBatch.deleteMany({
         where: { studentId: userId }
@@ -246,15 +244,14 @@ router.delete('/:id', async (req, res) => {
         where: { studentId: userId }
       });
     }
-    
-    // Delete profile picture if exists
+
     if (user.profilePictureId) {
       await prisma.file.delete({
         where: { fileId: user.profilePictureId }
       });
     }
     
-    // Delete user
+    //Delete user
     await prisma.User.delete({
       where: { userId }
     });
@@ -267,12 +264,12 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// Regenerate password for a user
+//Regenerate password
 router.post('/:id/regenerate-password', async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
     
-    // Check if user exists
+    //Check if user exists
     const user = await prisma.User.findUnique({
       where: { userId }
     });
@@ -284,10 +281,10 @@ router.post('/:id/regenerate-password', async (req, res) => {
       });
     }
     
-    // Generate new password
+    //Generate new password
     const newPassword = generateRandomPassword(10);
     
-    // Update user with new password
+    //Update user with new password
     await prisma.User.update({
       where: { userId },
       data: { 

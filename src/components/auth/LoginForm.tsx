@@ -10,8 +10,8 @@ import { Role } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
 const LoginForm = () => {
-  const [email, setEmail] = useState("admin@lms.com");
-  const [password, setPassword] = useState("Admin@123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [role, setRole] = useState<Role | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -45,7 +45,6 @@ const LoginForm = () => {
         if (userStr) {
           const user = JSON.parse(userStr);
           
-          // Redirect based on role
           if (user.role === Role.student) {
             navigate('/student/dashboard');
           } else {

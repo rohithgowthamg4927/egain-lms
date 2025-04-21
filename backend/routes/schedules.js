@@ -1,6 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
+import { format } from 'date-fns';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -41,8 +42,15 @@ router.get('/', async (req, res) => {
       },
       orderBy: { startTime: 'asc' }
     });
-    
-    res.json({ success: true, data: schedules });
+
+    // Format the times after fetching
+    const formattedSchedules = schedules.map(schedule => ({
+      ...schedule,
+      startTime: format(schedule.startTime, 'HH:mm'),
+      endTime: format(schedule.endTime, 'HH:mm')
+    }));
+
+    res.json({ success: true, data: formattedSchedules });
   } catch (error) {
     handleApiError(res, error);
   }

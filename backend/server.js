@@ -31,7 +31,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middlewares
 app.use(cors({
-  origin: '*',
+  origin: 'https://lms.e-gain.co.in',
   credentials: true
 }));
 app.use(express.json());

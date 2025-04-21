@@ -177,6 +177,22 @@ const ScheduleForm = ({
     setSessions(sessions.filter(s => s.id !== sessionId));
   };
 
+  const formatTime = (timeString: string) => {
+    if (!timeString) return '';
+    try {
+      // If it's already in HH:mm format
+      if (timeString.length === 5 && timeString.includes(':')) {
+        return timeString;
+      }
+      // If it's a full date string
+      const date = new Date(timeString);
+      return format(date, 'HH:mm');
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return timeString;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Form {...form}>
@@ -399,7 +415,7 @@ const ScheduleForm = ({
                               <span className="text-muted-foreground">Date:</span> {format(new Date(session.scheduleDate), 'MMM d, yyyy')}
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Time:</span> {session.startTime} - {session.endTime}
+                              <span className="text-muted-foreground">Time:</span> {formatTime(session.startTime)} - {formatTime(session.endTime)}
                             </div>
                             <div className="truncate">
                               <span className="text-muted-foreground">Link:</span> {session.meetingLink}

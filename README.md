@@ -1,21 +1,28 @@
-# Learning Management System for <a href="https://e-gain.co.in">eGain Technologies</a>
+# 🎓 Learning Management System for [eGain Technologies](https://e-gain.co.in)
 
-## Developed by: <a href="https://github.com/rohithgowthamg4927">Rohith Gowtham G</a>
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-blue.svg)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
+[![Express](https://img.shields.io/badge/Express-4.18.2-lightgrey.svg)](https://expressjs.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-5.0.0-blue.svg)](https://www.prisma.io/)
 
-## Overview
+## 👨‍💻 Developed by: [Rohith Gowtham G](https://github.com/rohithgowthamg4927)
+
+## 📋 Overview
 
 A comprehensive Learning Management System (LMS) built with React, TypeScript, and Express.js. The system provides a robust platform for managing educational content, courses, and student progress with role-based access control.
 
-## Getting Started
+## 🚀 Getting Started
 
-### Prerequisites
+### 📋 Prerequisites
 
-- Node.js (v18 or higher)
+- Node.js (v16 or higher)
 - npm or yarn
 - AWS account (for S3 storage)
 - PostgreSQL database
 
-### Installation
+### ⚙️ Installation
 
 1. Clone the repository:
 
@@ -73,26 +80,30 @@ The application should now be running at:
 - Frontend: http://localhost:5173
 - Backend: http://localhost:3001
 
-## Architecture
+## 🏗️ Architecture
 
-### Frontend
+### 🎨 Frontend
 
-- **Framework**: React with TypeScript
-- **Build Tool**: Vite
-- **State Management**: React Query
-- **UI Components**: Custom components built on Radix UI
-- **Styling**: Tailwind CSS
-- **Routing**: React Router
+| Technology           | Description                         |
+| -------------------- | ----------------------------------- |
+| **Framework**        | React with TypeScript               |
+| **Build Tool**       | Vite                                |
+| **State Management** | React Query                         |
+| **UI Components**    | Custom components built on Radix UI |
+| **Styling**          | Tailwind CSS                        |
+| **Routing**          | React Router                        |
 
-### Backend
+### ⚙️ Backend
 
-- **Framework**: Express.js
-- **Database ORM**: Prisma
-- **File Storage**: AWS S3
-- **Authentication**: JWT (JSON Web Tokens)
-- **API Architecture**: RESTful
+| Technology           | Description           |
+| -------------------- | --------------------- |
+| **Framework**        | Express.js            |
+| **Database ORM**     | Prisma                |
+| **File Storage**     | AWS S3                |
+| **Authentication**   | JWT (JSON Web Tokens) |
+| **API Architecture** | RESTful               |
 
-### Database Schema
+### 📊 Database Schema
 
 The system employs a relational database design that efficiently handles complex relationships between various entities. Key design patterns include:
 
@@ -102,25 +113,25 @@ The system employs a relational database design that efficiently handles complex
 - **Schedule Management**: Integrated scheduling system that links batches, instructors, and students while maintaining attendance records.
 - **Audit Trail**: Comprehensive tracking of creation and modification timestamps for all entities.
 
-## Authentication & Authorization
+## 🔐 Authentication & Authorization
 
 The system implements a comprehensive security architecture:
 
-### JWT-Based Authentication
+### 🔑 JWT-Based Authentication
 
 - Secure token generation using RS256 algorithm
 - Token payload includes user ID, role, and expiration time
 - Refresh token mechanism for seamless session management
 - Automatic token renewal for active sessions
 
-### Role-Based Access Control
+### 👥 Role-Based Access Control
 
 - Granular permission system based on user roles
 - Role hierarchy: Admin > Instructor > Student
 - Route-level access control using middleware
 - Component-level rendering based on user permissions
 
-### Security Features
+### 🛡️ Security Features
 
 - Password hashing using bcrypt with salt rounds
 - Protection against common web vulnerabilities (XSS, CSRF)
@@ -128,9 +139,9 @@ The system implements a comprehensive security architecture:
 - Session invalidation on password change
 - Secure password reset workflow
 
-## Features
+## ✨ Features
 
-### For Administrators
+### 👨‍💼 For Administrators
 
 - Complete user management (students and instructors)
 - Course and batch creation/management
@@ -139,7 +150,7 @@ The system implements a comprehensive security architecture:
 - Analytics dashboard
 - Schedule management
 
-### For Instructors
+### 👨‍🏫 For Instructors
 
 - Batch management
 - Resource upload and management
@@ -148,7 +159,7 @@ The system implements a comprehensive security architecture:
 - Course content management
 - Performance monitoring
 
-### For Students
+### 👨‍🎓 For Students
 
 - Course enrollment
 - Resource access
@@ -157,11 +168,11 @@ The system implements a comprehensive security architecture:
 - Progress monitoring
 - Course feedback
 
-### Resource Management
+### 📚 Resource Management
 
 The system provides a comprehensive resource management solution that handles various types of educational content:
 
-#### Upload Process
+#### 📤 Upload Process
 
 1. **File Selection**:
 
@@ -180,7 +191,7 @@ The system provides a comprehensive resource management solution that handles va
    - Secure file storage with encryption at rest
    - Automatic cleanup of incomplete multipart uploads
 
-#### Access Control
+#### 🔒 Access Control
 
 1. **Permission Management**:
 
@@ -193,7 +204,7 @@ The system provides a comprehensive resource management solution that handles va
    - URL expiration based on resource type
    - Download/streaming capabilities based on file type
 
-#### Resource Delivery
+#### 📥 Resource Delivery
 
 1. **Download Process**:
 
@@ -206,7 +217,7 @@ The system provides a comprehensive resource management solution that handles va
    - Buffering optimization for different network conditions
    - Support for seeking and partial content requests
 
-### Scheduling System
+### 📅 Scheduling System
 
 - Class schedule management
 - Attendance tracking
@@ -214,7 +225,7 @@ The system provides a comprehensive resource management solution that handles va
 - Batch-wise organization
 - Real-time updates
 
-### Analytics & Reporting
+### 📊 Analytics & Reporting
 
 - Dashboard metrics
 - Student performance tracking
@@ -222,7 +233,7 @@ The system provides a comprehensive resource management solution that handles va
 - Course progress monitoring
 - Resource usage statistics
 
-## Contributing
+## 🤝 Contributing
 
 We welcome contributions from the community! Here's how you can help:
 
@@ -231,7 +242,7 @@ We welcome contributions from the community! Here's how you can help:
 3. Make your changes
 4. Submit a **pull request**
 
-### Guidelines
+### 📋 Guidelines
 
 - Follow the existing code style
 - Write clear commit messages
@@ -239,16 +250,16 @@ We welcome contributions from the community! Here's how you can help:
 - Update documentation as needed
 - Ensure all tests pass
 
-### Reporting Issues
+### 🐛 Reporting Issues
 
 - Use the issue tracker to report bugs
 - Include steps to reproduce
 - Provide environment details
 - Add screenshots if relevant
 
-## Technical Implementation
+## 💻 Technical Implementation
 
-### Frontend Architecture
+### 🎨 Frontend Architecture
 
 - Component-based architecture
 - Custom hooks for business logic
@@ -257,7 +268,7 @@ We welcome contributions from the community! Here's how you can help:
 - Toast notifications
 - Form validation
 
-### Backend Architecture
+### ⚙️ Backend Architecture
 
 - RESTful API endpoints
 - Middleware for authentication
@@ -266,7 +277,7 @@ We welcome contributions from the community! Here's how you can help:
 - Database integration
 - AWS S3 integration
 
-### Security Features
+### 🔒 Security Features
 
 - JWT authentication
 - Password encryption
@@ -275,7 +286,7 @@ We welcome contributions from the community! Here's how you can help:
 - Secure file access
 - API rate limiting
 
-### Performance Optimizations
+### ⚡ Performance Optimizations
 
 - Query caching with React Query
 - Optimized file uploads
@@ -285,11 +296,11 @@ We welcome contributions from the community! Here's how you can help:
 
 This comprehensive system provides a scalable and maintainable platform for educational institutions to manage their learning resources and student progress effectively.
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 - [React](https://reactjs.org/) - Frontend framework
 - [Express.js](https://expressjs.com/) - Backend framework

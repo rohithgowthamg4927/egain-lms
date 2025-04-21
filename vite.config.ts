@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     proxy: {
       '/api': {
-        target: 'http://13.203.91.192:3001',
+        target: 'https://api.e-gain.co.in',
         changeOrigin: true,
         secure: false,
       }

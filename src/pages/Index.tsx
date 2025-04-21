@@ -16,7 +16,7 @@ const Index = () => {
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
-        const response = await fetch('http://13.203.91.192:3001/api/health');
+        const response = await fetch('https://api.e-gain.co.in/api/health');
         if (response.ok) {
           setServerStatus('online');
         } else {
@@ -60,22 +60,6 @@ const Index = () => {
         </div>
         
         <LoginForm />
-        
-        <div className="mt-6">
-          <Alert variant={serverStatus === 'online' ? 'default' : 'destructive'} className="text-center">
-            <div className="flex items-center justify-center gap-2">
-              {serverStatus === 'checking' && <AlertCircle className="h-4 w-4" />}
-              {serverStatus === 'online' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
-              {serverStatus === 'offline' && <XCircle className="h-4 w-4" />}
-              <AlertTitle>Backend Server Status: {serverStatus}</AlertTitle>
-            </div>
-            <AlertDescription className="text-sm mt-2">
-              {serverStatus === 'online' ? 
-                "Server is running at http://localhost:3001" : 
-                "Please ensure the backend server is running at http://localhost:3001"}
-            </AlertDescription>
-          </Alert>
-        </div>
         
         {/* {serverStatus === 'offline' && (
           <div className="mt-4">

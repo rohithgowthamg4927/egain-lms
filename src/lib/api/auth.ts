@@ -20,7 +20,7 @@ export const login = async (email: string, password: string, role: Role): Promis
   
   
   try {
-    const healthCheck = await fetch(`http://13.203.91.192:3001/api/auth/health`);
+    const healthCheck = await fetch(`https://api.e-gain.co.in/api/auth/health`);
     if (!healthCheck.ok) {
       return { success: false, error: "Backend server not responding" };
     }

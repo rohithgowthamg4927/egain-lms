@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
@@ -15,7 +14,7 @@ const Login = () => {
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
-        const response = await fetch('http://13.203.91.192:3001/api/health');
+        const response = await fetch('https://api.e-gain.co.in/api/health');
         if (!response.ok) {
           setServerError('Backend server is not responding properly');
         }
@@ -55,13 +54,7 @@ const Login = () => {
             </p>
           </div>
           
-          {serverError && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertDescription>
-                {serverError}. Make sure the backend server is running at http://localhost:3001.
-              </AlertDescription>
-            </Alert>
-          )}
+          
 
           <LoginForm />
         </div>

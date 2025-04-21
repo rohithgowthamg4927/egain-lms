@@ -6,9 +6,77 @@
 
 A comprehensive Learning Management System (LMS) built with React, TypeScript, and Express.js. The system provides a robust platform for managing educational content, courses, and student progress with role-based access control.
 
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn
+- AWS account (for S3 storage)
+- PostgreSQL database
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/yourusername/lms-egain.git
+cd lms-egain
+```
+
+2. Install dependencies:
+
+```bash
+# Install backend dependencies
+cd backend
+npm install
+
+# Install frontend dependencies
+cd ../frontend
+npm install
+```
+
+3. Set up environment variables:
+
+```bash
+# Copy the example environment files
+cp .env.example .env
+```
+
+4. Configure your environment variables in `.env`:
+
+- Set up AWS credentials for S3 storage
+- Configure your database connection
+- Set up JWT secret
+
+5. Set up the database:
+
+```bash
+cd backend
+npx prisma migrate dev
+```
+
+6. Start the development servers:
+
+```bash
+# Start backend server
+cd backend
+npm run dev
+
+# Start frontend server
+cd frontend
+npm run dev
+```
+
+The application should now be running at:
+
+- Frontend: http://localhost:5173
+- Backend: http://localhost:3001
+
 ## Architecture
 
 ### Frontend
+
 - **Framework**: React with TypeScript
 - **Build Tool**: Vite
 - **State Management**: React Query
@@ -17,6 +85,7 @@ A comprehensive Learning Management System (LMS) built with React, TypeScript, a
 - **Routing**: React Router
 
 ### Backend
+
 - **Framework**: Express.js
 - **Database ORM**: Prisma
 - **File Storage**: AWS S3
@@ -38,18 +107,21 @@ The system employs a relational database design that efficiently handles complex
 The system implements a comprehensive security architecture:
 
 ### JWT-Based Authentication
+
 - Secure token generation using RS256 algorithm
 - Token payload includes user ID, role, and expiration time
 - Refresh token mechanism for seamless session management
 - Automatic token renewal for active sessions
 
 ### Role-Based Access Control
+
 - Granular permission system based on user roles
 - Role hierarchy: Admin > Instructor > Student
 - Route-level access control using middleware
 - Component-level rendering based on user permissions
 
 ### Security Features
+
 - Password hashing using bcrypt with salt rounds
 - Protection against common web vulnerabilities (XSS, CSRF)
 - Rate limiting for API endpoints
@@ -59,6 +131,7 @@ The system implements a comprehensive security architecture:
 ## Features
 
 ### For Administrators
+
 - Complete user management (students and instructors)
 - Course and batch creation/management
 - Category management
@@ -67,6 +140,7 @@ The system implements a comprehensive security architecture:
 - Schedule management
 
 ### For Instructors
+
 - Batch management
 - Resource upload and management
 - Schedule management
@@ -75,6 +149,7 @@ The system implements a comprehensive security architecture:
 - Performance monitoring
 
 ### For Students
+
 - Course enrollment
 - Resource access
 - Schedule viewing
@@ -87,12 +162,15 @@ The system implements a comprehensive security architecture:
 The system provides a comprehensive resource management solution that handles various types of educational content:
 
 #### Upload Process
-1. **File Selection**: 
+
+1. **File Selection**:
+
    - Support for multiple file types (documents, videos, assignments)
    - File size validation and type checking
    - Batch selection for resource association
 
 2. **Upload Workflow**:
+
    - Small files (<5MB): Direct upload to S3
    - Large files: Multipart upload with progress tracking
    - Automatic file type detection and categorization
@@ -103,7 +181,9 @@ The system provides a comprehensive resource management solution that handles va
    - Automatic cleanup of incomplete multipart uploads
 
 #### Access Control
+
 1. **Permission Management**:
+
    - Admins: Full access to all resources
    - Instructors: Access to their batch resources
    - Students: Access to enrolled batch resources
@@ -114,7 +194,9 @@ The system provides a comprehensive resource management solution that handles va
    - Download/streaming capabilities based on file type
 
 #### Resource Delivery
+
 1. **Download Process**:
+
    - Secure URL generation for downloads
    - Progress tracking for large files
    - Resumable downloads for interrupted transfers
@@ -125,6 +207,7 @@ The system provides a comprehensive resource management solution that handles va
    - Support for seeking and partial content requests
 
 ### Scheduling System
+
 - Class schedule management
 - Attendance tracking
 - Calendar integration
@@ -132,15 +215,41 @@ The system provides a comprehensive resource management solution that handles va
 - Real-time updates
 
 ### Analytics & Reporting
+
 - Dashboard metrics
 - Student performance tracking
 - Attendance analytics
 - Course progress monitoring
 - Resource usage statistics
 
+## Contributing
+
+We welcome contributions from the community! Here's how you can help:
+
+1. **Fork** the repository
+2. Create a new **branch** for your feature or bugfix
+3. Make your changes
+4. Submit a **pull request**
+
+### Guidelines
+
+- Follow the existing code style
+- Write clear commit messages
+- Add tests for new features
+- Update documentation as needed
+- Ensure all tests pass
+
+### Reporting Issues
+
+- Use the issue tracker to report bugs
+- Include steps to reproduce
+- Provide environment details
+- Add screenshots if relevant
+
 ## Technical Implementation
 
 ### Frontend Architecture
+
 - Component-based architecture
 - Custom hooks for business logic
 - Responsive design
@@ -149,6 +258,7 @@ The system provides a comprehensive resource management solution that handles va
 - Form validation
 
 ### Backend Architecture
+
 - RESTful API endpoints
 - Middleware for authentication
 - Error handling
@@ -157,6 +267,7 @@ The system provides a comprehensive resource management solution that handles va
 - AWS S3 integration
 
 ### Security Features
+
 - JWT authentication
 - Password encryption
 - Protected routes
@@ -165,6 +276,7 @@ The system provides a comprehensive resource management solution that handles va
 - API rate limiting
 
 ### Performance Optimizations
+
 - Query caching with React Query
 - Optimized file uploads
 - Lazy loading
@@ -172,3 +284,16 @@ The system provides a comprehensive resource management solution that handles va
 - Responsive image handling
 
 This comprehensive system provides a scalable and maintainable platform for educational institutions to manage their learning resources and student progress effectively.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [React](https://reactjs.org/) - Frontend framework
+- [Express.js](https://expressjs.com/) - Backend framework
+- [Prisma](https://www.prisma.io/) - Database ORM
+- [AWS S3](https://aws.amazon.com/s3/) - File storage
+- [Tailwind CSS](https://tailwindcss.com/) - Styling framework
+- [Radix UI](https://www.radix-ui.com/) - UI components

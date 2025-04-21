@@ -35,7 +35,7 @@ cd lms-egain
 
 ```bash
 cd lms-egain
-npm i or npm install
+npm install
 ```
 
 3. Set up environment variables:

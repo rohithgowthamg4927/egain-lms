@@ -34,13 +34,8 @@ cd lms-egain
 2. Install dependencies:
 
 ```bash
-# Install backend dependencies
-cd backend
-npm install
-
-# Install frontend dependencies
-cd ../frontend
-npm install
+cd lms-egain
+npm i or npm install
 ```
 
 3. Set up environment variables:

@@ -17,7 +17,7 @@ A comprehensive Learning Management System (LMS) built with React, TypeScript, a
 
 ### 📋 Prerequisites
 
-- Node.js (v16 or higher)
+- Node.js (v23 or higher)
 - npm or yarn
 - AWS account (for S3 storage)
 - PostgreSQL database
@@ -77,7 +77,7 @@ npm run dev
 
 The application should now be running at:
 
-- Frontend: http://localhost:5173
+- Frontend: http://localhost:8080 
 - Backend: http://localhost:3001
 
 ## 🏗️ Architecture
@@ -220,7 +220,7 @@ The system provides a comprehensive resource management solution that handles va
 ### 📅 Scheduling System
 
 - Class schedule management
-- Attendance tracking
+- Attendance tracking and Analytics
 - Calendar integration
 - Batch-wise organization
 - Real-time updates

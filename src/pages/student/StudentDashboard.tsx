@@ -56,17 +56,15 @@ export default function StudentDashboard() {
     queryKey: ['studentBatches', user?.userId],
     queryFn: async () => {
       if (!user?.userId) throw new Error('User ID required');
-      return await fetch(`/api/student-batches/${user.userId}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      }).then(res => res.json());
+      const response = await apiFetch<any>(`/student-batches/${user.userId}`);
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch student batches');
+      }
+      return response;
     },
     enabled: !!user?.userId
   });
 
-  // Query for schedules using the same logic as StudentSchedules
   const { data: schedulesData, isLoading: isSchedulesLoading } = useQuery({
     queryKey: ['studentSchedules', studentBatchesData?.data],
     queryFn: async () => {

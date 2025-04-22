@@ -361,18 +361,16 @@ export interface AttendanceAnalytics {
 
 export interface InitiateUploadResponse {
   success: boolean;
-  data: {
-    uploadId: string;
-    key: string;
-  };
+  key: string;
+  uploadId: string;
   error?: string;
 }
 
+
 export interface UploadPartResponse {
   success: boolean;
-  data: {
-    ETag: string;
-    PartNumber: number;
-  };
+  ETag: string;
+  PartNumber: number;
   error?: string;
 }
+

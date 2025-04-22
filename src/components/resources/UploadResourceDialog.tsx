@@ -165,12 +165,6 @@ export function UploadResourceDialog({
           }),
         });
 
-        console.log('Initiate Upload Response:', {
-          success: initSuccess,
-          data: initData,
-          error: initError
-        });
-
         if (!initSuccess || !initData) {
           throw new Error(initError || 'Failed to initialize upload');
         }
@@ -186,8 +180,8 @@ export function UploadResourceDialog({
 
           const formData = new FormData();
           formData.append('file', chunk);
-          formData.append('key', initData.data.key);
-          formData.append('uploadId', initData.data.uploadId);
+          formData.append('key', initData.key);
+          formData.append('uploadId', initData.uploadId);
           formData.append('partNumber', partNumber.toString());
 
           const { success: partSuccess, data: partData, error: partError } = 
@@ -225,8 +219,8 @@ export function UploadResourceDialog({
         const { success: completeSuccess, error: completeError } = await apiFetch('/resources/complete-upload', {
           method: 'POST',
           body: JSON.stringify({
-            key: initData.data.key,  
-            uploadId: initData.data.uploadId, 
+            key: initData.key,  
+            uploadId: initData.uploadId, 
             parts,
             batchId: selectedBatch,
             title,

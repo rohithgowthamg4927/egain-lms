@@ -23,6 +23,17 @@ const upload = multer({
   }
 });
 
+// Add this error handler for multer
+const handleMulterError = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      success: false,
+      error: err.message
+    });
+  }
+  next(err);
+};
+
 // Get all resources for a batch
 router.get('/batch/:batchId', async (req, res) => {
   try {
@@ -177,7 +188,7 @@ router.post('/abort-upload', async (req, res) => {
 });
 
 // Upload small file directly
-router.post('/upload', upload.single('file'), async (req, res) => {
+router.post('/upload', upload.single('file'), handleMulterError, async (req, res) => {
   try {
     const { batchId, title, description, resourceType, uploadedById } = req.body;
     const file = req.file;

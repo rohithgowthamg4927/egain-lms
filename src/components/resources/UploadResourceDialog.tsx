@@ -22,8 +22,9 @@ import {
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Loader2, Upload, X } from 'lucide-react';
-import { Batch } from '@/lib/types';
+import { Batch, InitiateUploadResponse, UploadPartResponse } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
+import { apiFetch } from '@/lib/api/core';
 
 interface UploadResourceDialogProps {
   isOpen: boolean;
@@ -133,36 +134,30 @@ export function UploadResourceDialog({
         formData.append('resourceType', resourceType);
         formData.append('uploadedById', user.userId.toString());
 
-        const response = await fetch('/api/resources/upload', {
+        const { success, error } = await apiFetch('/resources/upload', {
           method: 'POST',
           body: formData,
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Upload failed');
+        if (!success) {
+          throw new Error(error || 'Upload failed');
         }
 
-        const result = await response.json();
-        if (result.success) {
-          toast({
-            title: 'Upload successful',
-            description: 'Resource has been uploaded successfully',
-          });
-          onSuccess();
-          onClose();
-        } else {
-          throw new Error(result.error || 'Upload failed');
-        }
+        toast({
+          title: 'Upload successful',
+          description: 'Resource has been uploaded successfully',
+        });
+        onSuccess();
+        onClose();
       } else {
         // For large files, use multipart upload
         const batch = batches.find(b => b.batchId.toString() === selectedBatch);
         if (!batch) throw new Error('Batch not found');
 
         // Initialize multipart upload
-        const initResponse = await fetch('/api/resources/initiate-upload', {
+        const { success: initSuccess, data: initData, error: initError } = 
+          await apiFetch<InitiateUploadResponse>('/resources/initiate-upload', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             batchName: batch.batchName,
             resourceType,
@@ -170,12 +165,9 @@ export function UploadResourceDialog({
           }),
         });
 
-        if (!initResponse.ok) {
-          const errorData = await initResponse.json();
-          throw new Error(errorData.error || 'Failed to initialize upload');
+        if (!initSuccess || !initData) {
+          throw new Error(initError || 'Failed to initialize upload');
         }
-
-        const { data: { uploadId, key } } = await initResponse.json();
 
         // Upload parts
         const parts = [];
@@ -188,22 +180,21 @@ export function UploadResourceDialog({
 
           const formData = new FormData();
           formData.append('file', chunk);
-          formData.append('key', key);
-          formData.append('uploadId', uploadId);
+          formData.append('key', initData.key);        // Access key directly from initData
+          formData.append('uploadId', initData.uploadId); // Access uploadId directly from initData
           formData.append('partNumber', partNumber.toString());
 
-          const uploadResponse = await fetch('/api/resources/upload-part', {
+          const { success: partSuccess, data: partData, error: partError } = 
+            await apiFetch<UploadPartResponse>('/resources/upload-part', {
             method: 'POST',
             body: formData,
           });
 
-          if (!uploadResponse.ok) {
-            const errorData = await uploadResponse.json();
-            throw new Error(errorData.error || 'Failed to upload part');
+          if (!partSuccess || !partData) {
+            throw new Error(partError || 'Failed to upload part');
           }
 
-          const { data: part } = await uploadResponse.json();
-          parts.push(part);
+          parts.push(partData);  // Push the entire partData object
 
           // Update progress
           uploadedBytes += chunk.size;
@@ -225,12 +216,11 @@ export function UploadResourceDialog({
         }
 
         // Complete multipart upload
-        const completeResponse = await fetch('/api/resources/complete-upload', {
+        const { success: completeSuccess, error: completeError } = await apiFetch('/resources/complete-upload', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            key,
-            uploadId,
+            key: initData.key,        // Access key directly from initData
+            uploadId: initData.uploadId, // Access uploadId directly from initData
             parts,
             batchId: selectedBatch,
             title,
@@ -240,22 +230,16 @@ export function UploadResourceDialog({
           }),
         });
 
-        if (!completeResponse.ok) {
-          const errorData = await completeResponse.json();
-          throw new Error(errorData.error || 'Failed to complete upload');
+        if (!completeSuccess) {
+          throw new Error(completeError || 'Failed to complete upload');
         }
 
-        const result = await completeResponse.json();
-        if (result.success) {
-          toast({
-            title: 'Upload successful',
-            description: 'Resource has been uploaded successfully',
-          });
-          onSuccess();
-          onClose();
-        } else {
-          throw new Error(result.error || 'Upload failed');
-        }
+        toast({
+          title: 'Upload successful',
+          description: 'Resource has been uploaded successfully',
+        });
+        onSuccess();
+        onClose();
       }
     } catch (error) {
       toast({

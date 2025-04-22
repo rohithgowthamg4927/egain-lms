@@ -77,8 +77,8 @@ router.get('/schedule/:scheduleId', async (req, res) => {
             email: true,
             role: true
           }
-        }
       }
+    }
     });
 
     // Get existing attendance records
@@ -245,8 +245,8 @@ router.post('/mark', async (req, res) => {
     // Check if attendance already exists
     const existingAttendance = await prisma.Attendance.findFirst({
       where: {
-        scheduleId,
-        userId
+          scheduleId,
+          userId
       }
     });
 
@@ -254,7 +254,7 @@ router.post('/mark', async (req, res) => {
       // Update existing attendance
       const updatedAttendance = await prisma.Attendance.update({
         where: { attendanceId: existingAttendance.attendanceId },
-        data: { 
+        data: {
           status,
           markedBy: markedById
         },
@@ -272,17 +272,17 @@ router.post('/mark', async (req, res) => {
 
     // Create new attendance record
     const newAttendance = await prisma.Attendance.create({
-      data: {
-        scheduleId,
-        userId,
-        status,
+        data: {
+          scheduleId,
+          userId,
+          status,
         markedBy: markedById
-      },
-      include: {
-        user: true,
-        markedByUser: true
-      }
-    });
+        },
+        include: {
+          user: true,
+          markedByUser: true
+        }
+      });
 
     res.json({
       success: true,
@@ -299,7 +299,7 @@ router.post('/bulk', async (req, res) => {
     const { scheduleId, attendanceRecords } = req.body;
     const instructorId = req.user.userId;
     const role = req.user.role;
-
+    
     // Validate required fields
     if (!scheduleId || !attendanceRecords || !Array.isArray(attendanceRecords)) {
       return res.status(400).json({
@@ -361,48 +361,48 @@ router.post('/bulk', async (req, res) => {
           if (targetUser.role === 'student' && targetUser.studentBatches.length === 0) {
             return { userId, success: false, error: 'Student is not enrolled in this batch' };
           }
-
-          const existingAttendance = await prisma.Attendance.findUnique({
-            where: {
-              scheduleId_userId: {
-                scheduleId,
-                userId
-              }
-            }
-          });
-
-          let attendance;
-          if (existingAttendance) {
-            attendance = await prisma.Attendance.update({
-              where: {
-                attendanceId: existingAttendance.attendanceId
-              },
-              data: {
-                status,
-                updatedAt: new Date()
-              },
-              include: {
-                user: true,
-                markedByUser: true
-              }
-            });
-          } else {
-            attendance = await prisma.Attendance.create({
-              data: {
-                scheduleId,
-                userId,
-                status,
-                markedBy: instructorId,
-                createdAt: new Date(),
-                updatedAt: new Date()
-              },
-              include: {
-                user: true,
-                markedByUser: true
-              }
-            });
+      
+      const existingAttendance = await prisma.Attendance.findUnique({
+        where: {
+          scheduleId_userId: {
+            scheduleId,
+            userId
           }
+        }
+      });
 
+      let attendance;
+      if (existingAttendance) {
+        attendance = await prisma.Attendance.update({
+          where: {
+            attendanceId: existingAttendance.attendanceId
+          },
+          data: {
+            status,
+            updatedAt: new Date()
+              },
+              include: {
+                user: true,
+                markedByUser: true
+          }
+        });
+      } else {
+        attendance = await prisma.Attendance.create({
+          data: {
+            scheduleId,
+            userId,
+            status,
+            markedBy: instructorId,
+            createdAt: new Date(),
+            updatedAt: new Date()
+              },
+              include: {
+                user: true,
+                markedByUser: true
+          }
+        });
+      }
+      
           return {
             userId,
             success: true,
@@ -414,7 +414,7 @@ router.post('/bulk', async (req, res) => {
           };
         } catch (error) {
           return { userId, success: false, error: error.message };
-        }
+      }
       })
     );
 

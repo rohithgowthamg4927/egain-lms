@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -16,7 +15,7 @@ import scheduleRoutes from './routes/schedules.js';
 import dashboardRoutes from './routes/dashboard.js';
 import studentRoutes from './routes/students.js'; 
 import instructorRoutes from './routes/instructors.js';
-import resourceRoutes from './routes/resources.js';
+import resourcesRoutes from './routes/resources.js';
 import attendanceRoutes from './routes/attendance.js';
 
 // Setup __dirname for ES Modules
@@ -31,8 +30,11 @@ const PORT = process.env.PORT || 3001;
 
 // Middlewares
 app.use(cors({
-  origin: 'https://lms.e-gain.co.in',
-  credentials: true
+  origin: '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
 app.use(express.json());
 app.use(cookieParser());
@@ -53,7 +55,7 @@ app.use('/api/students', studentRoutes.router);
 app.use('/api/student-batches', studentRoutes.batchRoutes);
 app.use('/api/student-courses', studentRoutes.courseRoutes);
 app.use('/api/instructors', instructorRoutes);
-app.use('/api/resources', resourceRoutes);
+app.use('/api/resources', resourcesRoutes);
 app.use('/api/attendance', attendanceRoutes);
 
 // Root and health check routes

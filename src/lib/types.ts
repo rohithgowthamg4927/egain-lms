@@ -1,4 +1,3 @@
-
 export enum Role {
   admin = 'admin',
   instructor = 'instructor',
@@ -358,4 +357,22 @@ export interface AttendanceAnalytics {
   }>;
   totalClasses?: number;
   totalStudents?: number;
+}
+
+export interface InitiateUploadResponse {
+  success: boolean;
+  data: {
+    uploadId: string;
+    key: string;
+  };
+  error?: string;
+}
+
+export interface UploadPartResponse {
+  success: boolean;
+  data: {
+    ETag: string;
+    PartNumber: number;
+  };
+  error?: string;
 }

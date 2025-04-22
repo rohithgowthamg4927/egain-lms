@@ -152,7 +152,7 @@ const InstructorDashboard = () => {
 
   const todaySchedules = schedules.filter(schedule => {
     try {
-      const scheduleDate = new Date(schedule.scheduleDate);
+    const scheduleDate = new Date(schedule.scheduleDate);
       const scheduleDateTime = getScheduleDateTime(schedule);
       
       if (!scheduleDateTime) return false;
@@ -168,7 +168,7 @@ const InstructorDashboard = () => {
       const dateTimeB = getScheduleDateTime(b);
       
       if (!dateTimeA || !dateTimeB) return 0;
-      
+    
       return dateTimeA.getTime() - dateTimeB.getTime();
     } catch (error) {
       console.error('Error sorting today schedules:', error);
@@ -178,8 +178,8 @@ const InstructorDashboard = () => {
 
   const tomorrowSchedules = schedules.filter(schedule => {
     try {
-      const scheduleDate = new Date(schedule.scheduleDate);
-      return isTomorrow(scheduleDate);
+    const scheduleDate = new Date(schedule.scheduleDate);
+    return isTomorrow(scheduleDate);
     } catch (error) {
       console.error('Error filtering tomorrow schedules:', error);
       return false;
@@ -190,7 +190,7 @@ const InstructorDashboard = () => {
       const dateTimeB = getScheduleDateTime(b);
       
       if (!dateTimeA || !dateTimeB) return 0;
-      
+    
       return dateTimeA.getTime() - dateTimeB.getTime();
     } catch (error) {
       console.error('Error sorting tomorrow schedules:', error);
@@ -200,15 +200,15 @@ const InstructorDashboard = () => {
 
   const nextWeekSchedules = schedules.filter(schedule => {
     try {
-      const scheduleDate = new Date(schedule.scheduleDate);
+    const scheduleDate = new Date(schedule.scheduleDate);
       const scheduleDateTime = getScheduleDateTime(schedule);
       const nextWeek = addDays(now, 7);
-      
+    
       if (!scheduleDateTime) return false;
-      
+    
       return scheduleDateTime > now && 
-             !isToday(scheduleDate) && 
-             !isTomorrow(scheduleDate) && 
+           !isToday(scheduleDate) && 
+           !isTomorrow(scheduleDate) && 
              scheduleDateTime <= nextWeek;
     } catch (error) {
       console.error('Error filtering next week schedules:', error);
@@ -220,7 +220,7 @@ const InstructorDashboard = () => {
       const dateTimeB = getScheduleDateTime(b);
       
       if (!dateTimeA || !dateTimeB) return 0;
-      
+    
       return dateTimeA.getTime() - dateTimeB.getTime();
     } catch (error) {
       console.error('Error sorting next week schedules:', error);

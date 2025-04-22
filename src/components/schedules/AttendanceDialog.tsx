@@ -183,7 +183,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
       queryClient.invalidateQueries({ queryKey: ['attendance', schedule?.scheduleId] });
     }
   });
-
+  
   const handleMarkAttendance = async (studentId: number, status: Status) => {
     if (!schedule) return;
     
@@ -212,7 +212,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
       await markBulkAttendanceMutation.mutateAsync({ status });
     } catch (error) {
       console.error('Error marking bulk attendance:', error);
-    }
+        }
   };
 
   const handleClearAttendance = async () => {
@@ -222,7 +222,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
       console.error('Error clearing attendance:', error);
     }
   };
-
+  
   const formatTime = (timeString: string) => {
     if (!timeString) return '';
     try {
@@ -238,7 +238,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
       return timeString;
     }
   };
-
+  
   const getStatusBadge = (status: Status | null) => {
     if (!status) return <Badge variant="outline">Not marked</Badge>;
     
@@ -268,7 +268,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
         return <Badge variant="outline">Unknown</Badge>;
     }
   };
-
+  
   const getAttendanceStats = () => {
     // Get only students (excluding instructor)
     const students = batchStudents.filter(student => student.role !== Role.instructor);
@@ -287,7 +287,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
     
     return { total, present, absent, late, notMarked };
   };
-
+  
   if (error) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -302,7 +302,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
       </Dialog>
     );
   }
-
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px]">
@@ -370,7 +370,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
                         Late
                       </Button>
                     </div>
-                    <Button
+                    <Button 
                       variant="outline"
                       size="sm"
                       className="text-red-600 border-red-600 hover:bg-red-50"
@@ -382,22 +382,22 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
                   </div>
                 )}
                 
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Student</TableHead>
-                      <TableHead>Status</TableHead>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Student</TableHead>
+                        <TableHead>Status</TableHead>
                       {user?.role !== Role.student && <TableHead>Actions</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                     {batchStudents.map((student) => {
                       const attendanceRecord = attendanceRecords.find(record => record.userId === student.userId);
                       const isInstructor = student.role === Role.instructor;
                       
                       return (
                         <TableRow key={student.userId}>
-                          <TableCell>
+                              <TableCell>
                             <div className="flex items-center gap-2">
                               <span>{student.fullName}</span>
                               {isInstructor && (
@@ -409,7 +409,7 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
                             <div className="flex flex-col gap-1">
                               {getStatusBadge(attendanceRecord?.status || null)}
                             </div>
-                          </TableCell>
+                              </TableCell>
                           {user?.role !== Role.student && !isInstructor && (
                             <TableCell>
                               <div className="flex items-center gap-2">
@@ -438,13 +438,13 @@ const AttendanceDialog = ({ open, onOpenChange, schedule }: AttendanceDialogProp
                                   Late
                                 </Button>
                               </div>
-                            </TableCell>
-                          )}
+                              </TableCell>
+                            )}
                         </TableRow>
                       );
                     })}
-                  </TableBody>
-                </Table>
+                    </TableBody>
+                  </Table>
               </TabsContent>
               
               <TabsContent value="summary">

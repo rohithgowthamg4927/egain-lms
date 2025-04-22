@@ -165,6 +165,12 @@ export function UploadResourceDialog({
           }),
         });
 
+        console.log('Initiate Upload Response:', {
+          success: initSuccess,
+          data: initData,
+          error: initError
+        });
+
         if (!initSuccess || !initData) {
           throw new Error(initError || 'Failed to initialize upload');
         }

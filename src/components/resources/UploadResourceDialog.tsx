@@ -180,8 +180,8 @@ export function UploadResourceDialog({
 
           const formData = new FormData();
           formData.append('file', chunk);
-          formData.append('key', initData.key);        // Access key directly from initData
-          formData.append('uploadId', initData.uploadId); // Access uploadId directly from initData
+          formData.append('key', initData.data.key);
+          formData.append('uploadId', initData.data.uploadId);
           formData.append('partNumber', partNumber.toString());
 
           const { success: partSuccess, data: partData, error: partError } = 
@@ -219,8 +219,8 @@ export function UploadResourceDialog({
         const { success: completeSuccess, error: completeError } = await apiFetch('/resources/complete-upload', {
           method: 'POST',
           body: JSON.stringify({
-            key: initData.key,        // Access key directly from initData
-            uploadId: initData.uploadId, // Access uploadId directly from initData
+            key: initData.data.key,  
+            uploadId: initData.data.uploadId, 
             parts,
             batchId: selectedBatch,
             title,

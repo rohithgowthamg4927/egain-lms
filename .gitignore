@@ -40,3 +40,6 @@ start-app.sh
 
 docker.sh
 ec2.txt
+
+test-password.js
+reset-admin.js

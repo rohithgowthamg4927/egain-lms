@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -10,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { User } from '@/lib/types';
-import { ArrowLeft, User as UserIcon, Mail, Phone, Calendar, Edit, Trash } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, Mail, Phone, Calendar, Edit, Trash, MapPin } from 'lucide-react';
 import StudentActivityPanel from '@/components/users/StudentActivityPanel';
 import InstructorActivityPanel from '@/components/users/InstructorActivityPanel';
 import PasswordTab from '@/components/users/PasswordTab';
@@ -248,6 +247,16 @@ const UserProfile = () => {
                         <div className="text-left flex-1 min-w-0">
                           <p className="text-sm text-muted-foreground">Joined</p>
                           <p className="font-medium break-all">{new Date(user.createdAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="bg-primary/10 p-2 rounded-full flex-shrink-0">
+                          <MapPin className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="text-left flex-1 min-w-0">
+                          <p className="text-sm text-muted-foreground">Address</p>
+                          <p className="font-medium break-all">{user.address || 'Not provided'}</p>
                         </div>
                       </div>
                     </div>

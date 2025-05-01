@@ -31,6 +31,7 @@ const formSchema = z.object({
   phoneNumber: z.string().optional(),
   address: z.string().optional(),
   shouldChangePassword: z.boolean().optional(),
+  mustResetPassword: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -108,7 +109,8 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false, isEdit
     onSubmit({
       ...values,
       password: passwordToSubmit,
-      photoUrl: profilePictureUrl || undefined
+      photoUrl: profilePictureUrl || undefined,
+      mustResetPassword: values.shouldChangePassword
     });
   };
 

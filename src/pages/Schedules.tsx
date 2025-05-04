@@ -17,7 +17,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 import { useAuth } from '@/hooks/use-auth';
-import { Link } from 'react-router-dom';
 import AttendanceDialog from '@/components/schedules/AttendanceDialog';
 import AttendanceAnalytics from '@/components/attendance/AttendanceAnalytics';
 import { apiFetch } from '@/lib/api/core';
@@ -367,7 +366,7 @@ const Schedules = () => {
 
   return (
     <div className="space-y-6">
-      <BreadcrumbNav items={[{ label: 'Home', link: '/' }, { label: 'Schedules', link: '/schedules' }]} />
+      <BreadcrumbNav items={[{ label: 'Schedules', link: '/schedules' }]} />
       
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Schedules</h1>

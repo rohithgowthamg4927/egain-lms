@@ -12,7 +12,6 @@ import { User } from '@/lib/types';
 import { ArrowLeft, User as UserIcon, Mail, Phone, Calendar, Edit, Trash, MapPin } from 'lucide-react';
 import StudentActivityPanel from '@/components/users/StudentActivityPanel';
 import InstructorActivityPanel from '@/components/users/InstructorActivityPanel';
-import PasswordTab from '@/components/users/PasswordTab';
 import { UserForm } from '@/components/users/UserForm';
 import {
   AlertDialog,
@@ -269,7 +268,6 @@ const UserProfile = () => {
                   <TabsList>
                     <TabsTrigger value="courses">Courses</TabsTrigger>
                     <TabsTrigger value="schedules">Schedules</TabsTrigger>
-                    <TabsTrigger value="password">Password</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="courses">
@@ -300,10 +298,6 @@ const UserProfile = () => {
                         )}
                       </CardContent>
                     </Card>
-                  </TabsContent>
-
-                  <TabsContent value="password">
-                    <PasswordTab user={user} onUpdate={handlePasswordUpdate} />
                   </TabsContent>
                 </Tabs>
               </div>

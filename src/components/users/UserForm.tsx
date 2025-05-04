@@ -47,9 +47,7 @@ interface UserFormProps {
 export function UserForm({ onSubmit, defaultValues, isSubmitting = false, isEditMode = false, existingUser }: UserFormProps) {
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
-  const [generatedPassword, setGeneratedPassword] = useState(() => 
-    defaultValues?.password || generateRandomPassword()
-  );
+  const [generatedPassword, setGeneratedPassword] = useState('');
   const [shouldChangePassword, setShouldChangePassword] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
@@ -100,11 +98,22 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false, isEdit
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleShouldChangePasswordChange = (value: boolean) => {
+    setShouldChangePassword(value);
+    form.setValue('shouldChangePassword', value);
+    // Clear generated password when unchecking
+    if (!value) {
+      setGeneratedPassword('');
+    }
+    // Generate new password when checking
+    if (value) {
+      setGeneratedPassword(generateRandomPassword());
+    }
+  };
+
   const handleSubmit = async (values: FormValues) => {
-    // Determine the password to use
-    const passwordToSubmit = isEditMode 
-      ? (values.shouldChangePassword ? generatedPassword : defaultValues?.password || '')
-      : generatedPassword;
+    // Only include password in submission if shouldChangePassword is true
+    const passwordToSubmit = values.shouldChangePassword ? generatedPassword : undefined;
     
     onSubmit({
       ...values,
@@ -112,11 +121,6 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false, isEdit
       photoUrl: profilePictureUrl || undefined,
       mustResetPassword: values.shouldChangePassword
     });
-  };
-
-  const handleShouldChangePasswordChange = (value: boolean) => {
-    setShouldChangePassword(value);
-    form.setValue('shouldChangePassword', value);
   };
 
   return (
@@ -225,13 +229,14 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false, isEdit
                     </label>
                   </div>
                   
-                  {shouldChangePassword ? (
+                  {shouldChangePassword && (
                     <div className="flex">
                       <Input
                         type="text"
                         value={generatedPassword}
                         readOnly
                         className="rounded-r-none border-r-0"
+                        placeholder="Click Regenerate to create new password"
                       />
                       <Button 
                         type="button" 
@@ -239,6 +244,7 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false, isEdit
                         size="icon" 
                         onClick={copyPassword}
                         className="rounded-none border-x-0"
+                        disabled={!generatedPassword}
                       >
                         {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                       </Button>
@@ -256,47 +262,7 @@ export function UserForm({ onSubmit, defaultValues, isSubmitting = false, isEdit
                         onClick={() => downloadCredentialsCSV(form.getValues('email'), generatedPassword, form.getValues('fullName'))}
                         className="rounded-l-none px-2 text-blue-500 hover:text-blue-600 hover:border-blue-600"
                         title="Download Credentials"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex">
-                      <Input
-                        type="text"
-                        value={defaultValues?.password || ''}
-                        readOnly
-                        className="rounded-r-none border-r-0"
-                      />
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="icon" 
-                        onClick={() => {
-                          if (defaultValues?.password) {
-                            navigator.clipboard.writeText(defaultValues.password);
-                            setCopied(true);
-                            toast({
-                              title: 'Password copied',
-                              description: 'Password has been copied to clipboard'
-                            });
-                            setTimeout(() => setCopied(false), 2000);
-                          }
-                        }}
-                        className="rounded-none border-x-0"
-                      >
-                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          if (defaultValues?.password) {
-                            downloadCredentialsCSV(form.getValues('email'), defaultValues.password, form.getValues('fullName'));
-                          }
-                        }}
-                        className="rounded-l-none px-2 text-blue-500 hover:text-blue-600 hover:border-blue-600"
-                        title="Download Credentials"
+                        disabled={!generatedPassword}
                       >
                         <Download className="h-4 w-4" />
                       </Button>

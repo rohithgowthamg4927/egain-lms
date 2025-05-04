@@ -323,7 +323,7 @@ export default function StudentDashboard() {
           onSuccess={handlePasswordResetSuccess}
         />
       )}
-
+      
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
         <div>
           <h1 className="text-3xl font-bold">Student Dashboard</h1>

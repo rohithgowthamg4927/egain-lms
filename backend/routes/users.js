@@ -2,6 +2,7 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
 import { hashPassword } from '../utils/password.js';
+import emailService from '../services/emailService.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -87,6 +88,18 @@ router.post('/', async (req, res) => {
             }
         });
 
+        // After successful user creation, send email with isNewUser = true
+        const emailResult = await emailService.sendCredentialsEmail({
+            email: user.email,
+            password: userPassword,
+            fullName: user.fullName
+        }, true);
+
+        if (!emailResult.success) {
+            console.error('Failed to send credentials email:', emailResult.error);
+            // Continue with the response, just log the error
+        }
+
         // Return user data (excluding password)
         const { password: _, ...userWithoutPassword } = user;
         res.json({
@@ -117,10 +130,22 @@ router.put('/:id', async (req, res) => {
             address
         };
 
-        // Only update password if provided
-        if (password) {
+        // Only update password and send email if a new password is explicitly provided
+        if (password !== undefined) {
+            
             updateData.password = await hashPassword(password);
             updateData.mustResetPassword = true;
+
+            // Send credentials email for password update with isNewUser = false
+            const emailResult = await emailService.sendCredentialsEmail({
+                email: email,
+                password: password,
+                fullName: fullName
+            }, false);
+
+            if (!emailResult.success) {
+                console.error('Failed to send credentials email:', emailResult.error);
+            }
         }
 
         // Only update mustResetPassword for non-admin roles

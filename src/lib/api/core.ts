@@ -1,6 +1,6 @@
 import { toast } from "@/hooks/use-toast";
 
-export const API_URL = "http://localhost:3000/api";
+export const API_URL = "https://api.e-gain.co.in/api";
 
 /**
  * Core API fetch function with authentication and error handling

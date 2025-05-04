@@ -12,10 +12,60 @@ class EmailService {
                 pass: process.env.SES_SMTP_PASSWORD
             }
         });
+
+        // Add a rate limiter to prevent too many emails
+        this.rateLimiter = new Map();
+        this.MAX_EMAILS_PER_HOUR = 50;
+
+        // Add to email service
+        this.metrics = {
+            sent: 0,
+            failed: 0,
+            rateLimited: 0
+        };
+
+        // Add to email service
+        this.templates = {
+            welcome: (name) => `Welcome ${name}...`,
+            reset: (name) => `Password reset for ${name}...`
+        };
     }
 
     async sendCredentialsEmail(userData, isNewUser = true) {
-        console.log('Sending email with isNewUser:', isNewUser); // Debug log
+        if (!userData || !userData.email || !userData.password || !userData.fullName) {
+            return { success: false, error: 'Missing required user data' };
+        }
+        
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(userData.email)) {
+            return { success: false, error: 'Invalid email format' };
+        }
+        
+        // Check rate limit
+        const now = Date.now();
+        const hourAgo = now - 3600000; // 1 hour in milliseconds
+        
+        // Clean up old entries
+        for (const [email, timestamps] of this.rateLimiter.entries()) {
+            this.rateLimiter.set(email, timestamps.filter(time => time > hourAgo));
+            if (this.rateLimiter.get(email).length === 0) {
+                this.rateLimiter.delete(email);
+            }
+        }
+        
+        // Check if user has exceeded limit
+        const userTimestamps = this.rateLimiter.get(userData.email) || [];
+        if (userTimestamps.length >= this.MAX_EMAILS_PER_HOUR) {
+            return { 
+                success: false, 
+                error: 'Too many emails sent. Please try again later.' 
+            };
+        }
+        
+        // Add current timestamp
+        userTimestamps.push(now);
+        this.rateLimiter.set(userData.email, userTimestamps);
         
         const csvContent = generateCredentialsCSV(userData);
         
@@ -38,12 +88,21 @@ class EmailService {
             }]
         };
 
-        try {
-            await this.transporter.sendMail(mailOptions);
-            return { success: true };
-        } catch (error) {
-            console.error('Email sending failed:', error);
-            return { success: false, error: error.message };
+        const MAX_RETRIES = 3;
+        let retryCount = 0;
+        while (retryCount < MAX_RETRIES) {
+            try {
+                await this.transporter.sendMail(mailOptions);
+                console.log(`Email sent to ${userData.email} at ${new Date().toISOString()}`);
+                return { success: true };
+            } catch (error) {
+                retryCount++;
+                if (retryCount === MAX_RETRIES) {
+                    console.error('Email sending failed after retries:', error);
+                    return { success: false, error: error.message };
+                }
+                await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+            }
         }
     }
 }

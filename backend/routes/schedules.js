@@ -42,7 +42,7 @@ router.get('/', async (req, res) => {
       },
       orderBy: { startTime: 'asc' }
     });
-
+    
     // Format the times after fetching
     const formattedSchedules = schedules.map(schedule => ({
       ...schedule,

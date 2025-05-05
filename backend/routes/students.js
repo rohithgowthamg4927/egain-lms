@@ -1,3 +1,4 @@
+
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
@@ -152,23 +153,27 @@ const courseRoutes = express.Router();
 courseRoutes.get('/:id', async (req, res) => {
   try {
     const studentId = parseInt(req.params.id);
-    
-    const courses = await prisma.StudentCourse.findMany({
+
+    const studentCourses = await prisma.StudentCourse.findMany({
       where: { studentId },
       include: {
         course: {
           include: {
-            category: true
+            category: true,
+            reviews: true
           }
         }
       }
     });
-    
-    // Return success with empty array instead of 404
-    res.json({
-      success: true,
-      data: courses
-    });
+
+    if (!studentCourses.length) {
+      return res.status(404).json({
+        success: false,
+        error: 'No courses found'
+      });
+    }
+
+    res.json({ success: true, data: studentCourses });
   } catch (error) {
     handleApiError(res, error);
   }

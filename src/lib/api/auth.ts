@@ -17,6 +17,17 @@ export const getCurrentUser = async (): Promise<{ success: boolean; data?: User;
 };
 
 export const login = async (email: string, password: string, role: Role): Promise<{ success: boolean; data?: { user: User; token: string }; error?: string }> => {
+  
+  
+  try {
+    const healthCheck = await fetch(`https://api.e-gain.co.in/api/auth/health`);
+    if (!healthCheck.ok) {
+      return { success: false, error: "Backend server not responding" };
+    }
+  } catch (error) {
+    return { success: false, error: "Cannot connect to backend server" };
+  }
+  
   const payload = { email, password, role };
   
   try {
@@ -24,6 +35,7 @@ export const login = async (email: string, password: string, role: Role): Promis
       method: 'POST',
       body: JSON.stringify(payload),
     });
+    
     
     // If login was successful, store the auth data
     if (response.success && response.data) {

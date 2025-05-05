@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => ({
       '/api': {
         target: 'https://api.e-gain.co.in',
         changeOrigin: true,
+        secure: false,
       }
     }
   },

@@ -19,20 +19,12 @@ const StudentActivityPanel = ({ userId, showSchedulesOnly = false }: StudentActi
     queryKey: ['studentCourses', userId],
     queryFn: () => getStudentCourses(userId),
     enabled: !showSchedulesOnly,
-    select: (data) => ({
-      success: true,
-      data: data?.data || []
-    })
   });
 
   // Fetch student schedules
   const schedulesQuery = useQuery({
     queryKey: ['studentSchedules', userId],
     queryFn: () => getStudentSchedules(userId),
-    select: (data) => ({
-      success: true,
-      data: data?.data || []
-    })
   });
 
   // If showing schedules only, render just the schedules section

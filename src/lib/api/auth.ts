@@ -1,3 +1,4 @@
+
 import { User, Role } from '@/lib/types';
 import { apiFetch } from './core';
 
@@ -59,7 +60,8 @@ export const login = async (email: string, password: string, role: Role): Promis
     console.log('Sending payload:', payload);
     
     try {
-      const response = await apiFetch<{ user: User; token: string }>('/auth/login', {
+      // Use the full /api/auth/login path to ensure it's properly routed through the Vite proxy
+      const response = await apiFetch<{ user: User; token: string }>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify(payload),
         credentials: 'include'

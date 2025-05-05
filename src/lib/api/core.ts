@@ -1,6 +1,8 @@
+
 import { toast } from "@/hooks/use-toast";
 
-export const API_URL = "/api";
+// Set API_URL to empty string since we're using relative paths with the /api prefix
+export const API_URL = "";
 
 /**
  * Core API fetch function with authentication and error handling
@@ -32,8 +34,11 @@ export async function apiFetch<T>(
       headers.append("Authorization", `Bearer ${token}`);
     }
 
+    // Make sure endpoint starts with /api
+    const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
+
     // Make the API request
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetch(apiEndpoint, {
       ...options,
       headers,
       credentials: 'include'
@@ -49,7 +54,7 @@ export async function apiFetch<T>(
 
     if (!response.ok) {
       console.error(`API Error (${response.status}):`, {
-        endpoint,
+        endpoint: apiEndpoint,
         data,
         status: response.status
       });

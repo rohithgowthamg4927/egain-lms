@@ -122,62 +122,68 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
   return (
     <div className="w-full space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="hover-scale shadow-md border-blue-100">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Students</CardTitle>
-            <CardDescription>Total enrolled students</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              {isLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                <span className="text-3xl font-bold">{data?.counts?.students || 0}</span>
-              )}
-              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
-                <Users className="h-5 w-5 text-blue-600" />
+        <Link to="/students" className="block">
+          <Card className="hover-scale shadow-md border-blue-100 hover:border-blue-300 transition-colors">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Students</CardTitle>
+              <CardDescription>Total enrolled students</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                {isLoading ? (
+                  <Skeleton className="h-8 w-24" />
+                ) : (
+                  <span className="text-3xl font-bold">{data?.counts?.students || 0}</span>
+                )}
+                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-blue-600" />
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card className="hover-scale shadow-md border-blue-100">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Instructors</CardTitle>
-            <CardDescription>Active instructors</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              {isLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                <span className="text-3xl font-bold">{data?.counts?.instructors || 0}</span>
-              )}
-              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
-                <Award className="h-5 w-5 text-blue-600" />
+        <Link to="/instructors" className="block">
+          <Card className="hover-scale shadow-md border-blue-100 hover:border-blue-300 transition-colors">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Instructors</CardTitle>
+              <CardDescription>Active instructors</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                {isLoading ? (
+                  <Skeleton className="h-8 w-24" />
+                ) : (
+                  <span className="text-3xl font-bold">{data?.counts?.instructors || 0}</span>
+                )}
+                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                  <Award className="h-5 w-5 text-blue-600" />
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card className="hover-scale shadow-md border-blue-100">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Courses</CardTitle>
-            <CardDescription>Available courses</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              {isLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                <span className="text-3xl font-bold">{data?.counts?.courses || 0}</span>
-              )}
-              <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-blue-600" />
+        <Link to="/courses" className="block">
+          <Card className="hover-scale shadow-md border-blue-100 hover:border-blue-300 transition-colors">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Courses</CardTitle>
+              <CardDescription>Available courses</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                {isLoading ? (
+                  <Skeleton className="h-8 w-24" />
+                ) : (
+                  <span className="text-3xl font-bold">{data?.counts?.courses || 0}</span>
+                )}
+                <div className="h-10 w-10 rounded-full bg-blue-600/10 flex items-center justify-center">
+                  <BookOpen className="h-5 w-5 text-blue-600" />
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

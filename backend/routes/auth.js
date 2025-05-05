@@ -196,9 +196,13 @@ router.post('/change-password', async (req, res) => {
   }
 });
 
-//Health check route to display timestamp and OK
+// Health check route
 router.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({
+    success: true,
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  });
 });
 
 export default router;

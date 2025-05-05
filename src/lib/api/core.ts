@@ -1,4 +1,3 @@
-
 import { toast } from "@/hooks/use-toast";
 
 export const API_URL = "/api";
@@ -14,9 +13,9 @@ export async function apiFetch<T>(
   data?: T;
   error?: string;
   status?: number;
+  details?: string;
 }> {
   try {
-    
     // Get auth token from local storage
     const token = localStorage.getItem("authToken");
     
@@ -37,6 +36,7 @@ export async function apiFetch<T>(
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       headers,
+      credentials: 'include'
     });
 
     let data;
@@ -58,7 +58,12 @@ export async function apiFetch<T>(
         localStorage.removeItem("authToken");
         localStorage.removeItem("currentUser");
         window.location.href = "/login";
-        return { success: false, error: "Authentication failed", status: response.status };
+        return { 
+          success: false, 
+          error: "Authentication failed", 
+          status: response.status,
+          details: data?.error || 'Unauthorized'
+        };
       }
       
       if (data && typeof data === 'object' && 'success' in data && 'error' in data) {
@@ -66,6 +71,7 @@ export async function apiFetch<T>(
           success: false,
           error: data.error,
           status: response.status,
+          details: data.debug || undefined
         };
       }
       
@@ -73,6 +79,7 @@ export async function apiFetch<T>(
         success: false,
         error: data.message || "An error occurred",
         status: response.status,
+        details: data.debug || undefined
       };
     }
 
@@ -83,7 +90,7 @@ export async function apiFetch<T>(
     return {
       success: true,
       data: data as T,
-      status: response.status,
+      status: response.status
     };
   } catch (error) {
     console.error("API Request Error:", {

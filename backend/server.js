@@ -37,7 +37,24 @@ app.use((req, res, next) => {
 
 // CORS configuration
 const corsOptions = {
-  origin: true, // Allow all origins
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow requests from these origins
+    const allowedOrigins = [
+      'https://lms.e-gain.co.in',
+      'http://localhost:5173',
+      'http://localhost:3001'
+    ];
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('Blocked CORS request from origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
@@ -45,10 +62,10 @@ const corsOptions = {
   maxAge: 86400 // 24 hours
 };
 
-// Apply CORS middleware
+// Apply CORS middleware before any routes
 app.use(cors(corsOptions));
 
-// Add CORS headers manually for OPTIONS requests
+// Handle preflight requests
 app.options('*', cors(corsOptions));
 
 // Middlewares

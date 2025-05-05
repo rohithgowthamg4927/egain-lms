@@ -1,4 +1,3 @@
-
 import { toast } from "@/hooks/use-toast";
 
 // Set API_URL to empty string since we're using relative paths with the /api prefix
@@ -103,6 +102,21 @@ export async function apiFetch<T>(
       error,
       options
     });
+    
+    // Handle CORS errors specifically
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      toast({
+        title: "CORS Error",
+        description: "Cannot connect to the server. Please check if the server is running and accessible.",
+        variant: "destructive",
+      });
+      return {
+        success: false,
+        error: "CORS Error",
+        details: "Cannot connect to the server. Please check if the server is running and accessible."
+      };
+    }
+    
     toast({
       title: "Network Error",
       description: "Failed to connect to the server. Please check your connection.",

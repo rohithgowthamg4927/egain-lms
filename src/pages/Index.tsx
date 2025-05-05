@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Terminal, CheckCircle2, XCircle } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
+import { apiFetch } from '@/lib/api/core';
 
 const Index = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -16,8 +17,8 @@ const Index = () => {
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
-        const response = await fetch('/api/health');
-        if (response.ok) {
+        const response = await apiFetch('/health');
+        if (response.success) {
           setServerStatus('online');
         } else {
           setServerStatus('offline');

@@ -1,4 +1,3 @@
-
 import { User, Role } from '@/lib/types';
 import { apiFetch } from './core';
 
@@ -26,20 +25,16 @@ export const getCurrentUser = async (): Promise<ApiResponse<User>> => {
 };
 
 export const login = async (email: string, password: string, role: Role): Promise<ApiResponse<{ user: User; token: string }>> => {
-  console.log('Login attempt with:', { email, password, role });
   
   try {
     // Check if server is reachable
     try {
-      const healthCheck = await fetch(`/api/health`, {
+      const healthCheck = await apiFetch('/health', {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         credentials: 'include'
       });
       
-      if (!healthCheck.ok) {
+      if (!healthCheck.success) {
         console.error('Health check failed:', healthCheck.status);
         return { 
           success: false, 
@@ -57,7 +52,6 @@ export const login = async (email: string, password: string, role: Role): Promis
     }
     
     const payload = { email, password, role };
-    console.log('Sending payload:', payload);
     
     try {
       // Use the full /api/auth/login path to ensure it's properly routed through the Vite proxy
@@ -67,7 +61,6 @@ export const login = async (email: string, password: string, role: Role): Promis
         credentials: 'include'
       });
       
-      console.log('Login response:', response);
       
       if (response.success && response.data) {
         localStorage.setItem('currentUser', JSON.stringify(response.data.user));

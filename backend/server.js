@@ -28,45 +28,24 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Debug middleware to log all requests
+// CORS configuration - Move to top and simplify
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  console.log('Headers:', req.headers);
+  const origin = req.headers.origin;
+  
+  // Set CORS headers
+  res.header('Access-Control-Allow-Origin', origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+  
   next();
 });
-
-// CORS configuration
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Allow requests from these origins
-    const allowedOrigins = [
-      'https://lms.e-gain.co.in',
-      'http://localhost:5173',
-      'http://localhost:3001'
-    ];
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('Blocked CORS request from origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  maxAge: 86400 // 24 hours
-};
-
-// Apply CORS middleware before any routes
-app.use(cors(corsOptions));
-
-// Handle preflight requests
-app.options('*', cors(corsOptions));
 
 // Middlewares
 app.use(express.json());
@@ -91,7 +70,12 @@ app.use('/api/instructors', instructorRoutes);
 app.use('/api/resources', resourcesRoutes);
 app.use('/api/attendance', attendanceRoutes);
 
-// Root and health check routes
+// Root and health check rout
+  
+  // Log the request
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log('Origin:', origin);
+  console.log('Headers:', req.headers);es
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Learning Management System API!' });
 });
@@ -103,6 +87,16 @@ app.get('/api/health', (req, res) => {
 // Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
+  
+  // Handle CORS errors specifically
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({
+      success: false,
+      error: 'Access denied by CORS policy',
+      details: 'Request from this origin is not allowed'
+    });
+  }
+  
   res.status(500).json({
     success: false,
     error: 'Something went wrong on the server',

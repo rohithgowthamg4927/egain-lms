@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import LoginForm from '@/components/auth/LoginForm';
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { apiFetch } from '@/lib/api/core';
 
 const Login = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -15,8 +15,8 @@ const Login = () => {
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
-        const response = await fetch('/api/health');
-        if (!response.ok) {
+        const response = await apiFetch('/health');
+        if (!response.success) {
           setServerError('Backend server is not responding properly');
         }
       } catch (error) {

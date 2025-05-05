@@ -1,8 +1,8 @@
-
 import { useState, useEffect, ReactNode } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { apiFetch } from '@/lib/api/core';
 
 interface ServerStatusCheckProps {
   children?: ReactNode;
@@ -17,14 +17,12 @@ const ServerStatusCheck = ({ children, onComplete }: ServerStatusCheckProps) => 
 
   const checkServerStatus = async () => {
     try {
-      const response = await fetch(`/api/health`, {
+      const response = await apiFetch('/health', {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include'
       });
 
-      if (response.ok) {
+      if (response.success) {
         setIsServerUp(true);
         setIsChecking(false);
         if (onComplete) onComplete();

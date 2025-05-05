@@ -1,15 +1,7 @@
 import { User, Role } from '@/lib/types';
 import { apiFetch } from './core';
 
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  status?: number;
-  details?: string;
-}
-
-export const getCurrentUser = async (): Promise<ApiResponse<User>> => {
+export const getCurrentUser = async (): Promise<{ success: boolean; data?: User; error?: string }> => {
   // Get the user from localStorage if available
   const userJson = localStorage.getItem('currentUser');
   if (userJson) {
@@ -24,75 +16,49 @@ export const getCurrentUser = async (): Promise<ApiResponse<User>> => {
   return apiFetch<User>('/users/current');
 };
 
-export const login = async (email: string, password: string, role: Role): Promise<ApiResponse<{ user: User; token: string }>> => {
+export const login = async (email: string, password: string, role: Role): Promise<{ success: boolean; data?: { user: User; token: string }; error?: string }> => {
+  
   
   try {
-    // Check if server is reachable
-    try {
-      const healthCheck = await apiFetch('/health', {
-        method: 'GET',
-        credentials: 'include'
-      });
-      
-      if (!healthCheck.success) {
-        console.error('Health check failed:', healthCheck.status);
-        return { 
-          success: false, 
-          error: "Backend server not responding",
-          status: healthCheck.status
-        };
-      }
-    } catch (error) {
-      console.error('Health check error:', error);
-      return { 
-        success: false, 
-        error: "Cannot connect to backend server",
-        details: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-    
-    const payload = { email, password, role };
-    
-    try {
-      // Use the full /api/auth/login path to ensure it's properly routed through the Vite proxy
-      const response = await apiFetch<{ user: User; token: string }>('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-        credentials: 'include'
-      });
-      
-      
-      if (response.success && response.data) {
-        localStorage.setItem('currentUser', JSON.stringify(response.data.user));
-        localStorage.setItem('authToken', response.data.token);
-      }
-      
-      return response;
-    } catch (error) {
-      console.error('Login error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Network error during login",
-        details: error instanceof Error ? error.stack : undefined
-      };
+    const healthCheck = await fetch(`https://api.e-gain.co.in/api/auth/health`);
+    if (!healthCheck.ok) {
+      return { success: false, error: "Backend server not responding" };
     }
   } catch (error) {
-    console.error('Login error:', error);
+    return { success: false, error: "Cannot connect to backend server" };
+  }
+  
+  const payload = { email, password, role };
+  
+  try {
+    const response = await apiFetch<{ user: User; token: string }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    
+    
+    // If login was successful, store the auth data
+    if (response.success && response.data) {
+      localStorage.setItem('currentUser', JSON.stringify(response.data.user));
+      localStorage.setItem('authToken', response.data.token);
+    }
+    
+    return response;
+  } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Network error during login",
-      details: error instanceof Error ? error.stack : undefined
+      error: error instanceof Error ? error.message : "Network error during login"
     };
   }
 };
 
-export const logout = async (): Promise<ApiResponse<null>> => {
+export const logout = async (): Promise<{ success: boolean }> => {
   localStorage.removeItem('currentUser');
   localStorage.removeItem('authToken');
   return { success: true };
 };
 
-export const changePassword = async (userId: number, newPassword: string): Promise<ApiResponse<null>> => {
+export const changePassword = async (userId: number, newPassword: string): Promise<{ success: boolean; error?: string }> => {
   return apiFetch(`/users/${userId}/change-password`, {
     method: 'POST',
     body: JSON.stringify({ newPassword }),

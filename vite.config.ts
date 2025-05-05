@@ -13,13 +13,6 @@ export default defineConfig(({ mode }) => ({
         target: 'https://api.e-gain.co.in',
         changeOrigin: true,
         secure: false,
-        configure: (proxy, options) => {
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-          });
-          proxy.on('error', (err, req, res) => {
-            console.error('Proxy error:', err);
-          });
-        }
       }
     }
   },

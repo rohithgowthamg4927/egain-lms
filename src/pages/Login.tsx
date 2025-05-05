@@ -4,7 +4,6 @@ import { useAuth } from '@/hooks/use-auth';
 import LoginForm from '@/components/auth/LoginForm';
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { apiFetch } from '@/lib/api/core';
 
 const Login = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -15,8 +14,8 @@ const Login = () => {
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
-        const response = await apiFetch('/health');
-        if (!response.success) {
+        const response = await fetch('https://api.e-gain.co.in/api/health');
+        if (!response.ok) {
           setServerError('Backend server is not responding properly');
         }
       } catch (error) {
@@ -55,11 +54,7 @@ const Login = () => {
             </p>
           </div>
           
-          {serverError && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertDescription>{serverError}</AlertDescription>
-            </Alert>
-          )}
+          
 
           <LoginForm />
         </div>

@@ -40,4 +40,3 @@ start-app.sh
 
 docker.sh
 ec2.txt
-migration.js

@@ -1,7 +1,6 @@
 import { toast } from "@/hooks/use-toast";
 
-// Set API_URL to empty string since we're using relative paths with the /api prefix
-export const API_URL = "";
+export const API_URL = "https://api.e-gain.co.in/api";
 
 /**
  * Core API fetch function with authentication and error handling
@@ -14,9 +13,9 @@ export async function apiFetch<T>(
   data?: T;
   error?: string;
   status?: number;
-  details?: string;
 }> {
   try {
+    
     // Get auth token from local storage
     const token = localStorage.getItem("authToken");
     
@@ -33,14 +32,10 @@ export async function apiFetch<T>(
       headers.append("Authorization", `Bearer ${token}`);
     }
 
-    // Make sure endpoint starts with /api
-    const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
-
     // Make the API request
-    const response = await fetch(apiEndpoint, {
+    const response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       headers,
-      credentials: 'include'
     });
 
     let data;
@@ -53,7 +48,7 @@ export async function apiFetch<T>(
 
     if (!response.ok) {
       console.error(`API Error (${response.status}):`, {
-        endpoint: apiEndpoint,
+        endpoint,
         data,
         status: response.status
       });
@@ -62,12 +57,7 @@ export async function apiFetch<T>(
         localStorage.removeItem("authToken");
         localStorage.removeItem("currentUser");
         window.location.href = "/login";
-        return { 
-          success: false, 
-          error: "Authentication failed", 
-          status: response.status,
-          details: data?.error || 'Unauthorized'
-        };
+        return { success: false, error: "Authentication failed", status: response.status };
       }
       
       if (data && typeof data === 'object' && 'success' in data && 'error' in data) {
@@ -75,7 +65,6 @@ export async function apiFetch<T>(
           success: false,
           error: data.error,
           status: response.status,
-          details: data.debug || undefined
         };
       }
       
@@ -83,7 +72,6 @@ export async function apiFetch<T>(
         success: false,
         error: data.message || "An error occurred",
         status: response.status,
-        details: data.debug || undefined
       };
     }
 
@@ -94,7 +82,7 @@ export async function apiFetch<T>(
     return {
       success: true,
       data: data as T,
-      status: response.status
+      status: response.status,
     };
   } catch (error) {
     console.error("API Request Error:", {
@@ -102,21 +90,6 @@ export async function apiFetch<T>(
       error,
       options
     });
-    
-    // Handle CORS errors specifically
-    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-      toast({
-        title: "CORS Error",
-        description: "Cannot connect to the server. Please check if the server is running and accessible.",
-        variant: "destructive",
-      });
-      return {
-        success: false,
-        error: "CORS Error",
-        details: "Cannot connect to the server. Please check if the server is running and accessible."
-      };
-    }
-    
     toast({
       title: "Network Error",
       description: "Failed to connect to the server. Please check your connection.",

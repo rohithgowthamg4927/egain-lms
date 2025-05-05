@@ -28,26 +28,14 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// CORS configuration - Move to top and simplify
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  
-  // Set CORS headers
-  res.header('Access-Control-Allow-Origin', origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return;
-  }
-  
-  next();
-});
-
 // Middlewares
+app.use(cors({
+  origin: '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
+}));
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
@@ -70,12 +58,7 @@ app.use('/api/instructors', instructorRoutes);
 app.use('/api/resources', resourcesRoutes);
 app.use('/api/attendance', attendanceRoutes);
 
-// Root and health check rout
-  
-  // Log the request
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  console.log('Origin:', origin);
-  console.log('Headers:', req.headers);es
+// Root and health check routes
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Learning Management System API!' });
 });
@@ -87,16 +70,6 @@ app.get('/api/health', (req, res) => {
 // Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  
-  // Handle CORS errors specifically
-  if (err.message === 'Not allowed by CORS') {
-    return res.status(403).json({
-      success: false,
-      error: 'Access denied by CORS policy',
-      details: 'Request from this origin is not allowed'
-    });
-  }
-  
   res.status(500).json({
     success: false,
     error: 'Something went wrong on the server',

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
@@ -14,7 +15,7 @@ const Login = () => {
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
-        const response = await fetch('https://api.e-gain.co.in/api/health');
+        const response = await fetch('/api/health');
         if (!response.ok) {
           setServerError('Backend server is not responding properly');
         }
@@ -54,7 +55,11 @@ const Login = () => {
             </p>
           </div>
           
-          
+          {serverError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{serverError}</AlertDescription>
+            </Alert>
+          )}
 
           <LoginForm />
         </div>

@@ -1,3 +1,4 @@
+
 import { User, Role } from '@/lib/types';
 import { apiFetch } from './core';
 
@@ -20,32 +21,42 @@ export const login = async (email: string, password: string, role: Role): Promis
   console.log('Login attempt with:', { email, password, role });
   
   try {
-    const healthCheck = await fetch(`https://api.e-gain.co.in/api/auth/health`);
-    if (!healthCheck.ok) {
-      return { success: false, error: "Backend server not responding" };
-    }
-  } catch (error) {
-    return { success: false, error: "Cannot connect to backend server" };
-  }
-  
-  const payload = { email, password, role };
-  console.log('Sending payload:', payload);
-  
-  try {
-    const response = await apiFetch<{ user: User; token: string }>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-    
-    console.log('Login response:', response);
-    
-    // If login was successful, store the auth data
-    if (response.success && response.data) {
-      localStorage.setItem('currentUser', JSON.stringify(response.data.user));
-      localStorage.setItem('authToken', response.data.token);
+    // Check if server is reachable
+    try {
+      const healthCheck = await fetch(`/api/auth/health`);
+      if (!healthCheck.ok) {
+        return { success: false, error: "Backend server not responding" };
+      }
+    } catch (error) {
+      return { success: false, error: "Cannot connect to backend server" };
     }
     
-    return response;
+    const payload = { email, password, role };
+    console.log('Sending payload:', payload);
+    
+    try {
+      // Explicitly set the correct endpoint and method
+      const response = await apiFetch<{ user: User; token: string }>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      
+      console.log('Login response:', response);
+      
+      // If login was successful, store the auth data
+      if (response.success && response.data) {
+        localStorage.setItem('currentUser', JSON.stringify(response.data.user));
+        localStorage.setItem('authToken', response.data.token);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Login error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Network error during login"
+      };
+    }
   } catch (error) {
     console.error('Login error:', error);
     return {

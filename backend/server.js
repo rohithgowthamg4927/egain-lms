@@ -28,14 +28,30 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middlewares
-app.use(cors({
-  origin: '*',
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log('Headers:', req.headers);
+  next();
+});
+
+// CORS configuration
+const corsOptions = {
+  origin: true, // Allow all origins
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range']
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400 // 24 hours
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
+
+// Add CORS headers manually for OPTIONS requests
+app.options('*', cors(corsOptions));
+
+// Middlewares
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));

@@ -17,7 +17,7 @@ export const getCurrentUser = async (): Promise<{ success: boolean; data?: User;
 };
 
 export const login = async (email: string, password: string, role: Role): Promise<{ success: boolean; data?: { user: User; token: string }; error?: string }> => {
-  
+  console.log('Login attempt with:', { email, password, role });
   
   try {
     const healthCheck = await fetch(`https://api.e-gain.co.in/api/auth/health`);
@@ -29,6 +29,7 @@ export const login = async (email: string, password: string, role: Role): Promis
   }
   
   const payload = { email, password, role };
+  console.log('Sending payload:', payload);
   
   try {
     const response = await apiFetch<{ user: User; token: string }>('/auth/login', {
@@ -36,6 +37,7 @@ export const login = async (email: string, password: string, role: Role): Promis
       body: JSON.stringify(payload),
     });
     
+    console.log('Login response:', response);
     
     // If login was successful, store the auth data
     if (response.success && response.data) {
@@ -45,6 +47,7 @@ export const login = async (email: string, password: string, role: Role): Promis
     
     return response;
   } catch (error) {
+    console.error('Login error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Network error during login"

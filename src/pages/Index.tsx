@@ -16,7 +16,7 @@ const Index = () => {
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
-        const response = await fetch('https://api.e-gain.co.in/api/health');
+        const response = await fetch('/api/health');
         if (response.ok) {
           setServerStatus('online');
         } else {

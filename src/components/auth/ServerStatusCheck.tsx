@@ -1,4 +1,3 @@
-
 import { useState, useEffect, ReactNode } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -17,8 +16,7 @@ const ServerStatusCheck = ({ children, onComplete }: ServerStatusCheckProps) => 
 
   const checkServerStatus = async () => {
     try {
-      // Updated to use port 3001
-      const response = await fetch(`https://api.e-gain.co.in/api/health`, {
+      const response = await fetch(`/api/health`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

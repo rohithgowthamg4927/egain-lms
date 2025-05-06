@@ -32,6 +32,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import PasswordTab from '@/components/users/PasswordTab';
 
 const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -268,6 +269,7 @@ const UserProfile = () => {
                   <TabsList>
                     <TabsTrigger value="courses">Courses</TabsTrigger>
                     <TabsTrigger value="schedules">Schedules</TabsTrigger>
+                    <TabsTrigger value="password">Password</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="courses">
@@ -299,6 +301,9 @@ const UserProfile = () => {
                       </CardContent>
                     </Card>
                   </TabsContent>
+                  <TabsContent value="password">
+                     <PasswordTab user={user} onUpdate={handlePasswordUpdate} />
+                   </TabsContent>
                 </Tabs>
               </div>
             </>

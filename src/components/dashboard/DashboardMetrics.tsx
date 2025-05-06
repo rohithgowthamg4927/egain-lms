@@ -6,6 +6,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { DashboardMetrics as DashboardMetricsType } from "@/lib/types";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
+import { getAllSchedules } from '@/lib/api/schedules';
+import { useQuery } from '@tanstack/react-query';
 
 interface DashboardMetricsProps {
   data?: DashboardMetricsType;
@@ -78,36 +80,39 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
     students: course._count?.students || 0,
   })) || [];
 
-  const upcomingSchedules = data?.upcomingSchedules || [];
+  // Fetch schedules using the same API as Schedules.tsx
+  const { data: schedulesData, isLoading: isLoadingSchedules, error: schedulesError } = useQuery({
+    queryKey: ['dashboardSchedules'],
+    queryFn: () => getAllSchedules(),
+  });
+  const schedules = schedulesData?.data || [];
 
-  // Update schedule filtering and sorting
+  // Use the fetched schedules for upcoming schedules
   const now = new Date();
-  now.setSeconds(0, 0); // Normalize seconds and milliseconds
-
-  const filteredUpcomingSchedules = upcomingSchedules
+  now.setSeconds(0, 0);
+  const filteredUpcomingSchedules = schedules
     .filter(schedule => {
       try {
-        const scheduleDateTime = getScheduleDateTime(schedule);
-        return scheduleDateTime ? scheduleDateTime > now : false;
+        const scheduleDate = new Date(schedule.scheduleDate);
+        const scheduleDateTime = new Date(scheduleDate);
+        if (schedule.startTime.includes('T')) {
+          const startTime = new Date(schedule.startTime);
+          scheduleDateTime.setHours(startTime.getHours(), startTime.getMinutes());
+        } else {
+          const [hours, minutes] = schedule.startTime.split(':').map(Number);
+          scheduleDateTime.setHours(hours, minutes);
+        }
+        return scheduleDateTime > now;
       } catch (error) {
-        console.error('Error filtering upcoming schedules:', error);
         return false;
       }
     })
     .sort((a, b) => {
-      try {
-        const dateTimeA = getScheduleDateTime(a);
-        const dateTimeB = getScheduleDateTime(b);
-        
-        if (!dateTimeA || !dateTimeB) return 0;
-        
-        return dateTimeA.getTime() - dateTimeB.getTime();
-      } catch (error) {
-        console.error('Error sorting upcoming schedules:', error);
-        return 0;
-      }
+      const dateA = new Date(a.scheduleDate);
+      const dateB = new Date(b.scheduleDate);
+      return dateA.getTime() - dateB.getTime();
     })
-    .slice(0, 5); // Keep only the first 5 upcoming schedules
+    .slice(0, 5);
 
   if (isError) {
     return (
@@ -353,7 +358,7 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
             <CardDescription>Next classes with Dates</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {isLoadingSchedules ? (
               <div className="space-y-4">
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />

@@ -257,6 +257,17 @@ const Schedules = () => {
             <div className="flex gap-2">
               {(isAdmin || isInstructor) && (
                 <>
+                  {schedule.meetingLink && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-3 text-purple-600 border-purple-600 hover:bg-purple-50"
+                      onClick={() => window.open(schedule.meetingLink, '_blank')}
+                    >
+                      <Video className="h-4 w-4 mr-1" />
+                      Join Meeting
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"

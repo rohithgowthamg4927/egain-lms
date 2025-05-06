@@ -43,17 +43,17 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { format, parseISO, isToday, isTomorrow, addDays, isAfter, isBefore } from 'date-fns';
+import PasswordResetDialog from '@/components/auth/PasswordResetDialog';
+import { getAllSchedules } from '@/lib/api/schedules';
 
 // Add utility functions for date/time handling
 const formatTime = (timeString: string) => {
   if (!timeString) return '';
   try {
-    // For full ISO string (from database)
     if (timeString.includes('T')) {
       const date = new Date(timeString);
       return format(date, 'h:mm a');
     }
-    // For time-only string (HH:mm:ss)
     const [hours, minutes] = timeString.split(':').map(Number);
     const date = new Date();
     date.setHours(hours, minutes, 0, 0);
@@ -98,6 +98,14 @@ const InstructorDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const instructorId = user?.userId;
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+
+  // Check if user needs to reset password
+  useEffect(() => {
+    if (user?.mustResetPassword) {
+      setShowPasswordReset(true);
+    }
+  }, [user?.mustResetPassword]);
 
   // Fetch instructor courses
   const {
@@ -110,14 +118,10 @@ const InstructorDashboard = () => {
     enabled: !!instructorId,
   });
 
-  // Fetch instructor schedules
-  const {
-    data: schedulesData,
-    isLoading: isSchedulesLoading,
-    error: schedulesError,
-  } = useQuery({
+  // Fetch schedules using the same API as Schedules.tsx, filtered by instructorId
+  const { data: schedulesData, isLoading: isLoadingSchedules, error: schedulesError } = useQuery({
     queryKey: ['instructorSchedules', instructorId],
-    queryFn: () => instructorId ? getInstructorSchedules(instructorId) : Promise.resolve({ success: false, data: [] }),
+    queryFn: () => instructorId ? getAllSchedules({ instructorId }) : Promise.resolve({ success: false, data: [] }),
     enabled: !!instructorId,
   });
 
@@ -152,7 +156,7 @@ const InstructorDashboard = () => {
 
   const todaySchedules = schedules.filter(schedule => {
     try {
-    const scheduleDate = new Date(schedule.scheduleDate);
+      const scheduleDate = new Date(schedule.scheduleDate);
       const scheduleDateTime = getScheduleDateTime(schedule);
       
       if (!scheduleDateTime) return false;
@@ -251,8 +255,28 @@ const InstructorDashboard = () => {
   // Pie chart colors
   const COLORS = ['#7E69AB', '#9b87f5', '#D6BCFA', '#E9D8FD', '#FAF5FF'];
 
+  const handlePasswordResetSuccess = () => {
+    setShowPasswordReset(false);
+    // Update user in localStorage
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (currentUser && currentUser.userId === user?.userId) {
+      currentUser.mustResetPassword = false;
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Password Reset Dialog */}
+      {user?.mustResetPassword && (
+        <PasswordResetDialog
+          userId={user.userId}
+          isOpen={showPasswordReset}
+          onClose={() => setShowPasswordReset(false)}
+          onSuccess={handlePasswordResetSuccess}
+        />
+      )}
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Welcome back, {user?.fullName || 'Instructor'}</h1>
         <p className="text-gray-600 mt-2">Here's an overview of your teaching activities and schedules</p>
@@ -311,7 +335,7 @@ const InstructorDashboard = () => {
             <CardDescription>Your teaching schedule for the coming days</CardDescription>
           </CardHeader>
           <CardContent>
-            {isSchedulesLoading ? (
+            {isLoadingSchedules ? (
               <div className="h-48 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-700"></div>
               </div>

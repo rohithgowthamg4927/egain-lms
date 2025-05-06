@@ -72,6 +72,7 @@ export function mapApiUser(user: any): User {
     email: user.email,
     phoneNumber: user.phoneNumber || user.phone,
     role: user.role,
+    address: user.address,
     createdAt: dateToString(user.createdAt),
     updatedAt: dateToString(user.updatedAt || user.createdAt),
     mustResetPassword: user.mustResetPassword || user.isFirstLogin || false,

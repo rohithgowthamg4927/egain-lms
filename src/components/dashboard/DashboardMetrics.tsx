@@ -1,14 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, BookOpen, Calendar, Award, TrendingUp, Bell, AlertCircle, PieChart as PieChartIcon, BarChart as BarChartIcon, Video } from "lucide-react";
+import { Users, BookOpen, Calendar, Award, TrendingUp, Bell, AlertCircle, PieChart as PieChartIcon, BarChart as BarChartIcon } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { DashboardMetrics as DashboardMetricsType } from "@/lib/types";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
-import { Button } from "../ui/button";
-import { getAllSchedules } from '@/lib/api/schedules';
-import { useQuery } from '@tanstack/react-query';
 
 interface DashboardMetricsProps {
   data?: DashboardMetricsType;
@@ -19,14 +16,15 @@ interface DashboardMetricsProps {
 const COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f97316', '#10b981', '#14b8a6'];
 
 // Add utility functions for date/time handling
-// Convert UTC time to IST (India Standard Time, UTC+5:30)
 const formatTime = (timeString: string) => {
   if (!timeString) return '';
   try {
+    // For full ISO string (from database)
     if (timeString.includes('T')) {
       const date = new Date(timeString);
       return format(date, 'h:mm a');
     }
+    // For time-only string (HH:mm:ss)
     const [hours, minutes] = timeString.split(':').map(Number);
     const date = new Date();
     date.setHours(hours, minutes, 0, 0);
@@ -80,39 +78,36 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
     students: course._count?.students || 0,
   })) || [];
 
-  // Fetch schedules using the same API as Schedules.tsx
-  const { data: schedulesData, isLoading: isLoadingSchedules, error: schedulesError } = useQuery({
-    queryKey: ['dashboardSchedules'],
-    queryFn: () => getAllSchedules(),
-  });
-  const schedules = schedulesData?.data || [];
+  const upcomingSchedules = data?.upcomingSchedules || [];
 
-  // Use the fetched schedules for upcoming schedules
+  // Update schedule filtering and sorting
   const now = new Date();
-  now.setSeconds(0, 0);
-  const filteredUpcomingSchedules = schedules
+  now.setSeconds(0, 0); // Normalize seconds and milliseconds
+
+  const filteredUpcomingSchedules = upcomingSchedules
     .filter(schedule => {
       try {
-        const scheduleDate = new Date(schedule.scheduleDate);
-        const scheduleDateTime = new Date(scheduleDate);
-        if (schedule.startTime.includes('T')) {
-          const startTime = new Date(schedule.startTime);
-          scheduleDateTime.setHours(startTime.getHours(), startTime.getMinutes());
-        } else {
-          const [hours, minutes] = schedule.startTime.split(':').map(Number);
-          scheduleDateTime.setHours(hours, minutes);
-        }
-        return scheduleDateTime > now;
+        const scheduleDateTime = getScheduleDateTime(schedule);
+        return scheduleDateTime ? scheduleDateTime > now : false;
       } catch (error) {
+        console.error('Error filtering upcoming schedules:', error);
         return false;
       }
     })
     .sort((a, b) => {
-      const dateA = new Date(a.scheduleDate);
-      const dateB = new Date(b.scheduleDate);
-      return dateA.getTime() - dateB.getTime();
+      try {
+        const dateTimeA = getScheduleDateTime(a);
+        const dateTimeB = getScheduleDateTime(b);
+        
+        if (!dateTimeA || !dateTimeB) return 0;
+        
+        return dateTimeA.getTime() - dateTimeB.getTime();
+      } catch (error) {
+        console.error('Error sorting upcoming schedules:', error);
+        return 0;
+      }
     })
-    .slice(0, 5);
+    .slice(0, 5); // Keep only the first 5 upcoming schedules
 
   if (isError) {
     return (
@@ -367,42 +362,28 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
             ) : filteredUpcomingSchedules && filteredUpcomingSchedules.length > 0 ? (
               <div className="space-y-4">
                 {filteredUpcomingSchedules.map((schedule, index) => (
-                  <div key={schedule.scheduleId} className="rounded-lg border hover:bg-accent transition-colors">
-                    <Link 
-                      to={`/schedules`}
-                      className="flex items-center gap-4 p-3"
-                    >
-                      <div className="bg-blue-600/10 p-3 rounded-lg">
-                        <Calendar className="h-5 w-5 text-blue-600" />
+                  <Link 
+                    to={`/schedules`}
+                    key={schedule.scheduleId}
+                    className="flex items-center gap-4 p-3 rounded-lg border hover:bg-accent transition-colors"
+                  >
+                    <div className="bg-blue-600/10 p-3 rounded-lg">
+                      <Calendar className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">{schedule.topic}</p>
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <span>
+                          {formatScheduleDate(schedule.scheduleDate)}
+                        </span>
+                        <span>{formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}</span>
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium">{schedule.topic}</p>
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                          <span>
-                            {formatScheduleDate(schedule.scheduleDate)}
-                          </span>
-                          <span>{formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}</span>
-                        </div>
-                      </div>
-                      <div className="text-sm">
-                        <p className="font-medium">{schedule.batch?.course?.courseName || 'N/A'}</p>
-                        <p className="text-muted-foreground">{schedule.batch?.batchName || 'N/A'}</p>
-                      </div>
-                    </Link>
-                    {schedule.meetingLink && (
-                      <div className="px-3 pb-3 flex justify-end">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => window.open(schedule.meetingLink, '_blank')}
-                          className="text-blue-600 border-blue-600 hover:bg-blue-50"
-                        >
-                          <Video className="w-4 h-4 mr-1" />
-                          Join Meeting
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                    <div className="text-sm">
+                      <p className="font-medium">{schedule.batch?.course?.courseName || 'N/A'}</p>
+                      <p className="text-muted-foreground">{schedule.batch?.batchName || 'N/A'}</p>
+                    </div>
+                  </Link>
                 ))}
               </div>
             ) : (

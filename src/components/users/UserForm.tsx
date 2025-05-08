@@ -103,16 +103,19 @@ import { useState } from 'react';
    
  
    const handleSubmit = async (values: FormValues) => {
-     // Determine the password to use
-     const passwordToSubmit = isEditMode 
-       ? (values.shouldChangePassword ? generatedPassword : defaultValues?.password || '')
-       : generatedPassword;
+     let passwordToSubmit: string | undefined = undefined;
+     if (isEditMode && shouldChangePassword) {
+       passwordToSubmit = generatedPassword;
+     } else if (!isEditMode) {
+       passwordToSubmit = generatedPassword;
+     }
  
      onSubmit({
        ...values,
        password: passwordToSubmit,
        photoUrl: profilePictureUrl || undefined,
-       mustResetPassword: values.shouldChangePassword
+       mustResetPassword: shouldChangePassword,
+       shouldChangePassword: shouldChangePassword,
      });
    };
  

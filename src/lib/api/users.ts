@@ -54,6 +54,7 @@ interface UserData {
   address?: string | null;
   role?: Role;
   mustResetPassword?: boolean;
+  shouldChangePassword?: boolean;
   password?: string;
 }
 

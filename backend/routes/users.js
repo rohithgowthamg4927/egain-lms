@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { handleApiError } from '../utils/errorHandler.js';
 import crypto from 'crypto';
+import emailService from '../services/emailService.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -90,42 +91,28 @@ router.get('/:id', async (req, res) => {
 //Create a new user
 router.post('/', async (req, res) => {
   try {
-    const { 
-      fullName, 
-      email, 
-      password,
-      role,
-      phoneNumber,
-      address,
-      mustResetPassword 
-    } = req.body;
+    const { fullName, email, password, role, phoneNumber, address } = req.body;
     
-    //Check if email already exists
-    const existingUser = await prisma.User.findUnique({
-      where: { email }
-    });
-    
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        error: 'Email already in use'
-      });
-    }
-    
+    // Create user
     const user = await prisma.User.create({
       data: {
         fullName,
         email,
-        password,
+        password, // plaintext password
         role,
         phoneNumber,
         address,
-        mustResetPassword: Boolean(mustResetPassword),
-        createdAt: new Date(),
-        updatedAt: new Date()
+        mustResetPassword: true
       }
     });
-    
+
+    // Send welcome email
+    await emailService.sendCredentialsEmail({
+      email: user.email,
+      password: password,
+      fullName: user.fullName
+    }, true); // isNewUser = true
+
     res.status(201).json({
       success: true,
       data: user
@@ -138,16 +125,8 @@ router.post('/', async (req, res) => {
 //Update user details
 router.put('/:id', async (req, res) => {
   try {
+    const { fullName, email, password, role, phoneNumber, address, shouldChangePassword, mustResetPassword } = req.body;
     const userId = parseInt(req.params.id);
-    const { 
-      fullName, 
-      email, 
-      password,
-      role,
-      phoneNumber,
-      address,
-      mustResetPassword
-    } = req.body;
     
     //Check if user exists
     const existingUser = await prisma.User.findUnique({
@@ -175,22 +154,47 @@ router.put('/:id', async (req, res) => {
       }
     }
     
+    // Prepare update data
     const updateData = {
-      ...(fullName !== undefined && { fullName }),
-      ...(email !== undefined && { email }),
-      ...(role !== undefined && { role }),
-      ...(phoneNumber !== undefined && { phoneNumber }),
-      ...(address !== undefined && { address }),
-      ...(password !== undefined && { password }),
-      ...(mustResetPassword !== undefined && { mustResetPassword }),
-      updatedAt: new Date()
+      fullName,
+      email,
+      role,
+      phoneNumber,
+      address,
+      mustResetPassword: shouldChangePassword ? true : mustResetPassword
     };
+
+    // Only update password and send email if shouldChangePassword is true
+    if (shouldChangePassword && password) {
+      updateData.password = password;
+      updateData.mustResetPassword = true;
+
+      try {
+        // Send password reset email
+        await emailService.sendCredentialsEmail({
+          email: email || existingUser.email,
+          password: password,
+          fullName: fullName || existingUser.fullName
+        }, false); // isNewUser = false
+      } catch (emailError) {
+        console.error('Error sending password reset email:', emailError);
+        // Continue with the update even if email fails
+      }
+    }
     
     //Update user
     const updatedUser = await prisma.User.update({
       where: { userId },
       data: updateData
     });
+    
+    // If email was changed, send notification to the new email
+    if (email && email !== existingUser.email) {
+      await emailService.sendEmailChangeNotification({
+        fullName: fullName || existingUser.fullName,
+        newEmail: email
+      });
+    }
     
     res.json({
       success: true,
@@ -292,6 +296,13 @@ router.post('/:id/regenerate-password', async (req, res) => {
         updatedAt: new Date()
       }
     });
+    
+    // Send password reset email
+    await emailService.sendCredentialsEmail({
+      email: user.email,
+      password: newPassword,
+      fullName: user.fullName
+    }, false); // isNewUser = false
     
     res.json({
       success: true,

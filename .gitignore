@@ -42,7 +42,4 @@ docker.sh
 ec2.txt
 
 PasswordResetDialog.tsx
-csvGenerator.js
 password.js
-emailService.js
-services/

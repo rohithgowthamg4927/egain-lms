@@ -1,4 +1,3 @@
-
 import { User, Role } from '@/lib/types';
 import { apiFetch } from './core';
 
@@ -54,6 +53,7 @@ interface UserData {
   address?: string | null;
   role?: Role;
   mustResetPassword?: boolean;
+  shouldChangePassword?: boolean;
   password?: string;
 }
 
@@ -95,6 +95,7 @@ export const updateUser = async (userId: number, data: Partial<UserData>): Promi
       ...(data.address !== undefined && { address: data.address || null }),
       ...(data.role !== undefined && { role: data.role }),
       ...(data.password !== undefined && { password: data.password }),
+      ...(data.shouldChangePassword !== undefined && { shouldChangePassword: data.shouldChangePassword }),
       ...(data.mustResetPassword !== undefined && { mustResetPassword: data.mustResetPassword })
     };
     

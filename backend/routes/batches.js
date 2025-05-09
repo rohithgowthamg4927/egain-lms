@@ -1,6 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
+import emailService from '../services/emailService.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -148,6 +149,10 @@ router.post('/', async (req, res) => {
           endDate: new Date(endDate),
           courseId: parseInt(courseId),
           instructorId: parseInt(instructorId)
+        },
+        include: {
+          course: true,
+          instructor: true
         }
       });
       
@@ -165,6 +170,15 @@ router.post('/', async (req, res) => {
             instructorId: parseInt(instructorId),
             courseId: parseInt(courseId)
           }
+        });
+      }
+
+      // Send instructor assignment email
+      if (newBatch.instructor && newBatch.course) {
+        await emailService.sendInstructorAssignmentEmail({
+          instructor: newBatch.instructor,
+          batch: newBatch,
+          course: newBatch.course
         });
       }
       
@@ -209,6 +223,10 @@ router.put('/:id', async (req, res) => {
           ...(endDate !== undefined && { endDate: new Date(endDate) }),
           ...(courseId !== undefined && { courseId: parseInt(courseId) }),
           ...(instructorId !== undefined && { instructorId: parseInt(instructorId) })
+        },
+        include: {
+          course: true,
+          instructor: true
         }
       });
       
@@ -235,6 +253,15 @@ router.put('/:id', async (req, res) => {
               instructorId: actualInstructorId,
               courseId: actualCourseId
             }
+          });
+        }
+
+        // Send instructor assignment email if instructor was changed
+        if (instructorId && parseInt(instructorId) !== currentBatch.instructorId && updatedBatch.instructor && updatedBatch.course) {
+          await emailService.sendInstructorAssignmentEmail({
+            instructor: updatedBatch.instructor,
+            batch: updatedBatch,
+            course: updatedBatch.course
           });
         }
       }
@@ -333,6 +360,24 @@ router.post('/:id/students', async (req, res) => {
             studentId: parseInt(studentId),
             courseId: batch.courseId
           }
+        });
+      }
+      
+      // Fetch student, batch, course, and instructor details for the email
+      const student = await prisma.User.findUnique({ where: { userId: parseInt(studentId) } });
+      const batchWithDetails = await prisma.Batch.findUnique({
+        where: { batchId },
+        include: {
+          course: true,
+          instructor: true
+        }
+      });
+      if (student && batchWithDetails && batchWithDetails.course && batchWithDetails.instructor) {
+        await emailService.sendEnrollmentEmail({
+          student,
+          batch: batchWithDetails,
+          course: batchWithDetails.course,
+          instructor: batchWithDetails.instructor
         });
       }
       

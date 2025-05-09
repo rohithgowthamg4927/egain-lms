@@ -2,7 +2,6 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import { handleApiError } from '../utils/errorHandler.js';
-import { hashPassword, comparePassword } from '../utils/password.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -20,7 +19,7 @@ router.post('/login', async (req, res) => {
       });
     }
     
-    const user = await prisma.user.findUnique({
+    const user = await prisma.User.findUnique({
       where: { email },
       include: {
         profilePicture: true
@@ -36,8 +35,7 @@ router.post('/login', async (req, res) => {
     }
     
     //match password from db
-    const isPasswordValid = await comparePassword(password, user.password);
-    if (!isPasswordValid) {
+    if (user.password !== password) {
       return res.status(401).json({
         success: false,
         error: 'Invalid credentials'
@@ -48,16 +46,26 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(
       { userId: user.userId, email: user.email, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '1d' }
     );
     
     //Return success response with token and user data
-    const { password: _, ...userWithoutPassword } = user;
     res.json({
       success: true,
       data: {
-        user: userWithoutPassword,
-        token
+        token,
+        user: {
+          userId: user.userId,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+          phoneNumber: user.phoneNumber,
+          address: user.address,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          mustResetPassword: user.mustResetPassword,
+          profilePicture: user.profilePicture
+        }
       }
     });
   } catch (error) {
@@ -68,17 +76,17 @@ router.post('/login', async (req, res) => {
 //Change password
 router.post('/change-password', async (req, res) => {
   try {
-    const { userId, newPassword } = req.body;
+    const { userId, currentPassword, newPassword } = req.body;
 
-    if (!userId || !newPassword) {
+    if (!userId || !currentPassword || !newPassword) {
       return res.status(400).json({
         success: false,
-        error: 'User ID and new password are required'
+        error: 'User ID, current password, and new password are required'
       });
     }
     
-    //Find user by ID
-    const user = await prisma.user.findUnique({
+    //Find instructor/student by ID
+    const user = await prisma.User.findUnique({
       where: { userId: parseInt(userId) }
     });
     
@@ -90,12 +98,19 @@ router.post('/change-password', async (req, res) => {
       });
     }
     
-    //Hash and update new password
-    const hashedPassword = await hashPassword(newPassword);
-    await prisma.user.update({
+    //Check if current password matches 
+    if (user.password !== currentPassword) {
+      return res.status(401).json({
+        success: false,
+        error: 'Current password is incorrect'
+      });
+    }
+    
+    //Update with new password
+    await prisma.User.update({
       where: { userId: parseInt(userId) },
       data: {
-        password: hashedPassword,
+        password: newPassword,
         updatedAt: new Date(),
         mustResetPassword: false
       }

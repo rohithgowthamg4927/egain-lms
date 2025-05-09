@@ -2,6 +2,7 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleApiError } from '../utils/errorHandler.js';
 import { format } from 'date-fns';
+import emailService from '../services/emailService.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -92,7 +93,16 @@ router.post('/', async (req, res) => {
     const { batchId, topic, startTime, endTime, meetingLink, platform, scheduleDate } = req.body;
 
     const batch = await prisma.Batch.findUnique({
-      where: { batchId: parseInt(batchId) }
+      where: { batchId: parseInt(batchId) },
+      include: {
+        course: true,
+        instructor: true,
+        students: {
+          include: {
+            student: true
+          }
+        }
+      }
     });
 
     if (!batch) {
@@ -152,6 +162,21 @@ router.post('/', async (req, res) => {
         platform: platform || null
       }
     });
+
+    // Send emails to all students in the batch
+    const emailPromises = batch.students.map(async (studentBatch) => {
+      const student = studentBatch.student;
+      return emailService.sendClassScheduleEmail({
+        student,
+        schedule,
+        batch,
+        course: batch.course,
+        instructor: batch.instructor
+      });
+    });
+
+    // Wait for all emails to be sent
+    await Promise.all(emailPromises);
 
     res.status(201).json({ success: true, data: schedule });
   } catch (error) {

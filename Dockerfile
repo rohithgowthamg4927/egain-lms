@@ -21,6 +21,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/backend/routes ./routes
 COPY --from=builder /app/backend/utils ./utils
+COPY --from=builder /app/backend/services ./services
 COPY --from=builder /app/backend/server.js ./
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/.env .env

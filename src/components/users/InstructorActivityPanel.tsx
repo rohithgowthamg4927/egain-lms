@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { Calendar, BookOpen, Clock, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
+import { useNavigate } from 'react-router-dom';
 
 interface InstructorActivityPanelProps {
   userId: number;
@@ -16,6 +17,7 @@ interface InstructorActivityPanelProps {
 
 const InstructorActivityPanel = ({ userId, showSchedulesOnly = false }: InstructorActivityPanelProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Fetch instructor courses if not showing schedules only
   const coursesQuery = useQuery({
@@ -134,7 +136,11 @@ const InstructorActivityPanel = ({ userId, showSchedulesOnly = false }: Instruct
         ) : coursesQuery.data?.data && coursesQuery.data.data.length > 0 ? (
           <div className="space-y-3">
             {coursesQuery.data.data.map((course) => (
-              <Card key={course.courseId} className="overflow-hidden">
+              <Card 
+                key={course.courseId} 
+                className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => navigate(`/courses/${course.courseId}`)}
+              >
                 <div className="p-4">
                   <div className="flex justify-between items-start">
                     <div className="flex items-start gap-3">
@@ -142,7 +148,9 @@ const InstructorActivityPanel = ({ userId, showSchedulesOnly = false }: Instruct
                         <BookOpen className="h-5 w-5 text-blue-600" />
                       </div>
                       <div>
-                        <h4 className="font-semibold">{course.courseName}</h4>
+                        <h4 className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                          {course.courseName}
+                        </h4>
                         <p className="text-sm text-muted-foreground">
                           {course.category?.categoryName || 'Uncategorized'} · {course.courseLevel.charAt(0).toUpperCase() + course.courseLevel.slice(1)}
                         </p>

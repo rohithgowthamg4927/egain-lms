@@ -55,7 +55,7 @@ const ResourceCard = ({
 
     if (type === 'recording' || type === 'video' ||
       extension === 'mp4' || extension === 'mov' || extension === 'avi') {
-      return 'video';
+      return 'Recording';
     }
 
     if (type === 'assignment' || type === 'document' ||
@@ -70,7 +70,7 @@ const ResourceCard = ({
 
   const resourceTypeColors = {
     'document': 'bg-blue-100 hover:bg-blue-200 text-blue-800',
-    'video': 'bg-red-100 hover:bg-red-200 text-red-800',
+    'Class Recording': 'destructive',
     'assignment': 'bg-amber-100 hover:bg-amber-200 text-amber-800',
     'link': 'bg-green-100 hover:bg-green-200 text-green-800',
     'code': 'bg-purple-100 hover:bg-purple-200 text-purple-800',
@@ -84,7 +84,7 @@ const ResourceCard = ({
     switch (type) {
       case 'document':
         return <div className="bg-blue-100 p-3 rounded-full"><svg className="h-6 w-6 text-blue-700" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /></svg></div>;
-      case 'video':
+      case 'Recording':
         return <div className="bg-red-100 p-3 rounded-full"><svg className="h-6 w-6 text-red-700" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9l6 3l-6 3V9z" /><rect width="20" height="14" x="2" y="5" rx="2" ry="2" /></svg></div>;
       case 'assignment':
         return <div className="bg-amber-100 p-3 rounded-full"><svg className="h-6 w-6 text-amber-700" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg></div>;
@@ -174,7 +174,10 @@ const ResourceCard = ({
     >
       <div className="p-4 flex items-center justify-between">
         {getResourceIcon(resourceType)}
-        <Badge variant="outline" className={`font-normal ${getResourceTypeColor(resourceType)}`}>
+        <Badge 
+          variant={resourceType === 'Recording' ? 'destructive' : 'outline'} 
+          className={`font-normal ${resourceType !== 'Recording' ? getResourceTypeColor(resourceType) : ''}`}
+        >
           {resourceType.charAt(0).toUpperCase() + resourceType.slice(1)}
         </Badge>
       </div>

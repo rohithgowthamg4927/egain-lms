@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -9,13 +9,28 @@ import { useToast } from '@/hooks/use-toast';
 import { getCourses, getCategories, createCategory, deleteCourse } from '@/lib/api';
 import { getDashboardCounts } from '@/lib/api/dashboard';
 import { Course, Category, Level, Role } from '@/lib/types';
-import { Search, BookOpen, Users, Layers, Plus } from 'lucide-react';
+import { Search, BookOpen, Users, Layers, Plus, Grid, List, LayoutGrid, X } from 'lucide-react';
 import CourseGrid from '@/components/courses/CourseGrid';
+import CourseList from '@/components/courses/CourseList';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 import { useAuth } from '@/hooks/use-auth';
+
+const SORT_OPTIONS = [
+  { value: 'az', label: 'A-Z' },
+  { value: 'za', label: 'Z-A' },
+  { value: 'recent', label: 'Recently Added' },
+  { value: 'oldest', label: 'First Added' },
+];
+
+const LEVEL_OPTIONS = [
+  { value: 'all', label: 'All Levels' },
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'advanced', label: 'Advanced' },
+];
 
 const Courses = () => {
   const navigate = useNavigate();
@@ -33,6 +48,12 @@ const Courses = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [studentsCount, setStudentsCount] = useState(0);
+  const [sortOption, setSortOption] = useState('az');
+  const [selectedLevel, setSelectedLevel] = useState('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<Course[]>([]);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   // Fetch dashboard counts for student metrics
   const countsQuery = useQuery({
@@ -98,6 +119,39 @@ const Courses = () => {
     refetchData();
   }, []);
 
+  // Handle click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Update suggestions when search term changes
+  useEffect(() => {
+    if (searchTerm.length > 0) {
+      const filtered = courses.filter(course => 
+        course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      ).slice(0, 5); // Limit to 5 suggestions
+      setSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [searchTerm, courses]);
+
+  const handleSuggestionClick = (course: Course) => {
+    setSearchTerm(course.courseName);
+    setShowSuggestions(false);
+    navigate(`/courses/${course.courseId}`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -120,15 +174,31 @@ const Courses = () => {
     );
   }
 
-  const filteredCourses = courses.filter((course) => {
+  // Sorting and filtering logic
+  const filteredCourses = courses
+    .filter((course) => {
     const matchesSearch =
       course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()));
-
     const matchesCategory =
       selectedCategory === 'all' || course.categoryId.toString() === selectedCategory;
-
-    return matchesSearch && matchesCategory;
+      const matchesLevel =
+        selectedLevel === 'all' || (course.courseLevel && course.courseLevel === selectedLevel);
+      return matchesSearch && matchesCategory && matchesLevel;
+    })
+    .sort((a, b) => {
+      switch (sortOption) {
+        case 'az':
+          return a.courseName.localeCompare(b.courseName);
+        case 'za':
+          return b.courseName.localeCompare(a.courseName);
+        case 'recent':
+          return b.courseId - a.courseId; // Assuming higher ID = newer
+        case 'oldest':
+          return a.courseId - b.courseId;
+        default:
+          return 0;
+      }
   });
 
   const handleViewCourse = (course: Course) => {
@@ -232,15 +302,35 @@ const Courses = () => {
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
         <h1 className="text-3xl font-bold">Courses</h1>
-        {isAdmin && (
-          <Button 
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => navigate('/courses/add')}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Course
-          </Button>
-        )}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className="h-8 px-2"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="h-8 px-2"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+          {isAdmin && (
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => navigate('/courses/add')}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Course
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -289,15 +379,71 @@ const Courses = () => {
 
       <div className="bg-white rounded-lg border shadow-sm p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
+          <div className="flex-1 relative" ref={searchRef}>
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
             <Input
               placeholder="Search courses..."
               className="pl-10 border-gray-200"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onFocus={() => searchTerm.length > 0 && setShowSuggestions(true)}
             />
+            {searchTerm && (
+              <button
+                className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+                onClick={() => {
+                  setSearchTerm('');
+                  setShowSuggestions(false);
+                }}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
+                {suggestions.map((course) => (
+                  <div
+                    key={course.courseId}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                    onClick={() => handleSuggestionClick(course)}
+                    role="link"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        handleSuggestionClick(course);
+                      }
+                    }}
+                  >
+                    <BookOpen className="h-4 w-4 text-gray-500" />
+                    <div className="flex-1">
+                      <div className="font-medium">{course.courseName}</div>
+                      {course.description && (
+                        <div className="text-sm text-gray-500 truncate">
+                          {course.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+          {/* Sorting Dropdown */}
+          <div className="w-full md:w-48">
+            <Select value={sortOption} onValueChange={setSortOption}>
+              <SelectTrigger className="w-full border-gray-200">
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent>
+                {SORT_OPTIONS.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Category and Level Dropdowns */}
           <div className="flex items-center gap-2">
             <Select
               value={selectedCategory}
@@ -316,9 +462,31 @@ const Courses = () => {
               </SelectContent>
             </Select>
             {isAdmin && (
+              <Select
+                value={selectedLevel}
+                onValueChange={setSelectedLevel}
+              >
+                <SelectTrigger className="w-[150px] border-gray-200">
+                  <SelectValue placeholder="All Levels" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LEVEL_OPTIONS.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {isAdmin && (
               <Dialog open={isCreateCategoryDialogOpen} onOpenChange={setIsCreateCategoryDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200 hover:border-green-300"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
                     Add Category
                   </Button>
                 </DialogTrigger>
@@ -359,13 +527,22 @@ const Courses = () => {
         </div>
       </div>
 
-      <CourseGrid
-        courses={filteredCourses}
-        loading={isLoading}
-        onView={handleViewCourse}
-        onEdit={isAdmin ? handleEditCourse : undefined}
-        onDelete={isAdmin ? handleDeleteCourse : undefined}
-      />
+      {viewMode === 'grid' ? (
+        <CourseGrid
+          courses={filteredCourses}
+          loading={isLoading}
+          onView={handleViewCourse}
+          onEdit={isAdmin ? handleEditCourse : undefined}
+          onDelete={isAdmin ? handleDeleteCourse : undefined}
+        />
+      ) : (
+        <CourseList
+          courses={filteredCourses}
+          onView={handleViewCourse}
+          onEdit={isAdmin ? handleEditCourse : undefined}
+          onDelete={isAdmin ? handleDeleteCourse : undefined}
+        />
+      )}
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>

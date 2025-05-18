@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
+import { useNavigate } from 'react-router-dom';
 
 interface StudentActivityPanelProps {
   userId: number;
@@ -14,6 +15,8 @@ interface StudentActivityPanelProps {
 }
 
 const StudentActivityPanel = ({ userId, showSchedulesOnly = false }: StudentActivityPanelProps) => {
+  const navigate = useNavigate();
+
   // Fetch student courses if not showing schedules only
   const coursesQuery = useQuery({
     queryKey: ['studentCourses', userId],
@@ -116,9 +119,15 @@ const StudentActivityPanel = ({ userId, showSchedulesOnly = false }: StudentActi
       ) : coursesQuery.data?.data && coursesQuery.data.data.length > 0 ? (
         <div className="space-y-4">
           {coursesQuery.data.data.map((course) => (
-            <Card key={course.studentCourseId} className="hover:bg-muted/50 transition-colors">
+            <Card 
+              key={course.studentCourseId} 
+              className="hover:bg-muted/50 transition-colors cursor-pointer hover:shadow-md"
+              onClick={() => navigate(`/courses/${course.course?.courseId}`)}
+            >
               <CardContent className="p-4">
-                <h4 className="font-semibold">{course.course?.courseName}</h4>
+                <h4 className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                  {course.course?.courseName}
+                </h4>
                 <p className="text-muted-foreground mt-1">
                   {course.course?.description?.slice(0, 100)}
                   {course.course?.description && course.course.description.length > 100 ? '...' : ''}

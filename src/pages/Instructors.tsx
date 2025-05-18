@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { getUsers, deleteUser } from '@/lib/api';
 import { getCourses } from '@/lib/api/courses';
 import { getBatches } from '@/lib/api/batches';
 import { Role, User } from '@/lib/types';
-import { Plus, Search, Award, BookOpen, Users, Eye, Edit, Trash, Calendar } from 'lucide-react';
+import { Plus, Search, Award, BookOpen, Users, Eye, Edit, Trash, Calendar, X, User as UserIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { formatDate } from '@/lib/utils/date-helpers';
@@ -25,6 +25,14 @@ import {
   AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const SORT_OPTIONS = [
+  { value: 'az', label: 'A-Z' },
+  { value: 'za', label: 'Z-A' },
+  { value: 'recent', label: 'Recently Joined' },
+  { value: 'oldest', label: 'First Joined' },
+];
 
 const Instructors = () => {
   const navigate = useNavigate();
@@ -38,6 +46,12 @@ const Instructors = () => {
   const [studentsCount, setStudentsCount] = useState(0);
   const [batchesCount, setBatchesCount] = useState(0);
   const { toast } = useToast();
+  const [sortOption, setSortOption] = useState('az');
+  const [selectedBatch, setSelectedBatch] = useState('all');
+  const [batches, setBatches] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<User[]>([]);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const fetchInstructors = async () => {
     setIsLoading(true);
@@ -78,6 +92,7 @@ const Instructors = () => {
       if (batchesResponse.success && batchesResponse.data) {
         const batchesData = Array.isArray(batchesResponse.data) ? batchesResponse.data : [batchesResponse.data];
         setBatchesCount(batchesData.length);
+        setBatches(batchesData);
       }
     } catch (error) {
     }
@@ -101,10 +116,66 @@ const Instructors = () => {
     fetchStudentsCount();
   }, []);
 
-  const filteredInstructors = instructors.filter((instructor) =>
-    instructor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    instructor.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Handle click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Update suggestions when search term changes
+  useEffect(() => {
+    if (searchTerm.length > 0) {
+      const filtered = instructors.filter(instructor => 
+        instructor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        instructor.email.toLowerCase().includes(searchTerm.toLowerCase())
+      ).slice(0, 5); // Limit to 5 suggestions
+      setSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [searchTerm, instructors]);
+
+  const handleSuggestionClick = (instructor: User) => {
+    setSearchTerm(instructor.fullName);
+    setShowSuggestions(false);
+    navigate(`/instructors/${instructor.userId}`);
+  };
+
+  // Filtering and sorting logic
+  const filteredInstructors = instructors
+    .filter((instructor) => {
+      const matchesSearch =
+        instructor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        instructor.email.toLowerCase().includes(searchTerm.toLowerCase());
+      let matchesBatch = true;
+      if (selectedBatch !== 'all') {
+        const batch = batches.find((b) => b.batchId.toString() === selectedBatch);
+        matchesBatch = batch ? batch.instructorId === instructor.userId : false;
+      }
+      return matchesSearch && matchesBatch;
+    })
+    .sort((a, b) => {
+      switch (sortOption) {
+        case 'az':
+          return a.fullName.localeCompare(b.fullName);
+        case 'za':
+          return b.fullName.localeCompare(a.fullName);
+        case 'recent':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'oldest':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        default:
+          return 0;
+      }
+    });
 
   const handleAddInstructor = () => {
     navigate('/add-user', { state: { role: Role.instructor } });
@@ -296,14 +367,85 @@ const Instructors = () => {
         </div>
 
         <div className="bg-white rounded-lg border shadow-sm p-4 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-            <Input
-              placeholder="Search instructors..."
-              className="pl-10 border-gray-200"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative" ref={searchRef}>
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+              <Input
+                placeholder="Search instructors..."
+                className="pl-10 border-gray-200"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={() => searchTerm.length > 0 && setShowSuggestions(true)}
+              />
+              {searchTerm && (
+                <button
+                  className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setShowSuggestions(false);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
+                  {suggestions.map((instructor) => (
+                    <div
+                      key={instructor.userId}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+                      onClick={() => handleSuggestionClick(instructor)}
+                      role="link"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          handleSuggestionClick(instructor);
+                        }
+                      }}
+                    >
+                      <UserIcon className="h-4 w-4 text-gray-500" />
+                      <div className="flex-1">
+                        <div className="font-medium">{instructor.fullName}</div>
+                        <div className="text-sm text-gray-500">
+                          {instructor.email}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Sorting Dropdown */}
+            <div className="w-full md:w-48">
+              <Select value={sortOption} onValueChange={setSortOption}>
+                <SelectTrigger className="w-full border-gray-200">
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Batch Dropdown */}
+            <div className="w-full md:w-56">
+              <Select value={selectedBatch} onValueChange={setSelectedBatch}>
+                <SelectTrigger className="w-full border-gray-200">
+                  <SelectValue placeholder="All Batches" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Batches</SelectItem>
+                  {batches.map((batch) => (
+                    <SelectItem key={batch.batchId} value={batch.batchId.toString()}>
+                      {batch.batchName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
@@ -330,7 +472,13 @@ const Instructors = () => {
               <AlertDialogTitle>Delete Instructor</AlertDialogTitle>
               <AlertDialogDescription>
                 Are you sure you want to delete this instructor? This action cannot be undone.
-                The instructor will be removed from all assigned batches.
+                The following data will be permanently deleted:
+                <ul className="list-disc pl-6 mt-2 space-y-1">
+                  <li>All attendance records marked by this instructor</li>
+                  <li>All batch assignments</li>
+                  <li>All course assignments</li>
+                  <li>Instructor profile and associated data</li>
+                </ul>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getInstructorCourses } from '@/lib/api/instructors';
-import { getAllSchedules } from '@/lib/api/schedules';
+import { getInstructorCourses, getInstructorSchedules } from '@/lib/api/instructors';
 import { useAuth } from '@/hooks/use-auth';
 import {
   Card,
@@ -99,7 +98,6 @@ const InstructorDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const instructorId = user?.userId;
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
 
   // Fetch instructor courses
   const {
@@ -112,13 +110,16 @@ const InstructorDashboard = () => {
     enabled: !!instructorId,
   });
 
-  // Fetch schedules using the same API as Schedules.tsx, filtered by instructorId
-  const { data: schedulesData, isLoading: isLoadingSchedules, error: schedulesError } = useQuery({
+  // Fetch instructor schedules
+  const {
+    data: schedulesData,
+    isLoading: isSchedulesLoading,
+    error: schedulesError,
+  } = useQuery({
     queryKey: ['instructorSchedules', instructorId],
-    queryFn: () => instructorId ? getAllSchedules({ instructorId }) : Promise.resolve({ success: false, data: [] }),
+    queryFn: () => instructorId ? getInstructorSchedules(instructorId) : Promise.resolve({ success: false, data: [] }),
     enabled: !!instructorId,
   });
-  const schedules = schedulesData?.data || [];
 
   useEffect(() => {
     if (coursesError) {
@@ -144,60 +145,87 @@ const InstructorDashboard = () => {
   const totalStudents = courses.reduce((acc, course) => acc + (course._count?.studentCourses || 0), 0);
   const totalBatches = courses.reduce((acc, course) => acc + (course._count?.batches || 0), 0);
 
-  // Use the fetched schedules for upcoming classes
+  // Process schedules data for upcoming classes
+  const schedules = schedulesData?.data || [];
   const now = new Date();
-  now.setSeconds(0, 0);
+  now.setSeconds(0, 0); // Normalize seconds and milliseconds
+
   const todaySchedules = schedules.filter(schedule => {
     try {
-      const scheduleDate = new Date(schedule.scheduleDate);
-      const scheduleDateTime = new Date(scheduleDate);
-      if (schedule.startTime.includes('T')) {
-        const startTime = new Date(schedule.startTime);
-        scheduleDateTime.setHours(startTime.getHours(), startTime.getMinutes());
-      } else {
-        const [hours, minutes] = schedule.startTime.split(':').map(Number);
-        scheduleDateTime.setHours(hours, minutes);
-      }
+    const scheduleDate = new Date(schedule.scheduleDate);
+      const scheduleDateTime = getScheduleDateTime(schedule);
+      
+      if (!scheduleDateTime) return false;
+      
       return isToday(scheduleDate) && scheduleDateTime > now;
     } catch (error) {
+      console.error('Error filtering today schedules:', error);
       return false;
     }
   }).sort((a, b) => {
-    const dateTimeA = getScheduleDateTime(a);
-    const dateTimeB = getScheduleDateTime(b);
-    if (!dateTimeA || !dateTimeB) return 0;
-    return dateTimeA.getTime() - dateTimeB.getTime();
+    try {
+      const dateTimeA = getScheduleDateTime(a);
+      const dateTimeB = getScheduleDateTime(b);
+      
+      if (!dateTimeA || !dateTimeB) return 0;
+    
+      return dateTimeA.getTime() - dateTimeB.getTime();
+    } catch (error) {
+      console.error('Error sorting today schedules:', error);
+      return 0;
+    }
   });
 
   const tomorrowSchedules = schedules.filter(schedule => {
     try {
-      const scheduleDate = new Date(schedule.scheduleDate);
-      return isTomorrow(scheduleDate);
+    const scheduleDate = new Date(schedule.scheduleDate);
+    return isTomorrow(scheduleDate);
     } catch (error) {
+      console.error('Error filtering tomorrow schedules:', error);
       return false;
     }
   }).sort((a, b) => {
-    const dateTimeA = getScheduleDateTime(a);
-    const dateTimeB = getScheduleDateTime(b);
-    if (!dateTimeA || !dateTimeB) return 0;
-    return dateTimeA.getTime() - dateTimeB.getTime();
+    try {
+      const dateTimeA = getScheduleDateTime(a);
+      const dateTimeB = getScheduleDateTime(b);
+      
+      if (!dateTimeA || !dateTimeB) return 0;
+    
+      return dateTimeA.getTime() - dateTimeB.getTime();
+    } catch (error) {
+      console.error('Error sorting tomorrow schedules:', error);
+      return 0;
+    }
   });
 
   const nextWeekSchedules = schedules.filter(schedule => {
     try {
-      const scheduleDate = new Date(schedule.scheduleDate);
+    const scheduleDate = new Date(schedule.scheduleDate);
       const scheduleDateTime = getScheduleDateTime(schedule);
       const nextWeek = addDays(now, 7);
+    
       if (!scheduleDateTime) return false;
-      return scheduleDateTime > now && !isToday(scheduleDate) && !isTomorrow(scheduleDate) && scheduleDateTime <= nextWeek;
+    
+      return scheduleDateTime > now && 
+           !isToday(scheduleDate) && 
+           !isTomorrow(scheduleDate) && 
+             scheduleDateTime <= nextWeek;
     } catch (error) {
+      console.error('Error filtering next week schedules:', error);
       return false;
     }
   }).sort((a, b) => {
-    const dateTimeA = getScheduleDateTime(a);
-    const dateTimeB = getScheduleDateTime(b);
-    if (!dateTimeA || !dateTimeB) return 0;
-    return dateTimeA.getTime() - dateTimeB.getTime();
+    try {
+      const dateTimeA = getScheduleDateTime(a);
+      const dateTimeB = getScheduleDateTime(b);
+      
+      if (!dateTimeA || !dateTimeB) return 0;
+    
+      return dateTimeA.getTime() - dateTimeB.getTime();
+    } catch (error) {
+      console.error('Error sorting next week schedules:', error);
+      return 0;
+    }
   });
 
   // Chart data for courses per category
@@ -283,7 +311,7 @@ const InstructorDashboard = () => {
             <CardDescription>Your teaching schedule for the coming days</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoadingSchedules ? (
+            {isSchedulesLoading ? (
               <div className="h-48 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-700"></div>
               </div>

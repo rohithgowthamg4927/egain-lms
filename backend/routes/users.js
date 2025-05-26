@@ -248,6 +248,16 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
+    // Delete attendance records for both students and instructors
+    await prisma.Attendance.deleteMany({
+      where: {
+        OR: [
+          { userId: userId }, // Delete records where user is the attendee
+          { markedBy: userId } // Delete records where user marked the attendance
+        ]
+      }
+    });
+
     if (user.profilePictureId) {
       await prisma.file.delete({
         where: { fileId: user.profilePictureId }

@@ -82,13 +82,21 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
 
   // Update schedule filtering and sorting
   const now = new Date();
-  now.setSeconds(0, 0); // Normalize seconds and milliseconds
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
 
   const filteredUpcomingSchedules = upcomingSchedules
     .filter(schedule => {
       try {
         const scheduleDateTime = getScheduleDateTime(schedule);
-        return scheduleDateTime ? scheduleDateTime > now : false;
+        if (!scheduleDateTime) return false;
+
+        // Include schedules for today and tomorrow
+        const scheduleDate = new Date(scheduleDateTime);
+        scheduleDate.setHours(0, 0, 0, 0);
+        
+        return scheduleDate >= today && scheduleDate < tomorrow;
       } catch (error) {
         console.error('Error filtering upcoming schedules:', error);
         return false;
@@ -106,8 +114,7 @@ const DashboardMetrics = ({ data, isLoading, isError }: DashboardMetricsProps) =
         console.error('Error sorting upcoming schedules:', error);
         return 0;
       }
-    })
-    .slice(0, 5); // Keep only the first 5 upcoming schedules
+    });
 
   if (isError) {
     return (

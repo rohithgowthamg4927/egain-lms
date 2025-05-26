@@ -34,7 +34,6 @@ import { useNavigate } from 'react-router-dom';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 import { Resource } from '@/lib/types';
 import { useQuery } from '@tanstack/react-query';
-import PasswordResetDialog from '@/components/auth/PasswordResetDialog';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -43,14 +42,6 @@ export default function StudentDashboard() {
   const [activeTab, setActiveTab] = useState('today');
   const [resourcesTab, setResourcesTab] = useState('all');
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
-
-  // Check if user needs to reset password
-  useEffect(() => {
-    if (user?.mustResetPassword) {
-      setShowPasswordReset(true);
-    }
-  }, [user?.mustResetPassword]);
 
   const { data: coursesData, isLoading: isCoursesLoading } = useQuery({
     queryKey: ['studentCourses', user?.userId],
@@ -298,39 +289,15 @@ export default function StudentDashboard() {
   const totalAssignments = resources.filter(r => getResourceType(r) === 'assignment').length;
   const totalRecordings = resources.filter(r => isVideoResource(r)).length;
 
-  const handlePasswordResetSuccess = () => {
-    setShowPasswordReset(false);
-    // Update user in localStorage
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    if (currentUser && currentUser.userId === user?.userId) {
-      currentUser.mustResetPassword = false;
-      localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    }
-  };
-
   return (
     <div className="space-y-6">
       <BreadcrumbNav items={[
         { label: 'Dashboard', link: '/student/dashboard' }
       ]} />
       
-      {/* Password Reset Dialog */}
-      {user?.mustResetPassword && (
-        <PasswordResetDialog
-          userId={user.userId}
-          isOpen={showPasswordReset}
-          onClose={() => setShowPasswordReset(false)}
-          onSuccess={handlePasswordResetSuccess}
-        />
-      )}
-      
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Student Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Welcome back, {user?.fullName}. Here's an overview of your learning journey.
-          </p>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">Welcome back, {user?.fullName || 'Student'}</h1>
+        <p className="text-gray-600 mt-2">Here's an overview of your learning progress and upcoming classes</p>
       </div>
 
       {isLoading ? (

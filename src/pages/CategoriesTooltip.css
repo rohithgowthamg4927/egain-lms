@@ -1,0 +1,19 @@
+.custom-tooltip-bg {
+  background: #fff; /* Match card/page background */
+  color: #222; /* Match card text color */
+  border-radius: 0.5rem; /* Match card border radius */
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.08), 0 1.5px 4px 0 rgba(0,0,0,0.03);
+  border: 1px solid #e5e7eb; /* Match card border */
+  font-size: 0.95rem;
+}
+
+.custom-tooltip-bg ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.custom-tooltip-bg h5 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+} 

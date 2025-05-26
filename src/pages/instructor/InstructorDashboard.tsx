@@ -43,7 +43,6 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { format, parseISO, isToday, isTomorrow, addDays, isAfter, isBefore } from 'date-fns';
-import PasswordResetDialog from '@/components/auth/PasswordResetDialog';
 
 // Add utility functions for date/time handling
 const formatTime = (timeString: string) => {
@@ -99,14 +98,6 @@ const InstructorDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const instructorId = user?.userId;
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
-
-  // Check if user needs to reset password
-  useEffect(() => {
-    if (user?.mustResetPassword) {
-      setShowPasswordReset(true);
-    }
-  }, [user?.mustResetPassword]);
 
   // Fetch instructor courses
   const {
@@ -260,28 +251,8 @@ const InstructorDashboard = () => {
   // Pie chart colors
   const COLORS = ['#7E69AB', '#9b87f5', '#D6BCFA', '#E9D8FD', '#FAF5FF'];
 
-  const handlePasswordResetSuccess = () => {
-    setShowPasswordReset(false);
-    // Update user in localStorage
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    if (currentUser && currentUser.userId === user?.userId) {
-      currentUser.mustResetPassword = false;
-      localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    }
-  };
-
   return (
     <div className="space-y-6">
-      {/* Password Reset Dialog */}
-      {user?.mustResetPassword && (
-        <PasswordResetDialog
-          userId={user.userId}
-          isOpen={showPasswordReset}
-          onClose={() => setShowPasswordReset(false)}
-          onSuccess={handlePasswordResetSuccess}
-        />
-      )}
-
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Welcome back, {user?.fullName || 'Instructor'}</h1>
         <p className="text-gray-600 mt-2">Here's an overview of your teaching activities and schedules</p>

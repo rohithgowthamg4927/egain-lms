@@ -1,7 +1,7 @@
 import { Course } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Users, Bookmark, Edit, Trash2 } from 'lucide-react';
+import { Eye, Users, Bookmark, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Role } from '@/lib/types';
 import Tippy from '@tippyjs/react';
@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useState } from 'react';
 
 interface CourseListProps {
   courses: Course[];
@@ -31,6 +32,10 @@ const CourseList = ({
 }: CourseListProps) => {
   const { user } = useAuth();
   const isAdmin = user?.role === Role.admin;
+  const [currentPage, setCurrentPage] = useState(1);
+  const entriesPerPage = 10;
+  const totalPages = Math.ceil(courses.length / entriesPerPage);
+  const paginatedCourses = courses.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
 
   const levelColor = {
     'beginner': 'bg-green-100 hover:bg-green-200 text-green-800',
@@ -73,9 +78,9 @@ const CourseList = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {courses.map((course, index) => (
+          {paginatedCourses.map((course, index) => (
             <TableRow key={course.courseId}>
-              <TableCell className="text-muted-foreground">{index + 1}</TableCell>
+              <TableCell className="text-muted-foreground">{(currentPage - 1) * entriesPerPage + index + 1}</TableCell>
               <TableCell className="font-medium">{course.courseName}</TableCell>
               <TableCell>{course.category?.categoryName || 'Uncategorized'}</TableCell>
               <TableCell>
@@ -167,6 +172,40 @@ const CourseList = ({
           ))}
         </TableBody>
       </Table>
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 py-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            aria-label="Previous Page"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <Button
+              key={i + 1}
+              variant={currentPage === i + 1 ? 'default' : 'ghost'}
+              size="icon"
+              onClick={() => setCurrentPage(i + 1)}
+              aria-label={`Page ${i + 1}`}
+            >
+              {i + 1}
+            </Button>
+          ))}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            aria-label="Next Page"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

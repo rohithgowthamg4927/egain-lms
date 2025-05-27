@@ -1,4 +1,3 @@
-
 import { Resource } from '@/lib/types';
 import ResourceCard from './ResourceCard';
 import {
@@ -7,14 +6,18 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 
 interface ResourceGridProps {
   resources: Resource[];
   onDelete: (resource: Resource) => void;
   userRole?: string;
+  selectedResourceIds?: number[];
+  onSelectResource?: (resourceId: number, checked: boolean) => void;
+  onViewFeedback?: (batchId: number, interval: number) => void;
 }
 
-const ResourceGrid = ({ resources, onDelete, userRole }: ResourceGridProps) => {
+const ResourceGrid = ({ resources, onDelete, userRole, selectedResourceIds, onSelectResource, onViewFeedback }: ResourceGridProps) => {
   // Helper function to determine resource type
   const getResourceType = (resource: Resource): string => {
     const type = resource.type?.toLowerCase();
@@ -56,6 +59,17 @@ const ResourceGrid = ({ resources, onDelete, userRole }: ResourceGridProps) => {
   const groupedResources = groupResourcesByType();
   const resourceTypes = Object.keys(groupedResources).sort();
   
+  // Helper to group resources into intervals of 5
+  const groupByInterval = (resources: Resource[]) => {
+    const groups: Resource[][] = [];
+    for (let i = 0; i < resources.length; i += 5) {
+      groups.push(resources.slice(i, i + 5));
+    }
+    return groups;
+  };
+
+  const grouped = groupByInterval(resources);
+  
   return (
     <Tabs defaultValue="all" className="w-full">
       <TabsList className="mb-4">
@@ -68,14 +82,36 @@ const ResourceGrid = ({ resources, onDelete, userRole }: ResourceGridProps) => {
       </TabsList>
       
       <TabsContent value="all" className="mt-0">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-          {resources.map((resource) => (
+        <div className="space-y-8">
+          {grouped.map((group, idx) => (
+            <div key={idx} className="flex items-end gap-4">
+              {group.map((resource) => (
             <ResourceCard 
               key={resource.resourceId} 
               resource={resource} 
               onDelete={onDelete}
               userRole={userRole}
-            />
+                  checked={selectedResourceIds?.includes(resource.resourceId) || false}
+                  onCheck={onSelectResource}
+                />
+              ))}
+              {(userRole === 'admin' || userRole === 'instructor') && group.length === 5 && (
+                <Button
+                  variant="outline"
+                  className="ml-2 h-12"
+                  onClick={() => {
+                    if (onViewFeedback) {
+                      console.log('View Feedback button clicked for batch', group[0].batchId || group[0].batch?.batchId, 'interval', idx + 1);
+                      onViewFeedback(group[0].batchId || group[0].batch?.batchId, idx + 1);
+                    } else {
+                      console.warn('onViewFeedback not provided');
+                    }
+                  }}
+                >
+                  View Feedback
+                </Button>
+              )}
+            </div>
           ))}
         </div>
       </TabsContent>
@@ -89,6 +125,8 @@ const ResourceGrid = ({ resources, onDelete, userRole }: ResourceGridProps) => {
                 resource={resource} 
                 onDelete={onDelete} 
                 userRole={userRole}
+                checked={selectedResourceIds?.includes(resource.resourceId) || false}
+                onCheck={onSelectResource}
               />
             ))}
           </div>

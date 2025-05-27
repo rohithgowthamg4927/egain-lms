@@ -132,8 +132,8 @@ const Instructors = () => {
   useEffect(() => {
     if (searchTerm.length > 0) {
       const filtered = instructors.filter(instructor => 
-        instructor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        instructor.email.toLowerCase().includes(searchTerm.toLowerCase())
+    instructor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    instructor.email.toLowerCase().includes(searchTerm.toLowerCase())
       ).slice(0, 5); // Limit to 5 suggestions
       setSuggestions(filtered);
       setShowSuggestions(true);
@@ -369,12 +369,12 @@ const Instructors = () => {
         <div className="bg-white rounded-lg border shadow-sm p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative" ref={searchRef}>
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-              <Input
-                placeholder="Search instructors..."
-                className="pl-10 border-gray-200"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+            <Input
+              placeholder="Search instructors..."
+              className="pl-10 border-gray-200"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
                 onFocus={() => searchTerm.length > 0 && setShowSuggestions(true)}
               />
               {searchTerm && (

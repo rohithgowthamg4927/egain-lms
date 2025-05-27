@@ -321,15 +321,15 @@ const Courses = () => {
               <List className="h-4 w-4" />
             </Button>
           </div>
-          {isAdmin && (
-            <Button 
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => navigate('/courses/add')}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Course
-            </Button>
-          )}
+        {isAdmin && (
+          <Button 
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => navigate('/courses/add')}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Course
+          </Button>
+        )}
         </div>
       </div>
 
@@ -528,13 +528,13 @@ const Courses = () => {
       </div>
 
       {viewMode === 'grid' ? (
-        <CourseGrid
-          courses={filteredCourses}
-          loading={isLoading}
-          onView={handleViewCourse}
-          onEdit={isAdmin ? handleEditCourse : undefined}
-          onDelete={isAdmin ? handleDeleteCourse : undefined}
-        />
+      <CourseGrid
+        courses={filteredCourses}
+        loading={isLoading}
+        onView={handleViewCourse}
+        onEdit={isAdmin ? handleEditCourse : undefined}
+        onDelete={isAdmin ? handleDeleteCourse : undefined}
+      />
       ) : (
         <CourseList
           courses={filteredCourses}

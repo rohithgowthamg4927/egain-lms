@@ -27,6 +27,7 @@ model User {
   uploadedResources Resource[]         @relation("ResourceUploader")
   studentBatches    StudentBatch[]     @relation("StudentInBatch")
   studentCourses    StudentCourse[]    @relation("StudentInCourse")
+  batchFeedbacks    BatchFeedback[]
 
   @@map("users")
 }
@@ -88,6 +89,7 @@ model Batch {
   resources    Resource[]     @relation("BatchResources")
   schedules    Schedule[]     @relation("BatchSchedules")
   students     StudentBatch[] @relation("BatchStudents")
+  batchFeedbacks BatchFeedback[]
 
   @@map("batches")
 }
@@ -195,6 +197,22 @@ model Attendance {
 
   @@unique([scheduleId, userId])
   @@map("attendances")
+}
+
+model BatchFeedback {
+  feedbackId   Int      @id @default(autoincrement())
+  batchId      Int
+  studentId    Int
+  interval     Int
+  rating       Int
+  feedback     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now())
+
+  batch        Batch    @relation(fields: [batchId], references: [batchId], onDelete: Cascade)
+  student      User     @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+
+  @@unique([batchId, studentId, interval])
 }
 
 enum Status {

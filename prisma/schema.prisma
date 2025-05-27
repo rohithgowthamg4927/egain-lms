@@ -209,8 +209,8 @@ model BatchFeedback {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now())
 
-  batch        Batch    @relation(fields: [batchId], references: [batchId])
-  student      User     @relation(fields: [studentId], references: [userId])
+  batch        Batch    @relation(fields: [batchId], references: [batchId], onDelete: Cascade)
+  student      User     @relation(fields: [studentId], references: [userId], onDelete: Cascade)
 
   @@unique([batchId, studentId, interval])
 }

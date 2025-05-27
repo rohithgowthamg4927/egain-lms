@@ -419,6 +419,65 @@ class EmailService {
             return { success: false, error: error.message };
         }
     }
+
+    async sendResourceUploadEmail({ students, batch, course, resource, resourceType }) {
+        const fileNameWithoutExt = resource.fileName.replace(/\.[^/.]+$/, "");
+        for (const student of students) {
+            const type = resourceType || (resource.resourceType === 'recording' ? 'Class Recording' : 'Assignment');
+            const subject = `New ${type} Uploaded: ${fileNameWithoutExt} (${batch.batchName})`;
+            const htmlBody = `
+                <!DOCTYPE html>
+                <html>
+                  <body style="margin:0;padding:0;background:#f6f6f6;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f6;padding:40px 0;">
+                      <tr>
+                        <td align="center">
+                          <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);padding:40px;">
+                            <tr>
+                              <td align="center" style="padding-bottom:24px;">
+                                <img src="https://lms.e-gain.co.in/egain-logo.jpeg" alt="eGain LMS" width="120" style="display:block;margin:0 auto 16px auto;border-radius:12px;" />
+                                <h2 style="margin:0;font-family:sans-serif;color:#1a237e;">New ${type} Uploaded</h2>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="font-family:sans-serif;color:#333;font-size:16px;line-height:1.6;">
+                                <p>Dear ${student.fullName},</p>
+                                <p>
+                                  A new <b>${type}</b> "<b>${fileNameWithoutExt}</b>" has been uploaded for your batch <b>${batch.batchName}</b> (${course.courseName}).
+                                </p>
+                                <p>
+                                  You can access it on the LMS:<br>
+                                  <a href="https://lms.e-gain.co.in" style="color:#1a237e;text-decoration:none;font-weight:500;">https://lms.e-gain.co.in</a>
+                                </p>
+                                <p>Best regards,<br>e-gain Technologies</p>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td align="center" style="padding-top:32px;">
+                                <small style="color:#888;font-size:12px;">&copy; 2025 e-gain Technologies. All rights reserved.</small>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </body>
+                </html>
+            `;
+            const mailOptions = {
+                from: 'noreplylms@e-gain.co.in',
+                to: student.email,
+                subject,
+                html: htmlBody,
+            };
+            try {
+                await this.transporter.sendMail(mailOptions);
+            } catch (error) {
+                console.error('Resource upload email failed for', student.email, error);
+            }
+        }
+        return { success: true };
+    }
 }
 
 const emailService = new EmailService();

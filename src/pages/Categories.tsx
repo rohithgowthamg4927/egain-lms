@@ -25,7 +25,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { getCategories, getCourses, createCategory, updateCategory, deleteCategory } from '@/lib/api';
 import { Category, Course } from '@/lib/types';
-import { Edit, Plus, Search, Tag, Trash, Book, ChevronDown, Grid, List } from 'lucide-react';
+import { Edit, Plus, Search, Tag, Trash, Book, ChevronDown, Grid, List, ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
@@ -304,6 +304,11 @@ const Categories = () => {
     (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const entriesPerPage = 10;
+  const totalPages = Math.ceil(filteredCategories.length / entriesPerPage);
+  const paginatedCategories = filteredCategories.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
+
   // Memoize the tooltip content for each category
   const categoryTooltips = useMemo(() => {
     return categories.reduce((acc, category) => {
@@ -345,7 +350,7 @@ const Categories = () => {
               onClick={() => setViewMode('grid')}
               className="h-8 px-2"
             >
-              <Grid className="h-4 w-4" />
+              <LayoutGrid className="h-4 w-4" />
             </Button>
             <Button
               variant={viewMode === 'list' ? 'default' : 'ghost'}
@@ -355,46 +360,46 @@ const Categories = () => {
             >
               <List className="h-4 w-4" />
             </Button>
-          </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Category
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Create New Category</DialogTitle>
-                <DialogDescription>
-                  Add a new category for organizing your courses.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="categoryName">Category Name</Label>
-                  <Input
-                    id="categoryName"
-                    value={categoryName}
-                    onChange={(e) => setCategoryName(e.target.value)}
-                    placeholder="Enter category name"
-                  />
-                </div>
+        </div>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Category
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Create New Category</DialogTitle>
+              <DialogDescription>
+                Add a new category for organizing your courses.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="categoryName">Category Name</Label>
+                <Input
+                  id="categoryName"
+                  value={categoryName}
+                  onChange={(e) => setCategoryName(e.target.value)}
+                  placeholder="Enter category name"
+                />
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleCreateCategory} 
-                  disabled={isSubmitting || !categoryName}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {isSubmitting ? 'Creating...' : 'Create Category'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCreateCategory} 
+                disabled={isSubmitting || !categoryName}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isSubmitting ? 'Creating...' : 'Create Category'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         </div>
       </div>
 
@@ -402,13 +407,13 @@ const Categories = () => {
       <div className="bg-white rounded-lg border shadow-sm p-4 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-            <Input
-              placeholder="Search categories..."
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+          <Input
+            placeholder="Search categories..."
               className="pl-10 border-gray-200 w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
           </div>
           <div className="w-full sm:w-56 relative">
             <Select value={sortOption} onValueChange={setSortOption}>
@@ -429,22 +434,22 @@ const Categories = () => {
 
       {isLoading ? (
         viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, index) => (
-              <Card key={index} className="shadow-md">
-                <CardHeader className="pb-2">
-                  <Skeleton className="h-4 w-1/2 mb-2" />
-                  <Skeleton className="h-4 w-full" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-24 w-full rounded" />
-                </CardContent>
-                <CardFooter>
-                  <Skeleton className="h-9 w-full rounded" />
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, index) => (
+            <Card key={index} className="shadow-md">
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-1/2 mb-2" />
+                <Skeleton className="h-4 w-full" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-24 w-full rounded" />
+              </CardContent>
+              <CardFooter>
+                <Skeleton className="h-9 w-full rounded" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
         ) : (
           <div className="space-y-4">
             {[...Array(6)].map((_, index) => (
@@ -484,10 +489,10 @@ const Categories = () => {
                       maxWidth={300}
                       className="custom-tooltip-bg"
                     >
-                      <span className="font-medium flex items-center gap-1 cursor-help">
-                        <Book className="h-4 w-4" />
-                        {category.coursesCount || 0}
-                      </span>
+                          <span className="font-medium flex items-center gap-1 cursor-help">
+                            <Book className="h-4 w-4" />
+                            {category.coursesCount || 0}
+                          </span>
                     </Tippy>
                   </div>
                   {category.courses && category.courses.length > 0 && (
@@ -541,9 +546,9 @@ const Categories = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCategories.map((category, index) => (
+              {paginatedCategories.map((category, index) => (
                 <TableRow key={category.categoryId}>
-                  <TableCell className="text-muted-foreground">{index + 1}</TableCell>
+                  <TableCell className="text-muted-foreground">{(currentPage - 1) * entriesPerPage + index + 1}</TableCell>
                   <TableCell className="font-medium">{category.categoryName}</TableCell>
                   <TableCell>
                     <Tippy
@@ -586,6 +591,40 @@ const Categories = () => {
               ))}
             </TableBody>
           </Table>
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 py-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                aria-label="Previous Page"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <Button
+                  key={i + 1}
+                  variant={currentPage === i + 1 ? 'default' : 'ghost'}
+                  size="icon"
+                  onClick={() => setCurrentPage(i + 1)}
+                  aria-label={`Page ${i + 1}`}
+                >
+                  {i + 1}
+                </Button>
+              ))}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                aria-label="Next Page"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

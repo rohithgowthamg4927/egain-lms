@@ -2,25 +2,32 @@ import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, Trash2, Eye, Loader2, FileVideo, FileText, FileImage, FileAudio, File } from 'lucide-react';
+import { Download, Trash2, Eye, Loader2, FileVideo, FileText, FileImage, FileAudio, File, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getResourcePresignedUrl } from '@/lib/api/resources';
 import { Resource } from '@/lib/types';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface ResourceListProps {
   resources: Resource[];
   onDelete: (resource: Resource) => void;
   userRole?: string;
+  selectedResourceIds?: number[];
+  onSelectResource?: (resourceId: number, checked: boolean) => void;
 }
 
-export function ResourceList({ resources, onDelete, userRole }: ResourceListProps) {
+export function ResourceList({ resources, onDelete, userRole, selectedResourceIds, onSelectResource }: ResourceListProps) {
   const { toast } = useToast();
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [resourceToDelete, setResourceToDelete] = useState<Resource | null>(null);
   const canDelete = userRole === 'instructor' || userRole === 'admin';
   const [isDownloading, setIsDownloading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const entriesPerPage = 10;
+  const totalPages = Math.ceil(resources.length / entriesPerPage);
+  const paginatedResources = resources.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
 
   const getResourceType = (resource: Resource): string => {
     const fileName = resource.fileName?.toLowerCase() || '';
@@ -115,6 +122,7 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-12"></TableHead>
             <TableHead>Title</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Uploaded By</TableHead>
@@ -123,12 +131,18 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
           </TableRow>
         </TableHeader>
         <TableBody>
-          {resources.map((resource) => (
+          {paginatedResources.map((resource) => (
             <TableRow key={resource.resourceId}>
+              <TableCell className="w-12">
+                <Checkbox
+                  checked={selectedResourceIds?.includes(resource.resourceId) || false}
+                  onCheckedChange={checked => onSelectResource?.(resource.resourceId, !!checked)}
+                />
+              </TableCell>
               <TableCell className="font-medium">
                 <div className="flex items-center gap-2">
                   {getFileIcon(resource)}
-                  {resource.title}
+                  <span className="truncate max-w-[220px]">{resource.title || resource.fileName || `Resource ${resource.resourceId}`}</span>
                 </div>
               </TableCell>
               <TableCell>
@@ -139,7 +153,7 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
                   {getResourceType(resource)}
                 </Badge>
               </TableCell>
-              <TableCell>{resource.uploadedBy.fullName}</TableCell>
+              <TableCell>{resource.uploadedBy?.fullName || 'Unknown'}</TableCell>
               <TableCell>{new Date(resource.createdAt).toLocaleDateString()}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
@@ -178,7 +192,40 @@ export function ResourceList({ resources, onDelete, userRole }: ResourceListProp
           ))}
         </TableBody>
       </Table>
-
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 py-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            aria-label="Previous Page"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <Button
+              key={i + 1}
+              variant={currentPage === i + 1 ? 'default' : 'ghost'}
+              size="icon"
+              onClick={() => setCurrentPage(i + 1)}
+              aria-label={`Page ${i + 1}`}
+            >
+              {i + 1}
+            </Button>
+          ))}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            aria-label="Next Page"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        </div>
+      )}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

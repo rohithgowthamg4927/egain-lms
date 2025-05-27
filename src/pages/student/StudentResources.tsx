@@ -9,10 +9,12 @@ import { Resource } from '@/lib/types';
 import { getResourcesByBatch, getResourcePresignedUrl } from '@/lib/api/resources';
 import { apiFetch } from '@/lib/api/core';
 import { format } from 'date-fns';
-import { Download, FileText, FileVideo, FileImage, FileAudio, File, Eye, Loader2 } from 'lucide-react';
+import { Download, FileText, FileVideo, FileImage, FileAudio, File, Eye, Loader2, Star, Lock } from 'lucide-react';
 import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Batch {
   batchId: number;
@@ -33,6 +35,15 @@ export default function StudentResources() {
   const [isLoading, setIsLoading] = useState(true);
   const [batches, setBatches] = useState<Batch[]>([]);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackInterval, setFeedbackInterval] = useState<number | null>(null);
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [pendingFeedback, setPendingFeedback] = useState<{ interval: number, missingInterval: number } | null>(null);
+  const [existingFeedback, setExistingFeedback] = useState<{ rating: number, feedback: string } | null>(null);
+  const [resourceToUnlock, setResourceToUnlock] = useState<Resource | null>(null);
+  const [allFeedbacks, setAllFeedbacks] = useState<any[]>([]);
 
   useEffect(() => {
     if (user?.userId) {
@@ -236,6 +247,127 @@ export default function StudentResources() {
            ['mp4', 'mov', 'avi', 'webm'].includes(extension || '');
   };
 
+  // Helper: Get all resources for the selected batch, ordered by createdAt
+  const batchResources = selectedBatch && selectedBatch !== 'all'
+    ? resources.filter(r => r.batch?.batchId.toString() === selectedBatch)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    : [];
+
+  // Fetch all feedbacks for the selected batch and user
+  const fetchAllFeedbacks = async (batchId: number) => {
+    if (!user?.userId) return [];
+    const feedbackRes = await apiFetch(`/resources/batches/${batchId}/feedbacks`);
+    if (feedbackRes.success && Array.isArray(feedbackRes.data)) {
+      setAllFeedbacks(feedbackRes.data.filter(f => f.studentId === user.userId));
+      console.log('Feedbacks:', feedbackRes.data.filter(f => f.studentId === user.userId));
+      return feedbackRes.data.filter(f => f.studentId === user.userId);
+    } else {
+      setAllFeedbacks([]);
+      return [];
+    }
+  };
+
+  // Helper: Get the last interval for which feedback has been submitted
+  const getLastSubmittedInterval = () => {
+    if (!allFeedbacks.length) return 1; // Only interval 1 accessible by default
+    return Math.max(...allFeedbacks.map(fb => fb.interval)) + 1; // intervals are 1-based
+  };
+
+  // Helper: Get the earliest missing feedback interval up to N-1
+  const getEarliestMissingInterval = (targetInterval: number) => {
+    for (let i = 1; i < targetInterval; i++) {
+      if (!allFeedbacks.some(fb => fb.interval === i)) {
+        return i;
+      }
+    }
+    return null;
+  };
+
+  // Handler for locked resource click
+  const handleLockedResourceClick = async (resource: Resource, interval: number, batchId: number) => {
+    setResourceToUnlock(resource);
+    setFeedbackInterval(null);
+    setShowFeedbackModal(false);
+    // Fetch all feedbacks for this batch and user
+    const feedbacks = await fetchAllFeedbacks(batchId);
+    const earliestMissing = getEarliestMissingInterval(interval);
+    if (earliestMissing !== null) {
+      // Prompt for the earliest missing feedback
+      setFeedbackInterval(earliestMissing);
+      const fb = feedbacks.find(f => f.interval === earliestMissing);
+      if (fb) setExistingFeedback({ rating: fb.rating, feedback: fb.feedback });
+      else setExistingFeedback(null);
+      setShowFeedbackModal(true);
+    }
+  };
+
+  // Handler for feedback submit
+  const handleSubmitFeedback = async () => {
+    if (!user?.userId || !selectedBatch || feedbackInterval === null || feedbackRating === 0 || !feedbackText) return;
+    setFeedbackLoading(true);
+    try {
+      const res = await apiFetch(`/resources/batches/${selectedBatch}/feedback`, {
+        method: 'POST',
+        body: JSON.stringify({
+          studentId: user.userId,
+          interval: feedbackInterval,
+          rating: feedbackRating,
+          feedback: feedbackText
+        })
+      });
+      if (res.success) {
+        toast({ title: 'Feedback submitted', description: 'Thank you for your feedback!' });
+        // Refetch all feedbacks
+        const feedbacks = await fetchAllFeedbacks(Number(selectedBatch));
+        // Check if there is another missing interval up to the interval of the resource to unlock
+        if (resourceToUnlock) {
+          const idx = batchResources.findIndex(r => r.resourceId === resourceToUnlock.resourceId);
+          const interval = Math.floor(idx / 5) + 1;
+          const nextMissing = getEarliestMissingInterval(interval);
+          if (nextMissing !== null) {
+            setFeedbackInterval(nextMissing);
+            const fb = feedbacks.find(f => f.interval === nextMissing);
+            if (fb) setExistingFeedback({ rating: fb.rating, feedback: fb.feedback });
+            else setExistingFeedback(null);
+            setShowFeedbackModal(true);
+            return;
+          }
+        }
+        setShowFeedbackModal(false);
+        setPendingFeedback(null);
+        setExistingFeedback(null);
+        setFeedbackRating(0);
+        setFeedbackText('');
+        setResourceToUnlock(null);
+      } else {
+        toast({ title: 'Error', description: res.error || 'Failed to submit feedback', variant: 'destructive' });
+      }
+    } catch (e) {
+      toast({ title: 'Error', description: 'Failed to submit feedback', variant: 'destructive' });
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
+  // Helper: Determine if a resource is locked for the student
+  const isResourceLocked = (resource: Resource, idx: number, batchId: number) => {
+    if (!user || user.role !== 'student') return false;
+    const interval = Math.floor(idx / 5) + 1;
+    // Only allow up to the last submitted interval
+    const lastSubmitted = getLastSubmittedInterval();
+    return interval > lastSubmitted;
+  };
+
+  // On batch change, fetch all feedbacks
+  useEffect(() => {
+    if (selectedBatch && selectedBatch !== 'all') {
+      fetchAllFeedbacks(Number(selectedBatch));
+    } else {
+      setAllFeedbacks([]);
+    }
+    // eslint-disable-next-line
+  }, [selectedBatch, user?.userId]);
+
   return (
     <div className="space-y-6">
       <BreadcrumbNav items={[
@@ -286,14 +418,15 @@ export default function StudentResources() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredResources.map((resource) => (
+              {batchResources.map((resource, idx) => {
+                const interval = Math.floor(idx / 5) + 1;
+                const locked = isResourceLocked(resource, idx, resource.batch.batchId);
+                return (
                 <Card key={resource.resourceId} className="overflow-hidden hover:shadow-md transition-shadow">
                   <CardContent className="p-0">
                     <div className="p-4">
                       <div className="flex items-start gap-3">
-                        <div className={`p-2 rounded-full ${
-                          isVideoResource(resource) ? 'bg-red-100' : 'bg-blue-100'
-                        }`}>
+                          <div className={`p-2 rounded-full ${isVideoResource(resource) ? 'bg-red-100' : 'bg-blue-100'}`}>
                           {getFileIcon(resource)}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -317,21 +450,24 @@ export default function StudentResources() {
                     <div className="bg-gray-50 px-4 py-2 border-t flex justify-end">
                       <Button
                         size="sm"
-                        onClick={() => isVideoResource(resource) ? handleView(resource) : handleDownload(resource)}
+                          onClick={() => locked ? handleLockedResourceClick(resource, interval, resource.batch.batchId) : (isVideoResource(resource) ? handleView(resource) : handleDownload(resource))}
                         disabled={downloadingId === resource.resourceId}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                          className={`bg-blue-600 hover:bg-blue-700 text-white ${locked ? 'opacity-60 cursor-pointer' : ''}`}
                       >
-                        {downloadingId === resource.resourceId ? (
+                          {locked ? (
+                            <Lock className="h-4 w-4 mr-2" />
+                          ) : downloadingId === resource.resourceId ? (
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         ) : (
                           <Eye className="h-4 w-4 mr-2" />
                         )}
-                        View/Download
+                          {locked ? 'Locked' : 'View/Download'}
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           )}
         </TabsContent>
@@ -457,6 +593,52 @@ export default function StudentResources() {
           </p>
         </div>
       )}
+
+      {/* Feedback Modal */}
+      <Dialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share Feedback to Unlock Resources</DialogTitle>
+            <DialogDescription>
+              Please rate and review your batch to access the next set of resources.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Rating</h4>
+              <div className="flex items-center space-x-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`h-6 w-6 cursor-pointer ${star <= (feedbackRating || existingFeedback?.rating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
+                    onClick={() => setFeedbackRating(star)}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="feedback" className="text-sm font-medium">
+                Feedback (required)
+              </label>
+              <Textarea
+                id="feedback"
+                placeholder="Write your feedback here..."
+                value={feedbackText || existingFeedback?.feedback || ''}
+                onChange={(e) => setFeedbackText(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFeedbackModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitFeedback} disabled={feedbackLoading || feedbackRating === 0 || !feedbackText}>
+              {feedbackLoading ? 'Submitting...' : (existingFeedback ? 'Update Feedback' : 'Submit Feedback')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

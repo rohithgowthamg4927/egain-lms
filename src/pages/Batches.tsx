@@ -307,12 +307,12 @@ const Batches = () => {
               <List className="h-4 w-4" />
             </Button>
           </div>
-          {isAdmin && (
-            <Button onClick={() => navigate('/batches/add')}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Batch
-            </Button>
-          )}
+        {isAdmin && (
+          <Button onClick={() => navigate('/batches/add')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Batch
+          </Button>
+        )}
         </div>
       </div>
 
@@ -492,15 +492,15 @@ const Batches = () => {
       </div>
 
       {viewMode === 'grid' ? (
-        <BatchGrid
-          batches={filteredBatches}
-          loading={isLoading}
-          onView={handleViewBatch}
-          onEdit={handleEditBatch}
-          onDelete={handleDeleteConfirmation}
-          onManageStudents={handleManageStudents}
-          onInstructorClick={(instructorId) => navigate(`/instructors/${instructorId}`)}
-        />
+      <BatchGrid
+        batches={filteredBatches}
+        loading={isLoading}
+        onView={handleViewBatch}
+        onEdit={handleEditBatch}
+        onDelete={handleDeleteConfirmation}
+        onManageStudents={handleManageStudents}
+        onInstructorClick={(instructorId) => navigate(`/instructors/${instructorId}`)}
+      />
       ) : (
         <BatchList
           batches={filteredBatches}

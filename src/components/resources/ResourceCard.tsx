@@ -24,17 +24,23 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ResourceCardProps {
   resource: Resource;
   onDelete?: (resource: Resource) => void;
   userRole?: string;
+  checked?: boolean;
+  onCheck?: (resourceId: number, checked: boolean) => void;
 }
 
 const ResourceCard = ({
   resource,
   onDelete,
-  userRole
+  userRole,
+  checked,
+  onCheck
 }: ResourceCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const { toast } = useToast();
@@ -173,6 +179,7 @@ const ResourceCard = ({
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="p-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
         {getResourceIcon(resourceType)}
         <Badge 
           variant={resourceType === 'Recording' ? 'destructive' : 'outline'} 
@@ -180,6 +187,19 @@ const ResourceCard = ({
         >
           {resourceType.charAt(0).toUpperCase() + resourceType.slice(1)}
         </Badge>
+        </div>
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Checkbox
+                checked={checked}
+                onCheckedChange={checked => onCheck?.(resource.resourceId, !!checked)}
+                className="ml-2"
+              />
+            </TooltipTrigger>
+            <TooltipContent side="left" align="center">Select</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <CardHeader className="pt-0 pb-1 px-4">

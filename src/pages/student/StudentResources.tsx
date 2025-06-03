@@ -479,50 +479,57 @@ export default function StudentResources() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredResources
-                .filter(resource => !isVideoResource(resource))
-                .map((resource) => (
-                  <Card key={resource.resourceId} className="overflow-hidden hover:shadow-md transition-shadow">
-                    <CardContent className="p-0">
-                      <div className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="bg-blue-100 p-2 rounded-full">
-                            {getFileIcon(resource)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 truncate">
-                              {resource.title || resource.fileName || `Resource ${resource.resourceId}`}
-                            </h3>
-                            <p className="text-sm text-muted-foreground truncate">
-                              {resource.batch?.course?.courseName} - {resource.batch?.batchName}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="default" className="text-[10px]">Assignment</Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {format(new Date(resource.createdAt), 'MMM d, yyyy')}
-                              </span>
+              {batchResources
+                .map((resource, idx) => ({ resource, idx }))
+                .filter(({ resource }) => !isVideoResource(resource))
+                .map(({ resource, idx }) => {
+                  const interval = Math.floor(idx / 5) + 1;
+                  const locked = isResourceLocked(resource, idx, resource.batch.batchId);
+                  return (
+                    <Card key={resource.resourceId} className="overflow-hidden hover:shadow-md transition-shadow">
+                      <CardContent className="p-0">
+                        <div className="p-4">
+                          <div className="flex items-start gap-3">
+                            <div className="bg-blue-100 p-2 rounded-full">
+                              {getFileIcon(resource)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-gray-900 truncate">
+                                {resource.title || resource.fileName || `Resource ${resource.resourceId}`}
+                              </h3>
+                              <p className="text-sm text-muted-foreground truncate">
+                                {resource.batch?.course?.courseName} - {resource.batch?.batchName}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="default" className="text-[10px]">Assignment</Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(resource.createdAt), 'MMM d, yyyy')}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="bg-gray-50 px-4 py-2 border-t flex justify-end">
-                        <Button
-                          size="sm"
-                          onClick={() => handleDownload(resource)}
-                          disabled={downloadingId === resource.resourceId}
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          {downloadingId === resource.resourceId ? (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          ) : (
-                            <Eye className="h-4 w-4 mr-2" />
-                          )}
-                          View/Download
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <div className="bg-gray-50 px-4 py-2 border-t flex justify-end">
+                          <Button
+                            size="sm"
+                            onClick={() => locked ? handleLockedResourceClick(resource, interval, resource.batch.batchId) : handleDownload(resource)}
+                            disabled={downloadingId === resource.resourceId}
+                            className={`bg-blue-600 hover:bg-blue-700 text-white ${locked ? 'opacity-60 cursor-pointer' : ''}`}
+                          >
+                            {locked ? (
+                              <Lock className="h-4 w-4 mr-2" />
+                            ) : downloadingId === resource.resourceId ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Eye className="h-4 w-4 mr-2" />
+                            )}
+                            {locked ? 'Locked' : 'View/Download'}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
             </div>
           )}
         </TabsContent>
@@ -534,50 +541,57 @@ export default function StudentResources() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredResources
-                .filter(resource => isVideoResource(resource))
-                .map((resource) => (
-                  <Card key={resource.resourceId} className="overflow-hidden hover:shadow-md transition-shadow">
-                    <CardContent className="p-0">
-                      <div className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="bg-red-100 p-2 rounded-full">
-                            <FileVideo className="h-6 w-6 text-red-500" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 truncate">
-                              {resource.title || resource.fileName || `Resource ${resource.resourceId}`}
-                            </h3>
-                            <p className="text-sm text-muted-foreground truncate">
-                              {resource.batch?.course?.courseName} - {resource.batch?.batchName}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="destructive" className="text-[10px]">Recording</Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {format(new Date(resource.createdAt), 'MMM d, yyyy')}
-                              </span>
+              {batchResources
+                .map((resource, idx) => ({ resource, idx }))
+                .filter(({ resource }) => isVideoResource(resource))
+                .map(({ resource, idx }) => {
+                  const interval = Math.floor(idx / 5) + 1;
+                  const locked = isResourceLocked(resource, idx, resource.batch.batchId);
+                  return (
+                    <Card key={resource.resourceId} className="overflow-hidden hover:shadow-md transition-shadow">
+                      <CardContent className="p-0">
+                        <div className="p-4">
+                          <div className="flex items-start gap-3">
+                            <div className="bg-red-100 p-2 rounded-full">
+                              <FileVideo className="h-6 w-6 text-red-500" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-gray-900 truncate">
+                                {resource.title || resource.fileName || `Resource ${resource.resourceId}`}
+                              </h3>
+                              <p className="text-sm text-muted-foreground truncate">
+                                {resource.batch?.course?.courseName} - {resource.batch?.batchName}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="destructive" className="text-[10px]">Recording</Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(resource.createdAt), 'MMM d, yyyy')}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="bg-gray-50 px-4 py-2 border-t flex justify-end">
-                        <Button
-                          size="sm"
-                          onClick={() => handleView(resource)}
-                          disabled={downloadingId === resource.resourceId}
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          {downloadingId === resource.resourceId ? (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          ) : (
-                            <Eye className="h-4 w-4 mr-2" />
-                          )}
-                          View Recording
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <div className="bg-gray-50 px-4 py-2 border-t flex justify-end">
+                          <Button
+                            size="sm"
+                            onClick={() => locked ? handleLockedResourceClick(resource, interval, resource.batch.batchId) : handleView(resource)}
+                            disabled={downloadingId === resource.resourceId}
+                            className={`bg-blue-600 hover:bg-blue-700 text-white ${locked ? 'opacity-60 cursor-pointer' : ''}`}
+                          >
+                            {locked ? (
+                              <Lock className="h-4 w-4 mr-2" />
+                            ) : downloadingId === resource.resourceId ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Eye className="h-4 w-4 mr-2" />
+                            )}
+                            {locked ? 'Locked' : 'View Recording'}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
             </div>
           )}
         </TabsContent>

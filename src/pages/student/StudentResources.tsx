@@ -259,7 +259,6 @@ export default function StudentResources() {
     const feedbackRes = await apiFetch(`/resources/batches/${batchId}/feedbacks`);
     if (feedbackRes.success && Array.isArray(feedbackRes.data)) {
       setAllFeedbacks(feedbackRes.data.filter(f => f.studentId === user.userId));
-      console.log('Feedbacks:', feedbackRes.data.filter(f => f.studentId === user.userId));
       return feedbackRes.data.filter(f => f.studentId === user.userId);
     } else {
       setAllFeedbacks([]);
